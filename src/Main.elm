@@ -54,6 +54,10 @@ type AST
       TodoDefineAST
 
 
+type ModuleName
+    = ModuleName String
+
+
 type TypeError
     = -- TODO
       TodoDefineTypeError
@@ -109,12 +113,13 @@ parseFile fileName fileContents model =
     let
         ast : AST
         ast =
-            TodoDefineAST
+            Debug.todo "ast"
 
         newFilesToBeRead : List String
         newFilesToBeRead =
-            -- TODO after we know the AST, check for new module dependencies and return them here
-            []
+            ast
+                |> findModuleNames
+                |> List.map moduleToFilepath
 
         filesWithReadFile : Dict String FileStage
         filesWithReadFile =
@@ -155,6 +160,18 @@ parseFile fileName fileContents model =
     else
         -- TODO use `elm-continue` to make this pattern cleaner
         typecheck newModel
+
+
+findModuleNames : AST -> List ModuleName
+findModuleNames ast =
+    Debug.todo "findModuleNames"
+
+
+moduleToFilepath : ModuleName -> String
+moduleToFilepath (ModuleName moduleName) =
+    -- TODO make filepaths their own type (almost) everywhere?
+    -- TODO un-hardcodize "src/"
+    "src/" ++ String.replace "." "/" moduleName ++ ".elm"
 
 
 typecheck : Model -> ( Model, Cmd Msg )
