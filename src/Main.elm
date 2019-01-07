@@ -223,8 +223,13 @@ emitJS model =
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    if Dict.any (\_ fileStage -> fileStage == ToBeRead) model.files then
+    if anyFilesToBeRead model then
         waitForReadFile ReadFileSuccess
 
     else
         Sub.none
+
+
+anyFilesToBeRead : Model -> Bool
+anyFilesToBeRead { files } =
+    Dict.any (\_ fileStage -> fileStage == ToBeRead) files
