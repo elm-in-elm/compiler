@@ -214,7 +214,10 @@ emitJS model =
             "console.log('boo');"
     in
     ( model
-    , writeToFile "out.js" (FileContents emittedJS)
+    , Cmd.batch
+        [ writeToFile "out.js" (FileContents emittedJS)
+        , printlnStdout "Successfully compiled to (hardcoded) out.js!"
+        ]
     )
 
 
