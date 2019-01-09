@@ -1,8 +1,8 @@
 port module Ports exposing
-    ( printStderr
-    , printStdout
+    ( print
+    , printStderr
+    , println
     , printlnStderr
-    , printlnStdout
     , readFile
     , waitForReadFile
     , writeToFile
@@ -26,13 +26,13 @@ port readSubscription : (( String, String ) -> msg) -> Sub msg
 port write : { filename : String, contents : String } -> Cmd msg
 
 
-printStdout : String -> Cmd msg
-printStdout string =
+print : String -> Cmd msg
+print string =
     stdout string
 
 
-printlnStdout : String -> Cmd msg
-printlnStdout string =
+println : String -> Cmd msg
+println string =
     stdout (string ++ "\n")
 
 

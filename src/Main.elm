@@ -6,8 +6,8 @@ import Dict.Extra as Dict
 import Platform
 import Ports
     exposing
-        ( printlnStderr
-        , printlnStdout
+        ( println
+        , printlnStderr
         , readFile
         , waitForReadFile
         , writeToFile
@@ -233,7 +233,7 @@ emitJS model =
     ( model
     , Cmd.batch
         [ writeToFile "out.js" (FileContents emittedJS)
-        , printlnStdout "Successfully compiled to (hardcoded) out.js!"
+        , println "Successfully compiled to (hardcoded) out.js!"
         ]
     )
 
