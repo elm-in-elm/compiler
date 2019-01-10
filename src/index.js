@@ -4,18 +4,25 @@ const {registerPort} = require('./utils.js');
 const fs = require('fs');
 const fsPromises = fs.promises;
 
-const app = Elm.Main.init({
-  flags: {
-    mainFilepath: 'src/Main.elm'
-  }
-});
+(async function(){
 
-registerPort(app, 'stdout', string => process.stdout.write(string));
-registerPort(app, 'stderr', string => process.stderr.write(string));
-registerPort(app, 'readFile', async function(filename) {
-  const contents = await fsPromises.readFile(filename, {encoding: 'utf8'});
-  app.ports.readSubscription.send([filename, contents]);
-});
-registerPort(app, 'write', async function({filename,contents}) {
-  await fsPromises.writeFile(filename, contents);
-});
+  const elmJson = await fsPromises.readFile('test/elm.json', {encoding: 'utf8'});
+
+  const app = Elm.Main.init({
+    flags: {
+      mainFilePath: 'src/Main.elm',
+      elmJson,
+    }
+  });
+
+  registerPort(app, 'stdout', string => process.stdout.write(string));
+  registerPort(app, 'stderr', string => process.stderr.write(string));
+  registerPort(app, 'read', async function(filename) {
+    const contents = await fsPromises.readFile(filename, {encoding: 'utf8'});
+    app.ports.readSubscription.send([filename, contents]);
+  });
+  registerPort(app, 'write', async function({filePath,contents}) {
+    await fsPromises.writeFile(filePath, contents);
+  });
+
+})();

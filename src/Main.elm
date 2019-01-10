@@ -1,8 +1,20 @@
 module Main exposing (main)
 
-import Common exposing (FileContents(..))
+import Common
+    exposing
+        ( AST
+        , Dict_
+        , FileContents(..)
+        , FilePath(..)
+        , Module
+        , ModuleName(..)
+        , Set_
+        )
 import Dict exposing (Dict)
+import Dict.Any as AnyDict exposing (AnyDict)
 import Dict.Extra as Dict
+import Error exposing (Error(..), ParseError(..))
+import Extra
 import Platform
 import Ports
     exposing
@@ -12,6 +24,12 @@ import Ports
         , waitForReadFile
         , writeToFile
         )
+import Set exposing (Set)
+import Set.Any as AnySet exposing (AnySet)
+import Stage.Emit as Emit
+import Stage.Optimize as Optimize
+import Stage.Parse as Parse
+import Stage.Typecheck as Typecheck
 
 
 main : Program Flags Model Msg
@@ -25,51 +43,59 @@ main =
 
 type alias Flags =
     { -- TODO allow for multiple `main`s instead of just one
-      mainFilepath : String
+      mainFilePath : String
+    , elmJson : String
     }
 
 
-type alias Model =
+type Model
+    = Compiling Model_
+    | EncounteredError
+    | Finished
+
+
+type alias Model_ =
     { flags : Flags
-    , files : Dict String FileStage
+    , -- TODO allow for multiple source directories
+      sourceDirectory : FilePath
+    , modules : Dict_ ModuleName Module
+    , waitingForFiles : Set_ FilePath
     }
 
 
 type Msg
     = -- TODO ReadFileFailure
-      ReadFileSuccess String FileContents
-
-
-type FileStage
-    = ToBeRead
-    | DoneParsing
-        { sourceCode : FileContents
-        , ast : AST
-        }
-    | DoneTypechecking AST
-
-
-type AST
-    = -- TODO
-      TodoDefineAST
-
-
-type ModuleName
-    = ModuleName String
-
-
-type TypeError
-    = -- TODO
-      TodoDefineTypeError
+      ReadFileSuccess FilePath FileContents
 
 
 init : Flags -> ( Model, Cmd Msg )
-init flags =
-    ( { flags = flags
-      , files = Dict.singleton flags.mainFilepath ToBeRead
-      }
-    , readFile flags.mainFilepath
-    )
+init ({ mainFilePath, elmJson } as flags) =
+    let
+        sourceDirectory : FilePath
+        sourceDirectory =
+            -- TODO read the source directories from elm.json
+            FilePath "src/"
+
+        mainFilePath_ : FilePath
+        mainFilePath_ =
+            FilePath mainFilePath
+    in
+    expectedModuleName sourceDirectory mainFilePath_
+        |> Maybe.map
+            (\mainModuleName ->
+                ( Compiling
+                    { flags = flags
+                    , sourceDirectory = sourceDirectory
+                    , modules = AnyDict.empty Common.moduleNameToString
+                    , waitingForFiles = AnySet.singleton mainFilePath_ Common.filePathToString
+                    }
+                , readFile mainFilePath_
+                )
+            )
+        |> Maybe.withDefault
+            ( EncounteredError
+            , printlnStderr (Error.toString (ParseError (FileNotFound mainFilePath_)))
+            )
 
 
 
@@ -88,10 +114,145 @@ init flags =
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
+    case model of
+        EncounteredError ->
+            ( model, Cmd.none )
+
+        Compiling model_ ->
+            update_ msg model_
+
+
+update_ : Msg -> Model_ -> ( Model, Cmd Msg )
+update_ msg model =
     case log msg of
-        ReadFileSuccess fileName fileContents ->
-            model
-                |> parseFile fileName fileContents
+        ReadFileSuccess filePath fileContents ->
+            handleReadFileSuccess filePath fileContents model
+
+
+handleReadFileSuccess : FilePath -> FileContents -> Model_ -> ( Model, Cmd Msg )
+handleReadFileSuccess filePath fileContents model =
+    case Parse.parse filePath fileContents of
+        Err error ->
+            handleError error
+
+        Ok ({ name, dependencies } as parsedModule) ->
+            let
+                modulesToBeRead : Set_ ModuleName
+                modulesToBeRead =
+                    dependencies
+                        |> AnySet.diff
+                            (model.modules
+                                |> AnyDict.keys
+                                |> AnySet.fromList Common.moduleNameToString
+                            )
+
+                filesToBeRead : Set_ FilePath
+                filesToBeRead =
+                    modulesToBeRead
+                        |> AnySet.map Common.filePathToString (expectedFilePath model.sourceDirectory)
+
+                newModules : Dict_ ModuleName Module
+                newModules =
+                    model.modules
+                        |> AnyDict.update name
+                            (Maybe.map (always parsedModule))
+
+                newWaitingForFiles : Set_ FilePath
+                newWaitingForFiles =
+                    model.waitingForFiles
+                        |> AnySet.union filesToBeRead
+
+                newModel : Model
+                newModel =
+                    Compiling
+                        { model
+                            | modules = newModules
+                            , waitingForFiles = newWaitingForFiles
+                        }
+            in
+            if AnySet.isEmpty newWaitingForFiles then
+                -- We're done reading and parsing files. Now we can do the rest synchronously!
+                Ok newModules
+                    |> Result.andThen Typecheck.typecheck
+                    |> Result.andThen Optimize.optimize
+                    |> Result.andThen Emit.emit
+                    |> finish
+
+            else
+                ( newModel
+                , filesToBeRead
+                    |> AnySet.toList
+                    |> List.map readFile
+                    |> Cmd.batch
+                )
+
+
+finish : Result Error FileContents -> ( Model, Cmd Msg )
+finish result =
+    case result of
+        Ok output ->
+            ( Finished
+            , writeToFile (FilePath "out.js") output
+            )
+
+        Err error ->
+            handleError error
+
+
+{-| When an error happens, we bail out as early as possible.
+Stop everything, abort mission, jump ship!
+
+The `EncounteredError` model stops most everything (`update`, `subscriptions`).
+
+-}
+handleError : Error -> ( Model, Cmd Msg )
+handleError error =
+    ( EncounteredError
+    , printlnStderr (Error.toString error)
+    )
+
+
+expectedFilePath : FilePath -> ModuleName -> FilePath
+expectedFilePath (FilePath sourceDirectory) (ModuleName moduleName) =
+    {- TODO somewhere normalize the / out of the source directories
+       so that it's not there twice.
+
+       Eg. we wouldn't want
+
+           sourceDirectories = ["src/"]
+           --> expectedFilePaths ... == "src//Foo.elm"
+    -}
+    FilePath (sourceDirectory ++ "/" ++ String.replace "." "/" moduleName ++ ".elm")
+
+
+expectedModuleName : FilePath -> FilePath -> Maybe ModuleName
+expectedModuleName (FilePath sourceDirectory) (FilePath filePath) =
+    if String.startsWith sourceDirectory filePath then
+        let
+            lengthToDrop : Int
+            lengthToDrop =
+                String.length sourceDirectory
+        in
+        filePath
+            |> String.dropLeft lengthToDrop
+            |> String.replace "/" "."
+            -- remove the ".elm":
+            |> String.dropRight 4
+            |> ModuleName
+            |> Just
+
+    else
+        Nothing
+
+
+subscriptions : Model -> Sub Msg
+subscriptions model =
+    case model of
+        EncounteredError ->
+            Sub.none
+
+        Compiling model_ ->
+            waitForReadFile ReadFileSuccess
 
 
 log : Msg -> Msg
@@ -106,147 +267,3 @@ log msg =
             Debug.log string ()
     in
     msg
-
-
-parseFile : String -> FileContents -> Model -> ( Model, Cmd Msg )
-parseFile fileName fileContents model =
-    let
-        ast : AST
-        ast =
-            Debug.todo "ast"
-
-        newFilesToBeRead : List String
-        newFilesToBeRead =
-            ast
-                |> findModuleNames
-                |> List.map moduleToFilepath
-
-        filesWithReadFile : Dict String FileStage
-        filesWithReadFile =
-            model.files
-                |> Dict.update fileName
-                    (Maybe.map
-                        (always
-                            (DoneParsing
-                                { sourceCode = fileContents
-                                , ast = ast
-                                }
-                            )
-                        )
-                    )
-
-        newFiles : Dict String FileStage
-        newFiles =
-            newFilesToBeRead
-                |> List.map (\filename -> ( filename, ToBeRead ))
-                |> Dict.fromList
-                |> Dict.union
-                    -- it's important that this dict is the first argument to Dict.union
-                    -- because in case of conflict it (already read file) is used
-                    -- instead of the `ToBeRead` one
-                    filesWithReadFile
-
-        newModel : Model
-        newModel =
-            { model | files = newFiles }
-    in
-    if Dict.any (\_ fileStage -> fileStage == ToBeRead) newFiles then
-        ( newModel
-        , newFilesToBeRead
-            |> List.map readFile
-            |> Cmd.batch
-        )
-
-    else
-        -- TODO use `elm-continue` to make this pattern cleaner
-        typecheck newModel
-
-
-findModuleNames : AST -> List ModuleName
-findModuleNames ast =
-    Debug.todo "findModuleNames"
-
-
-moduleToFilepath : ModuleName -> String
-moduleToFilepath (ModuleName moduleName) =
-    -- TODO make filepaths their own type (almost) everywhere?
-    -- TODO un-hardcodize "src/"
-    "src/" ++ String.replace "." "/" moduleName ++ ".elm"
-
-
-typecheck : Model -> ( Model, Cmd Msg )
-typecheck model =
-    -- TODO actually do some typechecking
-    let
-        errors : List TypeError
-        errors =
-            []
-    in
-    if List.isEmpty errors then
-        optimize
-            { model
-                | files =
-                    model.files
-                        |> Dict.map
-                            (\_ fileStage ->
-                                case fileStage of
-                                    DoneParsing { ast } ->
-                                        DoneTypechecking ast
-
-                                    -- If any of these happen, something went wrong. We're supposed
-                                    -- to read and parse everything, then typecheck everything,
-                                    -- then optimize etc.
-                                    ToBeRead ->
-                                        fileStage
-                                            |> Debug.log "something went wrong - `typecheck` encountered `ToBeRead` value"
-
-                                    DoneTypechecking _ ->
-                                        fileStage
-                                            |> Debug.log "something went wrong - `typecheck` encountered `DoneTypechecking` value"
-                            )
-            }
-
-    else
-        ( model
-        , printlnStderr ("Errors! " ++ Debug.toString errors)
-        )
-
-
-optimize : Model -> ( Model, Cmd Msg )
-optimize model =
-    -- TODO actually do some optimizing
-    let
-        newFiles =
-            model.files
-    in
-    emitJS { model | files = newFiles }
-
-
-emitJS : Model -> ( Model, Cmd Msg )
-emitJS model =
-    let
-        emittedJS : String
-        emittedJS =
-            -- TODO something real
-            "console.log('boo');"
-    in
-    ( model
-    , Cmd.batch
-        [ writeToFile "out.js" (FileContents emittedJS)
-        , println "Successfully compiled to (hardcoded) out.js!"
-        ]
-    )
-
-
-subscriptions : Model -> Sub Msg
-subscriptions model =
-    if anyFilesToBeRead model then
-        waitForReadFile ReadFileSuccess
-
-    else
-        Sub.none
-
-
-anyFilesToBeRead : Model -> Bool
-anyFilesToBeRead { files } =
-    Dict.any (\_ fileStage -> fileStage == ToBeRead) files

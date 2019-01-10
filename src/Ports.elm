@@ -8,7 +8,7 @@ port module Ports exposing
     , writeToFile
     )
 
-import Common exposing (FileContents(..))
+import Common exposing (FileContents(..), FilePath(..))
 
 
 port stdout : String -> Cmd msg
@@ -17,13 +17,13 @@ port stdout : String -> Cmd msg
 port stderr : String -> Cmd msg
 
 
-port readFile : String -> Cmd msg
+port read : String -> Cmd msg
 
 
 port readSubscription : (( String, String ) -> msg) -> Sub msg
 
 
-port write : { filename : String, contents : String } -> Cmd msg
+port write : { filePath : String, contents : String } -> Cmd msg
 
 
 print : String -> Cmd msg
@@ -46,17 +46,22 @@ printlnStderr string =
     stderr (string ++ "\n")
 
 
-waitForReadFile : (String -> FileContents -> msg) -> Sub msg
+readFile : FilePath -> Cmd msg
+readFile (FilePath filePath) =
+    read filePath
+
+
+waitForReadFile : (FilePath -> FileContents -> msg) -> Sub msg
 waitForReadFile toMsg =
     readSubscription
-        (\( fileName, fileContents ) ->
-            toMsg fileName (FileContents fileContents)
+        (\( filePath, fileContents ) ->
+            toMsg (FilePath filePath) (FileContents fileContents)
         )
 
 
-writeToFile : String -> FileContents -> Cmd msg
-writeToFile filename (FileContents contents) =
+writeToFile : FilePath -> FileContents -> Cmd msg
+writeToFile (FilePath filePath) (FileContents contents) =
     write
-        { filename = filename
+        { filePath = filePath
         , contents = contents
         }
