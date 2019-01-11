@@ -12,7 +12,7 @@ module Common exposing
     )
 
 import Dict.Any as AnyDict exposing (AnyDict)
-import Set exposing (Set)
+import Elm.Project
 import Set.Any as AnySet exposing (AnySet)
 
 
@@ -55,7 +55,12 @@ type alias AST =
 {-| TODO
 -}
 type alias Project =
-    {}
+    { mainFilePath : FilePath
+    , mainModuleName : ModuleName
+    , elmJson : Elm.Project.Project
+    , {- TODO allow multiple source directories -} sourceDirectory : FilePath
+    , modules : Dict_ ModuleName Module
+    }
 
 
 {-| TODO

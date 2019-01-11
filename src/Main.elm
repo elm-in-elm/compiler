@@ -8,6 +8,7 @@ import Common
         , FilePath(..)
         , Module
         , ModuleName(..)
+        , Project
         , Set_
         )
 import Dict exposing (Dict)
@@ -33,6 +34,9 @@ import Stage.Parse as Parse
 import Stage.Typecheck as Typecheck
 
 
+{-| We're essentially a Node.JS app (until we get self-hosting :P ).
+So, `Platform.worker` is the only option for us.
+-}
 main : Program Flags Model Msg
 main =
     Platform.worker
@@ -56,11 +60,7 @@ type Model
 
 
 type alias Model_ =
-    { mainFilePath : FilePath
-    , mainModuleName : ModuleName
-    , -- TODO allow for multiple source directories
-      sourceDirectory : FilePath
-    , modules : Dict_ ModuleName Module
+    { project : Project
     , waitingForFiles : Set_ FilePath
     }
 
@@ -77,22 +77,15 @@ init ({ mainFilePath, elmJson } as flags) =
         mainFilePath_ =
             FilePath mainFilePath
 
-        sourceDirectory : Result Error FilePath
-        sourceDirectory =
+        elmJson_ : Result Error Elm.Project.Project
+        elmJson_ =
             JD.decodeString Elm.Project.decoder elmJson
                 |> Result.mapError (ParseError << InvalidElmJson)
-                |> Result.andThen
-                    (\elmProject ->
-                        case elmProject of
-                            Elm.Project.Application { dirs } ->
-                                dirs
-                                    |> List.head
-                                    |> Maybe.map FilePath
-                                    |> Result.fromMaybe (ParseError EmptySourceDirectories)
 
-                            Elm.Project.Package _ ->
-                                Ok (FilePath "src/")
-                    )
+        sourceDirectory : Result Error FilePath
+        sourceDirectory =
+            elmJson_
+                |> Result.andThen getSourceDirectory
 
         mainModuleName_ : Result Error ModuleName
         mainModuleName_ =
@@ -110,19 +103,23 @@ init ({ mainFilePath, elmJson } as flags) =
 
         modelAndCmd : Result Error ( Model, Cmd Msg )
         modelAndCmd =
-            Result.map2
-                (\mainModuleName sourceDirectory_ ->
+            Result.map3
+                (\mainModuleName elmJson__ sourceDirectory_ ->
                     ( Compiling
-                        { mainFilePath = mainFilePath_
-                        , mainModuleName = mainModuleName
-                        , sourceDirectory = sourceDirectory_
-                        , modules = AnyDict.empty Common.moduleNameToString
+                        { project =
+                            { mainFilePath = mainFilePath_
+                            , mainModuleName = mainModuleName
+                            , elmJson = elmJson__
+                            , sourceDirectory = sourceDirectory_
+                            , modules = AnyDict.empty Common.moduleNameToString
+                            }
                         , waitingForFiles = AnySet.singleton mainFilePath_ Common.filePathToString
                         }
                     , readFile mainFilePath_
                     )
                 )
                 mainModuleName_
+                elmJson_
                 sourceDirectory
     in
     case modelAndCmd of
@@ -135,18 +132,17 @@ init ({ mainFilePath, elmJson } as flags) =
             )
 
 
+getSourceDirectory : Elm.Project.Project -> Result Error FilePath
+getSourceDirectory elmProject =
+    case elmProject of
+        Elm.Project.Application { dirs } ->
+            dirs
+                |> List.head
+                |> Maybe.map FilePath
+                |> Result.fromMaybe (ParseError EmptySourceDirectories)
 
-{-
-   mainFilename
-     -- FRONTEND
-       |> collectAndParseSources
-       |> typecheck
-     -- OPTIMIZERS
-       |> eliminateDeadCode
-       |> evaluate
-     -- BACKEND
-       |> emitJS
--}
+        Elm.Project.Package _ ->
+            Ok (FilePath "src/")
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -158,6 +154,9 @@ update msg model =
         Compiling model_ ->
             update_ msg model_
 
+        Finished ->
+            ( model, Cmd.none )
+
 
 update_ : Msg -> Model_ -> ( Model, Cmd Msg )
 update_ msg model =
@@ -167,7 +166,7 @@ update_ msg model =
 
 
 handleReadFileSuccess : FilePath -> FileContents -> Model_ -> ( Model, Cmd Msg )
-handleReadFileSuccess filePath fileContents model =
+handleReadFileSuccess filePath fileContents ({ project } as model) =
     case Parse.parse filePath fileContents of
         Err error ->
             handleError error
@@ -178,7 +177,7 @@ handleReadFileSuccess filePath fileContents model =
                 modulesToBeRead =
                     dependencies
                         |> AnySet.diff
-                            (model.modules
+                            (project.modules
                                 |> AnyDict.keys
                                 |> AnySet.fromList Common.moduleNameToString
                             )
@@ -186,42 +185,53 @@ handleReadFileSuccess filePath fileContents model =
                 filesToBeRead : Set_ FilePath
                 filesToBeRead =
                     modulesToBeRead
-                        |> AnySet.map Common.filePathToString (expectedFilePath model.sourceDirectory)
+                        |> AnySet.map
+                            Common.filePathToString
+                            (expectedFilePath project.sourceDirectory)
 
                 newModules : Dict_ ModuleName Module
                 newModules =
-                    model.modules
+                    project.modules
                         |> AnyDict.update name
                             (Maybe.map (always parsedModule))
+
+                newProject : Project
+                newProject =
+                    { project | modules = newModules }
 
                 newWaitingForFiles : Set_ FilePath
                 newWaitingForFiles =
                     model.waitingForFiles
                         |> AnySet.union filesToBeRead
 
-                newModel : Model
+                newModel : Model_
                 newModel =
-                    Compiling
-                        { model
-                            | modules = newModules
-                            , waitingForFiles = newWaitingForFiles
-                        }
+                    { model
+                        | project = newProject
+                        , waitingForFiles = newWaitingForFiles
+                    }
             in
             if AnySet.isEmpty newWaitingForFiles then
-                -- We're done reading and parsing files. Now we can do the rest synchronously!
-                Ok newModules
-                    |> Result.andThen Typecheck.typecheck
-                    |> Result.andThen Optimize.optimize
-                    |> Result.andThen Emit.emit
-                    |> finish
+                compile newProject
 
             else
-                ( newModel
+                ( Compiling newModel
                 , filesToBeRead
                     |> AnySet.toList
                     |> List.map readFile
                     |> Cmd.batch
                 )
+
+
+{-| We're done reading and parsing files. Now we can do the rest synchronously!
+-}
+compile : Project -> ( Model, Cmd Msg )
+compile project =
+    Ok project
+        |> Result.andThen Typecheck.typecheck
+        |> Result.andThen Optimize.optimize
+        |> Result.andThen Emit.emit
+        |> finish
 
 
 finish : Result Error FileContents -> ( Model, Cmd Msg )
@@ -290,6 +300,9 @@ subscriptions model =
 
         Compiling model_ ->
             waitForReadFile ReadFileSuccess
+
+        Finished ->
+            Sub.none
 
 
 log : Msg -> Msg

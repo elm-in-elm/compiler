@@ -1,9 +1,9 @@
 module Stage.Typecheck exposing (typecheck)
 
-import Common exposing (AST, Dict_, Module, ModuleName)
+import Common exposing (Project)
 import Error exposing (Error, TypeError(..))
 
 
-typecheck : Dict_ ModuleName Module -> Result Error (Dict_ ModuleName Module)
+typecheck : Project -> Result Error Project
 typecheck sourceCode =
     Debug.todo "typecheck"
