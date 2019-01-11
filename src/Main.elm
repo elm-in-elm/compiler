@@ -239,7 +239,10 @@ finish result =
     case result of
         Ok output ->
             ( Finished
-            , writeToFile (FilePath "out.js") output
+            , Cmd.batch
+                [ writeToFile (FilePath "out.js") output
+                , println "Compilation finished, wrote output to `out.js`."
+                ]
             )
 
         Err error ->
