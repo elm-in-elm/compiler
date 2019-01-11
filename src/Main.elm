@@ -22,7 +22,7 @@ filesystem IO library) and a little bit of JavaScript: see `src/index.js`.
                     │                           ^
                     │                           │ if syntax error
                     v                           │
-         ┌──────────────────────┐      ┌────────────────┐      ┌───────────────────┐ if all read  ┌─────────────────────────────┐
+         ┌──────────────────────┐      ┌────────┴───────┐      ┌───────────────────┐ if all read  ┌─────────────────────────────┐
          │ Read from filesystem ├─────>│ Parse into AST ├─────>│ Find dependencies ├─────────────>│ Rest of the compile process │
          └──────────────────────┘      └────────────────┘      └─────────┬─────────┘              └─────────────────────────────┘
                     ^                                                    │
