@@ -8,6 +8,7 @@ module Error exposing
     )
 
 import Common exposing (FilePath(..), ModuleName(..))
+import Json.Decode as JD
 
 
 type Error
@@ -20,6 +21,9 @@ type Error
 type ParseError
     = ModuleNameDoesntMatchFileName ModuleName FilePath
     | FileNotFound FilePath
+    | EmptySourceDirectories
+    | MainModuleNotInSourceDirectory FilePath
+    | InvalidElmJson JD.Error
 
 
 {-| TODO
@@ -50,6 +54,15 @@ toString error =
 
                 FileNotFound (FilePath filePath) ->
                     "File `" ++ filePath ++ "` not found."
+
+                EmptySourceDirectories ->
+                    "Empty `sourceDirectories`!"
+
+                MainModuleNotInSourceDirectory (FilePath filePath) ->
+                    "The main module `" ++ filePath ++ "` given as argument is not located in the sourceDirectories."
+
+                InvalidElmJson jsonError ->
+                    "Invalid elm.json! " ++ JD.errorToString jsonError
 
         TypeError typeError ->
             Debug.todo "toString typeError"

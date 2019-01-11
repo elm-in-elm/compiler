@@ -13,8 +13,9 @@ import Common
 import Dict exposing (Dict)
 import Dict.Any as AnyDict exposing (AnyDict)
 import Dict.Extra as Dict
+import Elm.Project
 import Error exposing (Error(..), ParseError(..))
-import Extra
+import Json.Decode as JD
 import Platform
 import Ports
     exposing
@@ -55,7 +56,8 @@ type Model
 
 
 type alias Model_ =
-    { flags : Flags
+    { mainFilePath : FilePath
+    , mainModuleName : ModuleName
     , -- TODO allow for multiple source directories
       sourceDirectory : FilePath
     , modules : Dict_ ModuleName Module
@@ -71,30 +73,65 @@ type Msg
 init : Flags -> ( Model, Cmd Msg )
 init ({ mainFilePath, elmJson } as flags) =
     let
-        sourceDirectory : FilePath
-        sourceDirectory =
-            -- TODO read the source directories from elm.json
-            FilePath "src/"
-
         mainFilePath_ : FilePath
         mainFilePath_ =
             FilePath mainFilePath
-    in
-    expectedModuleName sourceDirectory mainFilePath_
-        |> Maybe.map
-            (\mainModuleName ->
-                ( Compiling
-                    { flags = flags
-                    , sourceDirectory = sourceDirectory
-                    , modules = AnyDict.empty Common.moduleNameToString
-                    , waitingForFiles = AnySet.singleton mainFilePath_ Common.filePathToString
-                    }
-                , readFile mainFilePath_
+
+        sourceDirectory : Result Error FilePath
+        sourceDirectory =
+            JD.decodeString Elm.Project.decoder elmJson
+                |> Result.mapError (ParseError << InvalidElmJson)
+                |> Result.andThen
+                    (\elmProject ->
+                        case elmProject of
+                            Elm.Project.Application { dirs } ->
+                                dirs
+                                    |> List.head
+                                    |> Maybe.map FilePath
+                                    |> Result.fromMaybe (ParseError EmptySourceDirectories)
+
+                            Elm.Project.Package _ ->
+                                Ok (FilePath "src/")
+                    )
+
+        mainModuleName_ : Result Error ModuleName
+        mainModuleName_ =
+            sourceDirectory
+                |> Result.andThen
+                    (\sourceDirectory_ ->
+                        expectedModuleName sourceDirectory_ mainFilePath_
+                            {- TODO It is probably not enforced by the official compiler
+                               for the main module's path to be included in the source directories.
+                               We'd have to read the module name from the file contents in that case.
+                               Check that assumption and do that!
+                            -}
+                            |> Result.fromMaybe (ParseError (MainModuleNotInSourceDirectory mainFilePath_))
+                    )
+
+        modelAndCmd : Result Error ( Model, Cmd Msg )
+        modelAndCmd =
+            Result.map2
+                (\mainModuleName sourceDirectory_ ->
+                    ( Compiling
+                        { mainFilePath = mainFilePath_
+                        , mainModuleName = mainModuleName
+                        , sourceDirectory = sourceDirectory_
+                        , modules = AnyDict.empty Common.moduleNameToString
+                        , waitingForFiles = AnySet.singleton mainFilePath_ Common.filePathToString
+                        }
+                    , readFile mainFilePath_
+                    )
                 )
-            )
-        |> Maybe.withDefault
+                mainModuleName_
+                sourceDirectory
+    in
+    case modelAndCmd of
+        Ok modelAndCmd_ ->
+            modelAndCmd_
+
+        Err err ->
             ( EncounteredError
-            , printlnStderr (Error.toString (ParseError (FileNotFound mainFilePath_)))
+            , printlnStderr (Error.toString err)
             )
 
 
