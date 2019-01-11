@@ -1,9 +1,41 @@
 module Main exposing (main)
 
+{-| Welcome to the Elm compiler written in Elm!
+
+To get things out of the way: it would be great if the pipeline could be pure:
+
+    input
+        |> parse
+        |> typecheck
+        |> optimize
+        |> emit
+
+But we have to read files and parse them (to find more files to read),
+so the code doesn't look as nice and we have to go through The Elm Architecture.
+
+The reading is done through ports (as Elm doesn't have an general-purpose
+filesystem IO library) and a little bit of JavaScript: see `src/index.js`.
+
+    ┌─────────────────────────────────┐      ┌─────┐
+    │ Main file(s) (cmdline argument) │      │ Die │
+    └───────────────┬─────────────────┘      └─────┘
+                    │                           ^
+                    │                           │ if syntax error
+                    v                           │
+         ┌──────────────────────┐      ┌────────────────┐      ┌───────────────────┐ if all read  ┌─────────────────────────────┐
+         │ Read from filesystem ├─────>│ Parse into AST ├─────>│ Find dependencies ├─────────────>│ Rest of the compile process │
+         └──────────────────────┘      └────────────────┘      └─────────┬─────────┘              └─────────────────────────────┘
+                    ^                                                    │
+                    │                                                    │ if new file to read
+                    └────────────────────────────────────────────────────┘
+
+The loop at the bottom left is the bulk of this file.
+
+-}
+
 import Common
     exposing
-        ( AST
-        , Dict_
+        ( Dict_
         , FileContents(..)
         , FilePath(..)
         , Module
@@ -11,9 +43,7 @@ import Common
         , Project
         , Set_
         )
-import Dict exposing (Dict)
 import Dict.Any as AnyDict exposing (AnyDict)
-import Dict.Extra as Dict
 import Elm.Project
 import Error exposing (Error(..), ParseError(..))
 import Json.Decode as JD
@@ -26,7 +56,6 @@ import Ports
         , waitForReadFile
         , writeToFile
         )
-import Set exposing (Set)
 import Set.Any as AnySet exposing (AnySet)
 import Stage.Emit as Emit
 import Stage.Optimize as Optimize
