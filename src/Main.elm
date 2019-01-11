@@ -31,6 +31,13 @@ filesystem IO library) and a little bit of JavaScript: see `src/index.js`.
 
 The loop at the bottom left is the bulk of this file.
 
+The rest of the compile process can be found in the function `compile`.
+You'll find it has to deal with `Result`s, because the compilation stages
+can return errors. Of course, Elm doesn't have exceptions, so we are explicit
+about returning those.
+
+TODO downloading packages from the Internet (oh my!)
+
 -}
 
 import Common
@@ -75,19 +82,29 @@ main =
         }
 
 
+{-| User-provided options and other initialization data.
+-}
 type alias Flags =
-    { -- TODO allow for multiple `main`s instead of just one
-      mainFilePath : String
+    { mainFilePath : String -- TODO allow for multiple `main`s instead of just one
     , elmJson : String
     }
 
 
+{-| `Compiling` is the state we'll be most of the time. The other two are
+mostly useless; they do effectively stop `subscriptions` and `update` though.
+-}
 type Model
     = Compiling Model_
-    | EncounteredError
+    | {- We don't need to remember the error, because we report it
+         at the time of returning this new model. See `handleError`.
+      -}
+      EncounteredError
     | Finished
 
 
+{-| Because we're mostly in the `Compiling` state, it is worthwhile
+to make functions work only with its data and not with the general `Model`.
+-}
 type alias Model_ =
     { project : Project
     , waitingForFiles : Set_ FilePath
@@ -97,6 +114,23 @@ type alias Model_ =
 type Msg
     = -- TODO ReadFileFailure
       ReadFileSuccess FilePath FileContents
+
+
+{-| We'll be waiting for the various file contents we've asked for
+with `readFile`, but only on the happy path. They are of no use to us
+when we've already found an error elsewhere or finished the compilation.
+-}
+subscriptions : Model -> Sub Msg
+subscriptions model =
+    case model of
+        EncounteredError ->
+            Sub.none
+
+        Compiling model_ ->
+            waitForReadFile ReadFileSuccess
+
+        Finished ->
+            Sub.none
 
 
 init : Flags -> ( Model, Cmd Msg )
@@ -263,6 +297,12 @@ compile project =
         |> finish
 
 
+{-| We've got our output ready for writing to the filesystem!
+(Well, that or an error somewhere along the process.)
+
+Let's do that - report the error or write the output to a file.
+
+-}
 finish : Result Error FileContents -> ( Model, Cmd Msg )
 finish result =
     case result of
@@ -322,19 +362,6 @@ expectedModuleName (FilePath sourceDirectory) (FilePath filePath) =
 
     else
         Nothing
-
-
-subscriptions : Model -> Sub Msg
-subscriptions model =
-    case model of
-        EncounteredError ->
-            Sub.none
-
-        Compiling model_ ->
-            waitForReadFile ReadFileSuccess
-
-        Finished ->
-            Sub.none
 
 
 log : Msg -> Msg
