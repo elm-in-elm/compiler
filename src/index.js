@@ -28,6 +28,7 @@
   registerPort(app, 'stdout', string => process.stdout.write(string));
   registerPort(app, 'stderr', string => process.stderr.write(string));
   registerPort(app, 'read', async function(filename) {
+    // TODO read file failure Msg
     const contents = await fsPromises.readFile(filename, {encoding: 'utf8'});
     app.ports.readSubscription.send([filename, contents]);
   });

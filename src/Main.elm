@@ -10,10 +10,11 @@ To get things out of the way: it would be great if the pipeline could be pure:
         |> optimize
         |> emit
 
-But we have to read files and parse them (to find more files to read),
-so the code doesn't look as nice and we have to go through The Elm Architecture.
+But we have to read files and parse them (to, in turn, find more files to read!),
+so the code doesn't look as nice and we have to thread the reading and parsing
+through The Elm Architecture.
 
-The reading is done through ports (as Elm doesn't have an general-purpose
+The reading is done with ports (as Elm doesn't have an general-purpose
 filesystem IO library) and a little bit of JavaScript: see `src/index.js`.
 
     ┌─────────────────────────────────┐      ┌─────┐
@@ -55,14 +56,7 @@ import Elm.Project
 import Error exposing (Error(..), ParseError(..))
 import Json.Decode as JD
 import Platform
-import Ports
-    exposing
-        ( println
-        , printlnStderr
-        , readFile
-        , waitForReadFile
-        , writeToFile
-        )
+import Ports exposing (println, printlnStderr)
 import Set.Any as AnySet exposing (AnySet)
 import Stage.Emit as Emit
 import Stage.Optimize as Optimize
@@ -72,6 +66,9 @@ import Stage.Typecheck as Typecheck
 
 {-| We're essentially a Node.JS app (until we get self-hosting :P ).
 So, `Platform.worker` is the only option for us.
+
+TODO expose parts of the compiler as a library!
+
 -}
 main : Program Flags Model Msg
 main =
@@ -82,8 +79,6 @@ main =
         }
 
 
-{-| User-provided options and other initialization data.
--}
 type alias Flags =
     { mainFilePath : String -- TODO allow for multiple `main`s instead of just one
     , elmJson : String
@@ -96,14 +91,14 @@ mostly useless; they do effectively stop `subscriptions` and `update` though.
 type Model
     = Compiling Model_
     | {- We don't need to remember the error, because we report it
-         at the time of returning this new model. See `handleError`.
+         at the time of transition to this new model. See `handleError`.
       -}
       EncounteredError
     | Finished
 
 
 {-| Because we're mostly in the `Compiling` state, it is worthwhile
-to make functions work only with its data and not with the general `Model`.
+to make functions work with its data instead of the general `Model`.
 -}
 type alias Model_ =
     { project : Project
@@ -116,23 +111,31 @@ type Msg
       ReadFileSuccess FilePath FileContents
 
 
-{-| We'll be waiting for the various file contents we've asked for
-with `readFile`, but only on the happy path. They are of no use to us
-when we've already found an error elsewhere or finished the compilation.
--}
 subscriptions : Model -> Sub Msg
 subscriptions model =
     case model of
+        Compiling model_ ->
+            {- We'll be waiting for the various file contents we've asked for
+               with `readFile`, but only on the happy path. They are of no use
+               to us when we've already found an error elsewhere or finished
+               the compilation.
+            -}
+            Ports.waitForReadFile ReadFileSuccess
+
         EncounteredError ->
             Sub.none
-
-        Compiling model_ ->
-            waitForReadFile ReadFileSuccess
 
         Finished ->
             Sub.none
 
 
+{-| The JS wrapper gives us the main filepath and the contents of elm.json.
+We have two tasks here:
+
+  - decode the elm.json file to something meaningful
+  - read the main module (TODO maybe do that even before `init` in JS?)
+
+-}
 init : Flags -> ( Model, Cmd Msg )
 init ({ mainFilePath, elmJson } as flags) =
     let
@@ -140,8 +143,8 @@ init ({ mainFilePath, elmJson } as flags) =
         mainFilePath_ =
             FilePath mainFilePath
 
-        elmJson_ : Result Error Elm.Project.Project
-        elmJson_ =
+        elmJsonProject : Result Error Elm.Project.Project
+        elmJsonProject =
             JD.decodeString Elm.Project.decoder elmJson
                 |> Result.mapError (ParseError << InvalidElmJson)
 
@@ -150,8 +153,8 @@ init ({ mainFilePath, elmJson } as flags) =
             elmJson_
                 |> Result.andThen getSourceDirectory
 
-        mainModuleName_ : Result Error ModuleName
-        mainModuleName_ =
+        mainModuleName : Result Error ModuleName
+        mainModuleName =
             sourceDirectory
                 |> Result.andThen
                     (\sourceDirectory_ ->
@@ -167,34 +170,34 @@ init ({ mainFilePath, elmJson } as flags) =
         modelAndCmd : Result Error ( Model, Cmd Msg )
         modelAndCmd =
             Result.map3
-                (\mainModuleName elmJson__ sourceDirectory_ ->
+                (\mainModuleName_ elmJsonProject_ sourceDirectory_ ->
                     ( Compiling
                         { project =
                             { mainFilePath = mainFilePath_
                             , mainModuleName = mainModuleName
-                            , elmJson = elmJson__
+                            , elmJson = elmJsonProject_
                             , sourceDirectory = sourceDirectory_
                             , modules = AnyDict.empty Common.moduleNameToString
                             }
                         , waitingForFiles = AnySet.singleton mainFilePath_ Common.filePathToString
                         }
-                    , readFile mainFilePath_
+                    , Ports.readFile mainFilePath_
                     )
                 )
-                mainModuleName_
-                elmJson_
+                mainModuleName
+                elmJsonProject
                 sourceDirectory
     in
     case modelAndCmd of
         Ok modelAndCmd_ ->
             modelAndCmd_
 
-        Err err ->
-            ( EncounteredError
-            , printlnStderr (Error.toString err)
-            )
+        Err error ->
+            handleError error
 
 
+{-| Applications tell us their source directories; packages have `src/`.
+-}
 getSourceDirectory : Elm.Project.Project -> Result Error FilePath
 getSourceDirectory elmProject =
     case elmProject of
@@ -281,7 +284,7 @@ handleReadFileSuccess filePath fileContents ({ project } as model) =
                 ( Compiling newModel
                 , filesToBeRead
                     |> AnySet.toList
-                    |> List.map readFile
+                    |> List.map Ports.readFile
                     |> Cmd.batch
                 )
 
@@ -309,7 +312,7 @@ finish result =
         Ok output ->
             ( Finished
             , Cmd.batch
-                [ writeToFile (FilePath "out.js") output
+                [ Ports.writeToFile (FilePath "out.js") output
                 , println "Compilation finished, wrote output to `out.js`."
                 ]
             )
