@@ -26,7 +26,6 @@ parse { sourceDirectory } filePath fileContents =
     let
         expectedModuleName : Result Error ModuleName
         expectedModuleName =
-            -- TODO is it the same as the one in the actual file contents?
             Common.expectedModuleName sourceDirectory filePath
 
         dependencies : Set_ ModuleName
