@@ -1,6 +1,6 @@
 module Stage.Desugar exposing (desugar)
 
-import Common exposing (Project)
+import Common.Types exposing (Project)
 import Error exposing (Error)
 
 

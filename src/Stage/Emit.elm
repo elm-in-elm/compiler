@@ -1,6 +1,6 @@
 module Stage.Emit exposing (emit)
 
-import Common exposing (Project, ProjectToEmit)
+import Common.Types exposing (Project, ProjectToEmit)
 import Error exposing (Error)
 
 

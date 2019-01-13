@@ -3,17 +3,15 @@ module Stage.Parse exposing (parse)
 import AST.Common exposing (TopLevelDeclaration, VarName)
 import AST.Frontend as Frontend
 import Common
+import Common.Types
     exposing
         ( Dict_
         , FileContents(..)
+        , FilePath(..)
         , Module
+        , ModuleName
         , Project
         , Set_
-        )
-import Common.Types
-    exposing
-        ( FilePath(..)
-        , ModuleName
         )
 import Error exposing (Error(..), ParseError(..))
 

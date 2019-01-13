@@ -1,6 +1,6 @@
 module Stage.Typecheck exposing (typecheck)
 
-import Common exposing (Project)
+import Common.Types exposing (Project)
 import Error exposing (Error)
 
 

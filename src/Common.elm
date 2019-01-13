@@ -1,35 +1,22 @@
 module Common exposing
-    ( Dict_
-    , ElmProgram(..)
-    , FileContents(..)
-    , Module
-    , Project
-    , ProjectToEmit
-    , Set_
-    , expectedFilePath
+    ( expectedFilePath
     , expectedModuleName
     , filePathToString
     , moduleNameToString
     , moduleNames
     )
 
-import AST.Backend as Backend
-import AST.Canonical as Canonical
-import AST.Common exposing (TopLevelDeclaration, VarName)
-import AST.Frontend as Frontend
-import Common.Types exposing (FilePath(..), ModuleName(..))
-import Dict.Any as AnyDict exposing (AnyDict)
-import Elm.Project
+import Common.Types
+    exposing
+        ( Dict_
+        , ElmProgram(..)
+        , FilePath(..)
+        , ModuleName(..)
+        , Set_
+        )
+import Dict.Any as AnyDict
 import Error exposing (Error(..), GeneralError(..))
-import Set.Any as AnySet exposing (AnySet)
-
-
-type alias Set_ a =
-    AnySet String a
-
-
-type alias Dict_ a b =
-    AnyDict String a b
+import Set.Any as AnySet
 
 
 filePathToString : FilePath -> String
@@ -40,34 +27,6 @@ filePathToString (FilePath filePath) =
 moduleNameToString : ModuleName -> String
 moduleNameToString (ModuleName moduleName) =
     moduleName
-
-
-type FileContents
-    = FileContents String
-
-
-type alias Project =
-    { mainFilePath : FilePath
-    , mainModuleName : ModuleName
-    , elmJson : Elm.Project.Project
-    , {- TODO allow multiple source directories -} sourceDirectory : FilePath
-    , program : ElmProgram
-    }
-
-
-type alias ProjectToEmit =
-    { output : FileContents
-    }
-
-
-type alias Modules expr =
-    Dict_ ModuleName (Module expr)
-
-
-type ElmProgram
-    = Frontend { modules : Modules Frontend.Expr }
-    | Canonical { modules : Modules Canonical.Expr }
-    | Backend { modules : Modules Backend.Expr }
 
 
 moduleNames : ElmProgram -> Set_ ModuleName
@@ -88,14 +47,6 @@ moduleNames program =
 
         Backend { modules } ->
             toSet modules
-
-
-type alias Module expr =
-    { dependencies : Set_ ModuleName -- ie. imports. TODO will have to contain the `as` and `exposing` information later
-    , name : ModuleName
-    , filePath : FilePath
-    , topLevelDeclarations : Dict_ VarName (TopLevelDeclaration expr)
-    }
 
 
 expectedFilePath : FilePath -> ModuleName -> FilePath

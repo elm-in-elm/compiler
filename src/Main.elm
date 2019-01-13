@@ -44,19 +44,17 @@ TODO downloading packages from the Internet (oh my!)
 
 import AST.Frontend as Frontend
 import Common
+import Common.Types
     exposing
         ( Dict_
         , ElmProgram(..)
         , FileContents(..)
+        , FilePath(..)
         , Module
+        , ModuleName(..)
         , Project
         , ProjectToEmit
         , Set_
-        )
-import Common.Types
-    exposing
-        ( FilePath(..)
-        , ModuleName(..)
         )
 import Dict.Any as AnyDict exposing (AnyDict)
 import Elm.Project

@@ -8,8 +8,7 @@ port module Ports exposing
     , writeToFile
     )
 
-import Common exposing (FileContents(..))
-import Common.Types exposing (FilePath(..))
+import Common.Types exposing (FileContents(..), FilePath(..))
 
 
 port stdout : String -> Cmd msg
