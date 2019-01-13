@@ -214,11 +214,11 @@ getSourceDirectory elmProject =
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case model of
-        EncounteredError ->
-            ( model, Cmd.none )
-
         Compiling model_ ->
             update_ msg model_
+
+        EncounteredError ->
+            ( model, Cmd.none )
 
         Finished ->
             ( model, Cmd.none )
