@@ -309,6 +309,7 @@ compile project =
         |> Result.andThen Desugar.desugar
         |> Result.andThen Typecheck.typecheck
         |> Result.andThen Optimize.optimize
+        -- TODO think about something like "prepareForBackend"
         |> Result.andThen Emit.emit
         |> finish
 
