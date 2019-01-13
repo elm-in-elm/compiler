@@ -15,7 +15,7 @@ import Common.Types
         ( FilePath(..)
         , ModuleName
         )
-import Error exposing (Error, ParseError(..))
+import Error exposing (Error(..), ParseError(..))
 
 
 {-| I suspect in the future we'll have to add an argument of previously parsed
@@ -41,9 +41,15 @@ parse { sourceDirectory } filePath fileContents =
         topLevelDeclarations =
             Debug.todo "parse - topLevelDeclarations"
     in
-    Ok
-        { dependencies = dependencies
-        , name = actualModuleName
-        , filePath = filePath
-        , topLevelDeclarations = topLevelDeclarations
-        }
+    if expectedModuleName == Ok actualModuleName then
+        Ok
+            { dependencies = dependencies
+            , name = actualModuleName
+            , filePath = filePath
+            , topLevelDeclarations = topLevelDeclarations
+            }
+
+    else
+        ModuleNameDoesntMatchFileName actualModuleName filePath
+            |> ParseError
+            |> Err
