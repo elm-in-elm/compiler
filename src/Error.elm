@@ -2,29 +2,34 @@ module Error exposing
     ( DesugarError(..)
     , EmitError(..)
     , Error(..)
+    , GeneralError(..)
     , OptimizeError(..)
     , ParseError(..)
     , TypeError(..)
     , toString
     )
 
-import Common exposing (FilePath(..), ModuleName(..))
+import Common.Types exposing (FilePath(..), ModuleName(..))
 import Json.Decode as JD
 
 
 type Error
-    = ParseError ParseError
+    = GeneralError GeneralError
+    | ParseError ParseError
     | DesugarError DesugarError
     | TypeError TypeError
     | OptimizeError OptimizeError
     | EmitError EmitError
 
 
+type GeneralError
+    = FileNotInSourceDirectories FilePath
+
+
 type ParseError
     = ModuleNameDoesntMatchFileName ModuleName FilePath
     | FileNotFound FilePath
     | EmptySourceDirectories
-    | MainModuleNotInSourceDirectory FilePath
     | InvalidElmJson JD.Error
 
 
@@ -55,22 +60,33 @@ type EmitError
 toString : Error -> String
 toString error =
     case error of
+        GeneralError generalError ->
+            case generalError of
+                FileNotInSourceDirectories (FilePath filePath) ->
+                    "File `"
+                        ++ filePath
+                        ++ "` is not a part of the `sourceDirectories` in elm.json."
+
         ParseError parseError ->
             case parseError of
                 ModuleNameDoesntMatchFileName (ModuleName moduleName) (FilePath filePath) ->
-                    "Module name `" ++ moduleName ++ "` doesn't match the file path `" ++ filePath ++ "`."
+                    "Module name `"
+                        ++ moduleName
+                        ++ "` doesn't match the file path `"
+                        ++ filePath
+                        ++ "`."
 
                 FileNotFound (FilePath filePath) ->
-                    "File `" ++ filePath ++ "` not found."
+                    "File `"
+                        ++ filePath
+                        ++ "` not found."
 
                 EmptySourceDirectories ->
                     "Empty `sourceDirectories`!"
 
-                MainModuleNotInSourceDirectory (FilePath filePath) ->
-                    "The main module `" ++ filePath ++ "` given as argument is not located in the sourceDirectories."
-
                 InvalidElmJson jsonError ->
-                    "Invalid elm.json! " ++ JD.errorToString jsonError
+                    "Invalid elm.json! "
+                        ++ JD.errorToString jsonError
 
         DesugarError desugarError ->
             Debug.todo "toString desugarError"

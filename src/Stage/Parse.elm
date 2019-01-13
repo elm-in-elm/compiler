@@ -6,11 +6,14 @@ import Common
     exposing
         ( Dict_
         , FileContents(..)
-        , FilePath(..)
         , Module
-        , ModuleName
         , Project
         , Set_
+        )
+import Common.Types
+    exposing
+        ( FilePath(..)
+        , ModuleName
         )
 import Error exposing (Error, ParseError(..))
 
@@ -21,7 +24,7 @@ modules.
 parse : Project -> FilePath -> FileContents -> Result Error (Module Frontend.Expr)
 parse { sourceDirectory } filePath fileContents =
     let
-        expectedModuleName : Maybe ModuleName
+        expectedModuleName : Result Error ModuleName
         expectedModuleName =
             -- TODO is it the same as the one in the actual file contents?
             Common.expectedModuleName sourceDirectory filePath
@@ -30,9 +33,9 @@ parse { sourceDirectory } filePath fileContents =
         dependencies =
             Debug.todo "parse - dependencies"
 
-        name : ModuleName
-        name =
-            Debug.todo "parse - name"
+        actualModuleName : ModuleName
+        actualModuleName =
+            Debug.todo "parse - actualModuleName"
 
         topLevelDeclarations : Dict_ VarName (TopLevelDeclaration Frontend.Expr)
         topLevelDeclarations =
@@ -40,7 +43,7 @@ parse { sourceDirectory } filePath fileContents =
     in
     Ok
         { dependencies = dependencies
-        , name = name
+        , name = actualModuleName
         , filePath = filePath
         , topLevelDeclarations = topLevelDeclarations
         }

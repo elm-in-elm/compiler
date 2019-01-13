@@ -2,9 +2,7 @@ module Common exposing
     ( Dict_
     , ElmProgram(..)
     , FileContents(..)
-    , FilePath(..)
     , Module
-    , ModuleName(..)
     , Project
     , ProjectToEmit
     , Set_
@@ -19,8 +17,10 @@ import AST.Backend as Backend
 import AST.Canonical as Canonical
 import AST.Common exposing (TopLevelDeclaration, VarName)
 import AST.Frontend as Frontend
+import Common.Types exposing (FilePath(..), ModuleName(..))
 import Dict.Any as AnyDict exposing (AnyDict)
 import Elm.Project
+import Error exposing (Error(..), GeneralError(..))
 import Set.Any as AnySet exposing (AnySet)
 
 
@@ -32,17 +32,9 @@ type alias Dict_ a b =
     AnyDict String a b
 
 
-type FilePath
-    = FilePath String
-
-
 filePathToString : FilePath -> String
 filePathToString (FilePath filePath) =
     filePath
-
-
-type ModuleName
-    = ModuleName String
 
 
 moduleNameToString : ModuleName -> String
@@ -119,7 +111,7 @@ expectedFilePath (FilePath sourceDirectory) (ModuleName moduleName) =
     FilePath (sourceDirectory ++ "/" ++ String.replace "." "/" moduleName ++ ".elm")
 
 
-expectedModuleName : FilePath -> FilePath -> Maybe ModuleName
+expectedModuleName : FilePath -> FilePath -> Result Error ModuleName
 expectedModuleName (FilePath sourceDirectory) (FilePath filePath) =
     if String.startsWith sourceDirectory filePath then
         let
@@ -133,7 +125,9 @@ expectedModuleName (FilePath sourceDirectory) (FilePath filePath) =
             -- remove the ".elm":
             |> String.dropRight 4
             |> ModuleName
-            |> Just
+            |> Ok
 
     else
-        Nothing
+        FileNotInSourceDirectories (FilePath filePath)
+            |> GeneralError
+            |> Err

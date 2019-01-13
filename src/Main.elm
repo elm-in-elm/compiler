@@ -48,12 +48,15 @@ import Common
         ( Dict_
         , ElmProgram(..)
         , FileContents(..)
-        , FilePath(..)
         , Module
-        , ModuleName(..)
         , Project
         , ProjectToEmit
         , Set_
+        )
+import Common.Types
+    exposing
+        ( FilePath(..)
+        , ModuleName(..)
         )
 import Dict.Any as AnyDict exposing (AnyDict)
 import Elm.Project
@@ -163,13 +166,12 @@ init ({ mainFilePath, elmJson } as flags) =
             sourceDirectory
                 |> Result.andThen
                     (\sourceDirectory_ ->
+                        {- TODO It is probably not enforced by the official compiler
+                           for the main module's path to be included in the source directories.
+                           We'd have to read the module name from the file contents in that case.
+                           Check that assumption and do the right thing!
+                        -}
                         Common.expectedModuleName sourceDirectory_ mainFilePath_
-                            {- TODO It is probably not enforced by the official compiler
-                               for the main module's path to be included in the source directories.
-                               We'd have to read the module name from the file contents in that case.
-                               Check that assumption and do that!
-                            -}
-                            |> Result.fromMaybe (ParseError (MainModuleNotInSourceDirectory mainFilePath_))
                     )
 
         modelAndCmd : Result Error ( Model, Cmd Msg )
