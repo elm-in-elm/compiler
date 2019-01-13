@@ -6,6 +6,7 @@ To get things out of the way: it would be great if the pipeline could be pure:
 
     input
         |> parse
+        |> desugar
         |> typecheck
         |> optimize
         |> emit
@@ -41,14 +42,17 @@ TODO downloading packages from the Internet (oh my!)
 
 -}
 
+import AST.Frontend as Frontend
 import Common
     exposing
         ( Dict_
+        , ElmProgram(..)
         , FileContents(..)
         , FilePath(..)
         , Module
         , ModuleName(..)
         , Project
+        , ProjectToEmit
         , Set_
         )
 import Dict.Any as AnyDict exposing (AnyDict)
@@ -58,6 +62,7 @@ import Json.Decode as JD
 import Platform
 import Ports exposing (println, printlnStderr)
 import Set.Any as AnySet exposing (AnySet)
+import Stage.Desugar as Desugar
 import Stage.Emit as Emit
 import Stage.Optimize as Optimize
 import Stage.Parse as Parse
@@ -177,7 +182,7 @@ init ({ mainFilePath, elmJson } as flags) =
                             , mainModuleName = mainModuleName_
                             , elmJson = elmJsonProject_
                             , sourceDirectory = sourceDirectory_
-                            , modules = AnyDict.empty Common.moduleNameToString
+                            , program = Frontend { modules = AnyDict.empty Common.moduleNameToString }
                             }
                         , waitingForFiles = AnySet.singleton mainFilePath_ Common.filePathToString
                         }
@@ -242,11 +247,7 @@ handleReadFileSuccess filePath fileContents ({ project } as model) =
                 modulesToBeRead : Set_ ModuleName
                 modulesToBeRead =
                     dependencies
-                        |> AnySet.diff
-                            (project.modules
-                                |> AnyDict.keys
-                                |> AnySet.fromList Common.moduleNameToString
-                            )
+                        |> AnySet.diff (Common.moduleNames project.program)
 
                 filesToBeRead : Set_ FilePath
                 filesToBeRead =
@@ -255,15 +256,26 @@ handleReadFileSuccess filePath fileContents ({ project } as model) =
                             Common.filePathToString
                             (Common.expectedFilePath project.sourceDirectory)
 
-                newModules : Dict_ ModuleName Module
-                newModules =
-                    project.modules
-                        |> AnyDict.update name
-                            (Maybe.map (always parsedModule))
+                newProgram : ElmProgram
+                newProgram =
+                    case project.program of
+                        Frontend { modules } ->
+                            Frontend
+                                { modules =
+                                    AnyDict.update name
+                                        (Maybe.map (always parsedModule))
+                                        modules
+                                }
+
+                        Canonical _ ->
+                            project.program
+
+                        Backend { modules } ->
+                            project.program
 
                 newProject : Project
                 newProject =
-                    { project | modules = newModules }
+                    { project | program = newProgram }
 
                 newWaitingForFiles : Set_ FilePath
                 newWaitingForFiles =
@@ -294,6 +306,7 @@ handleReadFileSuccess filePath fileContents ({ project } as model) =
 compile : Project -> ( Model, Cmd Msg )
 compile project =
     Ok project
+        |> Result.andThen Desugar.desugar
         |> Result.andThen Typecheck.typecheck
         |> Result.andThen Optimize.optimize
         |> Result.andThen Emit.emit
@@ -306,12 +319,13 @@ compile project =
 Let's do that - report the error or write the output to a file.
 
 -}
-finish : Result Error FileContents -> ( Model, Cmd Msg )
+finish : Result Error ProjectToEmit -> ( Model, Cmd Msg )
 finish result =
     case result of
-        Ok output ->
+        Ok { output } ->
             ( Finished
             , Cmd.batch
+                -- TODO don't hardcode out.js
                 [ Ports.writeToFile (FilePath "out.js") output
                 , println "Compilation finished, wrote output to `out.js`."
                 ]

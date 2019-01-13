@@ -1,19 +1,24 @@
 module Common exposing
     ( Dict_
+    , ElmProgram(..)
     , FileContents(..)
     , FilePath(..)
     , Module
     , ModuleName(..)
     , Project
+    , ProjectToEmit
     , Set_
-    , TopLevelDeclaration
-    , VarName
     , expectedFilePath
     , expectedModuleName
     , filePathToString
     , moduleNameToString
+    , moduleNames
     )
 
+import AST.Backend as Backend
+import AST.Canonical as Canonical
+import AST.Common exposing (TopLevelDeclaration, VarName)
+import AST.Frontend as Frontend
 import Dict.Any as AnyDict exposing (AnyDict)
 import Elm.Project
 import Set.Any as AnySet exposing (AnySet)
@@ -54,60 +59,50 @@ type alias Project =
     , mainModuleName : ModuleName
     , elmJson : Elm.Project.Project
     , {- TODO allow multiple source directories -} sourceDirectory : FilePath
-    , modules : Dict_ ModuleName Module
+    , program : ElmProgram
     }
 
 
-type alias Module =
+type alias ProjectToEmit =
+    { output : FileContents
+    }
+
+
+type alias Modules expr =
+    Dict_ ModuleName (Module expr)
+
+
+type ElmProgram
+    = Frontend { modules : Modules Frontend.Expr }
+    | Canonical { modules : Modules Canonical.Expr }
+    | Backend { modules : Modules Backend.Expr }
+
+
+moduleNames : ElmProgram -> Set_ ModuleName
+moduleNames program =
+    let
+        toSet : Dict_ ModuleName a -> Set_ ModuleName
+        toSet dict =
+            dict
+                |> AnyDict.keys
+                |> AnySet.fromList moduleNameToString
+    in
+    case program of
+        Frontend { modules } ->
+            toSet modules
+
+        Canonical { modules } ->
+            toSet modules
+
+        Backend { modules } ->
+            toSet modules
+
+
+type alias Module expr =
     { dependencies : Set_ ModuleName -- ie. imports. TODO will have to contain the `as` and `exposing` information later
     , name : ModuleName
     , filePath : FilePath
-    , topLevelDeclarations : Dict_ VarName TopLevelDeclaration
-    }
-
-
-type VarName
-    = VarName String
-
-
-type Expr
-    = Var VarName
-    | Application
-        { fn : Expr
-        , arg : Expr
-        }
-    | Lambda
-        { argName : VarName
-        , body : Expr
-        }
-    | Let
-        { varName : VarName
-        , varBody : Expr
-        , body : Expr
-        }
-    | Literal Literal
-    | If
-        { test : Expr
-        , then_ : Expr
-        , else_ : Expr
-        }
-    | Fixpoint Expr
-    | Operator
-        { opName : VarName
-        , left : Expr
-        , right : Expr
-        }
-
-
-type Literal
-    = LInt Int
-      -- TODO | LFloat Float
-    | LBool Bool -- TODO how to do this and have Bools defined in the elm/core instead of hardcoded in the compiler?
-
-
-type alias TopLevelDeclaration =
-    { name : VarName
-    , body : Expr
+    , topLevelDeclarations : Dict_ VarName (TopLevelDeclaration expr)
     }
 
 

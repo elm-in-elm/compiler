@@ -1,10 +1,15 @@
 module Stage.Emit exposing (emit)
 
-import Common exposing (FileContents, Project)
+import AST.Backend as Backend
+import Common
+    exposing
+        ( FileContents
+        , Project
+        , ProjectToEmit
+        )
 import Error exposing (EmitError(..), Error)
 
 
-emit : Project -> Result Error FileContents
+emit : Project -> Result Error ProjectToEmit
 emit project =
-    -- TODO Bytes instead of String?
     Debug.todo "emit"

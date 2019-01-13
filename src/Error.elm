@@ -1,5 +1,6 @@
 module Error exposing
-    ( EmitError(..)
+    ( DesugarError(..)
+    , EmitError(..)
     , Error(..)
     , OptimizeError(..)
     , ParseError(..)
@@ -13,6 +14,7 @@ import Json.Decode as JD
 
 type Error
     = ParseError ParseError
+    | DesugarError DesugarError
     | TypeError TypeError
     | OptimizeError OptimizeError
     | EmitError EmitError
@@ -30,6 +32,12 @@ type ParseError
 -}
 type TypeError
     = TodoFirstTypeError
+
+
+{-| TODO
+-}
+type DesugarError
+    = TodoFirstDesugarError
 
 
 {-| TODO
@@ -63,6 +71,9 @@ toString error =
 
                 InvalidElmJson jsonError ->
                     "Invalid elm.json! " ++ JD.errorToString jsonError
+
+        DesugarError desugarError ->
+            Debug.todo "toString desugarError"
 
         TypeError typeError ->
             Debug.todo "toString typeError"

@@ -9,3 +9,7 @@ build: node_modules/.bin/elm
 
 node_modules/.bin/elm:
 	yarn
+
+.PHONY: watch
+watch:
+	elm-watch src/Main.elm src/

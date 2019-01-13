@@ -1,5 +1,7 @@
 module Stage.Parse exposing (parse)
 
+import AST.Common exposing (TopLevelDeclaration, VarName)
+import AST.Frontend as Frontend
 import Common
     exposing
         ( Dict_
@@ -9,8 +11,6 @@ import Common
         , ModuleName
         , Project
         , Set_
-        , TopLevelDeclaration
-        , VarName
         )
 import Error exposing (Error, ParseError(..))
 
@@ -22,7 +22,7 @@ import Error exposing (Error, ParseError(..))
 {-| I suspect in the future we'll have to add an argument of previously parsed
 modules.
 -}
-parse : Project -> FilePath -> FileContents -> Result Error Module
+parse : Project -> FilePath -> FileContents -> Result Error (Module Frontend.Expr)
 parse { sourceDirectory } filePath fileContents =
     let
         expectedModuleName : Maybe ModuleName
@@ -37,7 +37,7 @@ parse { sourceDirectory } filePath fileContents =
         name =
             Debug.todo "parse - name"
 
-        topLevelDeclarations : Dict_ VarName TopLevelDeclaration
+        topLevelDeclarations : Dict_ VarName (TopLevelDeclaration Frontend.Expr)
         topLevelDeclarations =
             Debug.todo "parse - topLevelDeclarations"
     in

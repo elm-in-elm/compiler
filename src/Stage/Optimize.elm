@@ -1,5 +1,6 @@
 module Stage.Optimize exposing (optimize)
 
+import AST.Canonical as Canonical
 import Common exposing (Project)
 import Error exposing (Error, OptimizeError(..))
 
