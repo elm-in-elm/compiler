@@ -150,7 +150,7 @@ init ({ mainFilePath, elmJson } as flags) =
 
         sourceDirectory : Result Error FilePath
         sourceDirectory =
-            elmJson_
+            elmJsonProject
                 |> Result.andThen getSourceDirectory
 
         mainModuleName : Result Error ModuleName
@@ -174,7 +174,7 @@ init ({ mainFilePath, elmJson } as flags) =
                     ( Compiling
                         { project =
                             { mainFilePath = mainFilePath_
-                            , mainModuleName = mainModuleName
+                            , mainModuleName = mainModuleName_
                             , elmJson = elmJsonProject_
                             , sourceDirectory = sourceDirectory_
                             , modules = AnyDict.empty Common.moduleNameToString
