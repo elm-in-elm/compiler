@@ -15,10 +15,6 @@ import Common
 import Error exposing (Error, ParseError(..))
 
 
-
--- TODO check filename too
-
-
 {-| I suspect in the future we'll have to add an argument of previously parsed
 modules.
 -}
@@ -27,6 +23,7 @@ parse { sourceDirectory } filePath fileContents =
     let
         expectedModuleName : Maybe ModuleName
         expectedModuleName =
+            -- TODO is it the same as the one in the actual file contents?
             Common.expectedModuleName sourceDirectory filePath
 
         dependencies : Set_ ModuleName
