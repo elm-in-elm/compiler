@@ -7,4 +7,4 @@ import Error exposing (Error)
 optimize : Project -> Result Error Project
 optimize project =
     -- TODO optimizations aren't MVP, do it later :)
-    project
+    Ok project
