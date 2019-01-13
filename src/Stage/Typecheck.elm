@@ -1,10 +1,10 @@
 module Stage.Typecheck exposing (typecheck)
 
-import AST.Canonical as Canonical
 import Common exposing (Project)
-import Error exposing (Error, TypeError(..))
+import Error exposing (Error)
 
 
 typecheck : Project -> Result Error Project
-typecheck sourceCode =
-    Debug.todo "typecheck"
+typecheck project =
+    -- TODO do later. not a MVP
+    project

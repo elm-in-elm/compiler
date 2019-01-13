@@ -1,10 +1,10 @@
 module Stage.Optimize exposing (optimize)
 
-import AST.Canonical as Canonical
 import Common exposing (Project)
-import Error exposing (Error, OptimizeError(..))
+import Error exposing (Error)
 
 
 optimize : Project -> Result Error Project
 optimize project =
-    Debug.todo "optimize"
+    -- TODO optimizations aren't MVP, do it later :)
+    project

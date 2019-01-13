@@ -1,13 +1,7 @@
 module Stage.Emit exposing (emit)
 
-import AST.Backend as Backend
-import Common
-    exposing
-        ( FileContents
-        , Project
-        , ProjectToEmit
-        )
-import Error exposing (EmitError(..), Error)
+import Common exposing (Project, ProjectToEmit)
+import Error exposing (Error)
 
 
 emit : Project -> Result Error ProjectToEmit

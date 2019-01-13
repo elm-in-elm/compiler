@@ -1,11 +1,10 @@
 module Stage.Desugar exposing (desugar)
 
-import AST.Canonical as Canonical
-import AST.Frontend as Frontend
 import Common exposing (Project)
-import Error exposing (DesugarError(..), Error)
+import Error exposing (Error)
 
 
 desugar : Project -> Result Error Project
 desugar project =
-    Debug.todo "desugar"
+    -- TODO for now, canonical AST is the same as frontend AST, so do nothing
+    project
