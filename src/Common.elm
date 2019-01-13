@@ -1,12 +1,15 @@
 module Common exposing
-    ( AST
-    , Dict_
+    ( Dict_
     , FileContents(..)
     , FilePath(..)
     , Module
     , ModuleName(..)
     , Project
     , Set_
+    , TopLevelDeclaration
+    , VarName
+    , expectedFilePath
+    , expectedModuleName
     , filePathToString
     , moduleNameToString
     )
@@ -46,14 +49,6 @@ type FileContents
     = FileContents String
 
 
-{-| TODO
--}
-type alias AST =
-    {}
-
-
-{-| TODO
--}
 type alias Project =
     { mainFilePath : FilePath
     , mainModuleName : ModuleName
@@ -63,12 +58,87 @@ type alias Project =
     }
 
 
-{-| TODO
--}
 type alias Module =
-    { dependencies :
-        -- TODO will have to contain the `as` and `exposing` information later
-        Set_ ModuleName
+    { dependencies : Set_ ModuleName -- ie. imports. TODO will have to contain the `as` and `exposing` information later
     , name : ModuleName
     , filePath : FilePath
+    , topLevelDeclarations : Dict_ VarName TopLevelDeclaration
     }
+
+
+type VarName
+    = VarName String
+
+
+type Expr
+    = Var VarName
+    | Application
+        { fn : Expr
+        , arg : Expr
+        }
+    | Lambda
+        { argName : VarName
+        , body : Expr
+        }
+    | Let
+        { varName : VarName
+        , varBody : Expr
+        , body : Expr
+        }
+    | Literal Literal
+    | If
+        { test : Expr
+        , then_ : Expr
+        , else_ : Expr
+        }
+    | Fixpoint Expr
+    | Operator
+        { opName : VarName
+        , left : Expr
+        , right : Expr
+        }
+
+
+type Literal
+    = LInt Int
+      -- TODO | LFloat Float
+    | LBool Bool -- TODO how to do this and have Bools defined in the elm/core instead of hardcoded in the compiler?
+
+
+type alias TopLevelDeclaration =
+    { name : VarName
+    , body : Expr
+    }
+
+
+expectedFilePath : FilePath -> ModuleName -> FilePath
+expectedFilePath (FilePath sourceDirectory) (ModuleName moduleName) =
+    {- TODO somewhere normalize the / out of the source directories
+       so that it's not there twice.
+
+       Eg. we wouldn't want
+
+           sourceDirectories = ["src/"]
+           --> expectedFilePaths ... == "src//Foo.elm"
+    -}
+    FilePath (sourceDirectory ++ "/" ++ String.replace "." "/" moduleName ++ ".elm")
+
+
+expectedModuleName : FilePath -> FilePath -> Maybe ModuleName
+expectedModuleName (FilePath sourceDirectory) (FilePath filePath) =
+    if String.startsWith sourceDirectory filePath then
+        let
+            lengthToDrop : Int
+            lengthToDrop =
+                String.length sourceDirectory
+        in
+        filePath
+            |> String.dropLeft lengthToDrop
+            |> String.replace "/" "."
+            -- remove the ".elm":
+            |> String.dropRight 4
+            |> ModuleName
+            |> Just
+
+    else
+        Nothing

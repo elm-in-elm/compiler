@@ -158,7 +158,7 @@ init ({ mainFilePath, elmJson } as flags) =
             sourceDirectory
                 |> Result.andThen
                     (\sourceDirectory_ ->
-                        expectedModuleName sourceDirectory_ mainFilePath_
+                        Common.expectedModuleName sourceDirectory_ mainFilePath_
                             {- TODO It is probably not enforced by the official compiler
                                for the main module's path to be included in the source directories.
                                We'd have to read the module name from the file contents in that case.
@@ -233,7 +233,7 @@ update_ msg model =
 
 handleReadFileSuccess : FilePath -> FileContents -> Model_ -> ( Model, Cmd Msg )
 handleReadFileSuccess filePath fileContents ({ project } as model) =
-    case Parse.parse filePath fileContents of
+    case Parse.parse project filePath fileContents of
         Err error ->
             handleError error
 
@@ -253,7 +253,7 @@ handleReadFileSuccess filePath fileContents ({ project } as model) =
                     modulesToBeRead
                         |> AnySet.map
                             Common.filePathToString
-                            (expectedFilePath project.sourceDirectory)
+                            (Common.expectedFilePath project.sourceDirectory)
 
                 newModules : Dict_ ModuleName Module
                 newModules =
@@ -332,39 +332,6 @@ handleError error =
     ( EncounteredError
     , printlnStderr (Error.toString error)
     )
-
-
-expectedFilePath : FilePath -> ModuleName -> FilePath
-expectedFilePath (FilePath sourceDirectory) (ModuleName moduleName) =
-    {- TODO somewhere normalize the / out of the source directories
-       so that it's not there twice.
-
-       Eg. we wouldn't want
-
-           sourceDirectories = ["src/"]
-           --> expectedFilePaths ... == "src//Foo.elm"
-    -}
-    FilePath (sourceDirectory ++ "/" ++ String.replace "." "/" moduleName ++ ".elm")
-
-
-expectedModuleName : FilePath -> FilePath -> Maybe ModuleName
-expectedModuleName (FilePath sourceDirectory) (FilePath filePath) =
-    if String.startsWith sourceDirectory filePath then
-        let
-            lengthToDrop : Int
-            lengthToDrop =
-                String.length sourceDirectory
-        in
-        filePath
-            |> String.dropLeft lengthToDrop
-            |> String.replace "/" "."
-            -- remove the ".elm":
-            |> String.dropRight 4
-            |> ModuleName
-            |> Just
-
-    else
-        Nothing
 
 
 log : Msg -> Msg
