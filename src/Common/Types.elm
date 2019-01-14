@@ -1,10 +1,14 @@
 module Common.Types exposing
     ( Dict_
+    , EffectMetadata
     , ElmProgram(..)
+    , ExposedItem(..)
+    , Exposing(..)
     , FileContents(..)
     , FilePath(..)
     , Module
     , ModuleName(..)
+    , ModuleType(..)
     , Project
     , ProjectToEmit
     , Set_
@@ -66,9 +70,33 @@ type ElmProgram
     | Backend { modules : Modules Backend.Expr }
 
 
+type ModuleType
+    = PlainModule
+    | PortModule
+    | EffectModule EffectMetadata
+
+
+type alias EffectMetadata =
+    -- TODO figure effect managers out
+    {}
+
+
+type Exposing
+    = All -- exposing (..)
+    | Some (List ExposedItem) -- exposing (foo, Foo, Bar(..))
+
+
+type ExposedItem
+    = Value String -- exposing (foo)
+    | Type String -- exposing (Foo)
+    | TypeAndAllConstructors String -- exposing (Foo(..))
+
+
 type alias Module expr =
     { dependencies : Set_ ModuleName -- ie. imports. TODO will have to contain the `as` and `exposing` information later
     , name : ModuleName
     , filePath : FilePath
     , topLevelDeclarations : Dict_ VarName (TopLevelDeclaration expr)
+    , type_ : ModuleType
+    , exposing_ : Exposing
     }

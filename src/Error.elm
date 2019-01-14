@@ -4,13 +4,16 @@ module Error exposing
     , Error(..)
     , GeneralError(..)
     , OptimizeError(..)
+    , ParseContext(..)
     , ParseError(..)
+    , ParseProblem(..)
     , TypeError(..)
     , toString
     )
 
 import Common.Types exposing (FilePath(..), ModuleName(..))
 import Json.Decode as JD
+import Parser.Advanced as P
 
 
 type Error
@@ -27,10 +30,21 @@ type GeneralError
 
 
 type ParseError
-    = ModuleNameDoesntMatchFileName ModuleName FilePath
+    = ModuleNameDoesntMatchFilePath ModuleName FilePath
     | FileNotFound FilePath
     | EmptySourceDirectories
     | InvalidElmJson JD.Error
+    | ParseProblem (List (P.DeadEnd ParseContext ParseProblem))
+
+
+{-| TODO
+-}
+type ParseContext
+    = TodoContextCases
+
+
+type ParseProblem
+    = ExpectingPortKeyword -- `port module ...`
 
 
 {-| TODO
@@ -69,7 +83,7 @@ toString error =
 
         ParseError parseError ->
             case parseError of
-                ModuleNameDoesntMatchFileName (ModuleName moduleName) (FilePath filePath) ->
+                ModuleNameDoesntMatchFilePath (ModuleName moduleName) (FilePath filePath) ->
                     "Module name `"
                         ++ moduleName
                         ++ "` doesn't match the file path `"
@@ -88,6 +102,11 @@ toString error =
                     "Invalid elm.json! "
                         ++ JD.errorToString jsonError
 
+                ParseProblem problems ->
+                    "Parse problems: "
+                        ++ Debug.toString problems
+
+        -- TODO
         DesugarError desugarError ->
             Debug.todo "toString desugarError"
 

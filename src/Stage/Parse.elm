@@ -14,39 +14,28 @@ import Common.Types
         , Set_
         )
 import Error exposing (Error(..), ParseError(..))
+import Parser.Advanced as P
+import Stage.Parse.Parser as Parser
 
 
-{-| I suspect in the future we'll have to add an argument of previously parsed
-modules.
--}
 parse : Project -> FilePath -> FileContents -> Result Error (Module Frontend.Expr)
-parse { sourceDirectory } filePath fileContents =
+parse { sourceDirectory } filePath (FileContents fileContents) =
+    P.run (Parser.module_ filePath) fileContents
+        |> Result.mapError (ParseError << ParseProblem)
+        |> Result.andThen (checkModuleNameAndFilePath sourceDirectory filePath)
+
+
+checkModuleNameAndFilePath : FilePath -> FilePath -> Module Frontend.Expr -> Result Error (Module Frontend.Expr)
+checkModuleNameAndFilePath sourceDirectory filePath ({ name } as parsedModule) =
     let
-        expectedModuleName : Result Error ModuleName
-        expectedModuleName =
+        expectedName : Result Error ModuleName
+        expectedName =
             Common.expectedModuleName sourceDirectory filePath
-
-        dependencies : Set_ ModuleName
-        dependencies =
-            Debug.todo "parse - dependencies"
-
-        actualModuleName : ModuleName
-        actualModuleName =
-            Debug.todo "parse - actualModuleName"
-
-        topLevelDeclarations : Dict_ VarName (TopLevelDeclaration Frontend.Expr)
-        topLevelDeclarations =
-            Debug.todo "parse - topLevelDeclarations"
     in
-    if expectedModuleName == Ok actualModuleName then
-        Ok
-            { dependencies = dependencies
-            , name = actualModuleName
-            , filePath = filePath
-            , topLevelDeclarations = topLevelDeclarations
-            }
+    if expectedName == Ok name then
+        Ok parsedModule
 
     else
-        ModuleNameDoesntMatchFileName actualModuleName filePath
+        ModuleNameDoesntMatchFilePath name filePath
             |> ParseError
             |> Err

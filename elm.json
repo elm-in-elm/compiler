@@ -10,13 +10,13 @@
             "elm/core": "1.0.2",
             "elm/html": "1.0.0",
             "elm/json": "1.1.2",
+            "elm/parser": "1.1.0",
             "elm/project-metadata-utils": "1.0.0",
             "stil4m/elm-syntax": "7.0.5",
             "turboMaCk/any-dict": "1.0.1",
             "turboMaCk/any-set": "1.0.0"
         },
         "indirect": {
-            "elm/parser": "1.1.0",
             "elm/time": "1.0.0",
             "elm/url": "1.0.0",
             "elm/virtual-dom": "1.0.2",
