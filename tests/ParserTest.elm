@@ -18,9 +18,6 @@ import Test exposing (Test, describe, test)
 
 moduleDeclaration : Test
 moduleDeclaration =
-    {- TODO test port modules
-       TODO test effect modules
-    -}
     let
         runTest ( description, input, output ) =
             test description <|
@@ -74,6 +71,16 @@ moduleDeclaration =
                   )
                 ]
             )
+        , describe "port module"
+            (List.map runTest
+                [ ( "simply works"
+                  , "port module Foo exposing (..)"
+                  , Ok ( PortModule, ModuleName "Foo", ExposingAll )
+                  )
+                ]
+            )
+
+        -- TODO test effect module
         ]
 
 
