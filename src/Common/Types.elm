@@ -14,7 +14,8 @@ module Common.Types exposing
     , Set_
     )
 
-{-| TODO is this an OK way to do the module hierarchy? Is there a better one?
+{-| TODO is this an OK way to do the module hierarchy? Eg. the Types module.
+Is there a better one?
 -}
 
 import AST.Backend as Backend
@@ -82,14 +83,14 @@ type alias EffectMetadata =
 
 
 type Exposing
-    = All -- exposing (..)
-    | Some (List ExposedItem) -- exposing (foo, Foo, Bar(..))
+    = ExposingAll -- exposing (..)
+    | ExposingSome (List ExposedItem) -- exposing (foo, Foo, Bar(..))
 
 
 type ExposedItem
-    = Value String -- exposing (foo)
-    | Type String -- exposing (Foo)
-    | TypeAndAllConstructors String -- exposing (Foo(..))
+    = ExposedValue String -- exposing (foo)
+    | ExposedType String -- exposing (Foo)
+    | ExposedTypeAndAllConstructors String -- exposing (Foo(..))
 
 
 type alias Module expr =

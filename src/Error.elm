@@ -44,7 +44,18 @@ type ParseContext
 
 
 type ParseProblem
-    = ExpectingPortKeyword -- `port module ...`
+    = ExpectingPortKeyword -- `>port< module ...`
+    | ExpectingModuleKeyword -- `>module< Foo.Bar exposing (..)`
+    | ExpectingModuleName -- `module >Foo.Bar< exposing (..)`
+    | ExpectingExposingKeyword -- `module Foo.Bar >exposing< (..)`
+    | ExpectingExposingAllSymbol -- `module Foo.Bar exposing >(..)<`
+    | ExpectingExposingListLeftParen -- `module Foo.Bar exposing >(<a, b, c)`
+    | ExpectingExposingListRightParen -- `module Foo.Bar exposing (a, b, c>)<`
+    | ExpectingExposingListSeparatorComma -- `module Foo.Bar exposing (a>,< b, c)`
+    | ExpectingExposedTypeDoublePeriod -- `module Foo.Bar exposing (Foo>(..)<)`
+    | ExpectingVarName -- eg. `module Foo.Bar exposing (>a<)`
+    | ExpectingTypeOrConstructorName -- eg. `module Foo.Bar exposing (>Foo<)`
+    | TodoNotImplemented
 
 
 {-| TODO

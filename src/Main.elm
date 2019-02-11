@@ -151,7 +151,7 @@ init ({ mainFilePath, elmJson } as flags) =
 
         elmJsonProject : Result Error Elm.Project.Project
         elmJsonProject =
-            JD.decodeString Elm.Project.decoder elmJson
+            JD.decodeString (JD.map normalizeDirs Elm.Project.decoder) elmJson
                 |> Result.mapError (ParseError << InvalidElmJson)
 
         sourceDirectory : Result Error FilePath
@@ -199,6 +199,25 @@ init ({ mainFilePath, elmJson } as flags) =
 
         Err error ->
             handleError error
+
+
+normalizeDirs : Elm.Project.Project -> Elm.Project.Project
+normalizeDirs project =
+    case project of
+        Elm.Project.Application data ->
+            Elm.Project.Application { data | dirs = List.map normalizeDir data.dirs }
+
+        Elm.Project.Package data ->
+            Elm.Project.Package data
+
+
+normalizeDir : String -> String
+normalizeDir dir =
+    if String.endsWith "/" dir then
+        dir
+
+    else
+        dir ++ "/"
 
 
 {-| Applications tell us their source directories; packages have `src/`.
@@ -263,7 +282,7 @@ handleReadFileSuccess filePath fileContents ({ project } as model) =
                             Frontend
                                 { modules =
                                     AnyDict.update name
-                                        (Maybe.map (always parsedModule))
+                                        (always (Just parsedModule))
                                         modules
                                 }
 
@@ -281,6 +300,7 @@ handleReadFileSuccess filePath fileContents ({ project } as model) =
                 newWaitingForFiles =
                     model.waitingForFiles
                         |> AnySet.union filesToBeRead
+                        |> AnySet.remove filePath
 
                 newModel : Model_
                 newModel =

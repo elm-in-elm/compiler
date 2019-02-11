@@ -73,7 +73,6 @@ expectedModuleName (FilePath sourceDirectory) (FilePath filePath) =
         filePath
             |> String.dropLeft lengthToDrop
             |> String.replace "/" "."
-            -- remove the ".elm":
             |> String.dropRight 4
             |> ModuleName
             |> Ok
