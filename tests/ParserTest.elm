@@ -18,6 +18,9 @@ import Test exposing (Test, describe, test)
 
 moduleDeclaration : Test
 moduleDeclaration =
+    {- TODO test port modules
+       TODO test effect modules
+    -}
     let
         runTest ( description, input, output ) =
             test description <|
@@ -27,7 +30,7 @@ moduleDeclaration =
                         |> Expect.equal output
     in
     describe "Stage.Parse.Parser.moduleDeclaration"
-        [ describe "plain module"
+        [ describe "general"
             (List.map runTest
                 [ ( "works with simple module name"
                   , "module Foo exposing (..)"
@@ -37,6 +40,10 @@ moduleDeclaration =
                   , "module Foo.Bar exposing (..)"
                   , Ok ( PlainModule, ModuleName "Foo.Bar", ExposingAll )
                   )
+                , ( "works with even more nested module name"
+                  , "module Foo.Bar.Baz.Quux exposing (..)"
+                  , Ok ( PlainModule, ModuleName "Foo.Bar.Baz.Quux", ExposingAll )
+                  )
                 , ( "allows multiple spaces between the `module` keyword and the module name"
                   , "module  Foo exposing (..)"
                   , Ok ( PlainModule, ModuleName "Foo", ExposingAll )
@@ -45,8 +52,24 @@ moduleDeclaration =
                   , "module Foo  exposing (..)"
                   , Ok ( PlainModule, ModuleName "Foo", ExposingAll )
                   )
+                , ( "allows a newline between the module name and the `exposing` keyword"
+                  , "module Foo\nexposing (..)"
+                  , Ok ( PlainModule, ModuleName "Foo", ExposingAll )
+                  )
                 , ( "allows multiple spaces between the `exposing` keyword and the exposing list"
                   , "module Foo exposing  (..)"
+                  , Ok ( PlainModule, ModuleName "Foo", ExposingAll )
+                  )
+                , ( "allows a newline between the `exposing` keyword and the exposing list"
+                  , "module Foo exposing\n(..)"
+                  , Ok ( PlainModule, ModuleName "Foo", ExposingAll )
+                  )
+                ]
+            )
+        , describe "plain module"
+            (List.map runTest
+                [ ( "simply works"
+                  , "module Foo exposing (..)"
                   , Ok ( PlainModule, ModuleName "Foo", ExposingAll )
                   )
                 ]
@@ -103,22 +126,32 @@ exposingList =
                                 ]
                             )
                       )
-                    ]
-                )
-            , describe "values"
-                (List.map runTest
-                    [ ( "works with one value"
-                      , "(foo)"
-                      , Just (ExposingSome [ ExposedValue "foo" ])
+                    , ( "works with mixed values"
+                      , "(foo, Bar, Baz(..))"
+                      , Just
+                            (ExposingSome
+                                [ ExposedValue "foo"
+                                , ExposedType "Bar"
+                                , ExposedTypeAndAllConstructors "Baz"
+                                ]
+                            )
                       )
-                    , ( "works with two values"
-                      , "(foo,bar)"
+                    , ( "allows for newline"
+                      , "(foo\n,bar)"
                       , Just
                             (ExposingSome
                                 [ ExposedValue "foo"
                                 , ExposedValue "bar"
                                 ]
                             )
+                      )
+                    ]
+                )
+            , describe "values"
+                (List.map runTest
+                    [ ( "works with a value"
+                      , "(foo)"
+                      , Just (ExposingSome [ ExposedValue "foo" ])
                       )
                     ]
                 )
