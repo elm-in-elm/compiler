@@ -136,6 +136,18 @@ exposingList =
                       , "(Foo(..))"
                       , Just (ExposingSome [ ExposedTypeAndAllConstructors "Foo" ])
                       )
+                    , ( "doesn't allow spaces between the module name and the double period list"
+                      , "(Foo (..))"
+                      , Nothing
+                      )
+                    , ( "doesn't allow spaces inside the double period list"
+                      , "(Foo( .. ))"
+                      , Nothing
+                      )
+                    , ( "doesn't allow only some constructors exposed"
+                      , "(Foo(Bar))"
+                      , Nothing
+                      )
                     ]
                 )
             ]
