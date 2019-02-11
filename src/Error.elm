@@ -45,6 +45,7 @@ type ParseContext
 
 type ParseProblem
     = ExpectingPortKeyword -- `>port< module ...`
+    | ExpectingEffectKeyword -- `>effect< module ...`
     | ExpectingModuleKeyword -- `>module< Foo.Bar exposing (..)`
     | ExpectingModuleName -- `module >Foo.Bar< exposing (..)`
     | ExpectingExposingKeyword -- `module Foo.Bar >exposing< (..)`
@@ -55,6 +56,7 @@ type ParseProblem
     | ExpectingExposedTypeDoublePeriod -- `module Foo.Bar exposing (Foo>(..)<)`
     | ExpectingVarName -- eg. `module Foo.Bar exposing (>a<)`
     | ExpectingTypeOrConstructorName -- eg. `module Foo.Bar exposing (>Foo<)`
+    | ExposingListCantBeEmpty -- `module Foo.Bar exposing >()<`
     | TodoNotImplemented
 
 
