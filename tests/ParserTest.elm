@@ -1,8 +1,10 @@
 module ParserTest exposing
-    ( exposingList
+    ( dependencies
+    , exposingList
     , moduleDeclaration
     )
 
+import Common
 import Common.Types
     exposing
         ( ExposedItem(..)
@@ -10,6 +12,7 @@ import Common.Types
         , ModuleName(..)
         , ModuleType(..)
         )
+import Dict.Any
 import Expect
 import Parser.Advanced as P
 import Stage.Parse.Parser
@@ -24,6 +27,7 @@ moduleDeclaration =
                 \() ->
                     input
                         |> P.run Stage.Parse.Parser.moduleDeclaration
+                        |> Result.toMaybe
                         |> Expect.equal output
     in
     describe "Stage.Parse.Parser.moduleDeclaration"
@@ -31,35 +35,39 @@ moduleDeclaration =
             (List.map runTest
                 [ ( "works with simple module name"
                   , "module Foo exposing (..)"
-                  , Ok ( PlainModule, ModuleName "Foo", ExposingAll )
+                  , Just ( PlainModule, ModuleName "Foo", ExposingAll )
                   )
                 , ( "works with nested module name"
                   , "module Foo.Bar exposing (..)"
-                  , Ok ( PlainModule, ModuleName "Foo.Bar", ExposingAll )
+                  , Just ( PlainModule, ModuleName "Foo.Bar", ExposingAll )
                   )
                 , ( "works with even more nested module name"
                   , "module Foo.Bar.Baz.Quux exposing (..)"
-                  , Ok ( PlainModule, ModuleName "Foo.Bar.Baz.Quux", ExposingAll )
+                  , Just ( PlainModule, ModuleName "Foo.Bar.Baz.Quux", ExposingAll )
                   )
                 , ( "allows multiple spaces between the `module` keyword and the module name"
                   , "module  Foo exposing (..)"
-                  , Ok ( PlainModule, ModuleName "Foo", ExposingAll )
+                  , Just ( PlainModule, ModuleName "Foo", ExposingAll )
                   )
                 , ( "allows multiple spaces between the module name and the `exposing` keyword"
                   , "module Foo  exposing (..)"
-                  , Ok ( PlainModule, ModuleName "Foo", ExposingAll )
+                  , Just ( PlainModule, ModuleName "Foo", ExposingAll )
                   )
                 , ( "allows a newline between the module name and the `exposing` keyword"
                   , "module Foo\nexposing (..)"
-                  , Ok ( PlainModule, ModuleName "Foo", ExposingAll )
+                  , Just ( PlainModule, ModuleName "Foo", ExposingAll )
                   )
                 , ( "allows multiple spaces between the `exposing` keyword and the exposing list"
                   , "module Foo exposing  (..)"
-                  , Ok ( PlainModule, ModuleName "Foo", ExposingAll )
+                  , Just ( PlainModule, ModuleName "Foo", ExposingAll )
                   )
                 , ( "allows a newline between the `exposing` keyword and the exposing list"
                   , "module Foo exposing\n(..)"
-                  , Ok ( PlainModule, ModuleName "Foo", ExposingAll )
+                  , Just ( PlainModule, ModuleName "Foo", ExposingAll )
+                  )
+                , ( "doesn't work without something after the `exposing` keyword"
+                  , "module Foo exposing"
+                  , Nothing
                   )
                 ]
             )
@@ -67,7 +75,7 @@ moduleDeclaration =
             (List.map runTest
                 [ ( "simply works"
                   , "module Foo exposing (..)"
-                  , Ok ( PlainModule, ModuleName "Foo", ExposingAll )
+                  , Just ( PlainModule, ModuleName "Foo", ExposingAll )
                   )
                 ]
             )
@@ -75,7 +83,7 @@ moduleDeclaration =
             (List.map runTest
                 [ ( "simply works"
                   , "port module Foo exposing (..)"
-                  , Ok ( PortModule, ModuleName "Foo", ExposingAll )
+                  , Just ( PortModule, ModuleName "Foo", ExposingAll )
                   )
                 ]
             )
@@ -192,3 +200,165 @@ exposingList =
                 )
             ]
         ]
+
+
+dependencies : Test
+dependencies =
+    let
+        runTest ( description, input, output ) =
+            test description <|
+                \() ->
+                    input
+                        |> P.run Stage.Parse.Parser.dependencies
+                        |> Result.toMaybe
+                        |> Expect.equal output
+    in
+    describe "Stage.Parse.Parser.dependencies"
+        [ describe "general"
+            (List.map runTest
+                [ ( "allows for multiple modifiers"
+                  , "import Foo as F exposing (..)"
+                  , Just
+                        (Dict.Any.fromList Common.moduleNameToString
+                            [ ( ModuleName "Foo"
+                              , { moduleName = ModuleName "Foo"
+                                , as_ = Just (ModuleName "F")
+                                , exposing_ = Just ExposingAll
+                                }
+                              )
+                            ]
+                        )
+                  )
+                , ( "allows for multiple spaces"
+                  , "import   Foo   as   F   exposing   (..)"
+                  , Just
+                        (Dict.Any.fromList Common.moduleNameToString
+                            [ ( ModuleName "Foo"
+                              , { moduleName = ModuleName "Foo"
+                                , as_ = Just (ModuleName "F")
+                                , exposing_ = Just ExposingAll
+                                }
+                              )
+                            ]
+                        )
+                  )
+                , ( "allows for multiple imports"
+                  , "import Foo\nimport Bar"
+                  , Just
+                        (Dict.Any.fromList Common.moduleNameToString
+                            [ ( ModuleName "Foo"
+                              , { moduleName = ModuleName "Foo"
+                                , as_ = Nothing
+                                , exposing_ = Nothing
+                                }
+                              )
+                            , ( ModuleName "Bar"
+                              , { moduleName = ModuleName "Bar"
+                                , as_ = Nothing
+                                , exposing_ = Nothing
+                                }
+                              )
+                            ]
+                        )
+                  )
+                , ( "allows for multiple newlines between imports"
+                  , "import Foo\n\nimport Bar"
+                  , Just
+                        (Dict.Any.fromList Common.moduleNameToString
+                            [ ( ModuleName "Foo"
+                              , { moduleName = ModuleName "Foo"
+                                , as_ = Nothing
+                                , exposing_ = Nothing
+                                }
+                              )
+                            , ( ModuleName "Bar"
+                              , { moduleName = ModuleName "Bar"
+                                , as_ = Nothing
+                                , exposing_ = Nothing
+                                }
+                              )
+                            ]
+                        )
+                  )
+                , ( "doesn't allow for lower-case import"
+                  , "import foo"
+                  , Nothing
+                  )
+                ]
+            )
+        , describe "simple"
+            (List.map runTest
+                [ ( "simply works"
+                  , "import Foo"
+                  , Just
+                        (Dict.Any.fromList Common.moduleNameToString
+                            [ ( ModuleName "Foo"
+                              , { moduleName = ModuleName "Foo"
+                                , as_ = Nothing
+                                , exposing_ = Nothing
+                                }
+                              )
+                            ]
+                        )
+                  )
+                ]
+            )
+        , describe "as"
+            (List.map runTest
+                [ ( "simply works"
+                  , "import Foo as F"
+                  , Just
+                        (Dict.Any.fromList Common.moduleNameToString
+                            [ ( ModuleName "Foo"
+                              , { moduleName = ModuleName "Foo"
+                                , as_ = Just (ModuleName "F")
+                                , exposing_ = Nothing
+                                }
+                              )
+                            ]
+                        )
+                  )
+                , ( "doesn't work with lowercase alias"
+                  , "import Foo as f"
+                  , Nothing
+                  )
+                , ( "doesn't work with dot-separated alias"
+                  , "import Foo as X.B"
+                  , Nothing
+                  )
+                ]
+            )
+        , describe "exposing"
+            (List.map runTest
+                [ ( "simply works"
+                  , "import Foo exposing (bar, Baz, Quux(..))"
+                  , Just
+                        (Dict.Any.fromList Common.moduleNameToString
+                            [ ( ModuleName "Foo"
+                              , { moduleName = ModuleName "Foo"
+                                , as_ = Nothing
+                                , exposing_ =
+                                    Just
+                                        (ExposingSome
+                                            [ ExposedValue "bar"
+                                            , ExposedType "Baz"
+                                            , ExposedTypeAndAllConstructors "Quux"
+                                            ]
+                                        )
+                                }
+                              )
+                            ]
+                        )
+                  )
+                , ( "doesn't work without something after the `exposing` keyword"
+                  , "import Foo exposing"
+                  , Nothing
+                  )
+                ]
+            )
+        ]
+
+
+
+--let _ = Debug.log "?" (P.run Stage.Parse.Parser.dependencies "import Foo\nimport Bar")
+--in

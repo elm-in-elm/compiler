@@ -9,17 +9,16 @@
   const fs = require('fs');
   const fsPromises = fs.promises;
 
-  // TODO Don't hardcode the elm.json filepath.
-  const elmJson = await fsPromises.readFile('test/elm.json', {encoding: 'utf8'});
-
   // The following line needs the Elm code to be compiled! See `Makefile`.
   // No Webpack around here!
   const {Elm} = require('../build/elm.js');
 
+  const exampleProjectPath = 'example-project';
+
   const app = Elm.Main.init({
     flags: {
       mainFilePath: 'src/Main.elm',
-      elmJson,
+      elmJson: await fsPromises.readFile(`${exampleProjectPath}/elm.json`, {encoding: 'utf8'}),
     }
   });
 
@@ -29,11 +28,11 @@
   registerPort(app, 'stderr', string => process.stderr.write(string));
   registerPort(app, 'read', async function(filename) {
     // TODO read file failure Msg
-    const contents = await fsPromises.readFile(filename, {encoding: 'utf8'});
+    const contents = await fsPromises.readFile(`${exampleProjectPath}/${filename}`, {encoding: 'utf8'});
     app.ports.readSubscription.send([filename, contents]);
   });
   registerPort(app, 'write', async function({filePath,contents}) {
-    await fsPromises.writeFile(filePath, contents);
+    await fsPromises.writeFile(`${exampleProjectPath}/${filePath}`, contents);
   });
 
 })();

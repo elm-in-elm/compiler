@@ -1,5 +1,6 @@
 module Common.Types exposing
-    ( Dict_
+    ( Dependency
+    , Dict_
     , EffectMetadata
     , ElmProgram(..)
     , ExposedItem(..)
@@ -94,10 +95,26 @@ type ExposedItem
 
 
 type alias Module expr =
-    { dependencies : Set_ ModuleName -- ie. imports. TODO will have to contain the `as` and `exposing` information later
+    -- TODO comments? doc comments?
+    { dependencies : Dict_ ModuleName Dependency -- ie. imports. Maybe rename?
     , name : ModuleName
     , filePath : FilePath
     , topLevelDeclarations : Dict_ VarName (TopLevelDeclaration expr)
     , type_ : ModuleType
     , exposing_ : Exposing
+    }
+
+
+{-| All four possibilities of the Maybes make sense:
+
+                   | exposing_ = Nothing | exposing_ = Just ...
+    ---------------|---------------------|-------------------------------
+    as_ = Nothing  | import Foo         | import Foo exposing (..)
+    as_ = Just "F" | import Foo as F    | import Foo as F exposing (..)
+
+-}
+type alias Dependency =
+    { moduleName : ModuleName
+    , as_ : Maybe ModuleName
+    , exposing_ : Maybe Exposing
     }

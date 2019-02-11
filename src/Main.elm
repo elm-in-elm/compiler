@@ -326,6 +326,7 @@ handleReadFileSuccess filePath fileContents ({ project } as model) =
 compile : Project -> ( Model, Cmd Msg )
 compile project =
     Ok project
+        |> Debug.log "after parse"
         |> Result.andThen Desugar.desugar
         |> Result.andThen Typecheck.typecheck
         |> Result.andThen Optimize.optimize

@@ -57,6 +57,11 @@ type ParseProblem
     | ExpectingVarName -- eg. `module Foo.Bar exposing (>a<)`
     | ExpectingTypeOrConstructorName -- eg. `module Foo.Bar exposing (>Foo<)`
     | ExposingListCantBeEmpty -- `module Foo.Bar exposing >()<`
+    | ExpectingImportKeyword -- `>import< Foo as F exposing (..)`
+    | ExpectingAsKeyword -- `import Foo >as< F exposing (..)`
+    | ExpectingModuleNameWithoutDots -- `import Foo as >F< exposing (..)`
+    | ExpectingNewline
+    | ExpectingEnd
     | TodoNotImplemented
 
 

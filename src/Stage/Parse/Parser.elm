@@ -1,5 +1,6 @@
 module Stage.Parse.Parser exposing
-    ( exposingList
+    ( dependencies
+    , exposingList
     , moduleDeclaration
     , module_
     )
@@ -9,7 +10,9 @@ import AST.Frontend as Frontend
 import Common
 import Common.Types
     exposing
-        ( ExposedItem(..)
+        ( Dependency
+        , Dict_
+        , ExposedItem(..)
         , Exposing(..)
         , FilePath(..)
         , Module
@@ -26,7 +29,6 @@ import Error
         )
 import Parser.Advanced as P exposing ((|.), (|=), Parser)
 import Set exposing (Set)
-import Set.Any
 
 
 type alias Parser_ a =
@@ -36,8 +38,8 @@ type alias Parser_ a =
 module_ : FilePath -> Parser_ (Module Frontend.Expr)
 module_ filePath =
     P.succeed
-        (\( moduleType_, moduleName_, exposing_ ) ->
-            { dependencies = Set.Any.empty Common.moduleNameToString -- TODO
+        (\( moduleType_, moduleName_, exposing_ ) dependencies_ ->
+            { dependencies = dependencies_
             , name = moduleName_
             , filePath = filePath
             , topLevelDeclarations = Dict.Any.empty Common.varNameToString -- TODO
@@ -46,6 +48,8 @@ module_ filePath =
             }
         )
         |= moduleDeclaration
+        -- TODO what about module doc comment? is it before the imports or after?
+        |= dependencies
 
 
 moduleDeclaration : Parser_ ( ModuleType, ModuleName, Exposing )
@@ -65,6 +69,53 @@ moduleDeclaration =
         |. P.keyword (P.Token "exposing" ExpectingExposingKeyword)
         |. P.spaces
         |= exposingList
+        |. newlines
+
+
+dependencies : Parser_ (Dict_ ModuleName Dependency)
+dependencies =
+    P.succeed
+        (List.map (\dep -> ( dep.moduleName, dep ))
+            >> Dict.Any.fromList Common.moduleNameToString
+        )
+        |= many dependency
+
+
+dependency : Parser_ Dependency
+dependency =
+    P.succeed
+        (\moduleName_ as_ exposing_ ->
+            { moduleName = ModuleName moduleName_
+            , as_ = as_
+            , exposing_ = exposing_
+            }
+        )
+        |. P.keyword (P.Token "import" ExpectingImportKeyword)
+        |. spacesOnly
+        -- TODO check expectation ... what about newlines here?
+        |= moduleName
+        |. P.spaces
+        |= P.oneOf
+            [ P.succeed (ModuleName >> Just)
+                |. P.keyword (P.Token "as" ExpectingAsKeyword)
+                |. P.spaces
+                |= moduleNameWithoutDots
+            , P.succeed Nothing
+            ]
+        |. P.oneOf
+            [ -- not sure if this is idiomatic
+              P.symbol (P.Token "." ExpectingModuleNameWithoutDots)
+                |. P.problem ExpectingModuleNameWithoutDots
+            , P.spaces
+            ]
+        |. P.spaces
+        |= P.oneOf
+            [ P.succeed Just
+                |. P.keyword (P.Token "exposing" ExpectingExposingKeyword)
+                |. P.spaces
+                |= exposingList
+            , P.succeed Nothing
+            ]
 
 
 moduleType : Parser_ ModuleType
@@ -106,6 +157,16 @@ moduleName =
         , inner = \c -> Char.isAlphaNum c || c == '.'
         , reserved = Set.empty
         , expecting = ExpectingModuleName
+        }
+
+
+moduleNameWithoutDots : Parser_ String
+moduleNameWithoutDots =
+    P.variable
+        { start = Char.isUpper
+        , inner = Char.isAlphaNum
+        , reserved = Set.empty
+        , expecting = ExpectingModuleNameWithoutDots
         }
 
 
@@ -219,3 +280,39 @@ reservedWords =
 spacesOnly : Parser_ ()
 spacesOnly =
     P.chompWhile ((==) ' ')
+
+
+newlines : Parser_ ()
+newlines =
+    P.chompWhile ((==) '\n')
+
+
+newlineOrEnd : Parser_ ()
+newlineOrEnd =
+    P.oneOf
+        [ P.symbol (P.Token "\n" ExpectingNewline)
+        , P.end ExpectingEnd
+        , P.succeed ()
+        ]
+
+
+{-| Taken from Punie/elm-parser-extras, made to work with Parser.Advanced.Parser
+instead of the simple one.
+-}
+many : Parser_ a -> Parser_ (List a)
+many p =
+    P.loop [] (manyHelp p)
+
+
+{-| Taken from Punie/elm-parser-extras, made to work with Parser.Advanced.Parser
+instead of the simple one.
+-}
+manyHelp : Parser_ a -> List a -> Parser_ (P.Step (List a) (List a))
+manyHelp p vs =
+    P.oneOf
+        [ P.succeed (\v -> P.Loop (v :: vs))
+            |= p
+            |. P.spaces
+        , P.succeed ()
+            |> P.map (always (P.Done (List.reverse vs)))
+        ]
