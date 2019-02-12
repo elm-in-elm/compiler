@@ -56,13 +56,13 @@ import Common.Types
         , ProjectToEmit
         , Set_
         )
-import Dict.Any as AnyDict exposing (AnyDict)
+import Dict.Any exposing (AnyDict)
 import Elm.Project
 import Error exposing (Error(..), ParseError(..))
 import Json.Decode as JD
 import Platform
 import Ports exposing (println, printlnStderr)
-import Set.Any as AnySet exposing (AnySet)
+import Set.Any exposing (AnySet)
 import Stage.Desugar as Desugar
 import Stage.Emit as Emit
 import Stage.Optimize as Optimize
@@ -182,9 +182,9 @@ init ({ mainFilePath, elmJson } as flags) =
                             , mainModuleName = mainModuleName_
                             , elmJson = elmJsonProject_
                             , sourceDirectory = sourceDirectory_
-                            , program = Frontend { modules = AnyDict.empty Common.moduleNameToString }
+                            , program = Frontend { modules = Dict.Any.empty Common.moduleNameToString }
                             }
-                        , waitingForFiles = AnySet.singleton mainFilePath_ Common.filePathToString
+                        , waitingForFiles = Set.Any.singleton mainFilePath_ Common.filePathToString
                         }
                     , Ports.readFile mainFilePath_
                     )
@@ -214,10 +214,10 @@ normalizeDirs project =
 normalizeDir : String -> String
 normalizeDir dir =
     if String.endsWith "/" dir then
-        dir
+        String.dropRight 1 dir
 
     else
-        dir ++ "/"
+        dir
 
 
 {-| Applications tell us their source directories; packages have `src/`.
@@ -263,17 +263,12 @@ handleReadFileSuccess filePath fileContents ({ project } as model) =
 
         Ok ({ name, dependencies } as parsedModule) ->
             let
-                modulesToBeRead : Set_ ModuleName
-                modulesToBeRead =
-                    dependencies
-                        |> AnySet.diff (Common.moduleNames project.program)
-
                 filesToBeRead : Set_ FilePath
                 filesToBeRead =
-                    modulesToBeRead
-                        |> AnySet.map
-                            Common.filePathToString
-                            (Common.expectedFilePath project.sourceDirectory)
+                    dependencies
+                        |> Dict.Any.keys
+                        |> List.map (Common.expectedFilePath project.sourceDirectory)
+                        |> Set.Any.fromList Common.filePathToString
 
                 newProgram : ElmProgram
                 newProgram =
@@ -281,7 +276,7 @@ handleReadFileSuccess filePath fileContents ({ project } as model) =
                         Frontend { modules } ->
                             Frontend
                                 { modules =
-                                    AnyDict.update name
+                                    Dict.Any.update name
                                         (always (Just parsedModule))
                                         modules
                                 }
@@ -299,8 +294,8 @@ handleReadFileSuccess filePath fileContents ({ project } as model) =
                 newWaitingForFiles : Set_ FilePath
                 newWaitingForFiles =
                     model.waitingForFiles
-                        |> AnySet.union filesToBeRead
-                        |> AnySet.remove filePath
+                        |> Set.Any.union filesToBeRead
+                        |> Set.Any.remove filePath
 
                 newModel : Model_
                 newModel =
@@ -309,13 +304,13 @@ handleReadFileSuccess filePath fileContents ({ project } as model) =
                         , waitingForFiles = newWaitingForFiles
                     }
             in
-            if AnySet.isEmpty newWaitingForFiles then
+            if Set.Any.isEmpty newWaitingForFiles then
                 compile newProject
 
             else
                 ( Compiling newModel
                 , filesToBeRead
-                    |> AnySet.toList
+                    |> Set.Any.toList
                     |> List.map Ports.readFile
                     |> Cmd.batch
                 )

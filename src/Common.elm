@@ -49,16 +49,10 @@ moduleNames program =
             toSet modules
 
 
+{-| Expects the source directory filepaths to be normalized so that there's no `/` at the end.
+-}
 expectedFilePath : FilePath -> ModuleName -> FilePath
 expectedFilePath (FilePath sourceDirectory) (ModuleName moduleName) =
-    {- TODO somewhere normalize the / out of the source directories
-       so that it's not there twice.
-
-       Eg. we wouldn't want
-
-           sourceDirectories = ["src/"]
-           --> expectedFilePaths ... == "src//Foo.elm"
-    -}
     FilePath (sourceDirectory ++ "/" ++ String.replace "." "/" moduleName ++ ".elm")
 
 
@@ -68,7 +62,8 @@ expectedModuleName (FilePath sourceDirectory) (FilePath filePath) =
         let
             lengthToDrop : Int
             lengthToDrop =
-                String.length sourceDirectory
+                -- don't forget the `/` which isn't part of the sourceDirectory but is in the filePath
+                String.length sourceDirectory + 1
         in
         filePath
             |> String.dropLeft lengthToDrop
