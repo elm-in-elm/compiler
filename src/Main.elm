@@ -58,7 +58,13 @@ import Common.Types
         )
 import Dict.Any exposing (AnyDict)
 import Elm.Project
-import Error exposing (Error(..), ParseError(..))
+import Error
+    exposing
+        ( Error(..)
+        , ErrorCode
+        , GeneralError(..)
+        , ParseError(..)
+        )
 import Json.Decode as JD
 import Platform
 import Ports exposing (println, printlnStderr)
@@ -113,8 +119,8 @@ type alias Model_ =
 
 
 type Msg
-    = -- TODO ReadFileFailure
-      ReadFileSuccess FilePath FileContents
+    = ReadFileSuccess FilePath FileContents
+    | ReadFileError FilePath ErrorCode
 
 
 subscriptions : Model -> Sub Msg
@@ -126,7 +132,7 @@ subscriptions model =
                to us when we've already found an error elsewhere or finished
                the compilation.
             -}
-            Ports.waitForReadFile ReadFileSuccess
+            Ports.waitForReadFile ReadFileError ReadFileSuccess
 
         EncounteredError ->
             Sub.none
@@ -254,6 +260,9 @@ update_ msg model =
         ReadFileSuccess filePath fileContents ->
             handleReadFileSuccess filePath fileContents model
 
+        ReadFileError filePath errorCode ->
+            handleReadFileError filePath errorCode model
+
 
 handleReadFileSuccess : FilePath -> FileContents -> Model_ -> ( Model, Cmd Msg )
 handleReadFileSuccess filePath fileContents ({ project } as model) =
@@ -316,6 +325,11 @@ handleReadFileSuccess filePath fileContents ({ project } as model) =
                 )
 
 
+handleReadFileError : FilePath -> ErrorCode -> Model_ -> ( Model, Cmd Msg )
+handleReadFileError (FilePath filePath) errorCode model =
+    handleError (GeneralError (IOError errorCode))
+
+
 {-| We're done reading and parsing files. Now we can do the rest synchronously!
 -}
 compile : Project -> ( Model, Cmd Msg )
@@ -370,8 +384,11 @@ log msg =
     let
         string =
             case msg of
-                ReadFileSuccess _ _ ->
-                    "ReadFileSuccess"
+                ReadFileSuccess (FilePath filePath) _ ->
+                    "ReadFileSuccess: " ++ filePath
+
+                ReadFileError (FilePath filePath) _ ->
+                    "ReadFileError: " ++ filePath
 
         _ =
             Debug.log string ()

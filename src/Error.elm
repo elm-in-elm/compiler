@@ -2,12 +2,14 @@ module Error exposing
     ( DesugarError(..)
     , EmitError(..)
     , Error(..)
+    , ErrorCode(..)
     , GeneralError(..)
     , OptimizeError(..)
     , ParseContext(..)
     , ParseError(..)
     , ParseProblem(..)
     , TypeError(..)
+    , parseErrorCode
     , toString
     )
 
@@ -27,6 +29,7 @@ type Error
 
 type GeneralError
     = FileNotInSourceDirectories FilePath
+    | IOError ErrorCode
 
 
 type ParseError
@@ -99,6 +102,14 @@ toString error =
                         ++ filePath
                         ++ "` is not a part of the `sourceDirectories` in elm.json."
 
+                IOError errorCode ->
+                    case errorCode of
+                        FileOrDirectoryNotFound (FilePath filePath) ->
+                            "File or directory `" ++ filePath ++ "` not found."
+
+                        OtherErrorCode other ->
+                            "Encountered error `" ++ other ++ "`."
+
         ParseError parseError ->
             case parseError of
                 ModuleNameDoesntMatchFilePath (ModuleName moduleName) (FilePath filePath) ->
@@ -136,3 +147,18 @@ toString error =
 
         EmitError emitError ->
             Debug.todo "toString emitError"
+
+
+parseErrorCode : String -> FilePath -> ErrorCode
+parseErrorCode code filePath =
+    case code of
+        "ENOENT" ->
+            FileOrDirectoryNotFound filePath
+
+        _ ->
+            OtherErrorCode code
+
+
+type ErrorCode
+    = FileOrDirectoryNotFound FilePath
+    | OtherErrorCode String

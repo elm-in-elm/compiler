@@ -27,9 +27,12 @@
   registerPort(app, 'stdout', string => process.stdout.write(string));
   registerPort(app, 'stderr', string => process.stderr.write(string));
   registerPort(app, 'read', async function(filename) {
-    // TODO read file failure Msg
-    const contents = await fsPromises.readFile(`${exampleProjectPath}/${filename}`, {encoding: 'utf8'});
-    app.ports.readSubscription.send([filename, contents]);
+    try {
+      const contents = await fsPromises.readFile(`${exampleProjectPath}/${filename}`, {encoding: 'utf8'});
+      app.ports.readSubscription.send([filename, contents]);
+    } catch (e) {
+      app.ports.readErrorSubscription.send([filename, e.code]);
+    }
   });
   registerPort(app, 'write', async function({filePath,contents}) {
     await fsPromises.writeFile(`${exampleProjectPath}/${filePath}`, contents);
