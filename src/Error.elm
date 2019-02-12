@@ -63,8 +63,12 @@ type ParseProblem
     | ExpectingImportKeyword -- `>import< Foo as F exposing (..)`
     | ExpectingAsKeyword -- `import Foo >as< F exposing (..)`
     | ExpectingModuleNameWithoutDots -- `import Foo as >F< exposing (..)`
+    | ExpectingEqualsSign -- `x >=< 1`
+    | ExpectingMinusSign -- `>-<42`
+    | ExpectingInt
     | ExpectingNewline
     | ExpectingEnd
+    | InvalidInt
     | TodoNotImplemented
 
 

@@ -6,7 +6,12 @@ module Stage.Parse.Parser exposing
     )
 
 import AST.Common as Common
-import AST.Frontend as Frontend
+    exposing
+        ( Literal(..)
+        , TopLevelDeclaration
+        , VarName(..)
+        )
+import AST.Frontend as Frontend exposing (Expr(..))
 import Common
 import Common.Types
     exposing
@@ -38,11 +43,11 @@ type alias Parser_ a =
 module_ : FilePath -> Parser_ (Module Frontend.Expr)
 module_ filePath =
     P.succeed
-        (\( moduleType_, moduleName_, exposing_ ) dependencies_ ->
+        (\( moduleType_, moduleName_, exposing_ ) dependencies_ topLevelDeclarations_ ->
             { dependencies = dependencies_
             , name = moduleName_
             , filePath = filePath
-            , topLevelDeclarations = Dict.Any.empty Common.varNameToString -- TODO
+            , topLevelDeclarations = topLevelDeclarations_
             , type_ = moduleType_
             , exposing_ = exposing_
             }
@@ -50,6 +55,7 @@ module_ filePath =
         |= moduleDeclaration
         -- TODO what about module doc comment? is it before the imports or after?
         |= dependencies
+        |= topLevelDeclarations
 
 
 moduleDeclaration : Parser_ ( ModuleType, ModuleName, Exposing )
@@ -275,6 +281,59 @@ reservedWords =
         , "as"
         , "port"
         ]
+
+
+topLevelDeclarations : Parser_ (Dict_ VarName (TopLevelDeclaration Frontend.Expr))
+topLevelDeclarations =
+    P.succeed
+        (List.map (\declaration -> ( declaration.name, declaration ))
+            >> Dict.Any.fromList Common.varNameToString
+        )
+        |= many topLevelDeclaration
+
+
+topLevelDeclaration : Parser_ (TopLevelDeclaration Frontend.Expr)
+topLevelDeclaration =
+    P.succeed TopLevelDeclaration
+        |= P.map VarName varName
+        |. P.spaces
+        |. P.symbol (P.Token "=" ExpectingEqualsSign)
+        |. P.spaces
+        |= expr
+
+
+expr : Parser_ Frontend.Expr
+expr =
+    P.oneOf
+        [ literal
+        ]
+
+
+literal : Parser_ Frontend.Expr
+literal =
+    P.succeed Literal
+        |= P.oneOf
+            [ literalInt
+            ]
+
+
+literalInt : Parser_ Literal
+literalInt =
+    let
+        int =
+            P.int ExpectingInt InvalidInt
+    in
+    P.succeed LInt
+        |= P.oneOf
+            [ P.succeed negate
+                |. P.symbol (P.Token "-" ExpectingMinusSign)
+                |= int
+            , int
+            ]
+
+
+
+-- Helpers
 
 
 spacesOnly : Parser_ ()
