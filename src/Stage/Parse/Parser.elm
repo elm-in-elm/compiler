@@ -7,11 +7,14 @@ module Stage.Parse.Parser exposing
 
 import AST.Common as Common
     exposing
-        ( Literal(..)
-        , TopLevelDeclaration
+        ( TopLevelDeclaration
         , VarName(..)
         )
-import AST.Frontend as Frontend exposing (Expr(..))
+import AST.Frontend as Frontend
+    exposing
+        ( Expr(..)
+        , Literal(..)
+        )
 import Common
 import Common.Types
     exposing

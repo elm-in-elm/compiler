@@ -1,10 +1,14 @@
-module AST.Frontend exposing (Expr(..))
+module AST.Frontend exposing (Expr(..), Literal(..))
 
-import AST.Common exposing (Literal(..), VarName(..))
+import AST.Common exposing (VarName(..))
 
 
 type Expr
     = Literal Literal
+
+
+type Literal
+    = LInt Int
 
 
 
