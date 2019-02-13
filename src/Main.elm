@@ -9,6 +9,7 @@ To get things out of the way: it would be great if the pipeline could be pure:
         |> desugar
         |> typecheck
         |> optimize
+        |> prepareForBackend
         |> emit
 
 But we have to read files and parse them (to, in turn, find more files to read!),
@@ -47,11 +48,11 @@ import Common
 import Common.Types
     exposing
         ( Dict_
-        , ElmProgram(..)
         , FileContents(..)
         , FilePath(..)
         , Module
         , ModuleName(..)
+        , Modules
         , Project
         , ProjectToEmit
         , Set_
@@ -73,6 +74,7 @@ import Stage.Desugar as Desugar
 import Stage.Emit as Emit
 import Stage.Optimize as Optimize
 import Stage.Parse as Parse
+import Stage.PrepareForBackend as PrepareForBackend
 import Stage.Typecheck as Typecheck
 
 
@@ -82,7 +84,7 @@ So, `Platform.worker` is the only option for us.
 TODO expose parts of the compiler as a library!
 
 -}
-main : Program Flags Model Msg
+main : Program Flags (Model Frontend.Expr) Msg
 main =
     Platform.worker
         { init = init
@@ -100,8 +102,8 @@ type alias Flags =
 {-| `Compiling` is the state we'll be most of the time. The other two are
 mostly useless; they do effectively stop `subscriptions` and `update` though.
 -}
-type Model
-    = Compiling Model_
+type Model expr
+    = Compiling (Model_ expr)
     | {- We don't need to remember the error, because we report it
          at the time of transition to this new model. See `handleError`.
       -}
@@ -112,8 +114,8 @@ type Model
 {-| Because we're mostly in the `Compiling` state, it is worthwhile
 to make functions work with its data instead of the general `Model`.
 -}
-type alias Model_ =
-    { project : Project
+type alias Model_ expr =
+    { project : Project expr
     , waitingForFiles : Set_ FilePath
     }
 
@@ -123,7 +125,7 @@ type Msg
     | ReadFileError FilePath ErrorCode
 
 
-subscriptions : Model -> Sub Msg
+subscriptions : Model expr -> Sub Msg
 subscriptions model =
     case model of
         Compiling model_ ->
@@ -148,7 +150,7 @@ We have two tasks here:
   - read the main module (TODO maybe do that even before `init` in JS?)
 
 -}
-init : Flags -> ( Model, Cmd Msg )
+init : Flags -> ( Model expr, Cmd Msg )
 init ({ mainFilePath, elmJson } as flags) =
     let
         mainFilePath_ : FilePath
@@ -178,7 +180,7 @@ init ({ mainFilePath, elmJson } as flags) =
                         Common.expectedModuleName sourceDirectory_ mainFilePath_
                     )
 
-        modelAndCmd : Result Error ( Model, Cmd Msg )
+        modelAndCmd : Result Error ( Model expr, Cmd Msg )
         modelAndCmd =
             Result.map3
                 (\mainModuleName_ elmJsonProject_ sourceDirectory_ ->
@@ -188,7 +190,7 @@ init ({ mainFilePath, elmJson } as flags) =
                             , mainModuleName = mainModuleName_
                             , elmJson = elmJsonProject_
                             , sourceDirectory = sourceDirectory_
-                            , program = Frontend { modules = Dict.Any.empty Common.moduleNameToString }
+                            , program = Dict.Any.empty Common.moduleNameToString
                             }
                         , waitingForFiles = Set.Any.singleton mainFilePath_ Common.filePathToString
                         }
@@ -241,7 +243,7 @@ getSourceDirectory elmProject =
             Ok (FilePath "src/")
 
 
-update : Msg -> Model -> ( Model, Cmd Msg )
+update : Msg -> Model Frontend.Expr -> ( Model Frontend.Expr, Cmd Msg )
 update msg model =
     case model of
         Compiling model_ ->
@@ -254,7 +256,7 @@ update msg model =
             ( model, Cmd.none )
 
 
-update_ : Msg -> Model_ -> ( Model, Cmd Msg )
+update_ : Msg -> Model_ Frontend.Expr -> ( Model Frontend.Expr, Cmd Msg )
 update_ msg model =
     case log msg of
         ReadFileSuccess filePath fileContents ->
@@ -264,7 +266,7 @@ update_ msg model =
             handleReadFileError filePath errorCode model
 
 
-handleReadFileSuccess : FilePath -> FileContents -> Model_ -> ( Model, Cmd Msg )
+handleReadFileSuccess : FilePath -> FileContents -> Model_ Frontend.Expr -> ( Model Frontend.Expr, Cmd Msg )
 handleReadFileSuccess filePath fileContents ({ project } as model) =
     case Parse.parse project filePath fileContents of
         Err error ->
@@ -279,24 +281,13 @@ handleReadFileSuccess filePath fileContents ({ project } as model) =
                         |> List.map (Common.expectedFilePath project.sourceDirectory)
                         |> Set.Any.fromList Common.filePathToString
 
-                newProgram : ElmProgram
+                newProgram : Modules Frontend.Expr
                 newProgram =
-                    case project.program of
-                        Frontend { modules } ->
-                            Frontend
-                                { modules =
-                                    Dict.Any.update name
-                                        (always (Just parsedModule))
-                                        modules
-                                }
+                    Dict.Any.update name
+                        (always (Just parsedModule))
+                        project.program
 
-                        Canonical _ ->
-                            project.program
-
-                        Backend { modules } ->
-                            project.program
-
-                newProject : Project
+                newProject : Project Frontend.Expr
                 newProject =
                     { project | program = newProgram }
 
@@ -306,7 +297,7 @@ handleReadFileSuccess filePath fileContents ({ project } as model) =
                         |> Set.Any.union filesToBeRead
                         |> Set.Any.remove filePath
 
-                newModel : Model_
+                newModel : Model_ Frontend.Expr
                 newModel =
                     { model
                         | project = newProject
@@ -325,22 +316,23 @@ handleReadFileSuccess filePath fileContents ({ project } as model) =
                 )
 
 
-handleReadFileError : FilePath -> ErrorCode -> Model_ -> ( Model, Cmd Msg )
+handleReadFileError : FilePath -> ErrorCode -> Model_ Frontend.Expr -> ( Model Frontend.Expr, Cmd Msg )
 handleReadFileError (FilePath filePath) errorCode model =
     handleError (GeneralError (IOError errorCode))
 
 
 {-| We're done reading and parsing files. Now we can do the rest synchronously!
 -}
-compile : Project -> ( Model, Cmd Msg )
+compile : Project Frontend.Expr -> ( Model dontcare, Cmd Msg )
 compile project =
     Ok project
         |> Debug.log "after parse"
         |> Result.andThen Desugar.desugar
         |> Result.andThen Typecheck.typecheck
         |> Result.andThen Optimize.optimize
-        -- TODO think about something like "prepareForBackend"
+        |> Result.andThen PrepareForBackend.prepareForBackend
         |> Result.andThen Emit.emit
+        |> Debug.log "after emit"
         |> finish
 
 
@@ -350,7 +342,7 @@ compile project =
 Let's do that - report the error or write the output to a file.
 
 -}
-finish : Result Error ProjectToEmit -> ( Model, Cmd Msg )
+finish : Result Error ProjectToEmit -> ( Model dontcare, Cmd Msg )
 finish result =
     case result of
         Ok { output } ->
@@ -372,7 +364,7 @@ Stop everything, abort mission, jump ship!
 The `EncounteredError` model stops most everything (`update`, `subscriptions`).
 
 -}
-handleError : Error -> ( Model, Cmd Msg )
+handleError : Error -> ( Model dontcare, Cmd Msg )
 handleError error =
     ( EncounteredError
     , printlnStderr (Error.toString error)

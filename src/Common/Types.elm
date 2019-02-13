@@ -2,7 +2,6 @@ module Common.Types exposing
     ( Dependency
     , Dict_
     , EffectMetadata
-    , ElmProgram(..)
     , ExposedItem(..)
     , Exposing(..)
     , FileContents(..)
@@ -10,6 +9,7 @@ module Common.Types exposing
     , Module
     , ModuleName(..)
     , ModuleType(..)
+    , Modules
     , Project
     , ProjectToEmit
     , Set_
@@ -48,12 +48,12 @@ type FileContents
     = FileContents String
 
 
-type alias Project =
+type alias Project expr =
     { mainFilePath : FilePath
     , mainModuleName : ModuleName
     , elmJson : Elm.Project.Project
     , {- TODO allow multiple source directories -} sourceDirectory : FilePath
-    , program : ElmProgram
+    , program : Modules expr
     }
 
 
@@ -64,12 +64,6 @@ type alias ProjectToEmit =
 
 type alias Modules expr =
     Dict_ ModuleName (Module expr)
-
-
-type ElmProgram
-    = Frontend { modules : Modules Frontend.Expr }
-    | Canonical { modules : Modules Canonical.Expr }
-    | Backend { modules : Modules Backend.Expr }
 
 
 type ModuleType

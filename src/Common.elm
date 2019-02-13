@@ -9,9 +9,9 @@ module Common exposing
 import Common.Types
     exposing
         ( Dict_
-        , ElmProgram(..)
         , FilePath(..)
         , ModuleName(..)
+        , Modules
         , Set_
         )
 import Dict.Any as AnyDict
@@ -29,24 +29,16 @@ moduleNameToString (ModuleName moduleName) =
     moduleName
 
 
-moduleNames : ElmProgram -> Set_ ModuleName
+moduleNames : Modules expr -> Set_ ModuleName
 moduleNames program =
     let
-        toSet : Dict_ ModuleName a -> Set_ ModuleName
+        toSet : Modules expr -> Set_ ModuleName
         toSet dict =
             dict
                 |> AnyDict.keys
                 |> AnySet.fromList moduleNameToString
     in
-    case program of
-        Frontend { modules } ->
-            toSet modules
-
-        Canonical { modules } ->
-            toSet modules
-
-        Backend { modules } ->
-            toSet modules
+    toSet program
 
 
 {-| Expects the source directory filepaths to be normalized so that there's no `/` at the end.

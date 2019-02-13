@@ -72,10 +72,6 @@ type ParseProblem
     | TodoNotImplemented
 
 
-{-| TODO
--}
-type TypeError
-    = TodoFirstTypeError
 
 
 {-| TODO
@@ -83,6 +79,10 @@ type TypeError
 type DesugarError
     = TodoFirstDesugarError
 
+{-| TODO
+-}
+type TypeError
+    = TodoFirstTypeError
 
 {-| TODO
 -}

@@ -1,5 +1,6 @@
 module Stage.Emit exposing (emit)
 
+import AST.Backend as Backend
 import Common.Types
     exposing
         ( FileContents(..)
@@ -9,7 +10,7 @@ import Common.Types
 import Error exposing (Error)
 
 
-emit : Project -> Result Error ProjectToEmit
+emit : Project Backend.Expr -> Result Error ProjectToEmit
 emit project =
     -- TODO do it later
     Ok { output = FileContents "// TODO" }

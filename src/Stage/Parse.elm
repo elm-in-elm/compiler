@@ -18,7 +18,7 @@ import Parser.Advanced as P
 import Stage.Parse.Parser as Parser
 
 
-parse : Project -> FilePath -> FileContents -> Result Error (Module Frontend.Expr)
+parse : Project a -> FilePath -> FileContents -> Result Error (Module Frontend.Expr)
 parse { sourceDirectory } filePath (FileContents fileContents) =
     P.run (Parser.module_ filePath) fileContents
         |> Result.mapError (ParseError << ParseProblem)
