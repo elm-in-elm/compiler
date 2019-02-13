@@ -1,16 +1,38 @@
 module Stage.Emit exposing (emit)
 
 import AST.Backend as Backend
+import AST.Common
+    exposing
+        ( TopLevelDeclaration
+        , VarName(..)
+        )
 import Common.Types
     exposing
         ( FileContents(..)
         , Project
         , ProjectToEmit
         )
-import Error exposing (Error)
+import Dict.Any
+import Error exposing (EmitError(..), Error(..))
 
 
 emit : Project Backend.Expr -> Result Error ProjectToEmit
 emit project =
-    -- TODO do it later
-    Ok { output = FileContents "// TODO" }
+    project.program
+        |> Dict.Any.get project.mainModuleName
+        |> Result.fromMaybe (EmitError MainModuleNotFound)
+        |> Result.andThen
+            (.topLevelDeclarations
+                >> Dict.Any.get (VarName "main")
+                >> Result.fromMaybe (EmitError MainDeclarationNotFound)
+            )
+        |> Result.map (emitTopLevelDeclaration >> FileContents >> ProjectToEmit)
+
+
+emitTopLevelDeclaration : TopLevelDeclaration Backend.Expr -> String
+emitTopLevelDeclaration declaration =
+    "// TODO"
+
+
+
+--emitExpr : Backend.Expr -> String

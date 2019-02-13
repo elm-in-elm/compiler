@@ -72,17 +72,17 @@ type ParseProblem
     | TodoNotImplemented
 
 
-
-
 {-| TODO
 -}
 type DesugarError
     = TodoFirstDesugarError
 
+
 {-| TODO
 -}
 type TypeError
     = TodoFirstTypeError
+
 
 {-| TODO
 -}
@@ -93,7 +93,8 @@ type OptimizeError
 {-| TODO
 -}
 type EmitError
-    = TodoFirstEmitError
+    = MainModuleNotFound
+    | MainDeclarationNotFound
 
 
 toString : Error -> String
@@ -150,7 +151,12 @@ toString error =
             Debug.todo "toString optimizeError"
 
         EmitError emitError ->
-            Debug.todo "toString emitError"
+            case emitError of
+                MainModuleNotFound ->
+                    "Main module not found!"
+
+                MainDeclarationNotFound ->
+                    "Couldn't find the value `main` in the main module given to the compiler!"
 
 
 parseErrorCode : String -> FilePath -> ErrorCode
