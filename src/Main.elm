@@ -150,7 +150,7 @@ We have two tasks here:
   - read the main module (TODO maybe do that even before `init` in JS?)
 
 -}
-init : Flags -> ( Model expr, Cmd Msg )
+init : Flags -> ( Model Frontend.ProjectFields, Cmd Msg )
 init ({ mainFilePath, elmJson } as flags) =
     let
         mainFilePath_ : FilePath
@@ -180,7 +180,7 @@ init ({ mainFilePath, elmJson } as flags) =
                         Common.expectedModuleName sourceDirectory_ mainFilePath_
                     )
 
-        modelAndCmd : Result Error ( Model expr, Cmd Msg )
+        modelAndCmd : Result Error ( Model Frontend.ProjectFields, Cmd Msg )
         modelAndCmd =
             Result.map3
                 (\mainModuleName_ elmJsonProject_ sourceDirectory_ ->
@@ -281,7 +281,7 @@ handleReadFileSuccess filePath fileContents ({ project } as model) =
                         |> List.map (Common.expectedFilePath project.sourceDirectory)
                         |> Set.Any.fromList Common.filePathToString
 
-                newProgram : Modules Frontend.ProjectFields
+                newProgram : Modules Frontend.Expr
                 newProgram =
                     Dict.Any.update name
                         (always (Just parsedModule))
@@ -323,7 +323,7 @@ handleReadFileError (FilePath filePath) errorCode model =
 
 {-| We're done reading and parsing files. Now we can do the rest synchronously!
 -}
-compile : Project Frontend.ProjectFields -> ( Model dontcare, Cmd Msg )
+compile : Project Frontend.ProjectFields -> ( Model Frontend.ProjectFields, Cmd Msg )
 compile project =
     Ok project
         |> Debug.log "after parse"
@@ -342,7 +342,7 @@ compile project =
 Let's do that - report the error or write the output to a file.
 
 -}
-finish : Result Error ProjectToEmit -> ( Model dontcare, Cmd Msg )
+finish : Result Error ProjectToEmit -> ( Model Frontend.ProjectFields, Cmd Msg )
 finish result =
     case result of
         Ok { output } ->
