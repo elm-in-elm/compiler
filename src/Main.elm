@@ -84,7 +84,7 @@ So, `Platform.worker` is the only option for us.
 TODO expose parts of the compiler as a library!
 
 -}
-main : Program Flags (Model Frontend.Expr) Msg
+main : Program Flags (Model Frontend.ProjectFields) Msg
 main =
     Platform.worker
         { init = init
@@ -243,7 +243,7 @@ getSourceDirectory elmProject =
             Ok (FilePath "src/")
 
 
-update : Msg -> Model Frontend.Expr -> ( Model Frontend.Expr, Cmd Msg )
+update : Msg -> Model Frontend.ProjectFields -> ( Model Frontend.ProjectFields, Cmd Msg )
 update msg model =
     case model of
         Compiling model_ ->
@@ -256,7 +256,7 @@ update msg model =
             ( model, Cmd.none )
 
 
-update_ : Msg -> Model_ Frontend.Expr -> ( Model Frontend.Expr, Cmd Msg )
+update_ : Msg -> Model_ Frontend.ProjectFields -> ( Model Frontend.ProjectFields, Cmd Msg )
 update_ msg model =
     case log msg of
         ReadFileSuccess filePath fileContents ->
@@ -266,7 +266,7 @@ update_ msg model =
             handleReadFileError filePath errorCode model
 
 
-handleReadFileSuccess : FilePath -> FileContents -> Model_ Frontend.Expr -> ( Model Frontend.Expr, Cmd Msg )
+handleReadFileSuccess : FilePath -> FileContents -> Model_ Frontend.ProjectFields -> ( Model Frontend.ProjectFields, Cmd Msg )
 handleReadFileSuccess filePath fileContents ({ project } as model) =
     case Parse.parse project filePath fileContents of
         Err error ->
@@ -281,13 +281,13 @@ handleReadFileSuccess filePath fileContents ({ project } as model) =
                         |> List.map (Common.expectedFilePath project.sourceDirectory)
                         |> Set.Any.fromList Common.filePathToString
 
-                newProgram : Modules Frontend.Expr
+                newProgram : Modules Frontend.ProjectFields
                 newProgram =
                     Dict.Any.update name
                         (always (Just parsedModule))
                         project.program
 
-                newProject : Project Frontend.Expr
+                newProject : Project Frontend.ProjectFields
                 newProject =
                     { project | program = newProgram }
 
@@ -297,7 +297,7 @@ handleReadFileSuccess filePath fileContents ({ project } as model) =
                         |> Set.Any.union filesToBeRead
                         |> Set.Any.remove filePath
 
-                newModel : Model_ Frontend.Expr
+                newModel : Model_ Frontend.ProjectFields
                 newModel =
                     { model
                         | project = newProject
@@ -316,14 +316,14 @@ handleReadFileSuccess filePath fileContents ({ project } as model) =
                 )
 
 
-handleReadFileError : FilePath -> ErrorCode -> Model_ Frontend.Expr -> ( Model Frontend.Expr, Cmd Msg )
+handleReadFileError : FilePath -> ErrorCode -> Model_ Frontend.ProjectFields -> ( Model Frontend.ProjectFields, Cmd Msg )
 handleReadFileError (FilePath filePath) errorCode model =
     handleError (GeneralError (IOError errorCode))
 
 
 {-| We're done reading and parsing files. Now we can do the rest synchronously!
 -}
-compile : Project Frontend.Expr -> ( Model dontcare, Cmd Msg )
+compile : Project Frontend.ProjectFields -> ( Model dontcare, Cmd Msg )
 compile project =
     Ok project
         |> Debug.log "after parse"
