@@ -5,11 +5,6 @@ module Stage.Parse.Parser exposing
     , module_
     )
 
-import AST.Common as Common
-    exposing
-        ( TopLevelDeclaration
-        , VarName(..)
-        )
 import AST.Frontend as Frontend
     exposing
         ( Expr(..)
@@ -26,6 +21,8 @@ import Common.Types
         , Module
         , ModuleName(..)
         , ModuleType(..)
+        , TopLevelDeclaration
+        , VarName(..)
         )
 import Dict.Any
 import Error
@@ -50,7 +47,17 @@ module_ filePath =
             { dependencies = dependencies_
             , name = moduleName_
             , filePath = filePath
-            , topLevelDeclarations = topLevelDeclarations_
+            , topLevelDeclarations =
+                topLevelDeclarations_
+                    |> List.map
+                        (\almostDeclaration ->
+                            let
+                                declaration =
+                                    almostDeclaration moduleName_
+                            in
+                            ( declaration.name, declaration )
+                        )
+                    |> Dict.Any.fromList Common.varNameToString
             , type_ = moduleType_
             , exposing_ = exposing_
             }
@@ -286,16 +293,12 @@ reservedWords =
         ]
 
 
-topLevelDeclarations : Parser_ (Dict_ VarName (TopLevelDeclaration Frontend.Expr))
+topLevelDeclarations : Parser_ (List (ModuleName -> TopLevelDeclaration Frontend.Expr))
 topLevelDeclarations =
-    P.succeed
-        (List.map (\declaration -> ( declaration.name, declaration ))
-            >> Dict.Any.fromList Common.varNameToString
-        )
-        |= many topLevelDeclaration
+    many topLevelDeclaration
 
 
-topLevelDeclaration : Parser_ (TopLevelDeclaration Frontend.Expr)
+topLevelDeclaration : Parser_ (ModuleName -> TopLevelDeclaration Frontend.Expr)
 topLevelDeclaration =
     P.succeed TopLevelDeclaration
         |= P.map VarName varName

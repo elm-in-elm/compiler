@@ -1,6 +1,5 @@
 module Stage.Parse exposing (parse)
 
-import AST.Common exposing (TopLevelDeclaration, VarName)
 import AST.Frontend as Frontend
 import Common
 import Common.Types
@@ -12,6 +11,8 @@ import Common.Types
         , ModuleName
         , Project
         , Set_
+        , TopLevelDeclaration
+        , VarName
         )
 import Error exposing (Error(..), ParseError(..))
 import Parser.Advanced as P

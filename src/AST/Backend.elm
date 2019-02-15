@@ -1,9 +1,21 @@
-module AST.Backend exposing (Expr)
+module AST.Backend exposing
+    ( Expr
+    , Graph
+    , ProjectFields
+    )
 
 import AST.Canonical as Canonical
+import Common.Types exposing (TopLevelDeclaration)
+import Graph
 
 
-{-| TODO make it different (based on needs)
--}
+type alias ProjectFields =
+    { programGraph : Graph }
+
+
 type alias Expr =
     Canonical.Expr
+
+
+type alias Graph =
+    Graph.Graph (TopLevelDeclaration Expr) ()

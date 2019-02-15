@@ -6,7 +6,7 @@ import Common.Types exposing (Project)
 import Error exposing (Error)
 
 
-desugar : Project Frontend.Expr -> Result Error (Project Canonical.Expr)
+desugar : Project Frontend.ProjectFields -> Result Error (Project Canonical.ProjectFields)
 desugar project =
     -- TODO for now, canonical AST is the same as frontend AST, so do nothing
     Ok project

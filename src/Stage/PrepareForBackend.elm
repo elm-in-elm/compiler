@@ -2,11 +2,23 @@ module Stage.PrepareForBackend exposing (prepareForBackend)
 
 import AST.Backend as Backend
 import AST.Canonical as Canonical
-import Common.Types exposing (Project)
+import Common.Types exposing (Modules, Project)
 import Error exposing (Error)
+import Graph
 
 
-prepareForBackend : Project Canonical.Expr -> Result Error (Project Backend.Expr)
-prepareForBackend project =
-    -- TODO the types are the same right now
-    Ok project
+prepareForBackend : Project Canonical.ProjectFields -> Result Error (Project Backend.ProjectFields)
+prepareForBackend p =
+    Ok
+        { mainFilePath = p.mainFilePath
+        , mainModuleName = p.mainModuleName
+        , elmJson = p.elmJson
+        , sourceDirectory = p.sourceDirectory
+        , programGraph = modulesToGraph p.program
+        }
+
+
+modulesToGraph : Modules Canonical.Expr -> Backend.Graph
+modulesToGraph modules =
+    -- TODO
+    Graph.empty

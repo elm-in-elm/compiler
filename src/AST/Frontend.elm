@@ -1,6 +1,18 @@
-module AST.Frontend exposing (Expr(..), Literal(..))
+module AST.Frontend exposing
+    ( Expr(..)
+    , Literal(..)
+    , ProjectFields
+    )
 
-import AST.Common exposing (VarName(..))
+import Common.Types
+    exposing
+        ( Modules
+        , VarName(..)
+        )
+
+
+type alias ProjectFields =
+    { program : Modules Expr }
 
 
 type Expr

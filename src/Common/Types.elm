@@ -13,16 +13,14 @@ module Common.Types exposing
     , Project
     , ProjectToEmit
     , Set_
+    , TopLevelDeclaration
+    , VarName(..)
     )
 
 {-| TODO is this an OK way to do the module hierarchy? Eg. the Types module.
 Is there a better one?
 -}
 
-import AST.Backend as Backend
-import AST.Canonical as Canonical
-import AST.Common exposing (TopLevelDeclaration, VarName)
-import AST.Frontend as Frontend
 import Dict.Any as AnyDict exposing (AnyDict)
 import Elm.Project
 import Set.Any as AnySet exposing (AnySet)
@@ -48,12 +46,22 @@ type FileContents
     = FileContents String
 
 
-type alias Project expr =
-    { mainFilePath : FilePath
-    , mainModuleName : ModuleName
-    , elmJson : Elm.Project.Project
-    , {- TODO allow multiple source directories -} sourceDirectory : FilePath
-    , program : Modules expr
+{-| Each AST stage has its own project fields - that's what the `r` parameter is.
+Eg. on the frontend we have `program : Modules Frontend.Expr`
+and on the backend we have `graph : Backend.Graph`.
+-}
+type alias Project r =
+    { r
+        | elmJson : Elm.Project.Project
+
+        {- TODO allow multiple main file paths -}
+        , mainFilePath : FilePath
+
+        {- TODO allow multiple main modules; probably tuple them together with the filepaths -}
+        , mainModuleName : ModuleName
+
+        {- TODO allow multiple source directories -}
+        , sourceDirectory : FilePath
     }
 
 
@@ -111,4 +119,15 @@ type alias Dependency =
     { moduleName : ModuleName
     , as_ : Maybe ModuleName
     , exposing_ : Maybe Exposing
+    }
+
+
+type VarName
+    = VarName String
+
+
+type alias TopLevelDeclaration expr =
+    { name : VarName
+    , body : expr
+    , module_ : ModuleName
     }

@@ -4,6 +4,7 @@ module Common exposing
     , filePathToString
     , moduleNameToString
     , moduleNames
+    , varNameToString
     )
 
 import Common.Types
@@ -13,6 +14,7 @@ import Common.Types
         , ModuleName(..)
         , Modules
         , Set_
+        , VarName(..)
         )
 import Dict.Any as AnyDict
 import Error exposing (Error(..), GeneralError(..))
@@ -68,3 +70,8 @@ expectedModuleName (FilePath sourceDirectory) (FilePath filePath) =
         FileNotInSourceDirectories (FilePath filePath)
             |> GeneralError
             |> Err
+
+
+varNameToString : VarName -> String
+varNameToString (VarName varName) =
+    varName
