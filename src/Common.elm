@@ -4,6 +4,7 @@ module Common exposing
     , filePathToString
     , moduleNameToString
     , moduleNames
+    , topLevelDeclarationToString
     , varNameToString
     )
 
@@ -14,6 +15,7 @@ import Common.Types
         , ModuleName(..)
         , Modules
         , Set_
+        , TopLevelDeclaration
         , VarName(..)
         )
 import Dict.Any as AnyDict
@@ -75,3 +77,8 @@ expectedModuleName (FilePath sourceDirectory) (FilePath filePath) =
 varNameToString : VarName -> String
 varNameToString (VarName varName) =
     varName
+
+
+topLevelDeclarationToString : TopLevelDeclaration a -> String
+topLevelDeclarationToString { name, module_ } =
+    moduleNameToString module_ ++ "." ++ varNameToString name

@@ -8,6 +8,7 @@ module Error exposing
     , ParseContext(..)
     , ParseError(..)
     , ParseProblem(..)
+    , PrepareForBackendError(..)
     , TypeError(..)
     , parseErrorCode
     , toString
@@ -24,6 +25,7 @@ type Error
     | DesugarError DesugarError
     | TypeError TypeError
     | OptimizeError OptimizeError
+    | PrepareForBackendError PrepareForBackendError
     | EmitError EmitError
 
 
@@ -90,11 +92,14 @@ type OptimizeError
     = TodoFirstOptimizeError
 
 
+type PrepareForBackendError
+    = MainDeclarationNotFound
+
+
 {-| TODO
 -}
 type EmitError
-    = MainModuleNotFound
-    | MainDeclarationNotFound
+    = TodoFirstEmitError
 
 
 toString : Error -> String
@@ -150,13 +155,13 @@ toString error =
         OptimizeError optimizeError ->
             Debug.todo "toString optimizeError"
 
-        EmitError emitError ->
-            case emitError of
-                MainModuleNotFound ->
-                    "Main module not found!"
-
+        PrepareForBackendError prepareForBackendError ->
+            case prepareForBackendError of
                 MainDeclarationNotFound ->
                     "Couldn't find the value `main` in the main module given to the compiler!"
+
+        EmitError emitError ->
+            Debug.todo "toString emitBackendError"
 
 
 parseErrorCode : String -> FilePath -> ErrorCode
