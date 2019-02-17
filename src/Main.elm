@@ -190,7 +190,7 @@ init ({ mainFilePath, elmJson } as flags) =
                             , mainModuleName = mainModuleName_
                             , elmJson = elmJsonProject_
                             , sourceDirectory = sourceDirectory_
-                            , program = Dict.Any.empty Common.moduleNameToString
+                            , modules = Dict.Any.empty Common.moduleNameToString
                             }
                         , waitingForFiles = Set.Any.singleton mainFilePath_ Common.filePathToString
                         }
@@ -281,15 +281,15 @@ handleReadFileSuccess filePath fileContents ({ project } as model) =
                         |> List.map (Common.expectedFilePath project.sourceDirectory)
                         |> Set.Any.fromList Common.filePathToString
 
-                newProgram : Modules Frontend.Expr
-                newProgram =
+                newModules : Modules Frontend.Expr
+                newModules =
                     Dict.Any.update name
                         (always (Just parsedModule))
-                        project.program
+                        project.modules
 
                 newProject : Project Frontend.ProjectFields
                 newProject =
-                    { project | program = newProgram }
+                    { project | modules = newModules }
 
                 newWaitingForFiles : Set_ FilePath
                 newWaitingForFiles =
@@ -326,7 +326,7 @@ handleReadFileError (FilePath filePath) errorCode model =
 compile : Project Frontend.ProjectFields -> ( Model Frontend.ProjectFields, Cmd Msg )
 compile project =
     Ok project
-        |> Debug.log "after parse"
+        --|> Debug.log "after parse"
         |> Result.andThen Desugar.desugar
         |> Result.andThen Typecheck.typecheck
         |> Result.andThen Optimize.optimize

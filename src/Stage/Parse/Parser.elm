@@ -5,11 +5,8 @@ module Stage.Parse.Parser exposing
     , module_
     )
 
-import AST.Frontend as Frontend
-    exposing
-        ( Expr(..)
-        , Literal(..)
-        )
+import AST.Common exposing (Literal(..))
+import AST.Frontend as Frontend exposing (Expr(..))
 import Common
 import Common.Types
     exposing
@@ -295,7 +292,11 @@ reservedWords =
 
 topLevelDeclarations : Parser_ (List (ModuleName -> TopLevelDeclaration Frontend.Expr))
 topLevelDeclarations =
-    many topLevelDeclaration
+    many
+        (P.succeed identity
+            |= topLevelDeclaration
+            |. P.spaces
+        )
 
 
 topLevelDeclaration : Parser_ (ModuleName -> TopLevelDeclaration Frontend.Expr)
@@ -308,10 +309,36 @@ topLevelDeclaration =
         |= expr
 
 
+{-| TODO revisit this terminal vs non-terminal thing later.
+We've probably wrote ourselves into a corner with `plus` only accepting
+non-terminal Exprs inside.
+
+Here are a few links from conversations with friends (thank you, @ilias and @turboMaCk!):
+
+  - <https://ellie-app.com/4KZ42w3RMrza1>
+  - <https://ellie-app.com/4LnWLWzwd8pa1>
+
+-}
 expr : Parser_ Frontend.Expr
 expr =
     P.oneOf
+        [ nonTerminal
+        , terminal
+        ]
+
+
+terminal : Parser_ Frontend.Expr
+terminal =
+    P.oneOf
         [ literal
+        , var
+        ]
+
+
+nonTerminal : Parser_ Frontend.Expr
+nonTerminal =
+    P.oneOf
+        [ plus
         ]
 
 
@@ -336,6 +363,29 @@ literalInt =
                 |= int
             , int
             ]
+
+
+var : Parser_ Frontend.Expr
+var =
+    P.map (Var << VarName) varName
+
+
+plus : Parser_ Frontend.Expr
+plus =
+    P.lazy (\() -> terminal |> P.andThen (plusHelper []))
+
+
+plusHelper : List Expr -> Expr -> Parser_ Frontend.Expr
+plusHelper revExprsSoFar currentExpr =
+    P.oneOf
+        [ P.succeed identity
+            |. spacesOnly
+            |. P.symbol (P.Token "+" ExpectingPlusOperator)
+            |. spacesOnly
+            |= terminal
+            |> P.andThen (\newExpr -> plusHelper (currentExpr :: revExprsSoFar) newExpr)
+        , P.lazy (\() -> P.succeed (List.foldl Plus currentExpr revExprsSoFar))
+        ]
 
 
 

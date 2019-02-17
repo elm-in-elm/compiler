@@ -1,9 +1,9 @@
 module AST.Frontend exposing
     ( Expr(..)
-    , Literal(..)
     , ProjectFields
     )
 
+import AST.Common exposing (Literal)
 import Common.Types
     exposing
         ( Modules
@@ -12,21 +12,18 @@ import Common.Types
 
 
 type alias ProjectFields =
-    { program : Modules Expr }
+    { modules : Modules Expr }
 
 
 type Expr
     = Literal Literal
-
-
-type Literal
-    = LInt Int
+    | Var VarName
+    | Plus Expr Expr
 
 
 
 {- Let's not get ahead of ourselves
 
-   | Var VarName
    | Application
        { fn : Expr
        , arg : Expr

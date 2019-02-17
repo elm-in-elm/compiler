@@ -31,6 +31,7 @@
       const contents = await fsPromises.readFile(`${exampleProjectPath}/${filename}`, {encoding: 'utf8'});
       app.ports.readSubscription.send([filename, contents]);
     } catch (e) {
+      console.log({e});
       app.ports.readErrorSubscription.send([filename, e.code]);
     }
   });

@@ -14,7 +14,12 @@ module Error exposing
     , toString
     )
 
-import Common.Types exposing (FilePath(..), ModuleName(..))
+import Common.Types
+    exposing
+        ( FilePath(..)
+        , ModuleName(..)
+        , VarName(..)
+        )
 import Json.Decode as JD
 import Parser.Advanced as P
 
@@ -70,6 +75,7 @@ type ParseProblem
     | ExpectingInt
     | ExpectingNewline
     | ExpectingEnd
+    | ExpectingPlusOperator
     | InvalidInt
     | TodoNotImplemented
 
@@ -77,7 +83,7 @@ type ParseProblem
 {-| TODO
 -}
 type DesugarError
-    = TodoFirstDesugarError
+    = VarNotInEnvOfModule VarName ModuleName
 
 
 {-| TODO
@@ -145,9 +151,10 @@ toString error =
                     "Parse problems: "
                         ++ Debug.toString problems
 
-        -- TODO
         DesugarError desugarError ->
-            Debug.todo "toString desugarError"
+            case desugarError of
+                VarNotInEnvOfModule (VarName varName) (ModuleName moduleName) ->
+                    "Can't find the variable `" ++ varName ++ "` in the module `" ++ moduleName ++ "`."
 
         TypeError typeError ->
             Debug.todo "toString typeError"

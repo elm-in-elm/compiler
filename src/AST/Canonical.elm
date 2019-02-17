@@ -1,17 +1,27 @@
 module AST.Canonical exposing
-    ( Expr
+    ( Expr(..)
     , ProjectFields
     )
 
-import AST.Frontend as Frontend
-import Common.Types exposing (Modules)
+import AST.Common exposing (Literal)
+import Common.Types
+    exposing
+        ( ModuleName
+        , Modules
+        , VarName
+        )
 
 
 type alias ProjectFields =
-    { program : Modules Expr }
+    { modules : Modules Expr }
 
 
-{-| TODO make it different (let only has one binding etc.)
+{-| Differs from Frontend.Expr by:
+
+  - having fully qualified variables
+
 -}
-type alias Expr =
-    Frontend.Expr
+type Expr
+    = Literal Literal
+    | Var ( ModuleName, VarName )
+    | Plus Expr Expr

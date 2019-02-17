@@ -1,15 +1,12 @@
 module Stage.Emit exposing (emit)
 
 import AST.Backend as Backend
-import AST.Frontend
-    exposing
-        ( Expr(..)
-        , Literal(..)
-        )
+import AST.Canonical exposing (Expr(..))
+import AST.Common exposing (Literal(..))
 import Common.Types
     exposing
         ( FileContents(..)
-        , ModuleName
+        , ModuleName(..)
         , Project
         , ProjectToEmit
         , TopLevelDeclaration
@@ -74,12 +71,8 @@ findMains graph mainModuleName =
 
 
 emitTopLevelDeclaration : TopLevelDeclaration Backend.Expr -> String
-emitTopLevelDeclaration { name, body } =
-    let
-        (VarName varName) =
-            name
-    in
-    "const " ++ varName ++ " = " ++ emitExpr body ++ ";"
+emitTopLevelDeclaration { module_, name, body } =
+    "const " ++ mangleVarName module_ name ++ " = " ++ emitExpr body ++ ";"
 
 
 emitExpr : Backend.Expr -> String
@@ -87,3 +80,14 @@ emitExpr expr =
     case expr of
         Literal (LInt int) ->
             String.fromInt int
+
+        Var ( moduleName, varName ) ->
+            mangleVarName moduleName varName
+
+        Plus e1 e2 ->
+            "(" ++ emitExpr e1 ++ " + " ++ emitExpr e2 ++ ")"
+
+
+mangleVarName : ModuleName -> VarName -> String
+mangleVarName (ModuleName moduleName) (VarName varName) =
+    moduleName ++ "$" ++ varName
