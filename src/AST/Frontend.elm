@@ -6,8 +6,9 @@ module AST.Frontend exposing
 import AST.Common exposing (Literal)
 import Common.Types
     exposing
-        ( Modules
-        , VarName(..)
+        ( ModuleName
+        , Modules
+        , VarName
         )
 
 
@@ -17,7 +18,8 @@ type alias ProjectFields =
 
 type Expr
     = Literal Literal
-    | Var VarName
+      -- the ModuleName here is name of the alias:
+    | Var ( Maybe ModuleName, VarName )
     | Plus Expr Expr
 
 

@@ -2,6 +2,7 @@ module Stage.Parse.Parser exposing
     ( dependencies
     , exposingList
     , moduleDeclaration
+    , moduleName
     , module_
     )
 
@@ -165,12 +166,23 @@ effectModuleType =
 
 moduleName : Parser_ String
 moduleName =
-    P.variable
-        { start = Char.isUpper
-        , inner = \c -> Char.isAlphaNum c || c == '.'
-        , reserved = Set.empty
-        , expecting = ExpectingModuleName
+    P.sequence
+        { start = P.Token "" ShouldntHappen -- TODO is this the right way?
+        , separator = P.Token "." ExpectingModuleDot
+        , end = P.Token "" ShouldntHappen
+        , spaces = P.succeed ()
+        , item = moduleNameWithoutDots
+        , trailing = P.Forbidden
         }
+        |> P.andThen
+            (\list ->
+                if List.isEmpty list then
+                    P.problem ExpectingModuleName
+
+                else
+                    P.succeed (String.join "." list)
+            )
+        |> P.inContext InModuleName
 
 
 moduleNameWithoutDots : Parser_ String
@@ -179,7 +191,7 @@ moduleNameWithoutDots =
         { start = Char.isUpper
         , inner = Char.isAlphaNum
         , reserved = Set.empty
-        , expecting = ExpectingModuleNameWithoutDots
+        , expecting = ExpectingModuleNamePart
         }
 
 
@@ -246,16 +258,6 @@ exposedTypeAndOptionallyAllConstructors =
                 |. P.symbol (P.Token "(..)" ExpectingExposedTypeDoublePeriod)
             , P.succeed False
             ]
-
-
-varName : Parser_ String
-varName =
-    P.variable
-        { start = Char.isLower
-        , inner = \c -> Char.isAlphaNum c || c == '_'
-        , reserved = reservedWords
-        , expecting = ExpectingVarName
-        }
 
 
 typeOrConstructorName : Parser_ String
@@ -367,7 +369,45 @@ literalInt =
 
 var : Parser_ Frontend.Expr
 var =
-    P.map (Var << VarName) varName
+    P.oneOf
+        [ P.map (\v -> Var ( Nothing, VarName v )) varName
+        , qualifiedVar
+        ]
+
+
+varName : Parser_ String
+varName =
+    P.variable
+        { start = Char.isLower
+        , inner = \c -> Char.isAlphaNum c || c == '_'
+        , reserved = reservedWords
+        , expecting = ExpectingVarName
+        }
+
+
+qualifiedVar : Parser_ Expr
+qualifiedVar =
+    P.sequence
+        { start = P.Token "" ShouldntHappen -- TODO is this the right way?
+        , separator = P.Token "." ExpectingModuleDot
+        , end = P.Token "" ShouldntHappen
+        , spaces = P.succeed ()
+        , item = moduleNameWithoutDots
+        , trailing = P.Mandatory -- this is the difference from `moduleName`
+        }
+        |> P.andThen
+            (\list ->
+                let
+                    maybeModuleName =
+                        if List.isEmpty list then
+                            Nothing
+
+                        else
+                            Just (ModuleName (String.join "." list))
+                in
+                P.map (\varName_ -> Var ( maybeModuleName, VarName varName_ )) varName
+            )
+        |> P.inContext InQualifiedVar
 
 
 plus : Parser_ Frontend.Expr

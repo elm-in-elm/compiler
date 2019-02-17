@@ -84,9 +84,9 @@ desugarExpr module_ expr =
         Frontend.Literal literal ->
             Ok (Canonical.Literal literal)
 
-        Frontend.Var varName ->
-            findModuleOfVar module_ varName
-                |> Result.fromMaybe (VarNotInEnvOfModule varName module_.name)
+        Frontend.Var ( maybeModuleName, varName ) ->
+            findModuleOfVar module_ maybeModuleName varName
+                |> Result.fromMaybe (VarNotInEnvOfModule ( maybeModuleName, varName ) module_.name)
                 |> Result.map (\moduleName -> Canonical.Var ( moduleName, varName ))
 
         Frontend.Plus e1 e2 ->
@@ -97,8 +97,9 @@ desugarExpr module_ expr =
 
 {-| TODO Currently we don't look for vars in other imported modules. Do it!
 -}
-findModuleOfVar : Module Frontend.Expr -> VarName -> Maybe ModuleName
-findModuleOfVar module_ varName =
+findModuleOfVar : Module Frontend.Expr -> Maybe ModuleName -> VarName -> Maybe ModuleName
+findModuleOfVar module_ maybeModuleName varName =
+    -- TODO use maybeModuleName
     if Dict.Any.member varName module_.topLevelDeclarations then
         Just module_.name
 

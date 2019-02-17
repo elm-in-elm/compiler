@@ -47,10 +47,10 @@ type ParseError
     | ParseProblem (List (P.DeadEnd ParseContext ParseProblem))
 
 
-{-| TODO
--}
 type ParseContext
-    = TodoContextCases
+    = InVarExpr
+    | InQualifiedVar
+    | InModuleName
 
 
 type ParseProblem
@@ -70,20 +70,22 @@ type ParseProblem
     | ExpectingImportKeyword -- `>import< Foo as F exposing (..)`
     | ExpectingAsKeyword -- `import Foo >as< F exposing (..)`
     | ExpectingModuleNameWithoutDots -- `import Foo as >F< exposing (..)`
+    | ExpectingModuleNamePart -- `Foo.>Bar<.Baz.value`
+    | ExpectingQualifiedVarNameDot -- `x = Foo>.<y`
     | ExpectingEqualsSign -- `x >=< 1`
     | ExpectingMinusSign -- `>-<42`
     | ExpectingInt
     | ExpectingNewline
     | ExpectingEnd
     | ExpectingPlusOperator
+    | ExpectingModuleDot -- `import Foo>.<Bar`
     | InvalidInt
+    | ShouldntHappen
     | TodoNotImplemented
 
 
-{-| TODO
--}
 type DesugarError
-    = VarNotInEnvOfModule VarName ModuleName
+    = VarNotInEnvOfModule ( Maybe ModuleName, VarName ) ModuleName
 
 
 {-| TODO
@@ -153,8 +155,14 @@ toString error =
 
         DesugarError desugarError ->
             case desugarError of
-                VarNotInEnvOfModule (VarName varName) (ModuleName moduleName) ->
-                    "Can't find the variable `" ++ varName ++ "` in the module `" ++ moduleName ++ "`."
+                VarNotInEnvOfModule ( maybeModuleAlias, VarName varName ) (ModuleName moduleName) ->
+                    let
+                        var =
+                            maybeModuleAlias
+                                |> Maybe.map (\(ModuleName moduleAlias) -> moduleAlias ++ "." ++ varName)
+                                |> Maybe.withDefault varName
+                    in
+                    "Can't find the variable `" ++ var ++ "` in the module `" ++ moduleName ++ "`. Have you imported it?"
 
         TypeError typeError ->
             Debug.todo "toString typeError"

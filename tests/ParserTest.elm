@@ -2,6 +2,7 @@ module ParserTest exposing
     ( dependencies
     , exposingList
     , moduleDeclaration
+    , moduleName
     )
 
 import Common
@@ -357,6 +358,47 @@ dependencies =
                 ]
             )
         ]
+
+
+moduleName : Test
+moduleName =
+    let
+        runTest ( description, input, output ) =
+            test description <|
+                \() ->
+                    input
+                        |> P.run Stage.Parse.Parser.moduleName
+                        |> Result.toMaybe
+                        |> Expect.equal output
+    in
+    describe "Stage.Parse.Parser.moduleName"
+        (List.map runTest
+            [ ( "works with simple module name"
+              , "Foo"
+              , Just "Foo"
+              )
+            , ( "doesn't work with lower-case name"
+              , "foo"
+              , Nothing
+              )
+            , ( "doesn't work with dot at the end"
+              , "Foo."
+              , Nothing
+              )
+            , ( "works with dotted module name"
+              , "Foo.Bar"
+              , Just "Foo.Bar"
+              )
+            , ( "works with doubly-dotted module name"
+              , "Foo.Bar.Baz"
+              , Just "Foo.Bar.Baz"
+              )
+            , ( "doesn't work with lower-case letter after the dot"
+              , "Foo.bar"
+              , Nothing
+              )
+            ]
+        )
 
 
 
