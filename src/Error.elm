@@ -86,6 +86,7 @@ type ParseProblem
 
 type DesugarError
     = VarNotInEnvOfModule ( Maybe ModuleName, VarName ) ModuleName
+    | AmbiguousVar ( Maybe ModuleName, VarName ) ModuleName
 
 
 {-| TODO
@@ -155,14 +156,11 @@ toString error =
 
         DesugarError desugarError ->
             case desugarError of
-                VarNotInEnvOfModule ( maybeModuleAlias, VarName varName ) (ModuleName moduleName) ->
-                    let
-                        var =
-                            maybeModuleAlias
-                                |> Maybe.map (\(ModuleName moduleAlias) -> moduleAlias ++ "." ++ varName)
-                                |> Maybe.withDefault varName
-                    in
-                    "Can't find the variable `" ++ var ++ "` in the module `" ++ moduleName ++ "`. Have you imported it?"
+                VarNotInEnvOfModule varNameTuple (ModuleName moduleName) ->
+                    "Can't find the variable `" ++ fullVarName varNameTuple ++ "` in the module `" ++ moduleName ++ "`. Have you imported it?"
+
+                AmbiguousVar varNameTuple (ModuleName moduleName) ->
+                    "There are multiple definitions for variable `" ++ fullVarName varNameTuple ++ "` in the module `" ++ moduleName ++ "`. Keep only one in the code! Maybe alias some imports to fix the collision?"
 
         TypeError typeError ->
             Debug.todo "toString typeError"
@@ -177,6 +175,13 @@ toString error =
 
         EmitError emitError ->
             Debug.todo "toString emitBackendError"
+
+
+fullVarName : ( Maybe ModuleName, VarName ) -> String
+fullVarName ( maybeModuleAlias, VarName varName ) =
+    maybeModuleAlias
+        |> Maybe.map (\(ModuleName moduleAlias) -> moduleAlias ++ "." ++ varName)
+        |> Maybe.withDefault varName
 
 
 parseErrorCode : String -> FilePath -> ErrorCode
