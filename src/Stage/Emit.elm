@@ -97,5 +97,4 @@ mangleName moduleName (VarName varName) =
 mangleModuleName : ModuleName -> String
 mangleModuleName (ModuleName moduleName) =
     -- TODO what does the original Elm compiler do?
-    moduleName
-        |> String.replace "." "$"
+    String.replace "." "$" moduleName
