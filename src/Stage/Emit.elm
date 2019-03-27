@@ -72,7 +72,7 @@ findMains graph mainModuleName =
 
 emitTopLevelDeclaration : TopLevelDeclaration Backend.Expr -> String
 emitTopLevelDeclaration { module_, name, body } =
-    "const " ++ mangleVarName module_ name ++ " = " ++ emitExpr body ++ ";"
+    "const " ++ mangleName module_ name ++ " = " ++ emitExpr body ++ ";"
 
 
 emitExpr : Backend.Expr -> String
@@ -82,12 +82,20 @@ emitExpr expr =
             String.fromInt int
 
         Var ( moduleName, varName ) ->
-            mangleVarName moduleName varName
+            mangleName moduleName varName
 
         Plus e1 e2 ->
             "(" ++ emitExpr e1 ++ " + " ++ emitExpr e2 ++ ")"
 
 
-mangleVarName : ModuleName -> VarName -> String
-mangleVarName (ModuleName moduleName) (VarName varName) =
-    moduleName ++ "$" ++ varName
+mangleName : ModuleName -> VarName -> String
+mangleName moduleName (VarName varName) =
+    -- TODO probably mangle var name too... what are the rules?
+    mangleModuleName moduleName ++ "$" ++ varName
+
+
+mangleModuleName : ModuleName -> String
+mangleModuleName (ModuleName moduleName) =
+    -- TODO what does the original Elm compiler do?
+    moduleName
+        |> String.replace "." "$"
