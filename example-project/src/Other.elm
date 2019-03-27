@@ -1,3 +1,7 @@
 module Other exposing (y)
 
-y = 2
+import Nested.Test
+
+
+y =
+    2 + Nested.Test.c

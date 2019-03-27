@@ -1,3 +1,9 @@
-module Nested.Test exposing (z)
+module Nested.Test exposing (c, z)
 
-z = 3
+
+z =
+    3
+
+
+c =
+    4
