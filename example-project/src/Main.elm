@@ -1,4 +1,4 @@
-module Main exposing (x)
+module Main exposing (main)
 
 import AndTheLastOne exposing (b)
 import Nested.Test as NT
