@@ -12,7 +12,9 @@
             "elm/json": "1.1.2",
             "elm/parser": "1.1.0",
             "elm/project-metadata-utils": "1.0.0",
+            "elm-community/basics-extra": "4.0.0",
             "elm-community/graph": "6.0.0",
+            "elm-community/maybe-extra": "5.0.0",
             "stil4m/elm-syntax": "7.0.5",
             "turboMaCk/any-dict": "1.0.1",
             "turboMaCk/any-set": "1.0.0"

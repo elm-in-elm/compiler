@@ -1,26 +1,32 @@
 module Common exposing
     ( expectedFilePath
     , expectedModuleName
+    , exposes
     , filePathToString
     , moduleNameToString
     , moduleNames
     , topLevelDeclarationToString
+    , unalias
     , varNameToString
     )
 
 import Common.Types
     exposing
         ( Dict_
+        , ExposedItem(..)
+        , Exposing(..)
         , FilePath(..)
+        , Module
         , ModuleName(..)
         , Modules
         , Set_
         , TopLevelDeclaration
         , VarName(..)
         )
-import Dict.Any as AnyDict
+import Dict.Any
 import Error exposing (Error(..), GeneralError(..))
-import Set.Any as AnySet
+import Extra.Dict.Any
+import Set.Any
 
 
 filePathToString : FilePath -> String
@@ -39,8 +45,8 @@ moduleNames program =
         toSet : Modules expr -> Set_ ModuleName
         toSet dict =
             dict
-                |> AnyDict.keys
-                |> AnySet.fromList moduleNameToString
+                |> Dict.Any.keys
+                |> Set.Any.fromList moduleNameToString
     in
     toSet program
 
@@ -69,9 +75,7 @@ expectedModuleName (FilePath sourceDirectory) (FilePath filePath) =
             |> Ok
 
     else
-        FileNotInSourceDirectories (FilePath filePath)
-            |> GeneralError
-            |> Err
+        Err (GeneralError (FileNotInSourceDirectories (FilePath filePath)))
 
 
 varNameToString : VarName -> String
@@ -82,3 +86,45 @@ varNameToString (VarName varName) =
 topLevelDeclarationToString : TopLevelDeclaration a -> String
 topLevelDeclarationToString { name, module_ } =
     moduleNameToString module_ ++ "." ++ varNameToString name
+
+
+{-| Is this variable name exposed in this module?
+-}
+exposes : VarName -> Modules a -> Module a -> Bool
+exposes ((VarName var) as varName) modules module_ =
+    let
+        isInTopLevelDeclarations =
+            Dict.Any.member varName module_.topLevelDeclarations
+    in
+    case module_.exposing_ of
+        ExposingAll ->
+            isInTopLevelDeclarations
+
+        ExposingSome items ->
+            List.any
+                (\exposedItem ->
+                    case exposedItem of
+                        ExposedValue value ->
+                            value == var
+
+                        ExposedType type_ ->
+                            -- TODO check this code after we have custom types in Frontend.Expr.
+                            type_ == var
+
+                        ExposedTypeAndAllConstructors type_ ->
+                            {- TODO when we have custom types in Frontend.Expr,
+                               return if the varName is in the type constructors.
+                            -}
+                            False
+                )
+                items
+                && isInTopLevelDeclarations
+
+
+{-| Given `import Foo as F`, `unalias ... (ModuleName "F")` => `Just (ModuleName "Foo")`
+-}
+unalias : Module a -> ModuleName -> Maybe ModuleName
+unalias thisModule moduleName =
+    thisModule.dependencies
+        |> Extra.Dict.Any.find (\_ dep -> dep.as_ == Just moduleName)
+        |> Maybe.map (Tuple.second >> .moduleName)

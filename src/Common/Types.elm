@@ -21,9 +21,9 @@ module Common.Types exposing
 Is there a better one?
 -}
 
-import Dict.Any as AnyDict exposing (AnyDict)
+import Dict.Any exposing (AnyDict)
 import Elm.Project
-import Set.Any as AnySet exposing (AnySet)
+import Set.Any exposing (AnySet)
 
 
 type alias Set_ a =
@@ -98,7 +98,8 @@ type ExposedItem
 
 type alias Module expr =
     -- TODO comments? doc comments?
-    { dependencies : Dict_ ModuleName Dependency -- ie. imports. Maybe rename?
+    { -- TODO somewhere check that dependencies' exposing lists contain only what's in that module's exposing list
+      dependencies : Dict_ ModuleName Dependency -- ie. imports. Maybe rename?
     , name : ModuleName
     , filePath : FilePath
     , topLevelDeclarations : Dict_ VarName (TopLevelDeclaration expr)
@@ -111,8 +112,8 @@ type alias Module expr =
 
                    | exposing_ = Nothing | exposing_ = Just ...
     ---------------|---------------------|-------------------------------
-    as_ = Nothing  | import Foo         | import Foo exposing (..)
-    as_ = Just "F" | import Foo as F    | import Foo as F exposing (..)
+    as_ = Nothing  | import Foo          | import Foo exposing (..)
+    as_ = Just "F" | import Foo as F     | import Foo as F exposing (..)
 
 -}
 type alias Dependency =

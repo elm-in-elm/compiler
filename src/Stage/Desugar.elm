@@ -2,23 +2,28 @@ module Stage.Desugar exposing (desugar)
 
 import AST.Canonical as Canonical
 import AST.Frontend as Frontend
+import Basics.Extra exposing (flip)
 import Common
 import Common.Types
     exposing
-        ( Module
+        ( Dict_
+        , Module
         , ModuleName
+        , Modules
         , Project
         , TopLevelDeclaration
         , VarName
         )
 import Dict.Any exposing (AnyDict)
 import Error exposing (DesugarError(..), Error(..))
+import Extra.Dict.Any
+import Maybe.Extra
 
 
 desugar : Project Frontend.ProjectFields -> Result Error (Project Canonical.ProjectFields)
 desugar p =
     p.modules
-        |> resultMapDict Common.moduleNameToString desugarModule
+        |> resultMapDict Common.moduleNameToString (desugarModule p.modules)
         |> Result.map
             (\modules ->
                 { elmJson = p.elmJson
@@ -31,17 +36,17 @@ desugar p =
         |> Result.mapError DesugarError
 
 
-desugarModule : Module Frontend.Expr -> Result DesugarError (Module Canonical.Expr)
-desugarModule m =
-    m.topLevelDeclarations
-        |> resultMapDict Common.varNameToString (desugarTopLevelDeclaration m)
+desugarModule : Modules Frontend.Expr -> Module Frontend.Expr -> Result DesugarError (Module Canonical.Expr)
+desugarModule modules thisModule =
+    thisModule.topLevelDeclarations
+        |> resultMapDict Common.varNameToString (desugarTopLevelDeclaration modules thisModule)
         |> Result.map
             (\topLevelDeclarations ->
-                { dependencies = m.dependencies
-                , name = m.name
-                , filePath = m.filePath
-                , type_ = m.type_
-                , exposing_ = m.exposing_
+                { dependencies = thisModule.dependencies
+                , name = thisModule.name
+                , filePath = thisModule.filePath
+                , type_ = thisModule.type_
+                , exposing_ = thisModule.exposing_
                 , topLevelDeclarations = topLevelDeclarations
                 }
             )
@@ -61,9 +66,9 @@ resultMapDict toComparable fn dict =
         |> Result.map (Dict.Any.fromList toComparable)
 
 
-desugarTopLevelDeclaration : Module Frontend.Expr -> TopLevelDeclaration Frontend.Expr -> Result DesugarError (TopLevelDeclaration Canonical.Expr)
-desugarTopLevelDeclaration module_ d =
-    desugarExpr module_ d.body
+desugarTopLevelDeclaration : Modules Frontend.Expr -> Module Frontend.Expr -> TopLevelDeclaration Frontend.Expr -> Result DesugarError (TopLevelDeclaration Canonical.Expr)
+desugarTopLevelDeclaration modules thisModule d =
+    desugarExpr modules thisModule d.body
         |> Result.map
             (\body ->
                 { name = d.name
@@ -78,30 +83,91 @@ desugarTopLevelDeclaration module_ d =
     - Var VarName -> Var (ModuleName, VarName)
 
 -}
-desugarExpr : Module Frontend.Expr -> Frontend.Expr -> Result DesugarError Canonical.Expr
-desugarExpr module_ expr =
+desugarExpr : Modules Frontend.Expr -> Module Frontend.Expr -> Frontend.Expr -> Result DesugarError Canonical.Expr
+desugarExpr modules thisModule expr =
     case expr of
         Frontend.Literal literal ->
             Ok (Canonical.Literal literal)
 
         Frontend.Var ( maybeModuleName, varName ) ->
-            findModuleOfVar module_ maybeModuleName varName
-                |> Result.fromMaybe (VarNotInEnvOfModule ( maybeModuleName, varName ) module_.name)
+            findModuleOfVar modules thisModule maybeModuleName varName
+                |> Result.fromMaybe (VarNotInEnvOfModule ( maybeModuleName, varName ) thisModule.name)
                 |> Result.map (\moduleName -> Canonical.Var ( moduleName, varName ))
 
         Frontend.Plus e1 e2 ->
             Result.map2 Canonical.Plus
-                (desugarExpr module_ e1)
-                (desugarExpr module_ e2)
+                (desugarExpr modules thisModule e1)
+                (desugarExpr modules thisModule e2)
 
 
-{-| TODO Currently we don't look for vars in other imported modules. Do it!
+{-| We have roughly these options:
+
+  - bar = >baz< (baz being defined elsewhere in this module)
+  - import Foo exposing (baz); bar = >baz<
+  - import Foo; bar = >Foo.baz<
+  - import Foo as F; bar = >F.baz<
+
+In all these cases we need to find the full unaliased module name of the var.
+
 -}
-findModuleOfVar : Module Frontend.Expr -> Maybe ModuleName -> VarName -> Maybe ModuleName
-findModuleOfVar module_ maybeModuleName varName =
-    -- TODO use maybeModuleName
-    if Dict.Any.member varName module_.topLevelDeclarations then
-        Just module_.name
+findModuleOfVar : Modules Frontend.Expr -> Module Frontend.Expr -> Maybe ModuleName -> VarName -> Maybe ModuleName
+findModuleOfVar modules thisModule maybeModuleName varName =
+    -- TODO test all these
+    {- TODO does this allow for some collisions by "returning early"?
+       Should we check that exactly one is Just and the others are Nothing?
+    -}
+    unqualifiedVarInThisModule thisModule maybeModuleName varName
+        |> Maybe.Extra.orElseLazy (\() -> unqualifiedVarInImportedModule modules thisModule maybeModuleName varName)
+        |> Maybe.Extra.orElseLazy (\() -> qualifiedVarInImportedModule modules maybeModuleName varName)
+        |> Maybe.Extra.orElseLazy (\() -> qualifiedVarInAliasedModule modules thisModule maybeModuleName varName)
+
+
+unqualifiedVarInThisModule : Module Frontend.Expr -> Maybe ModuleName -> VarName -> Maybe ModuleName
+unqualifiedVarInThisModule thisModule maybeModuleName varName =
+    if maybeModuleName == Nothing && Dict.Any.member varName thisModule.topLevelDeclarations then
+        Just thisModule.name
 
     else
         Nothing
+
+
+unqualifiedVarInImportedModule : Modules Frontend.Expr -> Module Frontend.Expr -> Maybe ModuleName -> VarName -> Maybe ModuleName
+unqualifiedVarInImportedModule modules thisModule maybeModuleName varName =
+    if maybeModuleName == Nothing then
+        -- find a module which exposes that var
+        thisModule.dependencies
+            |> Extra.Dict.Any.find
+                (\_ dependency ->
+                    Dict.Any.get dependency.moduleName modules
+                        |> Maybe.map (Common.exposes varName modules)
+                        |> Maybe.withDefault False
+                )
+            |> Maybe.map (\( k, v ) -> v.moduleName)
+
+    else
+        Nothing
+
+
+qualifiedVarInImportedModule : Modules Frontend.Expr -> Maybe ModuleName -> VarName -> Maybe ModuleName
+qualifiedVarInImportedModule modules maybeModuleName varName =
+    maybeModuleName
+        |> Maybe.andThen (flip Dict.Any.get modules)
+        |> Maybe.andThen
+            (\module_ ->
+                if Dict.Any.member varName module_.topLevelDeclarations then
+                    Just maybeModuleName
+
+                else
+                    Nothing
+            )
+        |> Maybe.withDefault Nothing
+
+
+qualifiedVarInAliasedModule : Modules Frontend.Expr -> Module Frontend.Expr -> Maybe ModuleName -> VarName -> Maybe ModuleName
+qualifiedVarInAliasedModule modules thisModule maybeModuleName varName =
+    let
+        unaliasedModuleName =
+            Maybe.andThen (Common.unalias thisModule) maybeModuleName
+    in
+    -- Reusing the existing functionality. TODO is this a good idea?
+    qualifiedVarInImportedModule modules unaliasedModuleName varName
