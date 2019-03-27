@@ -81,7 +81,6 @@ type ParseProblem
     | ExpectingModuleDot -- `import Foo>.<Bar`
     | InvalidInt
     | ShouldntHappen
-    | TodoNotImplemented
 
 
 type DesugarError
