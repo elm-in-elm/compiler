@@ -47,15 +47,16 @@ findPathToMain { programGraph, mainModuleName } =
         -- we could make sure some declaration gets always emmited by adding it here
         []
         programGraph
+        -- ignore the untraversed path (dead code elimination!)
         |> Tuple.first
-
-
-
--- ignore the untraversed path (dead code elimination!)
 
 
 findMains : Backend.Graph -> ModuleName -> List Int
 findMains graph mainModuleName =
+    {- TODO This will currently only find one main (we don't support more of those,
+       see TODOs in Types.Project), so the name of the fn is misleading.
+       The arguments to this fn will probably have to change (multiple main module names).
+    -}
     Graph.nodes graph
         |> List.filterMap
             (\{ id, label } ->
