@@ -3,6 +3,7 @@ module Stage.Emit exposing (emit)
 import AST.Backend as Backend
 import AST.Canonical exposing (Expr(..))
 import AST.Common exposing (Literal(..))
+import Common
 import Common.Types
     exposing
         ( FileContents(..)
@@ -87,6 +88,9 @@ emitExpr expr =
 
         Plus e1 e2 ->
             "(" ++ emitExpr e1 ++ " + " ++ emitExpr e2 ++ ")"
+
+        Lambda { argName, body } ->
+            "((" ++ Common.varNameToString argName ++ ") => " ++ emitExpr body ++ ")"
 
 
 mangleName : ModuleName -> VarName -> String

@@ -37,6 +37,4 @@ checkModuleNameAndFilePath sourceDirectory filePath ({ name } as parsedModule) =
         Ok parsedModule
 
     else
-        ModuleNameDoesntMatchFilePath name filePath
-            |> ParseError
-            |> Err
+        Err (ParseError (ModuleNameDoesntMatchFilePath name filePath))

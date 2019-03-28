@@ -18,9 +18,13 @@ type alias ProjectFields =
 
 type Expr
     = Literal Literal
-      -- the ModuleName here is name of the alias:
-    | Var ( Maybe ModuleName, VarName )
+    | Var ( Maybe ModuleName, VarName ) -- the ModuleName here is name of the alias
     | Plus Expr Expr
+    | Lambda
+        -- TODO multi-arg lambda
+        { argName : VarName
+        , body : Expr
+        }
 
 
 
@@ -29,10 +33,6 @@ type Expr
    | Application
        { fn : Expr
        , arg : Expr
-       }
-   | Lambda
-       { argName : VarName
-       , body : Expr
        }
    | Let
        { varName : VarName

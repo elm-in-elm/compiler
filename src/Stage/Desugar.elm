@@ -85,6 +85,10 @@ desugarTopLevelDeclaration modules thisModule d =
 -}
 desugarExpr : Modules Frontend.Expr -> Module Frontend.Expr -> Frontend.Expr -> Result DesugarError Canonical.Expr
 desugarExpr modules thisModule expr =
+    let
+        desugarExpr_ =
+            desugarExpr modules thisModule
+    in
     case expr of
         Frontend.Literal literal ->
             Ok (Canonical.Literal literal)
@@ -96,8 +100,19 @@ desugarExpr modules thisModule expr =
 
         Frontend.Plus e1 e2 ->
             Result.map2 Canonical.Plus
-                (desugarExpr modules thisModule e1)
-                (desugarExpr modules thisModule e2)
+                (desugarExpr_ e1)
+                (desugarExpr_ e2)
+
+        Frontend.Lambda { argName, body } ->
+            -- TODO when we do multi-arg lambdas in Frontend, change this
+            desugarExpr_ body
+                |> Result.map
+                    (\newBody ->
+                        Canonical.Lambda
+                            { argName = argName
+                            , body = newBody
+                            }
+                    )
 
 
 {-| We have roughly these options:

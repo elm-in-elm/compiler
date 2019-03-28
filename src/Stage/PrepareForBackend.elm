@@ -141,6 +141,10 @@ collectTopLevelDependencies modules remainingDeclarations doneDeclarations doneD
 
 findDependencies : Modules Canonical.Expr -> Canonical.Expr -> List (TopLevelDeclaration Canonical.Expr)
 findDependencies modules expr =
+    let
+        findDependencies_ =
+            findDependencies modules
+    in
     case expr of
         Literal (LInt _) ->
             []
@@ -153,5 +157,8 @@ findDependencies modules expr =
                 |> Maybe.withDefault []
 
         Plus e1 e2 ->
-            findDependencies modules e1
-                ++ findDependencies modules e2
+            findDependencies_ e1
+                ++ findDependencies_ e2
+
+        Lambda { argName, body } ->
+            findDependencies_ body

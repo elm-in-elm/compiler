@@ -311,14 +311,10 @@ topLevelDeclaration =
         |= expr
 
 
-{-| TODO revisit this terminal vs non-terminal thing later.
-We've probably wrote ourselves into a corner with `plus` only accepting
-non-terminal Exprs inside.
+{-| TODO absolutely revamp this wrt. operators ... use <https://package.elm-lang.org/packages/dmy/elm-pratt-parser/latest/>
+Ditch the terminal / non-terminal stuff.
 
-Here are a few links from conversations with friends (thank you, @ilias and @turboMaCk!):
-
-  - <https://ellie-app.com/4KZ42w3RMrza1>
-  - <https://ellie-app.com/4LnWLWzwd8pa1>
+TODO parse lambdas!
 
 -}
 expr : Parser_ Frontend.Expr

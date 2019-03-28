@@ -19,9 +19,14 @@ type alias ProjectFields =
 {-| Differs from Frontend.Expr by:
 
   - having fully qualified variables
+  - (after fixing TODO about multi-arg lambda in Frontend.Expr) having only single-arg lambdas
 
 -}
 type Expr
     = Literal Literal
     | Var ( ModuleName, VarName )
     | Plus Expr Expr
+    | Lambda
+        { argName : VarName
+        , body : Expr
+        }
