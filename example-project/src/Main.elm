@@ -7,7 +7,11 @@ import YetAnother exposing (..)
 
 
 main =
-    x + 42 + Other.y + NT.z + a + b
+    x + 42 + Other.y + NT.z + a + b + lambda
+
+
+lambda =
+    \abc -> abc + 2
 
 
 x =

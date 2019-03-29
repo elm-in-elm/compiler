@@ -1,6 +1,7 @@
 module Stage.Parse.Parser exposing
     ( dependencies
     , exposingList
+    , lambda
     , moduleDeclaration
     , moduleName
     , module_
@@ -31,6 +32,7 @@ import Error
         , ParseProblem(..)
         )
 import Parser.Advanced as P exposing ((|.), (|=), Parser)
+import Pratt.Advanced as PP
 import Set exposing (Set)
 
 
@@ -311,33 +313,19 @@ topLevelDeclaration =
         |= expr
 
 
-{-| TODO absolutely revamp this wrt. operators ... use <https://package.elm-lang.org/packages/dmy/elm-pratt-parser/latest/>
-Ditch the terminal / non-terminal stuff.
-
-TODO parse lambdas!
-
--}
 expr : Parser_ Frontend.Expr
 expr =
-    P.oneOf
-        [ nonTerminal
-        , terminal
-        ]
-
-
-terminal : Parser_ Frontend.Expr
-terminal =
-    P.oneOf
-        [ literal
-        , var
-        ]
-
-
-nonTerminal : Parser_ Frontend.Expr
-nonTerminal =
-    P.oneOf
-        [ plus
-        ]
+    PP.expression
+        { oneOf =
+            [ PP.literal literal
+            , PP.literal var
+            , PP.literal lambda
+            ]
+        , andThenOneOf =
+            [ PP.infixLeft 1 (P.symbol (P.Token "+" ExpectingPlusOperator)) Plus
+            ]
+        , spaces = P.spaces -- TODO newlines maybe?
+        }
 
 
 literal : Parser_ Frontend.Expr
@@ -406,22 +394,15 @@ qualifiedVar =
         |> P.inContext InQualifiedVar
 
 
-plus : Parser_ Frontend.Expr
-plus =
-    P.lazy (\() -> terminal |> P.andThen (plusHelper []))
-
-
-plusHelper : List Expr -> Expr -> Parser_ Frontend.Expr
-plusHelper revExprsSoFar currentExpr =
-    P.oneOf
-        [ P.succeed identity
-            |. spacesOnly
-            |. P.symbol (P.Token "+" ExpectingPlusOperator)
-            |. spacesOnly
-            |= terminal
-            |> P.andThen (\newExpr -> plusHelper (currentExpr :: revExprsSoFar) newExpr)
-        , P.lazy (\() -> P.succeed (List.foldl Plus currentExpr revExprsSoFar))
-        ]
+lambda : Parser_ Frontend.Expr
+lambda =
+    P.succeed (\argName body -> Lambda { argName = VarName argName, body = body })
+        |. P.symbol (P.Token "\\" ExpectingBackslash)
+        |= varName
+        |. spacesOnly
+        |. P.symbol (P.Token "->" ExpectingRightArrow)
+        |. P.spaces
+        |= P.lazy (\() -> expr)
 
 
 

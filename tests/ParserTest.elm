@@ -1,10 +1,13 @@
 module ParserTest exposing
     ( dependencies
     , exposingList
+    , lambda
     , moduleDeclaration
     , moduleName
     )
 
+import AST.Common exposing (Literal(..))
+import AST.Frontend exposing (Expr(..))
 import Common
 import Common.Types
     exposing
@@ -12,6 +15,7 @@ import Common.Types
         , Exposing(..)
         , ModuleName(..)
         , ModuleType(..)
+        , VarName(..)
         )
 import Dict.Any
 import Expect
@@ -395,6 +399,36 @@ moduleName =
               )
             , ( "doesn't work with lower-case letter after the dot"
               , "Foo.bar"
+              , Nothing
+              )
+            ]
+        )
+
+
+lambda : Test
+lambda =
+    let
+        runTest ( description, input, output ) =
+            test description <|
+                \() ->
+                    input
+                        |> P.run Stage.Parse.Parser.lambda
+                        |> Result.toMaybe
+                        |> Expect.equal output
+    in
+    describe "Stage.Parse.Parser.lambda"
+        (List.map runTest
+            [ ( "works - TODO write better test names damnit"
+              , "\\x -> x + 1"
+              , Just
+                    (Lambda
+                        { argName = VarName "x"
+                        , body = Plus (Var ( Nothing, VarName "x" )) (Literal (LInt 1))
+                        }
+                    )
+              )
+            , ( "doesn't work with multi-arg lambdas - TODO actually we will want this behaviour to work later!!"
+              , "\\x y -> x + y"
               , Nothing
               )
             ]
