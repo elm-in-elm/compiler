@@ -16,7 +16,3 @@ node_modules/.bin/elm-test:
 .PHONY: test
 test: node_modules/.bin/elm-test
 	node_modules/.bin/elm-test
-
-.PHONY: watch
-watch:
-	@clear; tput reset; echo "Watch mode started..."; inotifywait -mqr -e close_write --format '%w %e %f' src | while read DIR EVENT FILE; do clear; tput reset; rm -rf elm-stuff; sysconfcpus -n 1 ./node_modules/.bin/elm make src/Main.elm --output /dev/null; done
