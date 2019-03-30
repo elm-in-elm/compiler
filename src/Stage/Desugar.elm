@@ -78,7 +78,26 @@ desugarTopLevelDeclaration modules thisModule d =
             )
 
 
-{-| TODO make this a pipeline of small passes; don't smush them together into one function!
+{-| TODO Is it possible to make this a pipeline of small passes, even though
+they change the type? Ideally we wouldn't smush them together into one function
+but keep them separate!
+
+Possibly if each small pass has a "magic" function that deals with the rest
+of cases so that the pass can only deal with the interesting Expr constructor...
+
+    exampleSmallPass : (F.Expr -> Result err C.Expr) -> F.Expr -> Result err C.Expr
+    exampleSmallPass recurse expr =
+        case expr of
+            F.Literal literal ->
+                Ok (C.Literal literal)
+
+            _ ->
+                recurse expr
+
+Maybe it will have to return Maybes so that the algorithm then knows when to
+stop trying?
+
+---
 
 Current passes done in this function:
 
