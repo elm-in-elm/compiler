@@ -40,6 +40,10 @@ type alias Parser_ a =
     Parser ParseContext ParseProblem a
 
 
+type alias ExprConfig =
+    PP.Config ParseContext ParseProblem Frontend.Expr
+
+
 module_ : FilePath -> Parser_ (Module Frontend.Expr)
 module_ filePath =
     P.succeed
@@ -317,9 +321,9 @@ expr : Parser_ Frontend.Expr
 expr =
     PP.expression
         { oneOf =
-            [ always literal
+            [ PP.literal literal
             , always var
-            , always lambda
+            , lambda
             ]
         , andThenOneOf =
             [ PP.infixLeft 1 (P.symbol (P.Token "+" ExpectingPlusOperator)) Plus
@@ -394,8 +398,8 @@ qualifiedVar =
         |> P.inContext InQualifiedVar
 
 
-lambda : Parser_ Frontend.Expr
-lambda =
+lambda : ExprConfig -> Parser_ Frontend.Expr
+lambda config =
     P.succeed
         (\arguments body ->
             Lambda
@@ -427,7 +431,7 @@ lambda =
         |. spacesOnly
         |. P.symbol (P.Token "->" ExpectingRightArrow)
         |. P.spaces
-        |= P.lazy (\() -> expr)
+        |= PP.subExpression 0 config
 
 
 promoteArguments : List VarName -> Frontend.Expr -> Frontend.Expr
