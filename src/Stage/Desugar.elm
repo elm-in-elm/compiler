@@ -78,7 +78,9 @@ desugarTopLevelDeclaration modules thisModule d =
             )
 
 
-{-|
+{-| TODO make this a pipeline of small passes; don't smush them together into one function!
+
+Current passes done in this function:
 
     - Var VarName -> Var (ModuleName, VarName)
 
@@ -98,18 +100,21 @@ desugarExpr modules thisModule expr =
                 |> Result.fromMaybe (VarNotInEnvOfModule ( maybeModuleName, varName ) thisModule.name)
                 |> Result.map (\moduleName -> Canonical.Var ( moduleName, varName ))
 
+        Frontend.Argument varName ->
+            Ok (Canonical.Argument varName)
+
         Frontend.Plus e1 e2 ->
             Result.map2 Canonical.Plus
                 (desugarExpr_ e1)
                 (desugarExpr_ e2)
 
-        Frontend.Lambda { argName, body } ->
+        Frontend.Lambda { argument, body } ->
             -- TODO when we do multi-arg lambdas in Frontend, change this
-            desugarExpr_ body
+            desugarExpr modules thisModule body
                 |> Result.map
                     (\newBody ->
                         Canonical.Lambda
-                            { argName = argName
+                            { argument = argument
                             , body = newBody
                             }
                     )

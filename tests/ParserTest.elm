@@ -422,8 +422,8 @@ lambda =
               , "\\x -> x + 1"
               , Just
                     (Lambda
-                        { argName = VarName "x"
-                        , body = Plus (Var ( Nothing, VarName "x" )) (Literal (LInt 1))
+                        { argument = VarName "x"
+                        , body = Plus (Argument (VarName "x")) (Literal (LInt 1))
                         }
                     )
               )

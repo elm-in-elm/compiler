@@ -396,13 +396,52 @@ qualifiedVar =
 
 lambda : Parser_ Frontend.Expr
 lambda =
-    P.succeed (\argName body -> Lambda { argName = VarName argName, body = body })
+    P.succeed
+        (\argument body ->
+            Lambda
+                { argument = argument
+                , body =
+                    {- Run the promoting transformation on every subexpression,
+                       so that after parsing all the arguments aren't unqualified
+                       Vars but Arguments.
+
+                       Ie. this can't happen:
+
+                           -- \x -> x
+                           Lambda { argument = VarName "x", body = Var (Nothing, VarName "x") }
+
+                       But this should:
+
+                           -- \x -> x
+                           Lambda { argument = VarName "x", body = Argument (VarName "x") }
+
+                       TODO maybe add a fuzz test for this invariant?
+                    -}
+                    Frontend.transformOne
+                        (promoteArgument argument)
+                        body
+                }
+        )
         |. P.symbol (P.Token "\\" ExpectingBackslash)
-        |= varName
+        |= P.map VarName varName
         |. spacesOnly
         |. P.symbol (P.Token "->" ExpectingRightArrow)
         |. P.spaces
         |= P.lazy (\() -> expr)
+
+
+promoteArgument : VarName -> Frontend.Expr -> Frontend.Expr
+promoteArgument argument expr_ =
+    case expr_ of
+        Var ( Nothing, varName_ ) ->
+            if varName_ == argument then
+                Argument argument
+
+            else
+                expr_
+
+        _ ->
+            expr_
 
 
 

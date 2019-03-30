@@ -156,9 +156,14 @@ findDependencies modules expr =
                 |> Maybe.map List.singleton
                 |> Maybe.withDefault []
 
+        Argument argument ->
+            []
+
         Plus e1 e2 ->
             findDependencies_ e1
                 ++ findDependencies_ e2
 
-        Lambda { argName, body } ->
+        Lambda { argument, body } ->
+            -- TODO this is probably going to be more tricky than this?
             findDependencies_ body
+                |> List.filter (\decl -> decl.name /= argument)

@@ -25,8 +25,9 @@ type alias ProjectFields =
 type Expr
     = Literal Literal
     | Var ( ModuleName, VarName )
+    | Argument VarName
     | Plus Expr Expr
     | Lambda
-        { argName : VarName
+        { argument : VarName
         , body : Expr
         }
