@@ -124,9 +124,9 @@ desugarExpr modules thisModule expr =
 curryLambda : List VarName -> Canonical.Expr -> Canonical.Expr
 curryLambda arguments body =
     List.foldr
-        (\arg body_ ->
+        (\argument body_ ->
             Canonical.Lambda
-                { argument = arg
+                { argument = argument
                 , body = body_
                 }
         )
