@@ -317,9 +317,9 @@ expr : Parser_ Frontend.Expr
 expr =
     PP.expression
         { oneOf =
-            [ PP.literal literal
-            , PP.literal var
-            , PP.literal lambda
+            [ always literal
+            , always var
+            , always lambda
             ]
         , andThenOneOf =
             [ PP.infixLeft 1 (P.symbol (P.Token "+" ExpectingPlusOperator)) Plus
