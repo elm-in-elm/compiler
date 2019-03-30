@@ -418,18 +418,29 @@ lambda =
     in
     describe "Stage.Parse.Parser.lambda"
         (List.map runTest
-            [ ( "works - TODO write better test names damnit"
+            [ ( "works with single argument"
               , "\\x -> x + 1"
               , Just
                     (Lambda
-                        { argument = VarName "x"
-                        , body = Plus (Argument (VarName "x")) (Literal (LInt 1))
+                        { arguments = [ VarName "x" ]
+                        , body =
+                            Plus
+                                (Argument (VarName "x"))
+                                (Literal (LInt 1))
                         }
                     )
               )
-            , ( "doesn't work with multi-arg lambdas - TODO actually we will want this behaviour to work later!!"
+            , ( "works with multiple arguments"
               , "\\x y -> x + y"
-              , Nothing
+              , Just
+                    (Lambda
+                        { arguments = [ VarName "x", VarName "y" ]
+                        , body =
+                            Plus
+                                (Argument (VarName "x"))
+                                (Argument (VarName "y"))
+                        }
+                    )
               )
             ]
         )

@@ -108,16 +108,30 @@ desugarExpr modules thisModule expr =
                 (desugarExpr_ e1)
                 (desugarExpr_ e2)
 
-        Frontend.Lambda { argument, body } ->
-            -- TODO when we do multi-arg lambdas in Frontend, change this
+        Frontend.Lambda { arguments, body } ->
             desugarExpr modules thisModule body
-                |> Result.map
-                    (\newBody ->
-                        Canonical.Lambda
-                            { argument = argument
-                            , body = newBody
-                            }
-                    )
+                |> Result.map (curryLambda arguments)
+
+
+{-| Convert a multi-arg lambda into multiple single-arg lambdas.
+
+    Frontend.Lambda [ arg1, arg2 ] body
+
+    -->
+    Canonical.Lambda arg1 (Canonical.Lambda arg2 body)
+
+-}
+curryLambda : List VarName -> Canonical.Expr -> Canonical.Expr
+curryLambda arguments body =
+    List.foldr
+        (\arg body_ ->
+            Canonical.Lambda
+                { argument = arg
+                , body = body_
+                }
+        )
+        body
+        arguments
 
 
 {-| We have roughly these options:

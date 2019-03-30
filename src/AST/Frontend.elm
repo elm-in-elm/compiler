@@ -24,8 +24,7 @@ type Expr
     | Argument VarName
     | Plus Expr Expr
     | Lambda
-        -- TODO multi-arg lambda
-        { argument : VarName
+        { arguments : List VarName
         , body : Expr
         }
 

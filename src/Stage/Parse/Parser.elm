@@ -397,9 +397,9 @@ qualifiedVar =
 lambda : Parser_ Frontend.Expr
 lambda =
     P.succeed
-        (\argument body ->
+        (\arguments body ->
             Lambda
-                { argument = argument
+                { arguments = arguments
                 , body =
                     {- Run the promoting transformation on every subexpression,
                        so that after parsing all the arguments aren't unqualified
@@ -415,27 +415,28 @@ lambda =
                            -- \x -> x
                            Lambda { argument = VarName "x", body = Argument (VarName "x") }
 
-                       TODO maybe add a fuzz test for this invariant?
+                       TODO add a fuzz test for this invariant?
                     -}
                     Frontend.transformOne
-                        (promoteArgument argument)
+                        (promoteArguments arguments)
                         body
                 }
         )
         |. P.symbol (P.Token "\\" ExpectingBackslash)
-        |= P.map VarName varName
+        |= manySpacesOnly (P.map VarName varName)
         |. spacesOnly
         |. P.symbol (P.Token "->" ExpectingRightArrow)
         |. P.spaces
         |= P.lazy (\() -> expr)
 
 
-promoteArgument : VarName -> Frontend.Expr -> Frontend.Expr
-promoteArgument argument expr_ =
+promoteArguments : List VarName -> Frontend.Expr -> Frontend.Expr
+promoteArguments arguments expr_ =
+    -- TODO set of arguments instead of list?
     case expr_ of
         Var ( Nothing, varName_ ) ->
-            if varName_ == argument then
-                Argument argument
+            if List.member varName_ arguments then
+                Argument varName_
 
             else
                 expr_
@@ -467,23 +468,33 @@ newlineOrEnd =
         ]
 
 
-{-| Taken from Punie/elm-parser-extras, made to work with Parser.Advanced.Parser
-instead of the simple one.
--}
 many : Parser_ a -> Parser_ (List a)
 many p =
-    P.loop [] (manyHelp p)
+    many_ P.spaces p
+
+
+manySpacesOnly : Parser_ a -> Parser_ (List a)
+manySpacesOnly p =
+    many_ spacesOnly p
 
 
 {-| Taken from Punie/elm-parser-extras, made to work with Parser.Advanced.Parser
 instead of the simple one.
 -}
-manyHelp : Parser_ a -> List a -> Parser_ (P.Step (List a) (List a))
-manyHelp p vs =
+many_ : Parser_ () -> Parser_ a -> Parser_ (List a)
+many_ spaces p =
+    P.loop [] (manyHelp spaces p)
+
+
+{-| Taken from Punie/elm-parser-extras, made to work with Parser.Advanced.Parser
+instead of the simple one.
+-}
+manyHelp : Parser_ () -> Parser_ a -> List a -> Parser_ (P.Step (List a) (List a))
+manyHelp spaces p vs =
     P.oneOf
         [ P.succeed (\v -> P.Loop (v :: vs))
             |= p
-            |. P.spaces
+            |. spaces
         , P.succeed ()
             |> P.map (always (P.Done (List.reverse vs)))
         ]
