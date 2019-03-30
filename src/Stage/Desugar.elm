@@ -97,6 +97,8 @@ of cases so that the pass can only deal with the interesting Expr constructor...
 Maybe it will have to return Maybes so that the algorithm then knows when to
 stop trying?
 
+Also, when combining those, can we somehow use the Transform library?
+
 ---
 
 Current passes done in this function:
