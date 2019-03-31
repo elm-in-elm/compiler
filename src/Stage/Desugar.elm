@@ -67,71 +67,169 @@ resultMapDict toComparable fn dict =
 
 
 desugarTopLevelDeclaration : Modules Frontend.Expr -> Module Frontend.Expr -> TopLevelDeclaration Frontend.Expr -> Result DesugarError (TopLevelDeclaration Canonical.Expr)
-desugarTopLevelDeclaration modules thisModule d =
-    desugarExpr modules thisModule d.body
+desugarTopLevelDeclaration modules thisModule decl =
+    desugarExpr modules thisModule decl
         |> Result.map
             (\body ->
-                { name = d.name
-                , module_ = d.module_
+                { name = decl.name
+                , module_ = decl.module_
                 , body = body
                 }
             )
 
 
-{-| TODO Is it possible to make this a pipeline of small passes, even though
-they change the type? Ideally we wouldn't smush them together into one function
-but keep them separate!
+{-| Combines the various small desugaring passes into one pass that tries all
+of them. Thus, we get some separation of concerns - each pass only cares about
+a small subset of the whole process!
+-}
+desugarExpr : Modules Frontend.Expr -> Module Frontend.Expr -> TopLevelDeclaration Frontend.Expr -> Result DesugarError Canonical.Expr
+desugarExpr modules thisModule decl =
+    let
+        expr =
+            decl.body
+    in
+    desugarWithPasses
+        [ desugarLiteral
+        , desugarVar modules thisModule
+        , desugarArgument
+        , desugarPlus
+        , desugarLambda
+        ]
+        expr
+        {- TODO there may be a way to return the failing expr instead of the
+           top-level one... we're doing this Result.fromMaybe in a wrong spot.
 
-Possibly if each small pass has a "magic" function that deals with the rest
-of cases so that the pass can only deal with the interesting Expr constructor...
+           That will mean the `desugarWithPasses` function will have to know
+           about the Result DesugarError stuff and not just deal with Maybes.
+           Is it worth it? (Probably yes but we'll have to try and see.)
+        -}
+        |> Result.fromMaybe (NoDesugarPass decl)
+        |> Result.andThen identity
 
-    exampleSmallPass : (F.Expr -> Result err C.Expr) -> F.Expr -> Result err C.Expr
-    exampleSmallPass recurse expr =
-        case expr of
-            F.Literal literal ->
-                Ok (C.Literal literal)
 
-            _ ->
-                recurse expr
+{-| The `Maybe` decides whether we touch that Expr constructor or not (just so
+that we can combine the many desugar passes together).
 
-Maybe it will have to return Maybes so that the algorithm then knows when to
-stop trying?
+The `Result` is then a legitimate case of us trying to desugar and failing.
+See `DesugarError` for what everything can go wrong.
 
-Also, when combining those, can we somehow use the Transform library?
-
----
-
-Current passes done in this function:
-
-    - Var VarName -> Var (ModuleName, VarName)
+The function in the first argument is a way to recurse into child Exprs.
 
 -}
-desugarExpr : Modules Frontend.Expr -> Module Frontend.Expr -> Frontend.Expr -> Result DesugarError Canonical.Expr
-desugarExpr modules thisModule expr =
+type alias DesugarPass =
+    (Frontend.Expr -> Maybe (Result DesugarError Canonical.Expr))
+    -> Frontend.Expr
+    -> Maybe (Result DesugarError Canonical.Expr)
+
+
+{-| TODO Think about putting this into the Transform library.
+-}
+desugarWithPasses : List ((a -> Maybe b) -> (a -> Maybe b)) -> a -> Maybe b
+desugarWithPasses passes expr =
     let
-        desugarExpr_ =
-            desugarExpr modules thisModule
+        recurse : a -> Maybe b
+        recurse expr_ =
+            -- TODO maybe we can be more efficient with (not) repeating work
+            desugarWithPasses passes expr_
+
+        {- Just give the recursion argument to the pass.
+
+           We could do some cleverness with something like `((<|) recurse)`
+           instead of this function, but I think having it explicitly written
+           (and with all the types!) is better.
+
+        -}
+        supplyRecursion : ((a -> Maybe b) -> (a -> Maybe b)) -> (a -> Maybe b)
+        supplyRecursion pass =
+            pass recurse
+
+        multipass : a -> Maybe b
+        multipass =
+            orList (List.map supplyRecursion passes)
     in
+    multipass expr
+
+
+or : (a -> Maybe b) -> (a -> Maybe b) -> (a -> Maybe b)
+or leftFn rightFn value =
+    let
+        left =
+            leftFn value
+    in
+    if left == Nothing then
+        rightFn value
+
+    else
+        left
+
+
+orList : List (a -> Maybe b) -> (a -> Maybe b)
+orList fns =
+    List.foldl or (always Nothing) fns
+
+
+
+-- DESUGAR PASSES
+
+
+desugarLiteral : DesugarPass
+desugarLiteral _ expr =
     case expr of
         Frontend.Literal literal ->
-            Ok (Canonical.Literal literal)
+            Just (Ok (Canonical.Literal literal))
 
+        _ ->
+            Nothing
+
+
+desugarVar : Modules Frontend.Expr -> Module Frontend.Expr -> DesugarPass
+desugarVar modules thisModule _ expr =
+    case expr of
         Frontend.Var ( maybeModuleName, varName ) ->
             findModuleOfVar modules thisModule maybeModuleName varName
                 |> Result.fromMaybe (VarNotInEnvOfModule ( maybeModuleName, varName ) thisModule.name)
                 |> Result.map (\moduleName -> Canonical.Var ( moduleName, varName ))
+                |> Just
 
+        _ ->
+            Nothing
+
+
+desugarArgument : DesugarPass
+desugarArgument _ expr =
+    case expr of
         Frontend.Argument varName ->
-            Ok (Canonical.Argument varName)
+            Just (Ok (Canonical.Argument varName))
 
+        _ ->
+            Nothing
+
+
+desugarPlus : DesugarPass
+desugarPlus recurse expr =
+    case expr of
         Frontend.Plus e1 e2 ->
-            Result.map2 Canonical.Plus
-                (desugarExpr_ e1)
-                (desugarExpr_ e2)
+            Maybe.map2 (Result.map2 Canonical.Plus)
+                (recurse e1)
+                (recurse e2)
 
+        _ ->
+            Nothing
+
+
+desugarLambda : DesugarPass
+desugarLambda recurse expr =
+    case expr of
         Frontend.Lambda { arguments, body } ->
-            desugarExpr modules thisModule body
-                |> Result.map (curryLambda arguments)
+            recurse body
+                |> Maybe.map (Result.map (curryLambda arguments))
+
+        _ ->
+            Nothing
+
+
+
+-- HELPERS
 
 
 {-| Convert a multi-arg lambda into multiple single-arg lambdas.

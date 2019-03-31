@@ -14,10 +14,12 @@ module Error exposing
     , toString
     )
 
+import AST.Frontend as Frontend
 import Common.Types
     exposing
         ( FilePath(..)
         , ModuleName(..)
+        , TopLevelDeclaration
         , VarName(..)
         )
 import Json.Decode as JD
@@ -88,6 +90,7 @@ type ParseProblem
 type DesugarError
     = VarNotInEnvOfModule ( Maybe ModuleName, VarName ) ModuleName
     | AmbiguousVar ( Maybe ModuleName, VarName ) ModuleName
+    | NoDesugarPass (TopLevelDeclaration Frontend.Expr)
 
 
 {-| TODO
@@ -158,10 +161,37 @@ toString error =
         DesugarError desugarError ->
             case desugarError of
                 VarNotInEnvOfModule varNameTuple (ModuleName moduleName) ->
-                    "Can't find the variable `" ++ fullVarName varNameTuple ++ "` in the module `" ++ moduleName ++ "`. Have you imported it?"
+                    "Can't find the variable `"
+                        ++ fullVarName varNameTuple
+                        ++ "` in the module `"
+                        ++ moduleName
+                        ++ "`. Have you imported it?"
 
                 AmbiguousVar varNameTuple (ModuleName moduleName) ->
-                    "There are multiple definitions for variable `" ++ fullVarName varNameTuple ++ "` in the module `" ++ moduleName ++ "`. Keep only one in the code! Maybe alias some imports to fix the collision?"
+                    "There are multiple definitions for variable `"
+                        ++ fullVarName varNameTuple
+                        ++ "` in the module `"
+                        ++ moduleName
+                        ++ "`. Keep only one in the code! Maybe alias some imports to fix the collision?"
+
+                NoDesugarPass decl ->
+                    -- TODO we can't use Common.moduleNameToString etc. here - import cycle
+                    let
+                        (ModuleName moduleName) =
+                            decl.module_
+
+                        (VarName varName) =
+                            decl.name
+                    in
+                    "Compiler bug: couldn't find a corresponding desugar pass for `"
+                        ++ moduleName
+                        ++ "."
+                        ++ varName
+                        ++ "`:\n\n  "
+                        {- TODO use something different than toString so that we
+                           don't lock ourselves out of --optimize...
+                        -}
+                        ++ Debug.toString decl.body
 
         TypeError typeError ->
             Debug.todo "toString typeError"
