@@ -92,8 +92,8 @@ desugarExpr modules thisModule expr =
         Frontend.Literal literal ->
             desugarLiteral literal
 
-        Frontend.Var maybeModuleName varName ->
-            desugarVar modules thisModule maybeModuleName varName
+        Frontend.Var { qualifier, name } ->
+            desugarVar modules thisModule qualifier name
 
         Frontend.Argument varName ->
             desugarArgument varName
@@ -101,8 +101,11 @@ desugarExpr modules thisModule expr =
         Frontend.Plus e1 e2 ->
             desugarPlus recurse e1 e2
 
-        Frontend.Lambda args body ->
-            desugarLambda recurse args body
+        Frontend.Lambda { arguments, body } ->
+            desugarLambda recurse arguments body
+
+        Frontend.Call { fn, arguments } ->
+            desugarCall recurse fn arguments
 
 
 
@@ -137,6 +140,11 @@ desugarLambda : (Frontend.Expr -> Result DesugarError Canonical.Expr) -> List Va
 desugarLambda recurse arguments body =
     recurse body
         |> Result.map (curryLambda arguments)
+
+
+desugarCall : (Frontend.Expr -> Result DesugarError Canonical.Expr) -> Frontend.Expr -> List Frontend.Expr -> Result DesugarError Canonical.Expr
+desugarCall recurse fn arguments =
+    Debug.todo "desugarCall"
 
 
 

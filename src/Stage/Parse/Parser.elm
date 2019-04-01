@@ -325,12 +325,46 @@ expr =
             [ PP.literal literal
             , always var
             , lambda
+            , call
+
+            -- TODO parenthesized expressions
             ]
         , andThenOneOf =
             [ PP.infixLeft 1 (P.symbol (P.Token "+" ExpectingPlusOperator)) Plus
             ]
         , spaces = P.spaces -- TODO newlines maybe?
         }
+
+
+call : ExprConfig -> Parser_ Frontend.Expr
+call config =
+    -----------------------------
+    -----------------------------
+    -----------------------------
+    -----------------------------
+    -----------------------------
+    -----------------------------
+    -- TODO WORK ON THIS FIRST --
+    -----------------------------
+    -----------------------------
+    -----------------------------
+    -----------------------------
+    -----------------------------
+    -----------------------------
+    {- TODO The problem (see example-project Main) is that the top-level `x` is
+       parsed as an argument.
+
+       We can't give up on newlines though - function application works with it!
+
+       Some indentation stuff maybe? `withIndent` / `getIndent`?
+
+       Look at how the official compiler does stuff. The parser should use
+       constructs available to us.
+    -}
+    P.succeed Frontend.call
+        |= PP.subExpression 0 config
+        |. P.spaces
+        |= many (PP.subExpression 0 config)
 
 
 literal : Parser_ Frontend.Expr
@@ -399,7 +433,9 @@ literalString =
 var : Parser_ Frontend.Expr
 var =
     P.oneOf
-        [ P.map (\v -> Var Nothing (VarName v)) varName
+        [ P.map
+            (\varName_ -> Frontend.var Nothing (VarName varName_))
+            varName
         , qualifiedVar
         ]
 
@@ -434,7 +470,9 @@ qualifiedVar =
                         else
                             Just (ModuleName (String.join "." list))
                 in
-                P.map (\varName_ -> Var maybeModuleName (VarName varName_)) varName
+                P.map
+                    (\varName_ -> Frontend.var maybeModuleName (VarName varName_))
+                    varName
             )
         |> P.inContext InQualifiedVar
 
@@ -443,7 +481,8 @@ lambda : ExprConfig -> Parser_ Frontend.Expr
 lambda config =
     P.succeed
         (\arguments body ->
-            Lambda arguments
+            Frontend.lambda
+                arguments
                 {- Run the promoting transformation on every subexpression,
                    so that after parsing all the arguments aren't unqualified
                    Vars but Arguments.
@@ -460,7 +499,7 @@ lambda config =
 
                    TODO add a fuzz test for this invariant?
                 -}
-                (Frontend.transformOne (promoteArguments arguments) body)
+                (Frontend.transform (promoteArguments arguments) body)
         )
         |. P.symbol (P.Token "\\" ExpectingBackslash)
         |= manySpacesOnly (P.map VarName varName)
@@ -474,9 +513,9 @@ promoteArguments : List VarName -> Frontend.Expr -> Frontend.Expr
 promoteArguments arguments expr_ =
     -- TODO set of arguments instead of list?
     case expr_ of
-        Var Nothing varName_ ->
-            if List.member varName_ arguments then
-                Argument varName_
+        Var { qualifier, name } ->
+            if qualifier == Nothing && List.member name arguments then
+                Argument name
 
             else
                 expr_

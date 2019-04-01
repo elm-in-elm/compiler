@@ -1,7 +1,10 @@
 module AST.Frontend exposing
     ( Expr(..)
     , ProjectFields
-    , transformOne
+    , call
+    , lambda
+    , transform
+    , var
     )
 
 import AST.Common exposing (Literal(..))
@@ -18,23 +21,42 @@ type alias ProjectFields =
     { modules : Modules Expr }
 
 
-{-| TODO records are probably better for communicating the meaning of args.
--}
 type Expr
     = Literal Literal
-    | Var (Maybe ModuleName) VarName -- the ModuleName here is name of the alias
+    | Var { qualifier : Maybe ModuleName, name : VarName }
     | Argument VarName
     | Plus Expr Expr
-    | Lambda (List VarName) Expr
+    | Lambda { arguments : List VarName, body : Expr }
+    | Call { fn : Expr, arguments : List Expr }
+
+
+var : Maybe ModuleName -> VarName -> Expr
+var qualifier name =
+    Var
+        { qualifier = qualifier
+        , name = name
+        }
+
+
+lambda : List VarName -> Expr -> Expr
+lambda arguments body =
+    Lambda
+        { arguments = arguments
+        , body = body
+        }
+
+
+call : Expr -> List Expr -> Expr
+call fn arguments =
+    Call
+        { fn = fn
+        , arguments = arguments
+        }
 
 
 
 {- Let's not get ahead of ourselves
 
-   | Call
-       { fn : Expr
-       , arg : Expr
-       }
    | Let
        { varName : VarName
        , varBody : Expr
@@ -57,7 +79,7 @@ type Expr
 {-| A helper for the Transform library.
 -}
 recurse : (Expr -> Expr) -> Expr -> Expr
-recurse fn expr =
+recurse f expr =
     case expr of
         Literal (Int _) ->
             expr
@@ -68,28 +90,31 @@ recurse fn expr =
         Literal (String _) ->
             expr
 
-        Var _ _ ->
+        Var _ ->
             expr
 
         Argument _ ->
             expr
 
         Plus e1 e2 ->
-            Plus (fn e1) (fn e2)
+            Plus (f e1) (f e2)
 
-        Lambda args body ->
-            Lambda args (fn body)
+        Lambda ({ body } as lambda_) ->
+            Lambda { lambda_ | body = f body }
+
+        Call { fn, arguments } ->
+            Call
+                { fn = f fn
+                , arguments = List.map f arguments
+                }
 
 
-{-| TODO Maybe find a better name? The "one" means one transformation.
-
-(If we do more than one at the same time, we should use the Transform library
-a bit differently, see `Transform.orList`.)
-
--}
-transformOne : (Expr -> Expr) -> Expr -> Expr
-transformOne transform expr =
+transform : (Expr -> Expr) -> Expr -> Expr
+transform pass expr =
+    {- If we do more than one at the same time, we should use the Transform
+       library a bit differently, see `Transform.orList`.
+    -}
     Transform.transformAll
         recurse
-        (Transform.toMaybe transform)
+        (Transform.toMaybe pass)
         expr
