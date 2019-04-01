@@ -19,15 +19,14 @@ type alias ProjectFields =
 {-| Differs from Frontend.Expr by:
 
   - having fully qualified variables
-  - (after fixing TODO about multi-arg lambda in Frontend.Expr) having only single-arg lambdas
+  - having only single argument lambdas
+
+TODO records are probably better for communicating the meaning of args.
 
 -}
 type Expr
     = Literal Literal
-    | Var ( ModuleName, VarName )
+    | Var ModuleName VarName
     | Argument VarName
     | Plus Expr Expr
-    | Lambda
-        { argument : VarName
-        , body : Expr
-        }
+    | Lambda VarName Expr

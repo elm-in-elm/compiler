@@ -149,7 +149,7 @@ findDependencies modules expr =
         Literal (LInt _) ->
             []
 
-        Var ( moduleName, varName ) ->
+        Var moduleName varName ->
             modules
                 |> Dict.Any.get moduleName
                 |> Maybe.andThen (.topLevelDeclarations >> Dict.Any.get varName)
@@ -163,7 +163,7 @@ findDependencies modules expr =
             findDependencies_ e1
                 ++ findDependencies_ e2
 
-        Lambda { argument, body } ->
+        Lambda argument body ->
             -- TODO this is probably going to be more tricky than this?
             findDependencies_ body
                 |> List.filter (\decl -> decl.name /= argument)

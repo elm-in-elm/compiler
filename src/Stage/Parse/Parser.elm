@@ -358,7 +358,7 @@ literalInt =
 var : Parser_ Frontend.Expr
 var =
     P.oneOf
-        [ P.map (\v -> Var ( Nothing, VarName v )) varName
+        [ P.map (\v -> Var Nothing (VarName v)) varName
         , qualifiedVar
         ]
 
@@ -393,7 +393,7 @@ qualifiedVar =
                         else
                             Just (ModuleName (String.join "." list))
                 in
-                P.map (\varName_ -> Var ( maybeModuleName, VarName varName_ )) varName
+                P.map (\varName_ -> Var maybeModuleName (VarName varName_)) varName
             )
         |> P.inContext InQualifiedVar
 
@@ -402,29 +402,24 @@ lambda : ExprConfig -> Parser_ Frontend.Expr
 lambda config =
     P.succeed
         (\arguments body ->
-            Lambda
-                { arguments = arguments
-                , body =
-                    {- Run the promoting transformation on every subexpression,
-                       so that after parsing all the arguments aren't unqualified
-                       Vars but Arguments.
+            Lambda arguments
+                {- Run the promoting transformation on every subexpression,
+                   so that after parsing all the arguments aren't unqualified
+                   Vars but Arguments.
 
-                       Ie. this can't happen:
+                   Ie. the lambda parser can't return:
 
-                           -- \x -> x
-                           Lambda { argument = VarName "x", body = Var (Nothing, VarName "x") }
+                       -- \x -> x
+                       Lambda { argument = VarName "x", body = Var (Nothing, VarName "x") }
 
-                       But this should:
+                   And instead has to return:
 
-                           -- \x -> x
-                           Lambda { argument = VarName "x", body = Argument (VarName "x") }
+                       -- \x -> x
+                       Lambda { argument = VarName "x", body = Argument (VarName "x") }
 
-                       TODO add a fuzz test for this invariant?
-                    -}
-                    Frontend.transformOne
-                        (promoteArguments arguments)
-                        body
-                }
+                   TODO add a fuzz test for this invariant?
+                -}
+                (Frontend.transformOne (promoteArguments arguments) body)
         )
         |. P.symbol (P.Token "\\" ExpectingBackslash)
         |= manySpacesOnly (P.map VarName varName)
@@ -438,7 +433,7 @@ promoteArguments : List VarName -> Frontend.Expr -> Frontend.Expr
 promoteArguments arguments expr_ =
     -- TODO set of arguments instead of list?
     case expr_ of
-        Var ( Nothing, varName_ ) ->
+        Var Nothing varName_ ->
             if List.member varName_ arguments then
                 Argument varName_
 

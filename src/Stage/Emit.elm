@@ -74,7 +74,11 @@ findMains graph mainModuleName =
 
 emitTopLevelDeclaration : TopLevelDeclaration Backend.Expr -> String
 emitTopLevelDeclaration { module_, name, body } =
-    "const " ++ mangleQualifiedVar ( module_, name ) ++ " = " ++ emitExpr body ++ ";"
+    "const "
+        ++ mangleQualifiedVar module_ name
+        ++ " = "
+        ++ emitExpr body
+        ++ ";"
 
 
 emitExpr : Backend.Expr -> String
@@ -83,8 +87,8 @@ emitExpr expr =
         Literal (LInt int) ->
             String.fromInt int
 
-        Var var ->
-            mangleQualifiedVar var
+        Var moduleName varName ->
+            mangleQualifiedVar moduleName varName
 
         Argument argument ->
             mangleVarName argument
@@ -92,12 +96,12 @@ emitExpr expr =
         Plus e1 e2 ->
             "(" ++ emitExpr e1 ++ " + " ++ emitExpr e2 ++ ")"
 
-        Lambda { argument, body } ->
+        Lambda argument body ->
             "((" ++ mangleVarName argument ++ ") => " ++ emitExpr body ++ ")"
 
 
-mangleQualifiedVar : ( ModuleName, VarName ) -> String
-mangleQualifiedVar ( moduleName, varName ) =
+mangleQualifiedVar : ModuleName -> VarName -> String
+mangleQualifiedVar moduleName varName =
     mangleModuleName moduleName ++ "$" ++ mangleVarName varName
 
 

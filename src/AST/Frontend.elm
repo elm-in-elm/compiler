@@ -18,15 +18,14 @@ type alias ProjectFields =
     { modules : Modules Expr }
 
 
+{-| TODO records are probably better for communicating the meaning of args.
+-}
 type Expr
     = Literal Literal
-    | Var ( Maybe ModuleName, VarName ) -- the ModuleName here is name of the alias
+    | Var (Maybe ModuleName) VarName -- the ModuleName here is name of the alias
     | Argument VarName
     | Plus Expr Expr
-    | Lambda
-        { arguments : List VarName
-        , body : Expr
-        }
+    | Lambda (List VarName) Expr
 
 
 
@@ -63,7 +62,7 @@ recurse fn expr =
         Literal (LInt _) ->
             expr
 
-        Var _ ->
+        Var _ _ ->
             expr
 
         Argument _ ->
@@ -72,8 +71,8 @@ recurse fn expr =
         Plus e1 e2 ->
             Plus (fn e1) (fn e2)
 
-        Lambda ({ body } as rec) ->
-            Lambda { rec | body = fn body }
+        Lambda args body ->
+            Lambda args (fn body)
 
 
 {-| TODO Maybe find a better name? The "one" means one transformation.
