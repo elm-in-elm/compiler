@@ -146,7 +146,13 @@ findDependencies modules expr =
             findDependencies modules
     in
     case expr of
-        Literal (LInt _) ->
+        Literal (Int _) ->
+            []
+
+        Literal (Char _) ->
+            []
+
+        Literal (String _) ->
             []
 
         Var moduleName varName ->

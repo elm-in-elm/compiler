@@ -82,8 +82,14 @@ emitTopLevelDeclaration { module_, name, body } =
 emitExpr : Backend.Expr -> String
 emitExpr expr =
     case expr of
-        Literal (LInt int) ->
+        Literal (Int int) ->
             String.fromInt int
+
+        Literal (Char char) ->
+            "\"" ++ String.fromChar char ++ "\""
+
+        Literal (String string) ->
+            "\"" ++ string ++ "\""
 
         Var moduleName varName ->
             mangleQualifiedVar moduleName varName

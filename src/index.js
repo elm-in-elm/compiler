@@ -1,34 +1,25 @@
-/* TODO Is `require()`ing dependencies where we need them better than
-        all at the top? Measure! It makes the code look very unusual
-        so there should be a good reason for keeping it.
-*/
+const fs = require('fs').promises; // needs Node.JS v10+
 
-// Async/await is nice! This means we need Node.JS v7.6 at minimum though.
+const {Elm}          = require('../build/elm.js'); // build using Makefile... no Webpack around here!
+const {registerPort} = require('./utils.js');
+
+// Async/await is nice! (needs Node.JS v7.6+)
 (async function(){
-
-  const fs = require('fs');
-  const fsPromises = fs.promises;
-
-  // The following line needs the Elm code to be compiled! See `Makefile`.
-  // No Webpack around here!
-  const {Elm} = require('../build/elm.js');
 
   const exampleProjectPath = 'example-project';
 
   const app = Elm.Main.init({
     flags: {
       mainFilePath: 'src/Main.elm',
-      elmJson: await fsPromises.readFile(`${exampleProjectPath}/elm.json`, {encoding: 'utf8'}),
+      elmJson: await fs.readFile(`${exampleProjectPath}/elm.json`, {encoding: 'utf8'}),
     }
   });
-
-  const {registerPort} = require('./utils.js');
 
   registerPort(app, 'stdout', string => process.stdout.write(string));
   registerPort(app, 'stderr', string => process.stderr.write(string));
   registerPort(app, 'read', async function(filename) {
     try {
-      const contents = await fsPromises.readFile(`${exampleProjectPath}/${filename}`, {encoding: 'utf8'});
+      const contents = await fs.readFile(`${exampleProjectPath}/${filename}`, {encoding: 'utf8'});
       app.ports.readSubscription.send([filename, contents]);
     } catch (e) {
       console.log({e});
@@ -36,7 +27,7 @@
     }
   });
   registerPort(app, 'write', async function({filePath,contents}) {
-    await fsPromises.writeFile(`${exampleProjectPath}/${filePath}`, contents);
+    await fs.writeFile(`${exampleProjectPath}/${filePath}`, contents);
   });
 
 })();

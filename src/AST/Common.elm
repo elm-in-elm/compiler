@@ -6,4 +6,6 @@ module AST.Common exposing (Literal(..))
 
 
 type Literal
-    = LInt Int
+    = Int Int
+    | Char Char
+    | String String

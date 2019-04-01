@@ -2,6 +2,7 @@ module Stage.Parse.Parser exposing
     ( dependencies
     , exposingList
     , lambda
+    , literal
     , moduleDeclaration
     , moduleName
     , module_
@@ -173,9 +174,9 @@ effectModuleType =
 moduleName : Parser_ String
 moduleName =
     P.sequence
-        { start = P.Token "" ShouldntHappen -- TODO is this the right way?
+        { start = P.Token "" (CompilerBug "moduleName start parser failed") -- TODO is this the right way?
         , separator = P.Token "." ExpectingModuleDot
-        , end = P.Token "" ShouldntHappen
+        , end = P.Token "" (CompilerBug "moduleName start parser failed") -- TODO is this the right way?
         , spaces = P.succeed ()
         , item = moduleNameWithoutDots
         , trailing = P.Forbidden
@@ -336,23 +337,63 @@ literal : Parser_ Frontend.Expr
 literal =
     P.succeed Literal
         |= P.oneOf
+            -- TODO literalFloat
             [ literalInt
+            , literalChar
+            , literalString
             ]
 
 
+{-| TODO deal with hex values. Use P.number and solve this+floats in one go?
+-}
 literalInt : Parser_ Literal
 literalInt =
     let
         int =
             P.int ExpectingInt InvalidInt
     in
-    P.succeed LInt
+    P.succeed Int
         |= P.oneOf
             [ P.succeed negate
                 |. P.symbol (P.Token "-" ExpectingMinusSign)
                 |= int
             , int
             ]
+
+
+{-| TODO escapes
+TODO Unicode escapes
+-}
+literalChar : Parser_ Literal
+literalChar =
+    (P.succeed identity
+        |. P.symbol (P.Token "'" ExpectingSingleQuote)
+        |= P.getChompedString (P.chompIf (always True) ExpectingChar)
+        |. P.symbol (P.Token "'" ExpectingSingleQuote)
+    )
+        |> P.andThen
+            (\string ->
+                string
+                    |> String.uncons
+                    |> Maybe.map (Tuple.first >> Char >> P.succeed)
+                    |> Maybe.withDefault (P.problem (CompilerBug "Multiple characters chomped in `literalChar`"))
+            )
+
+
+{-| TODO escapes
+TODO unicode escapes
+TODO triple-quoted strings with different escaping
+-}
+literalString : Parser_ Literal
+literalString =
+    let
+        doubleQuote =
+            P.Token "\"" ExpectingDoubleQuote
+    in
+    P.succeed String
+        |. P.symbol doubleQuote
+        |= P.getChompedString (P.chompUntil doubleQuote)
+        |. P.symbol doubleQuote
 
 
 var : Parser_ Frontend.Expr
@@ -376,9 +417,9 @@ varName =
 qualifiedVar : Parser_ Expr
 qualifiedVar =
     P.sequence
-        { start = P.Token "" ShouldntHappen -- TODO is this the right way?
+        { start = P.Token "" (CompilerBug "qualifiedVar start parser failed") -- TODO is this the right way?
         , separator = P.Token "." ExpectingModuleDot
-        , end = P.Token "" ShouldntHappen
+        , end = P.Token "" (CompilerBug "qualifiedVar end parser failed") -- TODO is this the right way?
         , spaces = P.succeed ()
         , item = moduleNameWithoutDots
         , trailing = P.Mandatory -- this is the difference from `moduleName`

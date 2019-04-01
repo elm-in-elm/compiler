@@ -31,7 +31,7 @@ type Expr
 
 {- Let's not get ahead of ourselves
 
-   | Application
+   | Call
        { fn : Expr
        , arg : Expr
        }
@@ -59,7 +59,13 @@ type Expr
 recurse : (Expr -> Expr) -> Expr -> Expr
 recurse fn expr =
     case expr of
-        Literal (LInt _) ->
+        Literal (Int _) ->
+            expr
+
+        Literal (Char _) ->
+            expr
+
+        Literal (String _) ->
             expr
 
         Var _ _ ->

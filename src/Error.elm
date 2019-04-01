@@ -75,13 +75,15 @@ type ParseProblem
     | ExpectingEqualsSign -- `x >=< 1`
     | ExpectingMinusSign -- `>-<42`
     | ExpectingInt
-    | ExpectingEnd
+    | ExpectingSingleQuote
+    | ExpectingChar
+    | ExpectingDoubleQuote
     | ExpectingPlusOperator
     | ExpectingModuleDot -- `import Foo>.<Bar`
     | ExpectingBackslash -- `>\<x -> x + 1`
     | ExpectingRightArrow -- `\x >->< x + 1`
     | InvalidInt
-    | ShouldntHappen
+    | CompilerBug String
 
 
 {-| TODO records are probably better for communicating the meaning of args.
