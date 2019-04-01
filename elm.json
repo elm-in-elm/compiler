@@ -8,16 +8,13 @@
         "direct": {
             "Janiczek/transform": "1.0.0",
             "dmy/elm-pratt-parser": "2.0.0",
-            "elm/browser": "1.0.1",
             "elm/core": "1.0.2",
-            "elm/html": "1.0.0",
             "elm/json": "1.1.2",
             "elm/parser": "1.1.0",
             "elm/project-metadata-utils": "1.0.0",
             "elm-community/basics-extra": "4.0.0",
             "elm-community/graph": "6.0.0",
             "elm-community/maybe-extra": "5.0.0",
-            "stil4m/elm-syntax": "7.0.5",
             "turboMaCk/any-dict": "1.0.1",
             "turboMaCk/any-set": "1.0.0"
         },
