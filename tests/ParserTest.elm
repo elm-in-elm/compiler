@@ -422,24 +422,22 @@ lambda =
               , "\\x -> x + 1"
               , Just
                     (Lambda
-                        { arguments = [ VarName "x" ]
-                        , body =
-                            Plus
+                        [ VarName "x" ]
+                        (Plus
                                 (Argument (VarName "x"))
                                 (Literal (LInt 1))
-                        }
+                        )
                     )
               )
             , ( "works with multiple arguments"
               , "\\x y -> x + y"
               , Just
                     (Lambda
-                        { arguments = [ VarName "x", VarName "y" ]
-                        , body =
-                            Plus
+                        [ VarName "x", VarName "y" ]
+                        (Plus
                                 (Argument (VarName "x"))
                                 (Argument (VarName "y"))
-                        }
+                        )
                     )
               )
             ]

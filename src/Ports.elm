@@ -55,7 +55,7 @@ readFile (FilePath filePath) =
     read filePath
 
 
-waitForReadFile : (FilePath -> ErrorCode -> msg) -> (FilePath -> FileContents -> msg) -> Sub msg
+waitForReadFile : (ErrorCode -> msg) -> (FilePath -> FileContents -> msg) -> Sub msg
 waitForReadFile toErrorMsg toMsg =
     Sub.batch
         [ readSubscription
@@ -68,7 +68,7 @@ waitForReadFile toErrorMsg toMsg =
                     filePath_ =
                         FilePath filePath
                 in
-                toErrorMsg filePath_ (Error.parseErrorCode errorCode filePath_)
+                toErrorMsg (Error.parseErrorCode errorCode filePath_)
             )
         ]
 

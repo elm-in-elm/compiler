@@ -4,15 +4,11 @@ import AST.Frontend as Frontend
 import Common
 import Common.Types
     exposing
-        ( Dict_
-        , FileContents(..)
+        (  FileContents(..)
         , FilePath(..)
         , Module
         , ModuleName
         , Project
-        , Set_
-        , TopLevelDeclaration
-        , VarName
         )
 import Error exposing (Error(..), ParseError(..))
 import Parser.Advanced as P

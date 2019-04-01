@@ -156,7 +156,7 @@ findDependencies modules expr =
                 |> Maybe.map List.singleton
                 |> Maybe.withDefault []
 
-        Argument argument ->
+        Argument _ ->
             []
 
         Plus e1 e2 ->

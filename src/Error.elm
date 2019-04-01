@@ -75,7 +75,6 @@ type ParseProblem
     | ExpectingEqualsSign -- `x >=< 1`
     | ExpectingMinusSign -- `>-<42`
     | ExpectingInt
-    | ExpectingNewline
     | ExpectingEnd
     | ExpectingPlusOperator
     | ExpectingModuleDot -- `import Foo>.<Bar`
@@ -173,10 +172,10 @@ toString error =
                         ++ moduleName
                         ++ "`. Keep only one in the code! Maybe alias some imports to fix the collision?"
 
-        TypeError typeError ->
+        TypeError _ ->
             Debug.todo "toString typeError"
 
-        OptimizeError optimizeError ->
+        OptimizeError _ ->
             Debug.todo "toString optimizeError"
 
         PrepareForBackendError prepareForBackendError ->
@@ -184,7 +183,7 @@ toString error =
                 MainDeclarationNotFound ->
                     "Couldn't find the value `main` in the main module given to the compiler!"
 
-        EmitError emitError ->
+        EmitError _ ->
             Debug.todo "toString emitBackendError"
 
 

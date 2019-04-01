@@ -47,17 +47,15 @@ import AST.Frontend as Frontend
 import Common
 import Common.Types
     exposing
-        ( Dict_
-        , FileContents(..)
+        ( FileContents(..)
         , FilePath(..)
-        , Module
         , ModuleName(..)
         , Modules
         , Project
         , ProjectToEmit
         , Set_
         )
-import Dict.Any exposing (AnyDict)
+import Dict.Any
 import Elm.Project
 import Error
     exposing
@@ -69,7 +67,7 @@ import Error
 import Json.Decode as JD
 import Platform
 import Ports exposing (println, printlnStderr)
-import Set.Any exposing (AnySet)
+import Set.Any
 import Stage.Desugar as Desugar
 import Stage.Emit as Emit
 import Stage.Optimize as Optimize
@@ -122,13 +120,13 @@ type alias Model_ expr =
 
 type Msg
     = ReadFileSuccess FilePath FileContents
-    | ReadFileError FilePath ErrorCode
+    | ReadFileError ErrorCode -- already contains the FilePath
 
 
 subscriptions : Model expr -> Sub Msg
 subscriptions model =
     case model of
-        Compiling model_ ->
+        Compiling _ ->
             {- We'll be waiting for the various file contents we've asked for
                with `readFile`, but only on the happy path. They are of no use
                to us when we've already found an error elsewhere or finished
@@ -151,7 +149,7 @@ We have two tasks here:
 
 -}
 init : Flags -> ( Model Frontend.ProjectFields, Cmd Msg )
-init ({ mainFilePath, elmJson } as flags) =
+init { mainFilePath, elmJson } =
     let
         mainFilePath_ : FilePath
         mainFilePath_ =
@@ -262,8 +260,8 @@ update_ msg model =
         ReadFileSuccess filePath fileContents ->
             handleReadFileSuccess filePath fileContents model
 
-        ReadFileError filePath errorCode ->
-            handleReadFileError filePath errorCode model
+        ReadFileError errorCode ->
+            handleReadFileError errorCode
 
 
 handleReadFileSuccess : FilePath -> FileContents -> Model_ Frontend.ProjectFields -> ( Model Frontend.ProjectFields, Cmd Msg )
@@ -316,8 +314,8 @@ handleReadFileSuccess filePath fileContents ({ project } as model) =
                 )
 
 
-handleReadFileError : FilePath -> ErrorCode -> Model_ Frontend.ProjectFields -> ( Model Frontend.ProjectFields, Cmd Msg )
-handleReadFileError (FilePath filePath) errorCode model =
+handleReadFileError : ErrorCode -> ( Model Frontend.ProjectFields, Cmd Msg )
+handleReadFileError errorCode =
     handleError (GeneralError (IOError errorCode))
 
 
@@ -379,8 +377,8 @@ log msg =
                 ReadFileSuccess (FilePath filePath) _ ->
                     "ReadFileSuccess: " ++ filePath
 
-                ReadFileError (FilePath filePath) _ ->
-                    "ReadFileError: " ++ filePath
+                ReadFileError error ->
+                    "ReadFileError: " ++ Error.toString (GeneralError (IOError error))
 
         _ =
             Debug.log string ()

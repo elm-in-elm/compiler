@@ -20,6 +20,7 @@
         },
         "indirect": {
             "avh4/elm-fifo": "1.0.4",
+            "elm/html": "1.0.0",
             "elm/time": "1.0.0",
             "elm/url": "1.0.0",
             "elm/virtual-dom": "1.0.2",

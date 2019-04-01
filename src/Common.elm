@@ -12,8 +12,7 @@ module Common exposing
 
 import Common.Types
     exposing
-        ( Dict_
-        , ExposedItem(..)
+        ( ExposedItem(..)
         , Exposing(..)
         , FilePath(..)
         , Module
@@ -90,8 +89,8 @@ topLevelDeclarationToString { name, module_ } =
 
 {-| Is this variable name exposed in this module?
 -}
-exposes : VarName -> Modules a -> Module a -> Bool
-exposes ((VarName var) as varName) modules module_ =
+exposes : VarName -> Module a -> Bool
+exposes ((VarName var) as varName) module_ =
     let
         isInTopLevelDeclarations =
             Dict.Any.member varName module_.topLevelDeclarations
@@ -111,7 +110,7 @@ exposes ((VarName var) as varName) modules module_ =
                             -- TODO check this code after we have custom types in Frontend.Expr.
                             type_ == var
 
-                        ExposedTypeAndAllConstructors type_ ->
+                        ExposedTypeAndAllConstructors _ ->
                             {- TODO when we have custom types in Frontend.Expr,
                                return if the varName is in the type constructors.
                             -}
@@ -122,6 +121,8 @@ exposes ((VarName var) as varName) modules module_ =
 
 
 {-| Given `import Foo as F`, `unalias ... (ModuleName "F")` => `Just (ModuleName "Foo")`
+
+TODO add a test
 -}
 unalias : Module a -> ModuleName -> Maybe ModuleName
 unalias thisModule moduleName =

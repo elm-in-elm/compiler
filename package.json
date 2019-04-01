@@ -2,6 +2,7 @@
   "license": "BSD-3-Clause",
   "devDependencies": {
     "elm": "^0.19.0-bugfix2",
+    "elm-analyse": "^0.16.2",
     "elm-format": "^0.8.1",
     "elm-test": "^0.19.0-rev4"
   }

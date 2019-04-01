@@ -458,15 +458,6 @@ newlines =
     P.chompWhile ((==) '\n')
 
 
-newlineOrEnd : Parser_ ()
-newlineOrEnd =
-    P.oneOf
-        [ P.symbol (P.Token "\n" ExpectingNewline)
-        , P.end ExpectingEnd
-        , P.succeed ()
-        ]
-
-
 many : Parser_ a -> Parser_ (List a)
 many p =
     many_ P.spaces p

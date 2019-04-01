@@ -66,8 +66,7 @@ type alias Project r =
 
 
 type alias ProjectToEmit =
-    { output : FileContents
-    }
+    { output : FileContents }
 
 
 type alias Modules expr =

@@ -3,7 +3,6 @@ module Stage.Emit exposing (emit)
 import AST.Backend as Backend
 import AST.Canonical exposing (Expr(..))
 import AST.Common exposing (Literal(..))
-import Common
 import Common.Types
     exposing
         ( FileContents(..)
@@ -13,7 +12,6 @@ import Common.Types
         , TopLevelDeclaration
         , VarName(..)
         )
-import Dict.Any
 import Error exposing (EmitError(..), Error(..))
 import Graph
 

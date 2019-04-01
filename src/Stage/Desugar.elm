@@ -7,8 +7,7 @@ import Basics.Extra exposing (flip)
 import Common
 import Common.Types
     exposing
-        ( Dict_
-        , Module
+        ( Module
         , ModuleName
         , Modules
         , Project
@@ -197,10 +196,10 @@ unqualifiedVarInImportedModule modules thisModule maybeModuleName varName =
             |> Extra.Dict.Any.find
                 (\_ dependency ->
                     Dict.Any.get dependency.moduleName modules
-                        |> Maybe.map (Common.exposes varName modules)
+                        |> Maybe.map (Common.exposes varName)
                         |> Maybe.withDefault False
                 )
-            |> Maybe.map (\( k, v ) -> v.moduleName)
+            |> Maybe.map (\( _, dependency ) -> dependency.moduleName)
 
     else
         Nothing
