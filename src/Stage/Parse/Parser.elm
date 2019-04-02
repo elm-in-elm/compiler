@@ -360,6 +360,41 @@ call config =
 
        Look at how the official compiler does stuff. The parser should use
        constructs available to us.
+
+       ------------
+       UPDATE:
+
+       OK so the official compiler has a nice function `checkSpace` that
+       essentialy means `is indented?`
+
+       In pseudocode:
+
+           let
+               i = get current indentation (1-based)
+               c = get current column (1-based)
+           in
+           c > 1 && c > i
+
+       So it checks that this thing is not at the beginning of line,
+       and that it's not at the same column as the thing above it that set
+       the indentation.
+
+       So this is OK:
+
+           foo
+            abc
+
+       But this is not:
+
+           foo
+           bar
+
+       Assumptions: we use `withIndentation`; we have consumed the whitespace
+       before running this function.
+
+       Considering how elm/parser doesn't like to backtrack, will we have to
+       mark something here as backtrackable, or will we able to do it with oneOf?
+
     -}
     P.succeed Frontend.call
         |= PP.subExpression 0 config
