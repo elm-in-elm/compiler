@@ -332,7 +332,7 @@ expr =
         , andThenOneOf =
             [ PP.infixLeft 1 (P.symbol (P.Token "+" ExpectingPlusOperator)) Plus
             ]
-        , spaces = P.spaces -- TODO newlines maybe?
+        , spaces = P.spaces
         }
 
 
