@@ -4,7 +4,7 @@ import AST.Frontend as Frontend
 import Common
 import Common.Types
     exposing
-        (  FileContents(..)
+        ( FileContents(..)
         , FilePath(..)
         , Module
         , ModuleName

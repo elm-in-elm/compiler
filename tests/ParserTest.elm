@@ -1,9 +1,7 @@
 module ParserTest exposing
     ( dependencies
-    ,  exposingList
-       --, lambda
-
-    , literal
+    , exposingList
+    , expr
     , moduleDeclaration
     , moduleName
     )
@@ -407,99 +405,144 @@ moduleName =
         )
 
 
-
-{-
-   TODO waits for an API change in the Pratt parser library
-
-       lambda : Test
-       lambda =
-              let
-                  runTest ( description, input, output ) =
-                      test description <|
-                          \() ->
-                              input
-                                  |> P.run Stage.Parse.Parser.lambda
-                                  |> Result.toMaybe
-                                  |> Expect.equal output
-              in
-              describe "Stage.Parse.Parser.lambda"
-                  (List.map runTest
-                      [ ( "works with single argument"
-                        , "\\x -> x + 1"
-                        , Just
-                              (Lambda
-                                  [ VarName "x" ]
-                                  (Plus
-                                      (Argument (VarName "x"))
-                                      (Literal (Int 1))
-                                  )
-                              )
-                        )
-                      , ( "works with multiple arguments"
-                        , "\\x y -> x + y"
-                        , Just
-                              (Lambda
-                                  [ VarName "x", VarName "y" ]
-                                  (Plus
-                                      (Argument (VarName "x"))
-                                      (Argument (VarName "y"))
-                                  )
-                              )
-                        )
-                      ]
-                  )
--}
-
-
-literal : Test
-literal =
+expr : Test
+expr =
     let
+        runSection ( description, tests ) =
+            describe description
+                (List.map runTest tests)
+
         runTest ( description, input, output ) =
             test description <|
                 \() ->
                     input
-                        |> P.run Stage.Parse.Parser.literal
+                        |> P.run Stage.Parse.Parser.expr
                         |> Expect.equal output
     in
-    describe "Stage.Parse.Parser.literal"
-        [ describe "int"
-            (List.map runTest
-                [ ( "positive", "123", Ok (Literal (Int 123)) )
-                , ( "zero", "0", Ok (Literal (Int 0)) )
-                , ( "negative", "-42", Ok (Literal (Int -42)) )
+    describe "Stage.Parse.Parser.expr"
+        (List.map runSection
+            [ ( "lambda"
+              , [ ( "works with single argument"
+                  , "\\x -> x + 1"
+                  , Ok
+                        (AST.Frontend.lambda
+                            [ VarName "x" ]
+                            (Plus
+                                (Argument (VarName "x"))
+                                (Literal (Int 1))
+                            )
+                        )
+                  )
+                , ( "works with multiple arguments"
+                  , "\\x y -> x + y"
+                  , Ok
+                        (AST.Frontend.lambda
+                            [ VarName "x", VarName "y" ]
+                            (Plus
+                                (Argument (VarName "x"))
+                                (Argument (VarName "y"))
+                            )
+                        )
+                  )
+                ]
+              )
+            , ( "call"
+              , [ ( "simple"
+                  , "fn 1"
+                  , Ok
+                        (AST.Frontend.call
+                            (AST.Frontend.var Nothing (VarName "fn"))
+                            [ Literal (Int 1) ]
+                        )
+                  )
+                , ( "with var"
+                  , "fn arg"
+                  , Ok
+                        (AST.Frontend.call
+                            (AST.Frontend.var Nothing (VarName "fn"))
+                            [ AST.Frontend.var Nothing (VarName "arg") ]
+                        )
+                  )
+                , ( "multiple"
+                  , "fn arg1 arg2"
+                  , Ok
+                        (AST.Frontend.call
+                            (AST.Frontend.var Nothing (VarName "fn"))
+                            [ AST.Frontend.var Nothing (VarName "arg1")
+                            , AST.Frontend.var Nothing (VarName "arg2")
+                            ]
+                        )
+                  )
+                ]
+              )
+            , ( "literal int"
+              , [ ( "positive"
+                  , "123"
+                  , Ok (Literal (Int 123))
+                  )
+                , ( "zero"
+                  , "0"
+                  , Ok (Literal (Int 0))
+                  )
+                , ( "negative"
+                  , "-42"
+                  , Ok (Literal (Int -42))
+                  )
 
                 -- TODO deal with hex: , ( "hex uppercase", "0xFF", Ok (Literal (Int 255)) )
                 -- TODO deal with hex: , ( "hex lowercase", "0x7f", Ok (Literal (Int 127)) )
                 -- TODO deal with hex: , ( "hex negative", "-0x42", Ok (Literal (Int -66)) )
                 ]
-            )
-        , describe "char"
-            (List.map runTest
-                [ ( "number", "'1'", Ok (Literal (Char '1')) )
-                , ( "space", "' '", Ok (Literal (Char ' ')) )
-                , ( "letter lowercase", "'a'", Ok (Literal (Char 'a')) )
-                , ( "letter uppercase", "'A'", Ok (Literal (Char 'A')) )
+              )
+            , ( "literal char"
+              , [ ( "number"
+                  , "'1'"
+                  , Ok (Literal (Char '1'))
+                  )
+                , ( "space"
+                  , "' '"
+                  , Ok (Literal (Char ' '))
+                  )
+                , ( "letter lowercase"
+                  , "'a'"
+                  , Ok (Literal (Char 'a'))
+                  )
+                , ( "letter uppercase"
+                  , "'A'"
+                  , Ok (Literal (Char 'A'))
+                  )
 
                 -- TODO deal with escapes , ( "escaped single quote", "'\\''", Ok (Literal (Char '\'')) )
                 -- TODO deal with Unicode escapes
                 ]
-            )
-        , describe "string"
-            (List.map runTest
-                [ ( "empty", "\"\"", Ok (Literal (String "")) )
-                , ( "one space", "\" \"", Ok (Literal (String " ")) )
-                , ( "two numbers", "\"42\"", Ok (Literal (String "42")) )
-                , ( "single quote", "\"'\"", Ok (Literal (String "'")) )
+              )
+            , ( "literal string"
+              , [ ( "empty"
+                  , "\"\""
+                  , Ok (Literal (String ""))
+                  )
+                , ( "one space"
+                  , "\" \""
+                  , Ok (Literal (String " "))
+                  )
+                , ( "two numbers"
+                  , "\"42\""
+                  , Ok (Literal (String "42"))
+                  )
+                , ( "single quote"
+                  , "\"'\""
+                  , Ok (Literal (String "'"))
+                  )
 
                 -- TODO deal with escapes , ( "escaped double quote", "\"\\"\"", Ok (Literal (String "\"")) )
                 -- TODO deal with Unicode escapes
                 -- TODO triple-quote strings with different escaping
                 -- TODO emoji? does that even work in Elm?
                 ]
-            )
-        ]
+              )
+            ]
+        )
 
 
 
 -- TODO test topLevelDeclarations
--- TODO test expr

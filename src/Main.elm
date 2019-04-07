@@ -256,7 +256,7 @@ update msg model =
 
 update_ : Msg -> Model_ Frontend.ProjectFields -> ( Model Frontend.ProjectFields, Cmd Msg )
 update_ msg model =
-    case log msg of
+    case {- log -} msg of
         ReadFileSuccess filePath fileContents ->
             handleReadFileSuccess filePath fileContents model
 
@@ -324,7 +324,7 @@ handleReadFileError errorCode =
 compile : Project Frontend.ProjectFields -> ( Model Frontend.ProjectFields, Cmd Msg )
 compile project =
     Ok project
-        --|> Debug.log "after parse"
+        |> Debug.log "after parse"
         |> Result.andThen Desugar.desugar
         |> Result.andThen Typecheck.typecheck
         |> Result.andThen Optimize.optimize

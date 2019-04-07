@@ -1,8 +1,7 @@
 module Stage.Parse.Parser exposing
     ( dependencies
     , exposingList
-    , lambda
-    , literal
+    , expr
     , moduleDeclaration
     , moduleName
     , module_
@@ -399,7 +398,25 @@ call config =
     P.succeed Frontend.call
         |= PP.subExpression 0 config
         |. P.spaces
-        |= many (PP.subExpression 0 config)
+        |= many
+            (P.succeed identity
+                |. checkNotAtBeginningOfLine
+                |= PP.subExpression 0 config
+            )
+
+
+checkNotAtBeginningOfLine : Parser_ ()
+checkNotAtBeginningOfLine =
+    P.getCol
+        |> P.map ((==) 0)
+        |> P.andThen
+            (\isAtBeginningOfLine ->
+                if isAtBeginningOfLine then
+                    P.problem ExpectingNoBeginningOfLine
+
+                else
+                    P.succeed ()
+            )
 
 
 literal : Parser_ Frontend.Expr
