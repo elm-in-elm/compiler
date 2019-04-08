@@ -98,7 +98,7 @@ dependencies =
         (List.map (\dep -> ( dep.moduleName, dep ))
             >> Dict.Any.fromList Common.moduleNameToString
         )
-        |= many dependency
+        |= manyWith P.spaces dependency
 
 
 dependency : Parser_ Dependency
@@ -300,7 +300,7 @@ reservedWords =
 
 topLevelDeclarations : Parser_ (List (ModuleName -> TopLevelDeclaration Frontend.Expr))
 topLevelDeclarations =
-    many
+    manyWith P.spaces
         (P.succeed identity
             |= topLevelDeclaration
             |. P.spaces
@@ -322,9 +322,9 @@ expr =
     PP.expression
         { oneOf =
             [ PP.literal literal
-            , always var
             , lambda
-            , call
+            , peek "call" call
+            , always var
 
             -- TODO parenthesized expressions
             ]
@@ -397,8 +397,8 @@ call config =
     -}
     P.succeed Frontend.call
         |= PP.subExpression 0 config
-        |. P.spaces
-        |= many
+        |. mandatorySpaces
+        |= manyWith mandatorySpaces
             (P.succeed identity
                 |. checkNotAtBeginningOfLine
                 |= PP.subExpression 0 config
@@ -554,7 +554,7 @@ lambda config =
                 (Frontend.transform (promoteArguments arguments) body)
         )
         |. P.symbol (P.Token "\\" ExpectingBackslash)
-        |= manySpacesOnly (P.map VarName varName)
+        |= manyWith spacesOnly (P.map VarName varName)
         |. spacesOnly
         |. P.symbol (P.Token "->" ExpectingRightArrow)
         |. P.spaces
@@ -580,6 +580,20 @@ promoteArguments arguments expr_ =
 -- Helpers
 
 
+mandatorySpaces : Parser_ ()
+mandatorySpaces =
+    P.spaces
+        |> P.getChompedString
+        |> P.andThen
+            (\chompedSpaces ->
+                if String.isEmpty chompedSpaces then
+                    P.problem ExpectingWhitespace
+
+                else
+                    P.succeed ()
+            )
+
+
 spacesOnly : Parser_ ()
 spacesOnly =
     P.chompWhile ((==) ' ')
@@ -590,21 +604,11 @@ newlines =
     P.chompWhile ((==) '\n')
 
 
-many : Parser_ a -> Parser_ (List a)
-many p =
-    many_ P.spaces p
-
-
-manySpacesOnly : Parser_ a -> Parser_ (List a)
-manySpacesOnly p =
-    many_ spacesOnly p
-
-
 {-| Taken from Punie/elm-parser-extras, made to work with Parser.Advanced.Parser
 instead of the simple one.
 -}
-many_ : Parser_ () -> Parser_ a -> Parser_ (List a)
-many_ spaces p =
+manyWith : Parser_ () -> Parser_ a -> Parser_ (List a)
+manyWith spaces p =
     P.loop [] (manyHelp spaces p)
 
 
@@ -620,3 +624,33 @@ manyHelp spaces p vs =
         , P.succeed ()
             |> P.map (always (P.Done (List.reverse vs)))
         ]
+
+
+{-| Courtesy @mdgriffith in elm-markup
+-}
+peek : String -> Parser c p thing -> Parser c p thing
+peek name parser =
+    P.succeed
+        (\start val end src ->
+            let
+                highlightParsed =
+                    String.repeat (start.column - 1) " " ++ String.repeat (max 0 (end.column - start.column)) "^"
+
+                fullLine =
+                    String.slice (max 0 (start.offset - start.column)) end.offset src
+
+                _ =
+                    Debug.log name
+                        -- fullLine
+                        (String.slice start.offset end.offset src)
+
+                _ =
+                    Debug.log name
+                        highlightParsed
+            in
+            val
+        )
+        |= getPosition
+        |= parser
+        |= getPosition
+        |= P.getSource

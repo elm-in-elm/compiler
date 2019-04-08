@@ -83,6 +83,7 @@ type ParseProblem
     | ExpectingBackslash -- `>\<x -> x + 1`
     | ExpectingRightArrow -- `\x >->< x + 1`
     | ExpectingNoBeginningOfLine
+    | ExpectingWhitespace
     | InvalidInt
     | CompilerBug String
 
