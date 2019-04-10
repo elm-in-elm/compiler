@@ -1,6 +1,9 @@
 module AST.Canonical exposing
     ( Expr(..)
     , ProjectFields
+    , call
+    , lambda
+    , var
     )
 
 import AST.Common exposing (Literal)
@@ -21,12 +24,35 @@ type alias ProjectFields =
   - having fully qualified variables
   - having only single argument lambdas
 
-TODO records are probably better for communicating the meaning of args.
-
 -}
 type Expr
     = Literal Literal
-    | Var ModuleName VarName
+    | Var { qualifier : ModuleName, name : VarName }
     | Argument VarName
     | Plus Expr Expr
-    | Lambda VarName Expr
+    | Lambda { argument : VarName, body : Expr }
+    | Call { fn : Expr, argument : Expr }
+
+
+var : ModuleName -> VarName -> Expr
+var qualifier name =
+    Var
+        { qualifier = qualifier
+        , name = name
+        }
+
+
+lambda : VarName -> Expr -> Expr
+lambda argument body =
+    Lambda
+        { argument = argument
+        , body = body
+        }
+
+
+call : Expr -> Expr -> Expr
+call fn argument =
+    Call
+        { fn = fn
+        , argument = argument
+        }

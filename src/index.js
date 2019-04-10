@@ -6,6 +6,10 @@ const {registerPort} = require('./utils.js');
 // Async/await is nice! (needs Node.JS v7.6+)
 (async function(){
 
+  console.log('---------------------------');
+  console.log('-- STARTING THE COMPILER --');
+  console.log('---------------------------');
+
   const exampleProjectPath = 'example-project';
 
   const app = Elm.Main.init({
@@ -22,8 +26,13 @@ const {registerPort} = require('./utils.js');
       const contents = await fs.readFile(`${exampleProjectPath}/${filename}`, {encoding: 'utf8'});
       app.ports.readSubscription.send([filename, contents]);
     } catch (e) {
-      console.log({e});
-      app.ports.readErrorSubscription.send([filename, e.code]);
+      console.log('---------------------------');
+      console.log('-- COMPILER ERROR ---------');
+      console.log('---------------------------');
+      console.log(`\n${e.message}`);
+      if (e.code != null) {
+        app.ports.readErrorSubscription.send([filename, e.code]);
+      }
     }
   });
   registerPort(app, 'write', async function({filePath,contents}) {

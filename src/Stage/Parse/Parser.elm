@@ -323,100 +323,41 @@ expr =
         { oneOf =
             [ PP.literal literal
             , lambda
-            , peek "call" call
             , always var
-
-            -- TODO parenthesized expressions
+            , parenthesizedExpr
             ]
         , andThenOneOf =
+            -- TODO the numbers...
             [ PP.infixLeft 1 (P.symbol (P.Token "+" ExpectingPlusOperator)) Plus
+            , PP.infixLeft 2 checkNotBeginningOfLine Frontend.call
             ]
         , spaces = P.spaces
         }
 
 
-call : ExprConfig -> Parser_ Frontend.Expr
-call config =
-    -----------------------------
-    -----------------------------
-    -----------------------------
-    -----------------------------
-    -----------------------------
-    -----------------------------
-    -- TODO WORK ON THIS FIRST --
-    -----------------------------
-    -----------------------------
-    -----------------------------
-    -----------------------------
-    -----------------------------
-    -----------------------------
-    {- TODO The problem (see example-project Main) is that the top-level `x` is
-       parsed as an argument.
-
-       We can't give up on newlines though - function application works with it!
-
-       Some indentation stuff maybe? `withIndent` / `getIndent`?
-
-       Look at how the official compiler does stuff. The parser should use
-       constructs available to us.
-
-       ------------
-       UPDATE:
-
-       OK so the official compiler has a nice function `checkSpace` that
-       essentialy means `is indented?`
-
-       In pseudocode:
-
-           let
-               i = get current indentation (1-based)
-               c = get current column (1-based)
-           in
-           c > 1 && c > i
-
-       So it checks that this thing is not at the beginning of line,
-       and that it's not at the same column as the thing above it that set
-       the indentation.
-
-       So this is OK:
-
-           foo
-            abc
-
-       But this is not:
-
-           foo
-           bar
-
-       Assumptions: we use `withIndentation`; we have consumed the whitespace
-       before running this function.
-
-       Considering how elm/parser doesn't like to backtrack, will we have to
-       mark something here as backtrackable, or will we able to do it with oneOf?
-
-    -}
-    P.succeed Frontend.call
-        |= PP.subExpression 0 config
-        |. mandatorySpaces
-        |= manyWith mandatorySpaces
-            (P.succeed identity
-                |. checkNotAtBeginningOfLine
-                |= PP.subExpression 0 config
-            )
-
-
-checkNotAtBeginningOfLine : Parser_ ()
-checkNotAtBeginningOfLine =
+checkNotBeginningOfLine : Parser_ ()
+checkNotBeginningOfLine =
     P.getCol
-        |> P.map ((==) 0)
         |> P.andThen
-            (\isAtBeginningOfLine ->
-                if isAtBeginningOfLine then
-                    P.problem ExpectingNoBeginningOfLine
+            (\col ->
+                let
+                    _ =
+                        Debug.log "col" col
+                in
+                if col /= 0 then
+                    P.succeed ()
 
                 else
-                    P.succeed ()
+                    P.problem ExpectingNotBeginningOfLine
             )
+
+
+parenthesizedExpr : ExprConfig -> Parser_ Frontend.Expr
+parenthesizedExpr config =
+    P.succeed identity
+        |. P.symbol (P.Token "(" ExpectingLeftParen)
+        |= PP.subExpression 0 config
+        |. P.symbol (P.Token ")" ExpectingRightParen)
 
 
 literal : Parser_ Frontend.Expr
@@ -580,20 +521,6 @@ promoteArguments arguments expr_ =
 -- Helpers
 
 
-mandatorySpaces : Parser_ ()
-mandatorySpaces =
-    P.spaces
-        |> P.getChompedString
-        |> P.andThen
-            (\chompedSpaces ->
-                if String.isEmpty chompedSpaces then
-                    P.problem ExpectingWhitespace
-
-                else
-                    P.succeed ()
-            )
-
-
 spacesOnly : Parser_ ()
 spacesOnly =
     P.chompWhile ((==) ' ')
@@ -624,33 +551,3 @@ manyHelp spaces p vs =
         , P.succeed ()
             |> P.map (always (P.Done (List.reverse vs)))
         ]
-
-
-{-| Courtesy @mdgriffith in elm-markup
--}
-peek : String -> Parser c p thing -> Parser c p thing
-peek name parser =
-    P.succeed
-        (\start val end src ->
-            let
-                highlightParsed =
-                    String.repeat (start.column - 1) " " ++ String.repeat (max 0 (end.column - start.column)) "^"
-
-                fullLine =
-                    String.slice (max 0 (start.offset - start.column)) end.offset src
-
-                _ =
-                    Debug.log name
-                        -- fullLine
-                        (String.slice start.offset end.offset src)
-
-                _ =
-                    Debug.log name
-                        highlightParsed
-            in
-            val
-        )
-        |= getPosition
-        |= parser
-        |= getPosition
-        |= P.getSource

@@ -104,8 +104,8 @@ desugarExpr modules thisModule expr =
         Frontend.Lambda { arguments, body } ->
             desugarLambda recurse arguments body
 
-        Frontend.Call { fn, arguments } ->
-            desugarCall recurse fn arguments
+        Frontend.Call { fn, argument } ->
+            desugarCall recurse fn argument
 
 
 
@@ -121,7 +121,7 @@ desugarVar : Modules Frontend.Expr -> Module Frontend.Expr -> Maybe ModuleName -
 desugarVar modules thisModule maybeModuleName varName =
     findModuleOfVar modules thisModule maybeModuleName varName
         |> Result.fromMaybe (VarNotInEnvOfModule maybeModuleName varName thisModule.name)
-        |> Result.map (\moduleName -> Canonical.Var moduleName varName)
+        |> Result.map (\moduleName -> Canonical.var moduleName varName)
 
 
 desugarArgument : VarName -> Result DesugarError Canonical.Expr
@@ -142,8 +142,8 @@ desugarLambda recurse arguments body =
         |> Result.map (curryLambda arguments)
 
 
-desugarCall : (Frontend.Expr -> Result DesugarError Canonical.Expr) -> Frontend.Expr -> List Frontend.Expr -> Result DesugarError Canonical.Expr
-desugarCall recurse fn arguments =
+desugarCall : (Frontend.Expr -> Result DesugarError Canonical.Expr) -> Frontend.Expr -> Frontend.Expr -> Result DesugarError Canonical.Expr
+desugarCall recurse fn argument =
     Debug.todo "desugarCall"
 
 
@@ -162,7 +162,7 @@ desugarCall recurse fn arguments =
 -}
 curryLambda : List VarName -> Canonical.Expr -> Canonical.Expr
 curryLambda arguments body =
-    List.foldr Canonical.Lambda body arguments
+    List.foldr Canonical.lambda body arguments
 
 
 {-| We have roughly these options:

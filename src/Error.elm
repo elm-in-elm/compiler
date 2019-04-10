@@ -82,8 +82,9 @@ type ParseProblem
     | ExpectingModuleDot -- `import Foo>.<Bar`
     | ExpectingBackslash -- `>\<x -> x + 1`
     | ExpectingRightArrow -- `\x >->< x + 1`
-    | ExpectingNoBeginningOfLine
-    | ExpectingWhitespace
+    | ExpectingLeftParen
+    | ExpectingRightParen
+    | ExpectingNotBeginningOfLine
     | InvalidInt
     | CompilerBug String
 

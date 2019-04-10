@@ -452,7 +452,7 @@ expr =
                   , Ok
                         (AST.Frontend.call
                             (AST.Frontend.var Nothing (VarName "fn"))
-                            [ Literal (Int 1) ]
+                            (Literal (Int 1))
                         )
                   )
                 , ( "with var"
@@ -460,17 +460,18 @@ expr =
                   , Ok
                         (AST.Frontend.call
                             (AST.Frontend.var Nothing (VarName "fn"))
-                            [ AST.Frontend.var Nothing (VarName "arg") ]
+                            (AST.Frontend.var Nothing (VarName "arg"))
                         )
                   )
                 , ( "multiple"
                   , "fn arg1 arg2"
                   , Ok
                         (AST.Frontend.call
-                            (AST.Frontend.var Nothing (VarName "fn"))
-                            [ AST.Frontend.var Nothing (VarName "arg1")
-                            , AST.Frontend.var Nothing (VarName "arg2")
-                            ]
+                            (AST.Frontend.call
+                                (AST.Frontend.var Nothing (VarName "fn"))
+                                (AST.Frontend.var Nothing (VarName "arg1"))
+                            )
+                            (AST.Frontend.var Nothing (VarName "arg2"))
                         )
                   )
                 ]

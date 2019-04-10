@@ -155,10 +155,10 @@ findDependencies modules expr =
         Literal (String _) ->
             []
 
-        Var moduleName varName ->
+        Var { qualifier, name } ->
             modules
-                |> Dict.Any.get moduleName
-                |> Maybe.andThen (.topLevelDeclarations >> Dict.Any.get varName)
+                |> Dict.Any.get qualifier
+                |> Maybe.andThen (.topLevelDeclarations >> Dict.Any.get name)
                 |> Maybe.map List.singleton
                 |> Maybe.withDefault []
 
@@ -169,7 +169,11 @@ findDependencies modules expr =
             findDependencies_ e1
                 ++ findDependencies_ e2
 
-        Lambda argument body ->
+        Lambda { argument, body } ->
             -- TODO this is probably going to be more tricky than this?
             findDependencies_ body
                 |> List.filter (\decl -> decl.name /= argument)
+
+        Call { fn, argument } ->
+            findDependencies_ fn
+                ++ findDependencies_ argument

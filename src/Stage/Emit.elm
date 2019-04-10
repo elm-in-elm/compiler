@@ -91,8 +91,8 @@ emitExpr expr =
         Literal (String string) ->
             "\"" ++ string ++ "\""
 
-        Var moduleName varName ->
-            mangleQualifiedVar moduleName varName
+        Var { qualifier, name } ->
+            mangleQualifiedVar qualifier name
 
         Argument argument ->
             mangleVarName argument
@@ -100,8 +100,11 @@ emitExpr expr =
         Plus e1 e2 ->
             "(" ++ emitExpr e1 ++ " + " ++ emitExpr e2 ++ ")"
 
-        Lambda argument body ->
+        Lambda { argument, body } ->
             "((" ++ mangleVarName argument ++ ") => " ++ emitExpr body ++ ")"
+
+        Call { fn, argument } ->
+            "((" ++ emitExpr fn ++ ")(" ++ emitExpr argument ++ "))"
 
 
 mangleQualifiedVar : ModuleName -> VarName -> String

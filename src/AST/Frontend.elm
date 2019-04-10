@@ -27,7 +27,7 @@ type Expr
     | Argument VarName
     | Plus Expr Expr
     | Lambda { arguments : List VarName, body : Expr }
-    | Call { fn : Expr, arguments : List Expr }
+    | Call { fn : Expr, argument : Expr }
 
 
 var : Maybe ModuleName -> VarName -> Expr
@@ -46,11 +46,11 @@ lambda arguments body =
         }
 
 
-call : Expr -> List Expr -> Expr
-call fn arguments =
+call : Expr -> Expr -> Expr
+call fn argument =
     Call
         { fn = fn
-        , arguments = arguments
+        , argument = argument
         }
 
 
@@ -102,10 +102,10 @@ recurse f expr =
         Lambda ({ body } as lambda_) ->
             Lambda { lambda_ | body = f body }
 
-        Call { fn, arguments } ->
+        Call { fn, argument } ->
             Call
                 { fn = f fn
-                , arguments = List.map f arguments
+                , argument = f argument
                 }
 
 

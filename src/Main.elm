@@ -323,15 +323,32 @@ handleReadFileError errorCode =
 -}
 compile : Project Frontend.ProjectFields -> ( Model Frontend.ProjectFields, Cmd Msg )
 compile project =
+    let
+        _ =
+            project.modules
+                |> Dict.Any.values
+                |> List.map
+                    (\module_ ->
+                        Dict.Any.values module_.topLevelDeclarations
+                            |> List.map
+                                (\decl ->
+                                    decl.body
+                                        |> Debug.log
+                                            (Common.moduleNameToString decl.module_
+                                                ++ "."
+                                                ++ Common.varNameToString decl.name
+                                            )
+                                )
+                    )
+    in
     Ok project
-        |> Debug.log "after parse"
         |> Result.andThen Desugar.desugar
         |> Result.andThen Typecheck.typecheck
         |> Result.andThen Optimize.optimize
         |> Result.andThen PrepareForBackend.prepareForBackend
         |> Result.andThen Emit.emit
         |> Debug.log "after emit"
-        |> finish
+        |> writeToFSAndExit
 
 
 {-| We've got our output ready for writing to the filesystem!
@@ -340,8 +357,8 @@ compile project =
 Let's do that - report the error or write the output to a file.
 
 -}
-finish : Result Error ProjectToEmit -> ( Model Frontend.ProjectFields, Cmd Msg )
-finish result =
+writeToFSAndExit : Result Error ProjectToEmit -> ( Model Frontend.ProjectFields, Cmd Msg )
+writeToFSAndExit result =
     case result of
         Ok { output } ->
             ( Finished
