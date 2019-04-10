@@ -85,6 +85,9 @@ type ParseProblem
     | ExpectingLeftParen
     | ExpectingRightParen
     | ExpectingNotBeginningOfLine
+    | ExpectingIf
+    | ExpectingThen
+    | ExpectingElse
     | InvalidInt
     | CompilerBug String
 

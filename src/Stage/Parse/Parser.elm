@@ -328,6 +328,7 @@ expr =
             [ PP.literal literal
             , lambda
             , always var
+            , if_
             , parenthesizedExpr
             ]
         , andThenOneOf =
@@ -498,6 +499,17 @@ lambda config =
         |. spacesOnly
         |. P.symbol (P.Token "->" ExpectingRightArrow)
         |. P.spaces
+        |= PP.subExpression 0 config
+
+
+if_ : ExprConfig -> Parser_ Frontend.Expr
+if_ config =
+    P.succeed Frontend.if_
+        |. P.keyword (P.Token "if" ExpectingIf)
+        |= PP.subExpression 0 config
+        |. P.keyword (P.Token "then" ExpectingThen)
+        |= PP.subExpression 0 config
+        |. P.keyword (P.Token "else" ExpectingElse)
         |= PP.subExpression 0 config
 
 
