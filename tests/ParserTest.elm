@@ -485,31 +485,13 @@ expr =
                 ]
               )
             , ( "if"
-              , [ ( "simple"
-                  , "fn 1"
+              , [ ( "with spaces"
+                  , "if 1 then 2 else 3"
                   , Ok
-                        (AST.Frontend.call
-                            (AST.Frontend.var Nothing (VarName "fn"))
+                        (AST.Frontend.if_
                             (Literal (Int 1))
-                        )
-                  )
-                , ( "with var"
-                  , "fn arg"
-                  , Ok
-                        (AST.Frontend.call
-                            (AST.Frontend.var Nothing (VarName "fn"))
-                            (AST.Frontend.var Nothing (VarName "arg"))
-                        )
-                  )
-                , ( "multiple"
-                  , "fn arg1 arg2"
-                  , Ok
-                        (AST.Frontend.call
-                            (AST.Frontend.call
-                                (AST.Frontend.var Nothing (VarName "fn"))
-                                (AST.Frontend.var Nothing (VarName "arg1"))
-                            )
-                            (AST.Frontend.var Nothing (VarName "arg2"))
+                            (Literal (Int 2))
+                            (Literal (Int 3))
                         )
                   )
                 ]
