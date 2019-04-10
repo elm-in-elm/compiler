@@ -474,6 +474,44 @@ expr =
                             (AST.Frontend.var Nothing (VarName "arg2"))
                         )
                   )
+                , ( "space not needed if parenthesized arg"
+                  , "fn(arg1)"
+                  , Ok
+                        (AST.Frontend.call
+                            (AST.Frontend.var Nothing (VarName "fn"))
+                            (AST.Frontend.var Nothing (VarName "arg1"))
+                        )
+                  )
+                ]
+              )
+            , ( "if"
+              , [ ( "simple"
+                  , "fn 1"
+                  , Ok
+                        (AST.Frontend.call
+                            (AST.Frontend.var Nothing (VarName "fn"))
+                            (Literal (Int 1))
+                        )
+                  )
+                , ( "with var"
+                  , "fn arg"
+                  , Ok
+                        (AST.Frontend.call
+                            (AST.Frontend.var Nothing (VarName "fn"))
+                            (AST.Frontend.var Nothing (VarName "arg"))
+                        )
+                  )
+                , ( "multiple"
+                  , "fn arg1 arg2"
+                  , Ok
+                        (AST.Frontend.call
+                            (AST.Frontend.call
+                                (AST.Frontend.var Nothing (VarName "fn"))
+                                (AST.Frontend.var Nothing (VarName "arg1"))
+                            )
+                            (AST.Frontend.var Nothing (VarName "arg2"))
+                        )
+                  )
                 ]
               )
             , ( "literal int"
