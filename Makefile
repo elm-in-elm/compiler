@@ -1,6 +1,7 @@
 .PHONY: run
 run: build
-	node src/index.js
+	tput reset
+	@node src/index.js
 
 .PHONY: build
 build: node_modules/.bin/elm
