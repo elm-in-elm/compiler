@@ -2,6 +2,7 @@ module AST.Canonical exposing
     ( Expr(..)
     , ProjectFields
     , call
+    , if_
     , lambda
     , var
     )
@@ -32,6 +33,7 @@ type Expr
     | Plus Expr Expr
     | Lambda { argument : VarName, body : Expr }
     | Call { fn : Expr, argument : Expr }
+    | If { test : Expr, then_ : Expr, else_ : Expr }
 
 
 var : ModuleName -> VarName -> Expr
@@ -55,4 +57,13 @@ call fn argument =
     Call
         { fn = fn
         , argument = argument
+        }
+
+
+if_ : Expr -> Expr -> Expr -> Expr
+if_ test then_ else_ =
+    If
+        { test = test
+        , then_ = then_
+        , else_ = else_
         }

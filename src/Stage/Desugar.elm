@@ -107,6 +107,9 @@ desugarExpr modules thisModule expr =
         Frontend.Call { fn, argument } ->
             desugarCall recurse fn argument
 
+        Frontend.If { test, then_, else_ } ->
+            desugarIf recurse test then_ else_
+
 
 
 -- DESUGAR PASSES
@@ -147,6 +150,14 @@ desugarCall recurse fn argument =
     Result.map2 Canonical.call
         (recurse fn)
         (recurse argument)
+
+
+desugarIf : (Frontend.Expr -> Result DesugarError Canonical.Expr) -> Frontend.Expr -> Frontend.Expr -> Frontend.Expr -> Result DesugarError Canonical.Expr
+desugarIf recurse test then_ else_ =
+    Result.map3 Canonical.if_
+        (recurse test)
+        (recurse then_)
+        (recurse else_)
 
 
 

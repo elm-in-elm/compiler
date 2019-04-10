@@ -36,6 +36,10 @@ import Pratt.Advanced as PP
 import Set exposing (Set)
 
 
+
+-- TODO add contexts?
+
+
 type alias Parser_ a =
     Parser ParseContext ParseProblem a
 
@@ -463,7 +467,6 @@ qualifiedVar =
                     (\varName_ -> Frontend.var maybeModuleName (VarName varName_))
                     varName
             )
-        |> P.inContext InQualifiedVar
 
 
 lambda : ExprConfig -> Parser_ Frontend.Expr

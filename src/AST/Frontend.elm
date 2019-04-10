@@ -2,6 +2,7 @@ module AST.Frontend exposing
     ( Expr(..)
     , ProjectFields
     , call
+    , if_
     , lambda
     , transform
     , var
@@ -28,6 +29,7 @@ type Expr
     | Plus Expr Expr
     | Lambda { arguments : List VarName, body : Expr }
     | Call { fn : Expr, argument : Expr }
+    | If { test : Expr, then_ : Expr, else_ : Expr }
 
 
 var : Maybe ModuleName -> VarName -> Expr
@@ -54,6 +56,15 @@ call fn argument =
         }
 
 
+if_ : Expr -> Expr -> Expr -> Expr
+if_ test then_ else_ =
+    If
+        { test = test
+        , then_ = then_
+        , else_ = else_
+        }
+
+
 
 {- Let's not get ahead of ourselves
 
@@ -61,11 +72,6 @@ call fn argument =
        { varName : VarName
        , varBody : Expr
        , body : Expr
-       }
-   | If
-       { test : Expr
-       , then_ : Expr
-       , else_ : Expr
        }
    | Fixpoint Expr
    | Operator
@@ -106,6 +112,13 @@ recurse f expr =
             Call
                 { fn = f fn
                 , argument = f argument
+                }
+
+        If { test, then_, else_ } ->
+            If
+                { test = f test
+                , then_ = f then_
+                , else_ = f else_
                 }
 
 

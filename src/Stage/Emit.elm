@@ -106,6 +106,9 @@ emitExpr expr =
         Call { fn, argument } ->
             "((" ++ emitExpr fn ++ ")(" ++ emitExpr argument ++ "))"
 
+        If { test, then_, else_ } ->
+            "((" ++ emitExpr test ++ ") ? (" ++ emitExpr then_ ++ ") : (" ++ emitExpr else_ ++ "))"
+
 
 mangleQualifiedVar : ModuleName -> VarName -> String
 mangleQualifiedVar moduleName varName =

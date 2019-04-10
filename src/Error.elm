@@ -158,8 +158,10 @@ toString error =
                         ++ JD.errorToString jsonError
 
                 ParseProblem problems ->
-                    "Parse problems: "
-                        ++ Debug.toString problems
+                    String.join "\n"
+                        ("Parse problems: "
+                            :: List.map (\problem -> "  " ++ Debug.toString problem) problems
+                        )
 
         DesugarError desugarError ->
             case desugarError of

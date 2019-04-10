@@ -177,3 +177,8 @@ findDependencies modules expr =
         Call { fn, argument } ->
             findDependencies_ fn
                 ++ findDependencies_ argument
+
+        If { test, then_, else_ } ->
+            findDependencies_ test
+                ++ findDependencies_ then_
+                ++ findDependencies_ else_
