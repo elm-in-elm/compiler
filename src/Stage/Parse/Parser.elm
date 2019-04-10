@@ -327,9 +327,9 @@ expr =
             , parenthesizedExpr
             ]
         , andThenOneOf =
-            -- TODO the numbers...
-            [ PP.infixLeft 1 (P.symbol (P.Token "+" ExpectingPlusOperator)) Plus
-            , PP.infixLeft 2 checkNotBeginningOfLine Frontend.call
+            -- TODO test this: does `x =\n  call 1\n+ something` work? (it shouldn't: no space before '+')
+            [ PP.infixLeft 99 checkNotBeginningOfLine Frontend.call
+            , PP.infixLeft 1 (P.symbol (P.Token "+" ExpectingPlusOperator)) Plus
             ]
         , spaces = P.spaces
         }
@@ -340,11 +340,7 @@ checkNotBeginningOfLine =
     P.getCol
         |> P.andThen
             (\col ->
-                let
-                    _ =
-                        Debug.log "col" col
-                in
-                if col /= 0 then
+                if col /= 1 then
                     P.succeed ()
 
                 else
