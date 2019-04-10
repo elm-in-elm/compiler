@@ -18,7 +18,8 @@ import Common.Types
         , VarName(..)
         )
 import Dict.Any
-import Expect
+import Error exposing (ParseContext, ParseProblem)
+import Expect exposing (Expectation)
 import Parser.Advanced as P
 import Stage.Parse.Parser
 import Test exposing (Test, describe, test)
@@ -417,7 +418,7 @@ expr =
                 \() ->
                     input
                         |> P.run Stage.Parse.Parser.expr
-                        |> Expect.equal output
+                        |> expectEqualParseResult output
     in
     describe "Stage.Parse.Parser.expr"
         (List.map runSection
@@ -567,3 +568,51 @@ expr =
 
 
 -- TODO test topLevelDeclarations
+
+
+expectEqualParseResult :
+    Result (List (P.DeadEnd ParseContext ParseProblem)) a
+    -> Result (List (P.DeadEnd ParseContext ParseProblem)) a
+    -> Expectation
+expectEqualParseResult expected actual =
+    if actual == expected then
+        Expect.pass
+
+    else
+        case actual of
+            Err deadEnds ->
+                Expect.fail
+                    (String.join "\n"
+                        ("Err" :: List.map deadEndToString deadEnds)
+                    )
+
+            _ ->
+                actual |> Expect.equal expected
+
+
+deadEndToString : P.DeadEnd ParseContext ParseProblem -> String
+deadEndToString deadEnd =
+    let
+        metadata =
+            "  ("
+                ++ String.fromInt deadEnd.row
+                ++ ","
+                ++ String.fromInt deadEnd.col
+                ++ ") "
+                ++ Debug.toString deadEnd.problem
+    in
+    String.join "\n    "
+        (metadata
+            :: "---- with context stack ----"
+            :: List.map contextToString deadEnd.contextStack
+        )
+
+
+contextToString : { row : Int, col : Int, context : ParseContext } -> String
+contextToString context =
+    "("
+        ++ String.fromInt context.row
+        ++ ","
+        ++ String.fromInt context.col
+        ++ ") "
+        ++ Debug.toString context.context

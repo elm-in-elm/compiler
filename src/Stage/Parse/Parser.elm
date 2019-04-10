@@ -192,7 +192,6 @@ moduleName =
                 else
                     P.succeed (String.join "." list)
             )
-        |> P.inContext InModuleName
 
 
 moduleNameWithoutDots : Parser_ String
@@ -325,11 +324,11 @@ expr : Parser_ Frontend.Expr
 expr =
     PP.expression
         { oneOf =
-            [ PP.literal literal
+            [ if_
             , lambda
-            , always var
-            , if_
             , parenthesizedExpr
+            , PP.literal literal
+            , always var
             ]
         , andThenOneOf =
             -- TODO test this: does `x =\n  call 1\n+ something` work? (it shouldn't: no space before '+')
@@ -338,6 +337,7 @@ expr =
             ]
         , spaces = P.spaces
         }
+        |> P.inContext InExpr
 
 
 checkNotBeginningOfLine : Parser_ ()
@@ -370,6 +370,7 @@ literal =
             , literalChar
             , literalString
             ]
+        |> P.inContext InLiteral
 
 
 {-| TODO deal with hex values. Use P.number and solve this+floats in one go?
@@ -387,6 +388,7 @@ literalInt =
                 |= int
             , int
             ]
+        |> P.inContext InLiteralInt
 
 
 {-| TODO escapes
@@ -504,13 +506,14 @@ lambda config =
 
 if_ : ExprConfig -> Parser_ Frontend.Expr
 if_ config =
-    P.succeed Frontend.if_
-        |. P.keyword (P.Token "if" ExpectingIf)
-        |= PP.subExpression 0 config
-        |. P.keyword (P.Token "then" ExpectingThen)
-        |= PP.subExpression 0 config
-        |. P.keyword (P.Token "else" ExpectingElse)
-        |= PP.subExpression 0 config
+    log "if" <|
+        P.succeed Frontend.if_
+            |. P.keyword (P.Token "if" ExpectingIf)
+            |= log "test" (PP.subExpression 0 config)
+            |. log "then kw" (P.keyword (P.Token "then" ExpectingThen))
+            |= log "then" (PP.subExpression 0 config)
+            |. log "else kw" (P.keyword (P.Token "else" ExpectingElse))
+            |= log "else" (PP.subExpression 0 config)
 
 
 promoteArguments : List VarName -> Frontend.Expr -> Frontend.Expr
@@ -562,3 +565,28 @@ manyHelp spaces p vs =
         , P.succeed ()
             |> P.map (always (P.Done (List.reverse vs)))
         ]
+
+
+log : String -> Parser_ a -> Parser_ a
+log message parser =
+    P.succeed
+        (\source offsetBefore parseResult offsetAfter ->
+            let
+                _ =
+                    Debug.log "-----------------------------------------------" message
+
+                _ =
+                    Debug.log "source         " source
+
+                _ =
+                    Debug.log "chomped string " (String.slice offsetBefore offsetAfter source)
+
+                _ =
+                    Debug.log "parsed result  " parseResult
+            in
+            parseResult
+        )
+        |= P.getSource
+        |= P.getOffset
+        |= parser
+        |= P.getOffset

@@ -48,9 +48,9 @@ type ParseError
 
 
 type ParseContext
-    = InVarExpr
-    | InQualifiedVar
-    | InModuleName
+    = InLiteral
+    | InLiteralInt
+    | InExpr
 
 
 type ParseProblem
