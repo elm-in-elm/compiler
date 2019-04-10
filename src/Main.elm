@@ -347,7 +347,6 @@ compile project =
         |> Result.andThen Optimize.optimize
         |> Result.andThen PrepareForBackend.prepareForBackend
         |> Result.andThen Emit.emit
-        |> Debug.log "after emit"
         |> writeToFSAndExit
 
 
@@ -365,7 +364,7 @@ writeToFSAndExit result =
             , Cmd.batch
                 -- TODO don't hardcode out.js
                 [ Ports.writeToFile (FilePath "out.js") output
-                , println "Compilation finished, wrote output to `out.js`."
+                , println "Compilation finished, writing output to `out.js`."
                 ]
             )
 
