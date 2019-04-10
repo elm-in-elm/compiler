@@ -144,7 +144,9 @@ desugarLambda recurse arguments body =
 
 desugarCall : (Frontend.Expr -> Result DesugarError Canonical.Expr) -> Frontend.Expr -> Frontend.Expr -> Result DesugarError Canonical.Expr
 desugarCall recurse fn argument =
-    Debug.todo "desugarCall"
+    Result.map2 Canonical.call
+        (recurse fn)
+        (recurse argument)
 
 
 
