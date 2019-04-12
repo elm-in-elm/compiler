@@ -486,7 +486,7 @@ expr =
                 ]
               )
             , ( "if"
-              , [ ( "with spaces"
+              , [ ( "with one space"
                   , "if 1 then 2 else 3"
                   , Ok
                         (AST.Frontend.if_
@@ -495,6 +495,17 @@ expr =
                             (Literal (Int 3))
                         )
                   )
+                , ( "with multiple spaces"
+                  , "if   1   then   2   else   3"
+                  , Ok
+                        (AST.Frontend.if_
+                            (Literal (Int 1))
+                            (Literal (Int 2))
+                            (Literal (Int 3))
+                        )
+                  )
+
+                -- TODO newlines? "if\n1" should fail, "if\n 1" shouldn't?
                 ]
               )
             , ( "literal int"

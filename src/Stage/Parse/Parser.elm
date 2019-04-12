@@ -379,7 +379,13 @@ literalInt : Parser_ Literal
 literalInt =
     let
         int =
-            P.int ExpectingInt InvalidInt
+            {- This deals with the bug [elm/parser#25](https://github.com/elm/parser/issues/25).
+               In our case it was interfering with `if ... then ... >e<lse ...`.
+
+               For more info see @dmy's assessment at [dmy/elm-pratt-parser#1](https://github.com/dmy/elm-pratt-parser/issues/1).
+            -}
+            P.backtrackable <|
+                P.int ExpectingInt InvalidInt
     in
     P.succeed Int
         |= P.oneOf
@@ -506,14 +512,13 @@ lambda config =
 
 if_ : ExprConfig -> Parser_ Frontend.Expr
 if_ config =
-    log "if" <|
-        P.succeed Frontend.if_
-            |. P.keyword (P.Token "if" ExpectingIf)
-            |= log "test" (PP.subExpression 0 config)
-            |. log "then kw" (P.keyword (P.Token "then" ExpectingThen))
-            |= log "then" (PP.subExpression 0 config)
-            |. log "else kw" (P.keyword (P.Token "else" ExpectingElse))
-            |= log "else" (PP.subExpression 0 config)
+    P.succeed Frontend.if_
+        |. P.keyword (P.Token "if" ExpectingIf)
+        |= PP.subExpression 0 config
+        |. P.keyword (P.Token "then" ExpectingThen)
+        |= PP.subExpression 0 config
+        |. P.keyword (P.Token "else" ExpectingElse)
+        |= PP.subExpression 0 config
 
 
 promoteArguments : List VarName -> Frontend.Expr -> Frontend.Expr
@@ -569,24 +574,32 @@ manyHelp spaces p vs =
 
 log : String -> Parser_ a -> Parser_ a
 log message parser =
-    P.succeed
-        (\source offsetBefore parseResult offsetAfter ->
-            let
-                _ =
-                    Debug.log "-----------------------------------------------" message
+    P.succeed ()
+        |> P.andThen
+            (\() ->
+                let
+                    _ =
+                        Debug.log "starting" message
+                in
+                P.succeed
+                    (\source offsetBefore parseResult offsetAfter ->
+                        let
+                            _ =
+                                Debug.log "-----------------------------------------------" message
 
-                _ =
-                    Debug.log "source         " source
+                            _ =
+                                Debug.log "source         " source
 
-                _ =
-                    Debug.log "chomped string " (String.slice offsetBefore offsetAfter source)
+                            _ =
+                                Debug.log "chomped string " (String.slice offsetBefore offsetAfter source)
 
-                _ =
-                    Debug.log "parsed result  " parseResult
-            in
-            parseResult
-        )
-        |= P.getSource
-        |= P.getOffset
-        |= parser
-        |= P.getOffset
+                            _ =
+                                Debug.log "parsed result  " parseResult
+                        in
+                        parseResult
+                    )
+                    |= P.getSource
+                    |= P.getOffset
+                    |= parser
+                    |= P.getOffset
+            )
