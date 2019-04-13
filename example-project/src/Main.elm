@@ -2,7 +2,7 @@ module Main exposing (main)
 
 
 main =
-    call 1
+    ifTest
 
 
 call =
