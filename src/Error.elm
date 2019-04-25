@@ -14,6 +14,7 @@ module Error exposing
     , toString
     )
 
+import AST.Type exposing (Type)
 import Common.Types
     exposing
         ( FilePath(..)
@@ -99,10 +100,14 @@ type DesugarError
     | AmbiguousVar (Maybe ModuleName) VarName ModuleName
 
 
-{-| TODO
--}
+
+-- TypeErrors live in
+
+
 type TypeError
-    = TodoFirstTypeError
+    = UnboundName String
+    | CannotUnify Type Type -- TODO name suggestion: TypeMismatch?
+    | VarOccursInType Int Type -- TODO name suggestion: OccursCheckFailed?
 
 
 {-| TODO
