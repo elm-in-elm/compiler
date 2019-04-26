@@ -1,11 +1,11 @@
-module AST.Typechecked exposing
+module AST.Typed exposing
     ( Expr
     , Expr_(..)
     , ProjectFields
     )
 
 import AST.Common exposing (Literal)
-import AST.Type exposing (Type)
+import AST.Common.Type exposing (Type)
 import Common.Types
     exposing
         ( ModuleName

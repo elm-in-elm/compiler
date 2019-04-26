@@ -54,6 +54,10 @@ desugarModule modules thisModule =
 
 {-| Roughly: Dict.Any.map toResult >> Result.Extra.combine
 We might need to make the function accept keys if there arises a need for it.
+
+TODO look at Stage.Typecheck - we don't use resultMapDict there,
+instead we use Result.Extra.combine as is.
+
 -}
 resultMapDict : (k -> comparable) -> (v -> Result x v2) -> AnyDict comparable k v -> Result x (AnyDict comparable k v2)
 resultMapDict toComparable fn dict =

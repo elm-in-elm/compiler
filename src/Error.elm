@@ -14,7 +14,7 @@ module Error exposing
     , toString
     )
 
-import AST.Type exposing (Type)
+import AST.Common.Type exposing (Type)
 import Common.Types
     exposing
         ( FilePath(..)
@@ -106,8 +106,11 @@ type DesugarError
 
 type TypeError
     = UnboundName String
-    | CannotUnify Type Type -- TODO name suggestion: TypeMismatch?
-    | VarOccursInType Int Type -- TODO name suggestion: OccursCheckFailed?
+      -- TODO name suggestion: TypeMismatch?
+    | CannotUnify Type Type
+      -- TODO name suggestion: OccursCheckFailed?
+      -- TODO explain what "occurs check" is
+    | VarOccursInType Int Type
 
 
 {-| TODO

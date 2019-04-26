@@ -7,8 +7,9 @@ To get things out of the way: it would be great if the pipeline could be pure:
     input
         |> parse
         |> desugar
-        |> typecheck
+        |> inferTypes
         |> optimize
+        |> removeTypes
         |> prepareForBackend
         |> emit
 
@@ -70,10 +71,11 @@ import Ports exposing (println, printlnStderr)
 import Set.Any
 import Stage.Desugar as Desugar
 import Stage.Emit as Emit
+import Stage.InferTypes as InferTypes
 import Stage.Optimize as Optimize
 import Stage.Parse as Parse
 import Stage.PrepareForBackend as PrepareForBackend
-import Stage.Typecheck as Typecheck
+import Stage.RemoveTypes as RemoveTypes
 
 
 {-| We're essentially a Node.JS app (until we get self-hosting :P ).
@@ -343,8 +345,9 @@ compile project =
     in
     Ok project
         |> Result.andThen Desugar.desugar
-        |> Result.andThen Typecheck.typecheck
+        |> Result.andThen InferTypes.inferTypes
         |> Result.andThen Optimize.optimize
+        |> Result.andThen RemoveTypes.removeTypes
         |> Result.andThen PrepareForBackend.prepareForBackend
         |> Result.andThen Emit.emit
         |> writeToFSAndExit

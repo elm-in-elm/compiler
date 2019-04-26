@@ -1,4 +1,4 @@
-module Extra.Dict.Any exposing (find)
+module Extra.Dict.Any exposing (combine, find)
 
 import Dict.Any exposing (AnyDict)
 
@@ -33,3 +33,16 @@ find predicate dict =
         )
         Nothing
         dict
+
+
+{-| Similar to Result.Extra.combine which works for Lists.
+-}
+combine : (k -> comparable) -> AnyDict comparable k (Result err v) -> Result err (AnyDict comparable k v)
+combine toKey dictOfResults =
+    dictOfResults
+        |> Dict.Any.foldr
+            {- Is this readable enough? We're creating a new dict with the same
+               key but the contents of the Results, not the Results themselves.
+            -}
+            (Result.map2 << Dict.Any.insert)
+            (Ok (Dict.Any.empty toKey))
