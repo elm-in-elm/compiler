@@ -9,6 +9,8 @@ import Common.Types
         , Module
         , Modules
         , Project
+        , TopLevelDeclaration
+        , VarName
         )
 import Dict.Any
 import Error exposing (Error(..), TypeError)
@@ -22,57 +24,40 @@ import Extra.Dict.Any
 3.  Solve the equations (find something called "most general unifier" for a specific ID)
 
 -}
-typecheck : Project Canonical.ProjectFields -> Result Error (Project Typechecked.ProjectFields)
-typecheck project =
+inferTypes : Project Canonical.ProjectFields -> Result Error (Project Typed.ProjectFields)
+inferTypes project =
     project.modules
-        |> typecheckModules
-        |> projectOfNewType project
-
-
-{-| Boilerplate, for nice pipelined `typecheck` function.
--}
-typecheckModules : Modules Canonical.Expr -> Result TypeError (Modules Typechecked.Expr)
-typecheckModules modules =
-    modules
         {- TODO this can't work, we'll have to typecheck across modules, right?
            This only typechecks each module separately...
         -}
-        |> Dict.Any.map typecheckModule
+        |> Dict.Any.map (always inferModule)
         |> Extra.Dict.Any.combine Common.moduleNameToString
         |> Result.mapError TypeError
-
-
-{-| Boilerplate.
-
-Elm's record update syntax doesn't allow changing the type, so we have to
-create the record from scratch again.
-
--}
-projectOfNewType : Project a -> Result TypeError (Modules Typechecked.Expr) -> Result Error (Project Typechecked.ProjectFields)
-projectOfNewType p modules =
-    modules
-        |> Result.mapError TypeError
-        |> Result.map
-            (\newModules ->
-                { elmJson = p.elmJson
-                , mainFilePath = p.mainFilePath
-                , mainModuleName = p.mainModuleName
-                , sourceDirectory = p.sourceDirectory
-
-                -- all that because of this:
-                , modules = newModules
-                }
-            )
+        |> Result.map (projectOfNewType project)
 
 
 {-| Boilerplate.
 -}
-typecheckModule : Module Canonical.Expr -> Result TypeError (Module Typechecked.Expr)
-typecheckModule module_ =
+projectOfNewType : Project Canonical.ProjectFields -> Modules Typed.Expr -> Project Typed.ProjectFields
+projectOfNewType old modules =
+    { elmJson = old.elmJson
+    , mainFilePath = old.mainFilePath
+    , mainModuleName = old.mainModuleName
+    , sourceDirectory = old.sourceDirectory
+
+    -- all that code because of this:
+    , modules = modules
+    }
+
+
+{-| Boilerplate.
+-}
+inferModule : Module Canonical.Expr -> Result TypeError (Module Typed.Expr)
+inferModule module_ =
     module_.topLevelDeclarations
-        |> Dict.Any.map (Debug.todo "after map")
+        |> Dict.Any.map (always inferTopLevelDeclaration)
         |> Extra.Dict.Any.combine Common.varNameToString
-        |> Result.map moduleOfNewType module_
+        |> Result.map (moduleOfNewType module_)
 
 
 {-| Boilerplate.
@@ -82,14 +67,36 @@ moduleOfNewType old newDecls =
     { dependencies = old.dependencies
     , name = old.name
     , filePath = old.filePath
-    , topLevelDeclarations = newDecls
     , type_ = old.type_
     , exposing_ = old.exposing_
+
+    -- all that code because of this:
+    , topLevelDeclarations = newDecls
+    }
+
+
+{-| Boilerplate.
+-}
+inferTopLevelDeclaration : TopLevelDeclaration Canonical.Expr -> Result TypeError (TopLevelDeclaration Typed.Expr)
+inferTopLevelDeclaration decl =
+    inferExpr decl.body
+        |> Result.map (topLevelDeclarationOfNewType decl)
+
+
+{-| Boilerplate.
+-}
+topLevelDeclarationOfNewType : TopLevelDeclaration Canonical.Expr -> Typed.Expr -> TopLevelDeclaration Typed.Expr
+topLevelDeclarationOfNewType old newBody =
+    { name = old.name
+    , module_ = old.module_
+
+    -- all that code because of this:
+    , body = newBody
     }
 
 
 {-| The real work starts here!
 -}
-typecheckExpr : Canonical.Expr -> Result TypeError Typechecked.Expr
-typecheckExpr expr =
-    Debug.todo "typecheckExpr"
+inferExpr : Canonical.Expr -> Result TypeError Typed.Expr
+inferExpr expr =
+    Debug.todo "inferExpr"
