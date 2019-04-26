@@ -17,7 +17,7 @@ import Error exposing (Error(..), TypeError)
 import Extra.Dict.Any
 
 
-{-| We're using Hindley-Milner algorithm. It has essentially three parts:
+{-| We're using Hindley-Milner algorithm (Algorithm W). It has essentially three parts:
 
 1.  Annotate all the subexpressions with IDs
 2.  Generate equations (constraints) between the IDs (apply type inference rules)
