@@ -23,6 +23,8 @@ import Extra.Dict.Any
 2.  Generate equations (constraints) between the IDs (apply type inference rules)
 3.  Solve the equations (find something called "most general unifier" for a specific ID)
 
+See the `inferExpr` function for more! (Stuff in between is just one huge boilerplate.)
+
 -}
 inferTypes : Project Canonical.ProjectFields -> Result Error (Project Typed.ProjectFields)
 inferTypes project =
