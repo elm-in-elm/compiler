@@ -27,6 +27,8 @@ type alias ProjectFields =
   - being a tuple of the underlying Expr\_ type and its type
   - Lambda taking `argumentId` to help with typechecking (TODO write a better description)
 
+TODO make this opaque, add accessors etc.
+
 -}
 type alias Expr =
     ( Expr_, Type )

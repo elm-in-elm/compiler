@@ -22,6 +22,7 @@ optimizeExpr : Typed.Expr -> Typed.Expr
 optimizeExpr expr =
     Typed.transformAll
         [ optimizePlus
+        , optimizeIf
         ]
         expr
 
@@ -34,6 +35,27 @@ optimizePlus ( expr, _ ) =
                 ( Typed.Literal (Literal.Int (left + right))
                 , Type.Int
                 )
+
+        _ ->
+            Nothing
+
+
+optimizeIf : Typed.Expr -> Maybe Typed.Expr
+optimizeIf ( expr, type_ ) =
+    case expr of
+        Typed.If { test, then_, else_ } ->
+            case test of
+                ( Typed.Literal (Literal.Bool bool), _ ) ->
+                    Just
+                        (if bool then
+                            then_
+
+                         else
+                            else_
+                        )
+
+                _ ->
+                    Nothing
 
         _ ->
             Nothing
