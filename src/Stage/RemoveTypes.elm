@@ -5,17 +5,15 @@ import AST.Typed as Typed
 import Common.Types exposing (Project)
 import Dict.Any
 import Error exposing (Error)
+import Stage.RemoveTypes.Boilerplate exposing (projectOfNewType, removeTypesInModule)
 
 
 removeTypes : Project Typed.ProjectFields -> Result Error (Project Canonical.ProjectFields)
 removeTypes project =
     project.modules
         |> Dict.Any.map (always (removeTypesInModule removeTypesInExpr))
-        |> Debug.todo "removeTypes"
-
-
-removeTypesInModule =
-    Debug.todo "removeTypesInModule"
+        |> projectOfNewType project
+        |> Ok
 
 
 {-| TODO recursion schemes! Potentially a variant of transformOnce that works on (a -> b) instead of (a -> a) ?
