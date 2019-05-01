@@ -14,10 +14,11 @@ module Error exposing
     , toString
     )
 
-import AST.Common.Type exposing (Type)
+import AST.Common.Type as Type exposing (Type)
 import Common.Types
     exposing
         ( FilePath(..)
+          -- TODO we can't depend on Common, so we deconstruct by hand
         , ModuleName(..)
         , VarName(..)
         )
@@ -100,17 +101,11 @@ type DesugarError
     | AmbiguousVar (Maybe ModuleName) VarName ModuleName
 
 
-
--- TypeErrors live in
-
-
 type TypeError
-    = UnboundName String
-      -- TODO name suggestion: TypeMismatch?
-    | CannotUnify Type Type
-      -- TODO name suggestion: OccursCheckFailed?
+    = UnknownName VarName
+    | TypeMismatch Type Type
       -- TODO explain what "occurs check" is
-    | VarOccursInType Int Type
+    | OccursCheckFailed Int Type
 
 
 {-| TODO
@@ -190,8 +185,25 @@ toString error =
                         ++ moduleName
                         ++ "`. Keep only one in the code! Maybe alias some imports to fix the collision?"
 
-        TypeError _ ->
-            Debug.todo "toString typeError"
+        TypeError typeError ->
+            case typeError of
+                UnknownName (VarName varName) ->
+                    "I've encountered a variable name I haven't seen before while typechecking your program: "
+                        ++ varName
+
+                TypeMismatch t1 t2 ->
+                    "The types "
+                        ++ Type.toString t1
+                        ++ " and "
+                        ++ Type.toString t2
+                        ++ " don't match."
+
+                OccursCheckFailed varId type_ ->
+                    -- TODO better error. Is this cycle? Infinite type?
+                    "An \"occurs check\" failed while typechecking: "
+                        ++ Type.toString (Type.Var varId)
+                        ++ " occurs in "
+                        ++ Type.toString type_
 
         OptimizeError _ ->
             Debug.todo "toString optimizeError"

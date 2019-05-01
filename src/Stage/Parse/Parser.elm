@@ -7,7 +7,7 @@ module Stage.Parse.Parser exposing
     , module_
     )
 
-import AST.Common exposing (Literal(..))
+import AST.Common.Literal exposing (Literal(..))
 import AST.Frontend as Frontend exposing (Expr(..))
 import Common
 import Common.Types

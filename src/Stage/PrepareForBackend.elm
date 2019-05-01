@@ -2,7 +2,7 @@ module Stage.PrepareForBackend exposing (prepareForBackend)
 
 import AST.Backend as Backend
 import AST.Canonical as Canonical exposing (Expr(..))
-import AST.Common exposing (Literal(..))
+import AST.Common.Literal exposing (Literal(..))
 import Common
 import Common.Types
     exposing

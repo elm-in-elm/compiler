@@ -7,7 +7,7 @@ module AST.Canonical exposing
     , var
     )
 
-import AST.Common exposing (Literal)
+import AST.Common.Literal exposing (Literal)
 import Common.Types
     exposing
         ( ModuleName

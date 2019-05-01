@@ -1,7 +1,7 @@
 module Stage.Desugar exposing (desugar)
 
 import AST.Canonical as Canonical
-import AST.Common as Common
+import AST.Common.Literal exposing (Literal)
 import AST.Frontend as Frontend
 import Basics.Extra exposing (flip)
 import Common
@@ -119,7 +119,7 @@ desugarExpr modules thisModule expr =
 -- DESUGAR PASSES
 
 
-desugarLiteral : Common.Literal -> Result DesugarError Canonical.Expr
+desugarLiteral : Literal -> Result DesugarError Canonical.Expr
 desugarLiteral literal =
     Ok (Canonical.Literal literal)
 

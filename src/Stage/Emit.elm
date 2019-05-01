@@ -2,7 +2,7 @@ module Stage.Emit exposing (emit)
 
 import AST.Backend as Backend
 import AST.Canonical exposing (Expr(..))
-import AST.Common exposing (Literal(..))
+import AST.Common.Literal exposing (Literal(..))
 import Common.Types
     exposing
         ( FileContents(..)

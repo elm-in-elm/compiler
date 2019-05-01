@@ -8,7 +8,7 @@ module AST.Frontend exposing
     , var
     )
 
-import AST.Common exposing (Literal(..))
+import AST.Common.Literal exposing (Literal)
 import Common.Types
     exposing
         ( ModuleName
@@ -87,13 +87,7 @@ if_ test then_ else_ =
 recurse : (Expr -> Expr) -> Expr -> Expr
 recurse f expr =
     case expr of
-        Literal (Int _) ->
-            expr
-
-        Literal (Char _) ->
-            expr
-
-        Literal (String _) ->
+        Literal _ ->
             expr
 
         Var _ ->
