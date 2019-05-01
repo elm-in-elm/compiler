@@ -3,6 +3,7 @@ module AST.Typed exposing
     , Expr_(..)
     , ProjectFields
     , lambda
+    , transformAll
     , transformOnce
     )
 
@@ -95,4 +96,12 @@ transformOnce pass expr =
     Transform.transformOnce
         recurse
         pass
+        expr
+
+
+transformAll : List (Expr -> Maybe Expr) -> Expr -> Expr
+transformAll passes expr =
+    Transform.transformAll
+        recurse
+        (Transform.orList passes)
         expr

@@ -3,7 +3,7 @@ module Main exposing (main)
 
 main =
     if True then
-        "xyz"
+        1 + 2 + 3
 
     else
-        "abc"
+        999
