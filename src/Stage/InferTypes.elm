@@ -46,6 +46,11 @@ inferTypes project =
         {- TODO this can't work, we'll have to typecheck across modules, right?
            This only typechecks each module separately...
         -}
+        {- To keep this module nice and focused, we stash all the nasty stuff
+           into `Stage.InferTypes.Boilerplate`. The downside of that is that we
+           have to give `inferModule` an argument, since we want `inferExpr`
+           to live in this module too.
+        -}
         |> Dict.Any.map (always (inferModule inferExpr))
         |> Extra.Dict.Any.combine Common.moduleNameToString
         |> Result.mapError TypeError
@@ -80,6 +85,10 @@ inferExpr expr =
     Result.map2 substituteAllTypes
         substitutionMap
         exprWithIds
+
+
+
+-- TODO think about which functions should live in which modules.
 
 
 {-| Stage 1
@@ -168,7 +177,10 @@ assignIdsHelp unusedId0 varIds0 expr =
                                 (\( unusedId2, varIds2, argument_ ) ->
                                     ( unusedId2
                                     , varIds2
-                                    , Typed.call fn_ argument_
+                                    , Typed.Call
+                                        { fn = fn_
+                                        , argument = argument_
+                                        }
                                     )
                                 )
                     )
@@ -185,7 +197,11 @@ assignIdsHelp unusedId0 varIds0 expr =
                                             (\( unusedId3, varIds3, else__ ) ->
                                                 ( unusedId3
                                                 , varIds3
-                                                , Typed.if_ test_ then__ else__
+                                                , Typed.If
+                                                    { test = test_
+                                                    , then_ = then__
+                                                    , else_ = else__
+                                                    }
                                                 )
                                             )
                                 )

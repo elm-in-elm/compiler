@@ -332,7 +332,14 @@ expr =
             ]
         , andThenOneOf =
             -- TODO test this: does `x =\n  call 1\n+ something` work? (it shouldn't: no space before '+')
-            [ PP.infixLeft 99 checkNotBeginningOfLine Frontend.call
+            [ PP.infixLeft 99
+                checkNotBeginningOfLine
+                (\fn argument ->
+                    Frontend.Call
+                        { fn = fn
+                        , argument = argument
+                        }
+                )
             , PP.infixLeft 1 (P.symbol (P.Token "+" ExpectingPlusOperator)) Plus
             ]
         , spaces = P.spaces
@@ -522,7 +529,14 @@ lambda config =
 
 if_ : ExprConfig -> Parser_ Frontend.Expr
 if_ config =
-    P.succeed Frontend.if_
+    P.succeed
+        (\test then_ else_ ->
+            Frontend.If
+                { test = test
+                , then_ = then_
+                , else_ = else_
+                }
+        )
         |. P.keyword (P.Token "if" ExpectingIf)
         |= PP.subExpression 0 config
         |. P.keyword (P.Token "then" ExpectingThen)

@@ -55,8 +55,8 @@ desugarModule modules thisModule =
 {-| Roughly: Dict.Any.map toResult >> Result.Extra.combine
 We might need to make the function accept keys if there arises a need for it.
 
-TODO look at Stage.Typecheck - we don't use resultMapDict there,
-instead we use Result.Extra.combine as is.
+TODO look at Stage.InferTypes - we don't use resultMapDict there,
+instead we use our own Extra.Dict.Any.combine which is similar to Result.Extra.combine.
 
 -}
 resultMapDict : (k -> comparable) -> (v -> Result x v2) -> AnyDict comparable k v -> Result x (AnyDict comparable k v2)
@@ -151,14 +151,27 @@ desugarLambda recurse arguments body =
 
 desugarCall : (Frontend.Expr -> Result DesugarError Canonical.Expr) -> Frontend.Expr -> Frontend.Expr -> Result DesugarError Canonical.Expr
 desugarCall recurse fn argument =
-    Result.map2 Canonical.call
+    Result.map2
+        (\fn_ argument_ ->
+            Canonical.Call
+                { fn = fn_
+                , argument = argument_
+                }
+        )
         (recurse fn)
         (recurse argument)
 
 
 desugarIf : (Frontend.Expr -> Result DesugarError Canonical.Expr) -> Frontend.Expr -> Frontend.Expr -> Frontend.Expr -> Result DesugarError Canonical.Expr
 desugarIf recurse test then_ else_ =
-    Result.map3 Canonical.if_
+    Result.map3
+        (\test_ then__ else__ ->
+            Canonical.If
+                { test = test_
+                , then_ = then__
+                , else_ = else__
+                }
+        )
         (recurse test)
         (recurse then_)
         (recurse else_)

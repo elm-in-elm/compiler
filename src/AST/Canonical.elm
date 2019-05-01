@@ -1,8 +1,6 @@
 module AST.Canonical exposing
     ( Expr(..)
     , ProjectFields
-    , call
-    , if_
     , lambda
     , var
     )
@@ -49,21 +47,4 @@ lambda argument body =
     Lambda
         { argument = argument
         , body = body
-        }
-
-
-call : Expr -> Expr -> Expr
-call fn argument =
-    Call
-        { fn = fn
-        , argument = argument
-        }
-
-
-if_ : Expr -> Expr -> Expr -> Expr
-if_ test then_ else_ =
-    If
-        { test = test
-        , then_ = then_
-        , else_ = else_
         }

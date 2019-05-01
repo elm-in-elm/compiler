@@ -1,8 +1,6 @@
 module AST.Frontend exposing
     ( Expr(..)
     , ProjectFields
-    , call
-    , if_
     , lambda
     , transform
     , var
@@ -45,23 +43,6 @@ lambda arguments body =
     Lambda
         { arguments = arguments
         , body = body
-        }
-
-
-call : Expr -> Expr -> Expr
-call fn argument =
-    Call
-        { fn = fn
-        , argument = argument
-        }
-
-
-if_ : Expr -> Expr -> Expr -> Expr
-if_ test then_ else_ =
-    If
-        { test = test
-        , then_ = then_
-        , else_ = else_
         }
 
 

@@ -2,8 +2,6 @@ module AST.Typed exposing
     ( Expr
     , Expr_(..)
     , ProjectFields
-    , call
-    , if_
     , lambda
     , transformOnce
     )
@@ -26,6 +24,7 @@ type alias ProjectFields =
 {-| Differs from Canonical.Expr by:
 
   - being a tuple of the underlying Expr\_ type and its type
+  - Lambda taking `argumentId` to help with typechecking (TODO write a better description)
 
 -}
 type alias Expr =
@@ -52,23 +51,6 @@ lambda argument body argumentId =
         { argument = argument
         , argumentId = argumentId
         , body = body
-        }
-
-
-call : Expr -> Expr -> Expr_
-call fn argument =
-    Call
-        { fn = fn
-        , argument = argument
-        }
-
-
-if_ : Expr -> Expr -> Expr -> Expr_
-if_ test then_ else_ =
-    If
-        { test = test
-        , then_ = then_
-        , else_ = else_
         }
 
 
