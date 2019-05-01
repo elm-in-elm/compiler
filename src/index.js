@@ -20,14 +20,20 @@ const {registerPort} = require('./utils.js');
   });
 
   registerPort(app, 'stdout', string => process.stdout.write(string));
-  registerPort(app, 'stderr', string => process.stderr.write(string));
+  registerPort(app, 'stderr', string => {
+    process.stderr.write('\n');
+    process.stderr.write('\n---------------------------');
+    process.stderr.write('\n-- COMPILER ERROR ---------');
+    process.stderr.write('\n---------------------------');
+    process.stderr.write(`\n${string}`);
+  });
   registerPort(app, 'read', async function(filename) {
     try {
       const contents = await fs.readFile(`${exampleProjectPath}/${filename}`, {encoding: 'utf8'});
       app.ports.readSubscription.send([filename, contents]);
     } catch (e) {
       console.log('---------------------------');
-      console.log('-- COMPILER ERROR ---------');
+      console.log('-- DEVELOPMENT ERROR ------');
       console.log('---------------------------');
       console.log(`\n${e.message}`);
       if (e.code != null) {
