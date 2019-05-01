@@ -103,6 +103,8 @@ type DesugarError
     | AmbiguousVar (Maybe ModuleName) VarName ModuleName
 
 
+{-| TODO annotate all type errors so that we can show the position in source code!
+-}
 type TypeError
     = UnknownName VarName
     | TypeMismatch Type Type
