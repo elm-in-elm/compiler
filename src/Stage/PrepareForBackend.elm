@@ -146,13 +146,7 @@ findDependencies modules expr =
             findDependencies modules
     in
     case expr of
-        Literal (Int _) ->
-            []
-
-        Literal (Char _) ->
-            []
-
-        Literal (String _) ->
+        Literal _ ->
             []
 
         Var { qualifier, name } ->

@@ -5,3 +5,4 @@ type Literal
     = Int Int
     | Char Char
     | String String
+    | Bool Bool

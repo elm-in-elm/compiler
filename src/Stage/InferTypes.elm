@@ -220,6 +220,10 @@ generateEquations ( expr, type_ ) =
             -- string is a string
             [ equals type_ Type.String ]
 
+        Typed.Literal (Literal.Bool _) ->
+            -- bool is a bool
+            [ equals type_ Type.Bool ]
+
         Typed.Argument _ ->
             -- we can't make any assumptions here
             []

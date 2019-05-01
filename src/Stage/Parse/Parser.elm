@@ -369,6 +369,7 @@ literal =
             [ literalInt
             , literalChar
             , literalString
+            , literalBool
             ]
         |> P.inContext InLiteral
 
@@ -430,6 +431,15 @@ literalString =
         |. P.symbol doubleQuote
         |= P.getChompedString (P.chompUntil doubleQuote)
         |. P.symbol doubleQuote
+
+
+literalBool : Parser_ Literal
+literalBool =
+    P.succeed Bool
+        |= P.oneOf
+            [ P.map (always True) <| P.keyword (P.Token "True" ExpectingTrue)
+            , P.map (always False) <| P.keyword (P.Token "False" ExpectingTrue)
+            ]
 
 
 var : Parser_ Frontend.Expr

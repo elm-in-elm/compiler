@@ -91,6 +91,13 @@ emitExpr expr =
         Literal (String string) ->
             "\"" ++ string ++ "\""
 
+        Literal (Bool bool) ->
+            if bool then
+                "true"
+
+            else
+                "false"
+
         Var { qualifier, name } ->
             mangleQualifiedVar qualifier name
 

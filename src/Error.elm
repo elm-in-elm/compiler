@@ -90,6 +90,8 @@ type ParseProblem
     | ExpectingIf
     | ExpectingThen
     | ExpectingElse
+    | ExpectingTrue
+    | ExpectingFalse
     | InvalidInt
     | CompilerBug String
 

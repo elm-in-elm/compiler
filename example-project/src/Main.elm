@@ -2,8 +2,8 @@ module Main exposing (main)
 
 
 main =
-    if 1 + 2 then
+    if True then
         3
 
     else
-        4
+        "abc"
