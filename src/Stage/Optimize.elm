@@ -6,7 +6,7 @@ import AST.Typed as Typed
 import Common.Types exposing (Project)
 import Dict.Any
 import Error exposing (Error)
-import Stage.Optimize.Boilerplate as Boilerplate exposing (optimizeProject)
+import Stage.Optimize.Boilerplate as Boilerplate
 
 
 optimize : Project Typed.ProjectFields -> Result Error (Project Typed.ProjectFields)

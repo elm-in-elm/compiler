@@ -1,4 +1,4 @@
-module Stage.RemoveTypes.Boilerplate exposing (projectOfNewType, removeTypesInModule)
+module Stage.RemoveTypes.Boilerplate exposing (removeTypesInProject)
 
 import AST.Canonical as Canonical
 import AST.Typed as Typed
@@ -15,6 +15,13 @@ import Common.Types
 import Dict.Any
 import Error exposing (Error(..), TypeError)
 import Extra.Dict.Any
+
+
+removeTypesInProject : (Typed.Expr -> Canonical.Expr) -> Project Typed.ProjectFields -> Project Canonical.ProjectFields
+removeTypesInProject removeTypesInExpr project =
+    project.modules
+        |> Dict.Any.map (always (removeTypesInModule removeTypesInExpr))
+        |> projectOfNewType project
 
 
 projectOfNewType : Project Typed.ProjectFields -> Modules Canonical.Expr -> Project Canonical.ProjectFields
