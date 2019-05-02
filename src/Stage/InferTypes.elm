@@ -19,7 +19,7 @@ import Dict.Any exposing (AnyDict)
 import Error exposing (Error(..), TypeError(..))
 import Extra.Dict.Any
 import Extra.Tuple
-import Stage.InferTypes.Boilerplate exposing (inferModule, projectOfNewType)
+import Stage.InferTypes.Boilerplate as Boilerplate
 import Stage.InferTypes.SubstitutionMap as SubstitutionMap exposing (SubstitutionMap)
 import Stage.InferTypes.TypeEquation exposing (TypeEquation, equals)
 import Stage.InferTypes.Unify as Unify
@@ -39,22 +39,14 @@ We also have a fourth part:
   - `substituteAllTypes`: recursively replace type variable IDs with their
     inferred types.
 
+TODO this can't work, we'll have to typecheck across modules, right?
+This only typechecks each module separately...
+
 -}
 inferTypes : Project Canonical.ProjectFields -> Result Error (Project Typed.ProjectFields)
 inferTypes project =
-    project.modules
-        {- TODO this can't work, we'll have to typecheck across modules, right?
-           This only typechecks each module separately...
-        -}
-        {- To keep this module nice and focused, we stash all the nasty stuff
-           into `Stage.InferTypes.Boilerplate`. The downside of that is that we
-           have to give `inferModule` an argument, since we want `inferExpr`
-           to live in this module too.
-        -}
-        |> Dict.Any.map (always (inferModule inferExpr))
-        |> Extra.Dict.Any.combine Common.moduleNameToString
+    Boilerplate.inferProject inferExpr project
         |> Result.mapError TypeError
-        |> Result.map (projectOfNewType project)
 
 
 inferExpr : Canonical.Expr -> Result TypeError Typed.Expr

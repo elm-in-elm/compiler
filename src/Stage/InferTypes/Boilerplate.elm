@@ -1,4 +1,4 @@
-module Stage.InferTypes.Boilerplate exposing (inferModule, projectOfNewType)
+module Stage.InferTypes.Boilerplate exposing (inferProject)
 
 import AST.Canonical as Canonical
 import AST.Typed as Typed
@@ -15,6 +15,14 @@ import Common.Types
 import Dict.Any
 import Error exposing (Error(..), TypeError)
 import Extra.Dict.Any
+
+
+inferProject : (Canonical.Expr -> Result TypeError Typed.Expr) -> Project Canonical.ProjectFields -> Result TypeError (Project Typed.ProjectFields)
+inferProject inferExpr project =
+    project.modules
+        |> Dict.Any.map (always (inferModule inferExpr))
+        |> Extra.Dict.Any.combine Common.moduleNameToString
+        |> Result.map (projectOfNewType project)
 
 
 projectOfNewType : Project Canonical.ProjectFields -> Modules Typed.Expr -> Project Typed.ProjectFields
