@@ -4,7 +4,6 @@ import AST.Common.Literal as Literal
 import AST.Common.Type as Type
 import AST.Typed as Typed
 import Common.Types exposing (Project)
-import Dict.Any
 import Error exposing (Error)
 import Stage.Optimize.Boilerplate as Boilerplate
 
@@ -38,7 +37,7 @@ optimizePlus ( expr, _ ) =
 
 
 optimizeIfLiteralBool : Typed.Expr -> Maybe Typed.Expr
-optimizeIfLiteralBool ( expr, type_ ) =
+optimizeIfLiteralBool ( expr, _ ) =
     case expr of
         Typed.If { test, then_, else_ } ->
             case test of

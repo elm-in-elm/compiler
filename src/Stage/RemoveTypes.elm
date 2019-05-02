@@ -3,7 +3,6 @@ module Stage.RemoveTypes exposing (removeTypes)
 import AST.Canonical as Canonical
 import AST.Typed as Typed
 import Common.Types exposing (Project)
-import Dict.Any
 import Error exposing (Error)
 import Stage.RemoveTypes.Boilerplate as Boilerplate
 

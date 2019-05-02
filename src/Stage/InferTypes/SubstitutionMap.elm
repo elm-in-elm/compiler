@@ -6,7 +6,7 @@ module Stage.InferTypes.SubstitutionMap exposing
     , isEmpty
     )
 
-import AST.Common.Type as Type exposing (Type)
+import AST.Common.Type exposing (Type)
 import Dict exposing (Dict)
 
 

@@ -1,8 +1,6 @@
 module Stage.Optimize.Boilerplate exposing (optimizeProject)
 
-import AST.Canonical as Canonical
 import AST.Typed as Typed
-import Common
 import Common.Types
     exposing
         ( Dict_
@@ -12,9 +10,7 @@ import Common.Types
         , TopLevelDeclaration
         , VarName
         )
-import Dict.Any exposing (AnyDict)
-import Error exposing (Error(..), TypeError)
-import Extra.Dict.Any
+import Dict.Any
 
 
 optimizeProject : (Typed.Expr -> Typed.Expr) -> Project Typed.ProjectFields -> Project Typed.ProjectFields

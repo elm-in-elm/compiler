@@ -2,7 +2,6 @@ module Stage.RemoveTypes.Boilerplate exposing (removeTypesInProject)
 
 import AST.Canonical as Canonical
 import AST.Typed as Typed
-import Common
 import Common.Types
     exposing
         ( Dict_
@@ -13,8 +12,6 @@ import Common.Types
         , VarName
         )
 import Dict.Any
-import Error exposing (Error(..), TypeError)
-import Extra.Dict.Any
 
 
 removeTypesInProject : (Typed.Expr -> Canonical.Expr) -> Project Typed.ProjectFields -> Project Canonical.ProjectFields

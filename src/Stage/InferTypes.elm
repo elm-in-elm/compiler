@@ -7,17 +7,11 @@ import AST.Typed as Typed
 import Common
 import Common.Types
     exposing
-        ( Dict_
-        , Module
-        , Modules
-        , Project
-        , TopLevelDeclaration
+        ( Project
         , VarName
         )
-import Dict exposing (Dict)
 import Dict.Any exposing (AnyDict)
 import Error exposing (Error(..), TypeError(..))
-import Extra.Dict.Any
 import Extra.Tuple
 import Stage.InferTypes.Boilerplate as Boilerplate
 import Stage.InferTypes.SubstitutionMap as SubstitutionMap exposing (SubstitutionMap)

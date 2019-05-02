@@ -11,10 +11,9 @@ import Common.Types
         , ModuleName
         , Modules
         , Project
-        , TopLevelDeclaration
         , VarName
         )
-import Dict.Any exposing (AnyDict)
+import Dict.Any
 import Error exposing (DesugarError(..), Error(..))
 import Extra.Dict.Any
 import Maybe.Extra

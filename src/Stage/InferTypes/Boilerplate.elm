@@ -13,7 +13,7 @@ import Common.Types
         , VarName
         )
 import Dict.Any
-import Error exposing (Error(..), TypeError)
+import Error exposing (TypeError)
 import Extra.Dict.Any
 
 
