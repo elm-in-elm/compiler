@@ -1,8 +1,12 @@
 module Main exposing (main)
 
 
+a =
+    True
+
+
 main =
-    if True then
+    if a then
         1 + 2 + 3
 
     else

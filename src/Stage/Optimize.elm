@@ -19,6 +19,16 @@ optimizeExpr expr =
     Typed.transformAll
         [ optimizePlus
         , optimizeIfLiteralBool
+
+        {- TODO optimizeLiteralPropagation -- all general constants too, not just literals?
+
+           a = True
+           main = if a then b else c
+
+           -->
+
+           b
+        -}
         ]
         expr
 
