@@ -6,7 +6,7 @@ module ParserTest exposing
     , moduleName
     )
 
-import AST.Common exposing (Literal(..))
+import AST.Common.Literal exposing (Literal(..))
 import AST.Frontend exposing (Expr(..))
 import Common
 import Common.Types
@@ -451,36 +451,41 @@ expr =
               , [ ( "simple"
                   , "fn 1"
                   , Ok
-                        (AST.Frontend.call
-                            (AST.Frontend.var Nothing (VarName "fn"))
-                            (Literal (Int 1))
+                        (AST.Frontend.Call
+                            { fn = AST.Frontend.var Nothing (VarName "fn")
+                            , argument = Literal (Int 1)
+                            }
                         )
                   )
                 , ( "with var"
                   , "fn arg"
                   , Ok
-                        (AST.Frontend.call
-                            (AST.Frontend.var Nothing (VarName "fn"))
-                            (AST.Frontend.var Nothing (VarName "arg"))
+                        (AST.Frontend.Call
+                            { fn = AST.Frontend.var Nothing (VarName "fn")
+                            , argument = AST.Frontend.var Nothing (VarName "arg")
+                            }
                         )
                   )
                 , ( "multiple"
                   , "fn arg1 arg2"
                   , Ok
-                        (AST.Frontend.call
-                            (AST.Frontend.call
-                                (AST.Frontend.var Nothing (VarName "fn"))
-                                (AST.Frontend.var Nothing (VarName "arg1"))
-                            )
-                            (AST.Frontend.var Nothing (VarName "arg2"))
+                        (AST.Frontend.Call
+                            { fn =
+                                AST.Frontend.Call
+                                    { fn = AST.Frontend.var Nothing (VarName "fn")
+                                    , argument = AST.Frontend.var Nothing (VarName "arg1")
+                                    }
+                            , argument = AST.Frontend.var Nothing (VarName "arg2")
+                            }
                         )
                   )
                 , ( "space not needed if parenthesized arg"
                   , "fn(arg1)"
                   , Ok
-                        (AST.Frontend.call
-                            (AST.Frontend.var Nothing (VarName "fn"))
-                            (AST.Frontend.var Nothing (VarName "arg1"))
+                        (AST.Frontend.Call
+                            { fn = AST.Frontend.var Nothing (VarName "fn")
+                            , argument = AST.Frontend.var Nothing (VarName "arg1")
+                            }
                         )
                   )
                 ]
@@ -489,19 +494,21 @@ expr =
               , [ ( "with one space"
                   , "if 1 then 2 else 3"
                   , Ok
-                        (AST.Frontend.if_
-                            (Literal (Int 1))
-                            (Literal (Int 2))
-                            (Literal (Int 3))
+                        (AST.Frontend.If
+                            { test = Literal (Int 1)
+                            , then_ = Literal (Int 2)
+                            , else_ = Literal (Int 3)
+                            }
                         )
                   )
                 , ( "with multiple spaces"
                   , "if   1   then   2   else   3"
                   , Ok
-                        (AST.Frontend.if_
-                            (Literal (Int 1))
-                            (Literal (Int 2))
-                            (Literal (Int 3))
+                        (AST.Frontend.If
+                            { test = Literal (Int 1)
+                            , then_ = Literal (Int 2)
+                            , else_ = Literal (Int 3)
+                            }
                         )
                   )
 
@@ -571,6 +578,17 @@ expr =
                 -- TODO deal with Unicode escapes
                 -- TODO triple-quote strings with different escaping
                 -- TODO emoji? does that even work in Elm?
+                ]
+              )
+            , ( "literal bool"
+              , [ ( "True"
+                  , "True"
+                  , Ok (Literal (Bool True))
+                  )
+                , ( "False"
+                  , "False"
+                  , Ok (Literal (Bool False))
+                  )
                 ]
               )
             ]
