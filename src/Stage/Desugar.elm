@@ -18,68 +18,13 @@ import Dict.Any exposing (AnyDict)
 import Error exposing (DesugarError(..), Error(..))
 import Extra.Dict.Any
 import Maybe.Extra
+import Stage.Desugar.Boilerplate as Boilerplate
 
 
 desugar : Project Frontend.ProjectFields -> Result Error (Project Canonical.ProjectFields)
-desugar p =
-    p.modules
-        |> resultMapDict Common.moduleNameToString (desugarModule p.modules)
-        |> Result.map
-            (\modules ->
-                { elmJson = p.elmJson
-                , mainFilePath = p.mainFilePath
-                , mainModuleName = p.mainModuleName
-                , sourceDirectory = p.sourceDirectory
-                , modules = modules
-                }
-            )
+desugar project =
+    Boilerplate.desugarProject (desugarExpr project.modules) project
         |> Result.mapError DesugarError
-
-
-desugarModule : Modules Frontend.Expr -> Module Frontend.Expr -> Result DesugarError (Module Canonical.Expr)
-desugarModule modules thisModule =
-    thisModule.topLevelDeclarations
-        |> resultMapDict Common.varNameToString (desugarTopLevelDeclaration modules thisModule)
-        |> Result.map
-            (\topLevelDeclarations ->
-                { dependencies = thisModule.dependencies
-                , name = thisModule.name
-                , filePath = thisModule.filePath
-                , type_ = thisModule.type_
-                , exposing_ = thisModule.exposing_
-                , topLevelDeclarations = topLevelDeclarations
-                }
-            )
-
-
-{-| Roughly: Dict.Any.map toResult >> Result.Extra.combine
-We might need to make the function accept keys if there arises a need for it.
-
-TODO look at Stage.InferTypes - we don't use resultMapDict there,
-instead we use our own Extra.Dict.Any.combine which is similar to Result.Extra.combine.
-
--}
-resultMapDict : (k -> comparable) -> (v -> Result x v2) -> AnyDict comparable k v -> Result x (AnyDict comparable k v2)
-resultMapDict toComparable fn dict =
-    dict
-        |> Dict.Any.toList
-        -- This following line is a mouthful. It uses the Result-producing fn on the second part of the tuple,
-        -- and in the same loop does what Result.Extra.combine would did with that second part of the tuple:
-        -- List (a, Result x b) -> Result x (List (a,b))
-        |> List.foldr (\( a, b ) acc -> Result.map2 (\b_ acc_ -> ( a, b_ ) :: acc_) (fn b) acc) (Ok [])
-        |> Result.map (Dict.Any.fromList toComparable)
-
-
-desugarTopLevelDeclaration : Modules Frontend.Expr -> Module Frontend.Expr -> TopLevelDeclaration Frontend.Expr -> Result DesugarError (TopLevelDeclaration Canonical.Expr)
-desugarTopLevelDeclaration modules thisModule decl =
-    desugarExpr modules thisModule decl.body
-        |> Result.map
-            (\body ->
-                { name = decl.name
-                , module_ = decl.module_
-                , body = body
-                }
-            )
 
 
 {-| Combines the various small desugaring passes into one pass that tries all
