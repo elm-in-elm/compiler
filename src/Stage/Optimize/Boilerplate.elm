@@ -1,4 +1,4 @@
-module Stage.Optimize.Boilerplate exposing (asModulesIn, optimizeModule)
+module Stage.Optimize.Boilerplate exposing (optimizeProject)
 
 import AST.Canonical as Canonical
 import AST.Typed as Typed
@@ -15,6 +15,13 @@ import Common.Types
 import Dict.Any exposing (AnyDict)
 import Error exposing (Error(..), TypeError)
 import Extra.Dict.Any
+
+
+optimizeProject : (Typed.Expr -> Typed.Expr) -> Project Typed.ProjectFields -> Project Typed.ProjectFields
+optimizeProject optimizeExpr project =
+    project.modules
+        |> Dict.Any.map (always (optimizeModule optimizeExpr))
+        |> asModulesIn project
 
 
 asModulesIn : Project Typed.ProjectFields -> Modules Typed.Expr -> Project Typed.ProjectFields
