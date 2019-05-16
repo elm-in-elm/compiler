@@ -343,6 +343,7 @@ compile project =
                                 )
                     )
     in
+    -- TODO look at official compiler's Compile.compile - is that a better API?
     Ok project
         |> Result.andThen Desugar.desugar
         |> Result.andThen InferTypes.inferTypes
