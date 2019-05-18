@@ -591,6 +591,18 @@ expr =
                   )
                 ]
               )
+            , ( "let"
+              , [ ( "one liner"
+                  , "let x = 1 in 2"
+                  , Ok
+                        (AST.Frontend.Let
+                            { bindings = [ { name = VarName "x", body = Literal (Int 1) } ]
+                            , body = Literal (Int 2)
+                            }
+                        )
+                  )
+                ]
+              )
             ]
         )
 

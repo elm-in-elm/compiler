@@ -1,8 +1,10 @@
 module Common exposing
-    ( expectedFilePath
+    ( combineBinding
+    , expectedFilePath
     , expectedModuleName
     , exposes
     , filePathToString
+    , mapBinding
     , moduleNameToString
     , moduleNames
     , topLevelDeclarationToString
@@ -12,7 +14,8 @@ module Common exposing
 
 import Common.Types
     exposing
-        ( ExposedItem(..)
+        ( Binding
+        , ExposedItem(..)
         , Exposing(..)
         , FilePath(..)
         , Module
@@ -123,9 +126,28 @@ exposes ((VarName var) as varName) module_ =
 {-| Given `import Foo as F`, `unalias ... (ModuleName "F")` => `Just (ModuleName "Foo")`
 
 TODO add a test
+
 -}
 unalias : Module a -> ModuleName -> Maybe ModuleName
 unalias thisModule moduleName =
     thisModule.dependencies
         |> Extra.Dict.Any.find (\_ dep -> dep.as_ == Just moduleName)
         |> Maybe.map (Tuple.second >> .moduleName)
+
+
+mapBinding : (e1 -> e2) -> Binding e1 -> Binding e2
+mapBinding fn { name, body } =
+    { name = name
+    , body = fn body
+    }
+
+
+combineBinding : Binding (Result x a) -> Result x (Binding a)
+combineBinding { name, body } =
+    Result.map
+        (\body_ ->
+            { name = name
+            , body = body_
+            }
+        )
+        body

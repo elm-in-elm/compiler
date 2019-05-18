@@ -2,7 +2,9 @@ module Stage.RemoveTypes exposing (removeTypes)
 
 import AST.Canonical as Canonical
 import AST.Typed as Typed
+import Common
 import Common.Types exposing (Project)
+import Dict.Any
 import Error exposing (Error)
 import Stage.RemoveTypes.Boilerplate as Boilerplate
 
@@ -47,4 +49,10 @@ removeTypesInExpr ( expr, _ ) =
                 { test = removeTypesInExpr test
                 , then_ = removeTypesInExpr then_
                 , else_ = removeTypesInExpr else_
+                }
+
+        Typed.Let { bindings, body } ->
+            Canonical.Let
+                { bindings = Dict.Any.map (always (Common.mapBinding removeTypesInExpr)) bindings
+                , body = removeTypesInExpr body
                 }

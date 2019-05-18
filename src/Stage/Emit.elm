@@ -116,6 +116,9 @@ emitExpr expr =
         If { test, then_, else_ } ->
             "((" ++ emitExpr test ++ ") ? (" ++ emitExpr then_ ++ ") : (" ++ emitExpr else_ ++ "))"
 
+        Let { bindings, body } ->
+            Debug.todo "emit let"
+
 
 mangleQualifiedVar : ModuleName -> VarName -> String
 mangleQualifiedVar moduleName varName =

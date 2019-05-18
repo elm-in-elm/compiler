@@ -7,9 +7,11 @@ module AST.Frontend exposing
     )
 
 import AST.Common.Literal exposing (Literal)
+import Common
 import Common.Types
     exposing
-        ( ModuleName
+        ( Binding
+        , ModuleName
         , Modules
         , VarName
         )
@@ -28,6 +30,7 @@ type Expr
     | Lambda { arguments : List VarName, body : Expr }
     | Call { fn : Expr, argument : Expr }
     | If { test : Expr, then_ : Expr, else_ : Expr }
+    | Let { bindings : List (Binding Expr), body : Expr }
 
 
 var : Maybe ModuleName -> VarName -> Expr
@@ -94,6 +97,12 @@ recurse f expr =
                 { test = f test
                 , then_ = f then_
                 , else_ = f else_
+                }
+
+        Let { bindings, body } ->
+            Let
+                { bindings = List.map (Common.mapBinding f) bindings
+                , body = f body
                 }
 
 

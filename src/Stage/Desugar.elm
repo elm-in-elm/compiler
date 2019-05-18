@@ -7,7 +7,8 @@ import Basics.Extra exposing (flip)
 import Common
 import Common.Types
     exposing
-        ( Module
+        ( Binding
+        , Module
         , ModuleName
         , Modules
         , Project
@@ -17,6 +18,7 @@ import Dict.Any
 import Error exposing (DesugarError(..), Error(..))
 import Extra.Dict.Any
 import Maybe.Extra
+import Result.Extra
 import Stage.Desugar.Boilerplate as Boilerplate
 
 
@@ -57,6 +59,9 @@ desugarExpr modules thisModule expr =
 
         Frontend.If { test, then_, else_ } ->
             desugarIf recurse test then_ else_
+
+        Frontend.Let { bindings, body } ->
+            desugarLet recurse bindings body
 
 
 
@@ -119,6 +124,28 @@ desugarIf recurse test then_ else_ =
         (recurse test)
         (recurse then_)
         (recurse else_)
+
+
+desugarLet : (Frontend.Expr -> Result DesugarError Canonical.Expr) -> List (Binding Frontend.Expr) -> Frontend.Expr -> Result DesugarError Canonical.Expr
+desugarLet recurse bindings body =
+    Result.map2
+        (\bindings_ body_ ->
+            let
+                x : List (Binding Canonical.Expr)
+                x =
+                    bindings_
+            in
+            Canonical.Let
+                { bindings =
+                    bindings_
+                        |> List.map (\binding -> ( binding.name, binding ))
+                        |> Dict.Any.fromList Common.varNameToString
+                , body = body_
+                }
+        )
+        -- TODO a bit mouthful:
+        (Result.Extra.combine (List.map (Common.mapBinding recurse >> Common.combineBinding) bindings))
+        (recurse body)
 
 
 

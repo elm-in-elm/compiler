@@ -1,5 +1,6 @@
 module Common.Types exposing
-    ( Dependency
+    ( Binding
+    , Dependency
     , Dict_
     , EffectMetadata
     , ExposedItem(..)
@@ -130,4 +131,10 @@ type alias TopLevelDeclaration expr =
     { name : VarName
     , body : expr
     , module_ : ModuleName
+    }
+
+
+type alias Binding expr =
+    { name : VarName
+    , body : expr
     }

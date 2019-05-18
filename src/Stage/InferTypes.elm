@@ -192,6 +192,9 @@ assignIdsHelp unusedId0 varIds0 expr =
                                             )
                                 )
                     )
+
+        Canonical.Let { bindings, body } ->
+            Debug.todo "infer types of let"
     )
         |> Result.map
             (\( unusedIdN, varIdsN, recursedExpr ) ->
@@ -298,6 +301,9 @@ generateEquations ( expr, type_ ) =
                 ++ generateEquations test
                 ++ generateEquations then_
                 ++ generateEquations else_
+
+        Typed.Let { bindings, body } ->
+            Debug.todo "infer types for let"
 
 
 {-| This function takes care of recursively applying `substituteType`

@@ -325,6 +325,7 @@ expr =
     PP.expression
         { oneOf =
             [ if_
+            , let_
             , lambda
             , parenthesizedExpr
             , PP.literal literal
@@ -542,6 +543,21 @@ if_ config =
         |. P.keyword (P.Token "then" ExpectingThen)
         |= PP.subExpression 0 config
         |. P.keyword (P.Token "else" ExpectingElse)
+        |= PP.subExpression 0 config
+
+
+let_ : ExprConfig -> Parser_ Frontend.Expr
+let_ config =
+    P.succeed
+        (\bindings body ->
+            Frontend.Let
+                { bindings = bindings
+                , body = body
+                }
+        )
+        |. P.keyword (P.Token "let" ExpectingIf)
+        |= Debug.todo "parse let bindings"
+        |. P.keyword (P.Token "in" ExpectingThen)
         |= PP.subExpression 0 config
 
 

@@ -176,3 +176,13 @@ findDependencies modules expr =
             findDependencies_ test
                 ++ findDependencies_ then_
                 ++ findDependencies_ else_
+
+        Let { bindings, body } ->
+            let
+                bindingsDependencies =
+                    bindings
+                        |> Dict.Any.values
+                        |> List.concatMap (.body >> findDependencies_)
+            in
+            bindingsDependencies
+                ++ findDependencies_ body

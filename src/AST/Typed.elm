@@ -9,12 +9,15 @@ module AST.Typed exposing
 
 import AST.Common.Literal exposing (Literal)
 import AST.Common.Type exposing (Type)
+import Common
 import Common.Types
     exposing
-        ( ModuleName
+        ( Binding
+        , ModuleName
         , Modules
         , VarName
         )
+import Dict.Any exposing (AnyDict)
 import Transform
 
 
@@ -46,6 +49,7 @@ type Expr_
         }
     | Call { fn : Expr, argument : Expr }
     | If { test : Expr, then_ : Expr, else_ : Expr }
+    | Let { bindings : AnyDict String VarName (Binding Expr), body : Expr }
 
 
 lambda : VarName -> Expr -> Int -> Expr_
@@ -88,6 +92,12 @@ recurse f ( expr, type_ ) =
                 { test = f test
                 , then_ = f then_
                 , else_ = f else_
+                }
+
+        Let { bindings, body } ->
+            Let
+                { bindings = Dict.Any.map (always (Common.mapBinding f)) bindings
+                , body = f body
                 }
     , type_
     )

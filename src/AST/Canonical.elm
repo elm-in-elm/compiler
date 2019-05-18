@@ -8,10 +8,12 @@ module AST.Canonical exposing
 import AST.Common.Literal exposing (Literal)
 import Common.Types
     exposing
-        ( ModuleName
+        ( Binding
+        , ModuleName
         , Modules
         , VarName
         )
+import Dict.Any exposing (AnyDict)
 
 
 type alias ProjectFields =
@@ -32,6 +34,7 @@ type Expr
     | Lambda { argument : VarName, body : Expr }
     | Call { fn : Expr, argument : Expr }
     | If { test : Expr, then_ : Expr, else_ : Expr }
+    | Let { bindings : AnyDict String VarName (Binding Expr), body : Expr }
 
 
 var : ModuleName -> VarName -> Expr
