@@ -550,17 +550,21 @@ if_ config =
 let_ : ExprConfig -> Parser_ Frontend.Expr
 let_ config =
     P.succeed
-        (\bindings body ->
+        (\binding_ body ->
             Frontend.Let
-                { bindings = bindings
+                -- TODO multiple let bindings
+                { bindings = [ binding_ ]
                 , body = body
                 }
         )
         |. P.keyword (P.Token "let" ExpectingIf)
-        -- TODO will probably have to think about some strict indentation
-        |= manyWith newlinesAndOptionallySpaces (binding config)
+        |. P.spaces
+        |= binding config
+        |. P.spaces
         |. P.keyword (P.Token "in" ExpectingThen)
+        |. P.spaces
         |= PP.subExpression 0 config
+        |> P.inContext InLet
 
 
 binding : ExprConfig -> Parser_ (Binding Frontend.Expr)
@@ -571,6 +575,7 @@ binding config =
         |. P.symbol (P.Token "=" ExpectingEqualsSign)
         |. P.spaces
         |= PP.subExpression 0 config
+        |> P.inContext InLetBinding
 
 
 promoteArguments : List VarName -> Frontend.Expr -> Frontend.Expr

@@ -601,6 +601,30 @@ expr =
                             }
                         )
                   )
+                , ( "one binding, generous whitespace"
+                  , "let\n  x =\n      1\nin\n  2"
+                  , Ok
+                        (AST.Frontend.Let
+                            { bindings = [ { name = VarName "x", body = Literal (Int 1) } ]
+                            , body = Literal (Int 2)
+                            }
+                        )
+                  )
+
+                {-
+                   , ( "two bindings"
+                     , "let\n  x = 1\n  y = 2\nin 3"
+                     , Ok
+                           (AST.Frontend.Let
+                               { bindings =
+                                   [ { name = VarName "x", body = Literal (Int 1) }
+                                   , { name = VarName "y", body = Literal (Int 2) }
+                                   ]
+                               , body = Literal (Int 3)
+                               }
+                           )
+                     )
+                -}
                 ]
               )
             ]
@@ -625,7 +649,7 @@ expectEqualParseResult input expected actual =
             Err deadEnds ->
                 Expect.fail
                     (String.join "\n"
-                        (("\"" ++ input ++ "\"")
+                        (input
                             :: "===>"
                             :: "Err"
                             :: List.map deadEndToString deadEnds
@@ -640,15 +664,16 @@ deadEndToString : P.DeadEnd ParseContext ParseProblem -> String
 deadEndToString deadEnd =
     let
         metadata =
-            "  ("
-                ++ String.fromInt deadEnd.row
+            "("
+                ++ String.fromInt (deadEnd.row - 1)
                 ++ ","
-                ++ String.fromInt deadEnd.col
+                ++ String.fromInt (deadEnd.col - 1)
                 ++ ") "
                 ++ Debug.toString deadEnd.problem
     in
     String.join "\n    "
-        (metadata
+        ("\n"
+            :: metadata
             :: "---- with context stack ----"
             :: List.map contextToString deadEnd.contextStack
         )
@@ -657,8 +682,8 @@ deadEndToString deadEnd =
 contextToString : { row : Int, col : Int, context : ParseContext } -> String
 contextToString context =
     "("
-        ++ String.fromInt context.row
+        ++ String.fromInt (context.row - 1)
         ++ ","
-        ++ String.fromInt context.col
+        ++ String.fromInt (context.col - 1)
         ++ ") "
         ++ Debug.toString context.context

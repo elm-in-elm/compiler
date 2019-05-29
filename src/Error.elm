@@ -53,6 +53,10 @@ type ParseContext
     = InLiteral
     | InLiteralInt
     | InExpr
+    | InIf
+    | InLet
+    | InLetBinding
+    | InLambda
 
 
 type ParseProblem
@@ -92,6 +96,10 @@ type ParseProblem
     | ExpectingElse
     | ExpectingTrue
     | ExpectingFalse
+    | ExpectingLet
+    | ExpectingIn
+    | ExpectingAtLeastOne
+    | ExpectingNewline
     | InvalidInt
     | CompilerBug String
 
