@@ -130,11 +130,6 @@ desugarLet : (Frontend.Expr -> Result DesugarError Canonical.Expr) -> List (Bind
 desugarLet recurse bindings body =
     Result.map2
         (\bindings_ body_ ->
-            let
-                x : List (Binding Canonical.Expr)
-                x =
-                    bindings_
-            in
             Canonical.Let
                 { bindings =
                     bindings_
