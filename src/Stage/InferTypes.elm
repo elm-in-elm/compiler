@@ -338,7 +338,22 @@ generateEquations ( expr, type_ ) =
                 ++ generateEquations else_
 
         Typed.Let { bindings, body } ->
-            Debug.todo "infer types for let"
+            -- TODO no let polymorphism?
+            let
+                ( _, bodyType ) =
+                    body
+
+                bindingEquations =
+                    bindings
+                        |> Dict.Any.values
+                        |> List.concatMap (.body >> generateEquations)
+            in
+            -- for expression `let x = a, y = b in c` (pardon the comma):
+            -- type of the whole let and type of `c` are the same
+            equals bodyType type_
+                -- (don't forget `a`, `b` and `c` can be arbitrary expressions!)
+                :: generateEquations body
+                ++ bindingEquations
 
 
 {-| This function takes care of recursively applying `substituteType`
