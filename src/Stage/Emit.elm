@@ -12,6 +12,7 @@ import Common.Types
         , TopLevelDeclaration
         , VarName(..)
         )
+import Dict.Any
 import Error exposing (EmitError(..), Error(..))
 import Graph
 
@@ -117,7 +118,15 @@ emitExpr expr =
             "((" ++ emitExpr test ++ ") ? (" ++ emitExpr then_ ++ ") : (" ++ emitExpr else_ ++ "))"
 
         Let { bindings, body } ->
-            Debug.todo "emit let"
+            -- TODO emit in the right order? (dependencies, cycles...)
+            let
+                bindingsJS =
+                    bindings
+                        |> Dict.Any.values
+                        |> List.map (\binding -> "const " ++ mangleVarName binding.name ++ " = " ++ emitExpr binding.body)
+                        |> String.join ";"
+            in
+            "(() => {" ++ bindingsJS ++ "; return " ++ emitExpr body ++ ";})()"
 
 
 mangleQualifiedVar : ModuleName -> VarName -> String
