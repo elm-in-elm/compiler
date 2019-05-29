@@ -12,6 +12,7 @@ import Common.Types
         )
 import Dict.Any exposing (AnyDict)
 import Error exposing (Error(..), TypeError(..))
+import Extra.Dict.Any
 import Extra.Tuple
 import Stage.InferTypes.Boilerplate as Boilerplate
 import Stage.InferTypes.SubstitutionMap as SubstitutionMap exposing (SubstitutionMap)
@@ -194,7 +195,41 @@ assignIdsHelp unusedId0 varIds0 expr =
                     )
 
         Canonical.Let { bindings, body } ->
-            Debug.todo "infer types of let"
+            assignIdsHelp unusedId0 varIds0 body
+                |> Result.andThen
+                    (\( unusedId1, varIds1, body_ ) ->
+                        bindings
+                            |> Dict.Any.foldl
+                                (\_ binding accResult ->
+                                    accResult
+                                        |> Result.andThen
+                                            (\( unusedId2, varIds2, newBindings ) ->
+                                                assignIdsHelp unusedId2 varIds2 binding.body
+                                                    |> Result.map
+                                                        (\( unusedId3, varIds3, newBody ) ->
+                                                            ( unusedId3
+                                                            , varIds3
+                                                            , newBindings
+                                                                |> Dict.Any.insert binding.name
+                                                                    { name = binding.name
+                                                                    , body = newBody
+                                                                    }
+                                                            )
+                                                        )
+                                            )
+                                )
+                                (Ok ( unusedId1, varIds1, Dict.Any.empty Common.varNameToString ))
+                            |> Result.map
+                                (\( unusedId4, varIds4, bindings_ ) ->
+                                    ( unusedId4
+                                    , varIds4
+                                    , Typed.Let
+                                        { bindings = bindings_
+                                        , body = body_
+                                        }
+                                    )
+                                )
+                    )
     )
         |> Result.map
             (\( unusedIdN, varIdsN, recursedExpr ) ->
