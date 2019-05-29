@@ -418,7 +418,7 @@ expr =
                 \() ->
                     input
                         |> P.run Stage.Parse.Parser.expr
-                        |> expectEqualParseResult output
+                        |> expectEqualParseResult input output
     in
     describe "Stage.Parse.Parser.expr"
         (List.map runSection
@@ -612,10 +612,11 @@ expr =
 
 
 expectEqualParseResult :
-    Result (List (P.DeadEnd ParseContext ParseProblem)) a
+    String
+    -> Result (List (P.DeadEnd ParseContext ParseProblem)) a
     -> Result (List (P.DeadEnd ParseContext ParseProblem)) a
     -> Expectation
-expectEqualParseResult expected actual =
+expectEqualParseResult input expected actual =
     if actual == expected then
         Expect.pass
 
@@ -624,7 +625,11 @@ expectEqualParseResult expected actual =
             Err deadEnds ->
                 Expect.fail
                     (String.join "\n"
-                        ("Err" :: List.map deadEndToString deadEnds)
+                        (("\"" ++ input ++ "\"")
+                            :: "===>"
+                            :: "Err"
+                            :: List.map deadEndToString deadEnds
+                        )
                     )
 
             _ ->

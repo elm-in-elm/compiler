@@ -12,7 +12,8 @@ import AST.Frontend as Frontend exposing (Expr(..))
 import Common
 import Common.Types
     exposing
-        ( Dependency
+        ( Binding
+        , Dependency
         , Dict_
         , ExposedItem(..)
         , Exposing(..)
@@ -556,8 +557,19 @@ let_ config =
                 }
         )
         |. P.keyword (P.Token "let" ExpectingIf)
-        |= Debug.todo "parse let bindings"
+        -- TODO will probably have to think about some strict indentation
+        |= manyWith newlinesAndOptionallySpaces (binding config)
         |. P.keyword (P.Token "in" ExpectingThen)
+        |= PP.subExpression 0 config
+
+
+binding : ExprConfig -> Parser_ (Binding Frontend.Expr)
+binding config =
+    P.succeed Binding
+        |= P.map VarName varName
+        |. P.spaces
+        |. P.symbol (P.Token "=" ExpectingEqualsSign)
+        |. P.spaces
         |= PP.subExpression 0 config
 
 
@@ -588,6 +600,14 @@ spacesOnly =
 newlines : Parser_ ()
 newlines =
     P.chompWhile ((==) '\n')
+
+
+newlinesAndOptionallySpaces : Parser_ ()
+newlinesAndOptionallySpaces =
+    P.succeed ()
+        |. P.spaces
+        |. newlines
+        |. P.spaces
 
 
 {-| Taken from Punie/elm-parser-extras, made to work with Parser.Advanced.Parser
