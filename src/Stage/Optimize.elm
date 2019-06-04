@@ -8,7 +8,7 @@ import Error exposing (Error)
 import Stage.Optimize.Boilerplate as Boilerplate
 
 
-optimize : Project Typed.ProjectFields -> Result Error (Project Typed.ProjectFields)
+optimize : Project Typed.ProjectFields -> Result x (Project Typed.ProjectFields)
 optimize project =
     -- TODO do we need types when optimizing? If not we could swap the stages and make this a bit simpler
     Ok (Boilerplate.optimizeProject optimizeExpr project)
