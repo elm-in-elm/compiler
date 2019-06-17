@@ -9,7 +9,6 @@ To get things out of the way: it would be great if the pipeline could be pure:
         |> desugar
         |> inferTypes
         |> optimize
-        |> removeTypes
         |> prepareForBackend
         |> emit
 
@@ -75,7 +74,6 @@ import Stage.InferTypes as InferTypes
 import Stage.Optimize as Optimize
 import Stage.Parse as Parse
 import Stage.PrepareForBackend as PrepareForBackend
-import Stage.RemoveTypes as RemoveTypes
 
 
 {-| We're essentially a Node.JS app (until we get self-hosting :P ).
@@ -348,7 +346,6 @@ compile project =
         |> Result.andThen Desugar.desugar
         |> Result.andThen InferTypes.inferTypes
         |> Result.andThen Optimize.optimize
-        |> Result.andThen RemoveTypes.removeTypes
         |> Result.andThen PrepareForBackend.prepareForBackend
         |> Result.andThen Emit.emit
         |> writeToFSAndExit

@@ -1,8 +1,8 @@
 module Stage.Emit exposing (emit)
 
 import AST.Backend as Backend
-import AST.Canonical exposing (Expr(..))
 import AST.Common.Literal exposing (Literal(..))
+import AST.Typed exposing (Expr_(..))
 import Common.Types
     exposing
         ( FileContents(..)
@@ -81,7 +81,7 @@ emitTopLevelDeclaration { module_, name, body } =
 
 
 emitExpr : Backend.Expr -> String
-emitExpr expr =
+emitExpr ( expr, type_ ) =
     case expr of
         Literal (Int int) ->
             String.fromInt int

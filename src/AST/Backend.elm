@@ -4,7 +4,7 @@ module AST.Backend exposing
     , ProjectFields
     )
 
-import AST.Canonical as Canonical
+import AST.Typed as Typed
 import Common.Types exposing (TopLevelDeclaration)
 import Graph
 
@@ -17,7 +17,7 @@ type alias Expr =
     {- TODO is it worth it to concatenate the single-arg lambdas back to a multi-arg lambda,
        so that we emit eg. `(a,b) => a+b` instead of `(a) => (b) => a + b`?
     -}
-    Canonical.Expr
+    Typed.Expr
 
 
 type alias Graph =
