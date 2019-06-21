@@ -76,7 +76,7 @@ $ make test
 ```
 Runs `elm-test` on the test suite (gasp!) 
 
-## TODO
+## TODOs
 
 #### Project management
 
