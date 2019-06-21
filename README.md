@@ -6,6 +6,8 @@
 # elm-in-elm
 Elm compiler written in Elm!
 
+<a href="https://travis-ci.com/elm-in-elm/compiler" alt="Build Status">
+  <img src="https://travis-ci.com/elm-in-elm/compiler.svg?branch=master" /></a>
 <a href="https://github.com/elm-in-elm/compiler/issues" alt="Contributions welcome!">
   <img src="https://img.shields.io/badge/contributions-welcome-brightgreen.svg" /></a>
 <a href="https://github.com/elm-in-elm/compiler/pulse" alt="Activity">
