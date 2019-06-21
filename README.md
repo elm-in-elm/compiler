@@ -7,7 +7,7 @@
 Elm compiler written in Elm!
 
 <a href="https://travis-ci.com/elm-in-elm/compiler" alt="Build Status">
-  <img src="https://travis-ci.com/elm-in-elm/compiler.svg?branch=master" /></a>
+  <img src="https://img.shields.io/travis/com/elm-in-elm/compiler/master.svg" /></a>
 <a href="https://github.com/elm-in-elm/compiler/issues" alt="Contributions welcome!">
   <img src="https://img.shields.io/badge/contributions-welcome-brightgreen.svg" /></a>
 <a href="https://github.com/elm-in-elm/compiler/pulse" alt="Activity">
@@ -62,7 +62,7 @@ The tooling around this project requires:
 
 * **`make`** for the [Makefile](Makefile)
 * **NodeJS 10+** for the [CLI tool](src/index.js)
-* **`elm`**, **`elm-test`**, **`elm-format`** and **`elm-analyse`**
+* **`elm`** and **`elm-test`**
 
 or alternatively a good amount of ingenuity to do stuff in a different-than-planned way.
 
@@ -136,6 +136,12 @@ Runs `elm-test` on the test suite (gasp!)
         src="https://avatars2.githubusercontent.com/u/5399281?v=3&s=150">
         </br>
         <a href="https://github.com/rlefevre">Rémi Lefèvre</a>
+      </td>
+      <td align="center">
+        <img width="150" height="150"
+        src="https://avatars0.githubusercontent.com/u/16308754">
+        </br>
+        <a href="https://github.com/harrysarson">Harry Sarson</a>
       </td>
     </tr>
   <tbody>
