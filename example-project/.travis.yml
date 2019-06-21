@@ -1,0 +1,7 @@
+language: nodejs
+
+node:
+  lts/*
+
+script: make && make test
+
