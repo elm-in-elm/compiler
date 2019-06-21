@@ -10,10 +10,12 @@ Elm compiler written in Elm!
   <img src="https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat" /></a>
 <a href="https://github.com/elm-in-elm/compiler/pulse" alt="Activity">
   <img src="https://img.shields.io/github/commit-activity/m/elm-in-elm/compiler.svg" /></a>
+<a href="https://github.com/elm-in-elm/compiler/commits/master" alt="Latest commits">
+  <img src="https://badgen.net/github/last-commit/elm-in-elm/compiler" /></a>
 <a href="https://github.com/elm-in-elm/compiler/graphs/contributors" alt="Contributors">
   <img src="https://img.shields.io/github/contributors/elm-in-elm/compiler.svg" /></a>
 <a href="https://discordapp.com/invite/d6kkjg7" alt="Discord">
-  <img src="https://img.shields.io/discord/578305644780716039.svg" /></a>
+  <img src="https://img.shields.io/discord/578305644780716039.svg?label=discord" /></a>
 <a href="https://github.com/elm-in-elm/compiler/labels/help%20wanted" alt="'help wanted' issues">
   <img src="https://img.shields.io/github/issues/elm-in-elm/compiler/help wanted.svg" /></a>
 <a href="https://github.com/elm-in-elm/compiler/labels/good%20first%20issue" alt="'good first issue' issues">
