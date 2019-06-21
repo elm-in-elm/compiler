@@ -6,8 +6,8 @@
 # elm-in-elm
 Elm compiler written in Elm!
 
-<a href="https://github.com/elm-in-elm/compiler/blob/master/LICENSE" alt="BSD-3-Clause license">
-  <img src="https://img.shields.io/github/license/elm-in-elm/compiler.svg" /></a>
+<a href="https://github.com/elm-in-elm/compiler/issues" alt="Contributions welcome!">
+  <img src="https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat" /></a>
 <a href="https://github.com/elm-in-elm/compiler/pulse" alt="Activity">
   <img src="https://img.shields.io/github/commit-activity/m/elm-in-elm/compiler.svg" /></a>
 <a href="https://github.com/elm-in-elm/compiler/graphs/contributors" alt="Contributors">
@@ -24,7 +24,7 @@ Elm compiler written in Elm!
 ## Why?
 
 1. :book: **compiler as library:** so that we can publish it on https://package.elm-lang.org/ and unlock new kinds of Elm applications (like Slack bots, Klipse integration, stepping debuggers, ...)!
-2. :children_crossing: **learning friendly:** so that folks can learn how to write a compiler in Elm (similarly to Richard Feldman's [elm-spa-example](https://github.com/rtfeldman/elm-spa-example). This means `elm-in-elm` is focused on readability, beauty, approachability, simplicity and great docs and tests first, completeness and speed second.
+2. :children_crossing: **learning friendly:** so that folks can learn how to write a compiler in Elm (similarly to Richard Feldman's [elm-spa-example](https://github.com/rtfeldman/elm-spa-example)). This means `elm-in-elm` is focused on readability, beauty, approachability, simplicity, great docs and great tests first, and completeness and speed second.
 3. :bulb: **exploration ready:** the first two points enable folks to hack on the compiler (as it's in Elm, which they know, and the code is new-people-friendly) and answer some questions! (For example, what's the best order of optimizations? How would emitting to JavaScript have to look like to make it extra amenable to Google Closure Compiler's advanced optimizations?)
 4. :wrench: **extensible:** again, the first two (three?) points make it easy and invite extending the compiler in various ways, eg. a native binary target, different type inference algorithm, new optimizations, `where` syntax, etc.
 
@@ -34,7 +34,7 @@ Essentially, elm-in-elm should unblock people to play with compilers, explore an
 
 1. To dethrone or replace [the official Elm compiler](https://github.com/elm/compiler/) written in Haskell.
 
-This is :negative_squared_cross_mark::negative_squared_cross_mark::negative_squared_cross_mark: NOT THE REASON and NOT THE GOAL :negative_squared_cross_mark::negative_squared_cross_mark::negative_squared_cross_mark: of elm-in-elm. We don't want to and aren't planning to divide the community into multiple Elm derivates, and will actively try to prevent that. elm-in-elm is, for all intents and purposes, an experimentation environment.
+This is :negative_squared_cross_mark::negative_squared_cross_mark::negative_squared_cross_mark: NOT THE REASON and NOT THE GOAL :negative_squared_cross_mark::negative_squared_cross_mark::negative_squared_cross_mark: of `elm-in-elm`. We don't want to and aren't planning to divide the community into multiple Elm derivatives, and will actively try to prevent that. `elm-in-elm` is, for all intents and purposes, a sandbox, a place to try out ideas, an experimentation environment.
 
 ## What?
 
@@ -48,7 +48,7 @@ This is :negative_squared_cross_mark::negative_squared_cross_mark::negative_squa
 It is written in Elm, and compiles Elm to JavaScript, but lays the foundation to be able to compile to different targets in the future.
 
 
-## Contributing [![contributions welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat)](https://github.com/elm-in-elm/compiler/issues)
+## Contributing
 
 Oh God please yes! :heart: Feel free to look around the [<kbd>help wanted</kbd>](https://github.com/elm-in-elm/compiler/labels/help%20wanted) or [<kbd>good first issue</kbd>](https://github.com/elm-in-elm/compiler/labels/good%20first%20issue) issues, have a look around the codebase for some general nitpicks or refactorings, or hit us up on [Discord](https://discordapp.com/invite/d6kkjg7)!
 
