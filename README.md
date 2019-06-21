@@ -7,7 +7,7 @@
 Elm compiler written in Elm!
 
 <a href="https://github.com/elm-in-elm/compiler/issues" alt="Contributions welcome!">
-  <img src="https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat" /></a>
+  <img src="https://img.shields.io/badge/contributions-welcome-brightgreen.svg" /></a>
 <a href="https://github.com/elm-in-elm/compiler/pulse" alt="Activity">
   <img src="https://img.shields.io/github/commit-activity/m/elm-in-elm/compiler.svg" /></a>
 <a href="https://github.com/elm-in-elm/compiler/commits/master" alt="Latest commits">
