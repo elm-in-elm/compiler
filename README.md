@@ -20,7 +20,7 @@ Elm compiler written in Elm!
   <img src="https://img.shields.io/github/issues/elm-in-elm/compiler/help wanted.svg" /></a>
 <a href="https://github.com/elm-in-elm/compiler/labels/good%20first%20issue" alt="'good first issue' issues">
   <img src="https://img.shields.io/github/issues/elm-in-elm/compiler/good first issue.svg" /></a>
-  
+
 ----
 
 ## Why?
@@ -76,7 +76,7 @@ Essentially compiles the compiler (using the official Elm compiler :wink: ) to a
 ```
 $ make test
 ```
-Runs `elm-test` on the test suite (gasp!) 
+Runs `elm-test` on the test suite (gasp!)
 
 ## TODOs
 
@@ -85,7 +85,7 @@ Runs `elm-test` on the test suite (gasp!)
 - [ ] Create issues for all the TODOs in the codebase, tag some with <kbd>help wanted</kbd> and <kbd>good first issue</kbd>
 - [ ] [@janiczek](https://twitter.com/janiczek/): Write some more TODOs/issues off the top of your head, and maybe some of the long-term plans
 - [ ] [@janiczek](https://twitter.com/janiczek/): Share your Firefox bookmarks relevant to `elm-in-elm` (ie. talks about Haskell hierarchical optimizations etc.)
-- [ ] Travis integration + shields.io badge about it
+- [x] Travis integration + shields.io badge about it
 
 #### Library
 
