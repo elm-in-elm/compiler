@@ -11,7 +11,7 @@ function run {
   date -R;
   echo -en "${COLOR_OFF}";
 
-  sysconfcpus -n 1 yarn elm-test;
+  elm-test;
 }
 
 run;

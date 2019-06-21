@@ -6,6 +6,8 @@
 # elm-in-elm
 Elm compiler written in Elm!
 
+<a href="https://travis-ci.com/elm-in-elm/compiler" alt="Build Status">
+  <img src="https://img.shields.io/travis/com/elm-in-elm/compiler/master.svg" /></a>
 <a href="https://github.com/elm-in-elm/compiler/issues" alt="Contributions welcome!">
   <img src="https://img.shields.io/badge/contributions-welcome-brightgreen.svg" /></a>
 <a href="https://github.com/elm-in-elm/compiler/pulse" alt="Activity">
@@ -20,7 +22,7 @@ Elm compiler written in Elm!
   <img src="https://img.shields.io/github/issues/elm-in-elm/compiler/help wanted.svg" /></a>
 <a href="https://github.com/elm-in-elm/compiler/labels/good%20first%20issue" alt="'good first issue' issues">
   <img src="https://img.shields.io/github/issues/elm-in-elm/compiler/good first issue.svg" /></a>
-  
+
 ----
 
 ## Why?
@@ -60,9 +62,9 @@ The tooling around this project requires:
 
 * **`make`** for the [Makefile](Makefile)
 * **NodeJS 10+** for the [CLI tool](src/index.js)
-* **`yarn`** for installing `elm` and `elm-test` (among other dependencies from [package.json](package.json))
+* **`elm`** and **`elm-test`**
 
-or alternatively a good amount of ingenuinity to do stuff in a different-than-planned way.
+or alternatively a good amount of ingenuity to do stuff in a different-than-planned way.
 
 ## Running the compiler
 
@@ -76,7 +78,7 @@ Essentially compiles the compiler (using the official Elm compiler :wink: ) to a
 ```
 $ make test
 ```
-Runs `elm-test` on the test suite (gasp!) 
+Runs `elm-test` on the test suite (gasp!)
 
 ## TODOs
 
@@ -85,7 +87,7 @@ Runs `elm-test` on the test suite (gasp!)
 - [ ] Create issues for all the TODOs in the codebase, tag some with <kbd>help wanted</kbd> and <kbd>good first issue</kbd>
 - [ ] [@janiczek](https://twitter.com/janiczek/): Write some more TODOs/issues off the top of your head, and maybe some of the long-term plans
 - [ ] [@janiczek](https://twitter.com/janiczek/): Share your Firefox bookmarks relevant to `elm-in-elm` (ie. talks about Haskell hierarchical optimizations etc.)
-- [ ] Travis integration + shields.io badge about it
+- [x] Travis integration + shields.io badge about it
 
 #### Library
 
@@ -134,6 +136,12 @@ Runs `elm-test` on the test suite (gasp!)
         src="https://avatars2.githubusercontent.com/u/5399281?v=3&s=150">
         </br>
         <a href="https://github.com/rlefevre">Rémi Lefèvre</a>
+      </td>
+      <td align="center">
+        <img width="150" height="150"
+        src="https://avatars0.githubusercontent.com/u/16308754">
+        </br>
+        <a href="https://github.com/harrysarson">Harry Sarson</a>
       </td>
     </tr>
   <tbody>
