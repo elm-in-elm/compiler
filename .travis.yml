@@ -4,8 +4,7 @@ node_js:
   lts/*
 
 before_install:
-  - curl -o- -L https://yarnpkg.com/install.sh | bash -s -- --version 1.16.0
-  - export PATH="$HOME/.yarn/bin:$PATH"
+  - npm install -g elm@0.19.0 elm-test@0.19.0 elm-format@0.8 elm-analyse@0.16
 
 script: make && make test
 
