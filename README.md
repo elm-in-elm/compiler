@@ -62,9 +62,9 @@ The tooling around this project requires:
 
 * **`make`** for the [Makefile](Makefile)
 * **NodeJS 10+** for the [CLI tool](src/index.js)
-* **`yarn`** for installing `elm` and `elm-test` (among other dependencies from [package.json](package.json))
+* **`elm`**, **`elm-test`**, **`elm-format`** and **`elm-analyse`**
 
-or alternatively a good amount of ingenuinity to do stuff in a different-than-planned way.
+or alternatively a good amount of ingenuity to do stuff in a different-than-planned way.
 
 ## Running the compiler
 
