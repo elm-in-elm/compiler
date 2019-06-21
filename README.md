@@ -82,6 +82,7 @@ Runs `elm-test` on the test suite (gasp!)
 
 - [ ] Create issues for all the TODOs in the codebase, tag some with <kbd>help wanted</kbd> and <kbd>good first issue</kbd>
 - [ ] [@janiczek](https://twitter.com/janiczek/): Write some more TODOs/issues off the top of your head, and maybe some of the long-term plans
+- [ ] [@janiczek](https://twitter.com/janiczek/): Share your Firefox bookmarks relevant to `elm-in-elm` (ie. talks about Haskell hierarchical optimizations etc.)
 - [ ] Travis integration + shields.io badge about it
 
 #### Library
