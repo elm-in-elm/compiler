@@ -163,6 +163,7 @@ Runs `elm-test` on the test suite (gasp!)
 - [ ] Parsing: Add tests for all the (even non-implemented) various Elm syntax: comments, booleans, ints, floats (don't forget hex variants), chars, strings (don't forget multiline), lists, cons, if, case...of, records, accessors, record update syntax, functions, lambdas, operators, let...in, module declarations, imports, type annotations (don't forget extensible records), type aliases, custom types, ports... and possibly more. (This **doesn't** need to be all done in one PR :grimacing: it's a lot of stuff!)
 - [ ] Test `Common.unalias`
 - [ ] Test `Stage.Desugar.findModuleOfVar`
+- [ ] Instead of a single `example-project`, have a directory with multiple such projects, and probably `in` and `out` directories to allow testing the CLI tool. The library can be tested through Elm tests.
 
 ## Contributors
 
