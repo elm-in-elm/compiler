@@ -173,7 +173,6 @@ In all these cases we need to find the full unaliased module name of the var.
 -}
 findModuleOfVar : Modules Frontend.Expr -> Module Frontend.Expr -> Maybe ModuleName -> VarName -> Maybe ModuleName
 findModuleOfVar modules thisModule maybeModuleName varName =
-    -- TODO test all these
     {- TODO does this allow for some collisions by "returning early"?
        Should we check that exactly one is Just and the others are Nothing?
     -}

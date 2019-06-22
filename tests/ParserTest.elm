@@ -93,8 +93,6 @@ moduleDeclaration =
                   )
                 ]
             )
-
-        -- TODO test effect module
         ]
 
 
@@ -511,8 +509,6 @@ expr =
                             }
                         )
                   )
-
-                -- TODO newlines? "if\n1" should fail, "if\n 1" shouldn't?
                 ]
               )
             , ( "literal int"
@@ -528,10 +524,6 @@ expr =
                   , "-42"
                   , Ok (Literal (Int -42))
                   )
-
-                -- TODO deal with hex: , ( "hex uppercase", "0xFF", Ok (Literal (Int 255)) )
-                -- TODO deal with hex: , ( "hex lowercase", "0x7f", Ok (Literal (Int 127)) )
-                -- TODO deal with hex: , ( "hex negative", "-0x42", Ok (Literal (Int -66)) )
                 ]
               )
             , ( "literal char"
@@ -551,9 +543,6 @@ expr =
                   , "'A'"
                   , Ok (Literal (Char 'A'))
                   )
-
-                -- TODO deal with escapes , ( "escaped single quote", "'\\''", Ok (Literal (Char '\'')) )
-                -- TODO deal with Unicode escapes
                 ]
               )
             , ( "literal string"
@@ -573,11 +562,6 @@ expr =
                   , "\"'\""
                   , Ok (Literal (String "'"))
                   )
-
-                -- TODO deal with escapes , ( "escaped double quote", "\"\\"\"", Ok (Literal (String "\"")) )
-                -- TODO deal with Unicode escapes
-                -- TODO triple-quote strings with different escaping
-                -- TODO emoji? does that even work in Elm?
                 ]
               )
             , ( "literal bool"
@@ -610,29 +594,10 @@ expr =
                             }
                         )
                   )
-
-                {-
-                   , ( "two bindings"
-                     , "let\n  x = 1\n  y = 2\nin 3"
-                     , Ok
-                           (AST.Frontend.Let
-                               { bindings =
-                                   [ { name = VarName "x", body = Literal (Int 1) }
-                                   , { name = VarName "y", body = Literal (Int 2) }
-                                   ]
-                               , body = Literal (Int 3)
-                               }
-                           )
-                     )
-                -}
                 ]
               )
             ]
         )
-
-
-
--- TODO test topLevelDeclarations
 
 
 expectEqualParseResult :

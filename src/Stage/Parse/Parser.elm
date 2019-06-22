@@ -37,10 +37,6 @@ import Pratt.Advanced as PP
 import Set exposing (Set)
 
 
-
--- TODO add contexts?
-
-
 type alias Parser_ a =
     Parser ParseContext ParseProblem a
 

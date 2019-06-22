@@ -39,8 +39,6 @@ You'll find it has to deal with `Result`s, because the compilation stages
 can return errors. Of course, Elm doesn't have exceptions, so we are explicit
 about returning those.
 
-TODO downloading packages from the Internet (oh my!)
-
 -}
 
 import AST.Frontend as Frontend
@@ -78,9 +76,6 @@ import Stage.PrepareForBackend as PrepareForBackend
 
 {-| We're essentially a Node.JS app (until we get self-hosting :P ).
 So, `Platform.worker` is the only option for us.
-
-TODO expose parts of the compiler as a library!
-
 -}
 main : Program Flags (Model Frontend.ProjectFields) Msg
 main =
@@ -92,7 +87,7 @@ main =
 
 
 type alias Flags =
-    { mainFilePath : String -- TODO allow for multiple `main`s instead of just one
+    { mainFilePath : String
     , elmJson : String
     }
 
@@ -341,7 +336,6 @@ compile project =
                                 )
                     )
     in
-    -- TODO look at official compiler's Compile.compile - is that a better API?
     Ok project
         |> Result.andThen Desugar.desugar
         |> Result.andThen InferTypes.inferTypes
@@ -363,7 +357,6 @@ writeToFSAndExit result =
         Ok { output } ->
             ( Finished
             , Cmd.batch
-                -- TODO don't hardcode out.js
                 [ Ports.writeToFile (FilePath "out.js") output
                 , println "Compilation finished, writing output to `out.js`."
                 ]

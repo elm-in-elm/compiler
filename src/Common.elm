@@ -124,9 +124,6 @@ exposes ((VarName var) as varName) module_ =
 
 
 {-| Given `import Foo as F`, `unalias ... (ModuleName "F")` => `Just (ModuleName "Foo")`
-
-TODO add a test
-
 -}
 unalias : Module a -> ModuleName -> Maybe ModuleName
 unalias thisModule moduleName =

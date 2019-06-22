@@ -164,7 +164,6 @@ findDependencies modules ( expr, type_ ) =
                 ++ findDependencies_ e2
 
         Lambda { argument, body } ->
-            -- TODO this is probably going to be more tricky than this?
             findDependencies_ body
                 |> List.filter (\decl -> decl.name /= argument)
 

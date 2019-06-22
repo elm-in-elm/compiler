@@ -34,9 +34,6 @@ We also have a fourth part:
   - `substituteAllTypes`: recursively replace type variable IDs with their
     inferred types.
 
-TODO this can't work, we'll have to typecheck across modules, right?
-This only typechecks each module separately...
-
 -}
 inferTypes : Project Canonical.ProjectFields -> Result Error (Project Typed.ProjectFields)
 inferTypes project =
@@ -91,9 +88,6 @@ assignIds expr =
 
 assignIdsHelp : Int -> AnyDict String VarName Int -> Canonical.Expr -> Result TypeError ( Int, AnyDict String VarName Int, Typed.Expr )
 assignIdsHelp unusedId0 varIds0 expr =
-    {- TODO is there a nicer, maybe monadic, way to do this, instead of
-       threading this state ourselves?
-    -}
     (case expr of
         {- With literals, we could plug their final type in right here
            (no solving needed!) but let's be uniform and do everything through
@@ -123,10 +117,6 @@ assignIdsHelp unusedId0 varIds0 expr =
                 )
 
         Canonical.Plus e1 e2 ->
-            {- TODO elm-format makes this look ugly ... is there a different way?
-               What's hurting the readability is essentially the lack of do notation...
-               similarly to how List.Extra.andThen usages aren't very pretty.
-            -}
             assignIdsHelp unusedId0 varIds0 e1
                 |> Result.andThen
                     (\( unusedId1, varIds1, e1_ ) ->
@@ -327,8 +317,6 @@ generateEquations ( expr, type_ ) =
             in
             -- for expression `if a then b else c`:
             [ equals testType Type.Bool -- type of `a` is Bool
-
-            --, equals thenType TODO -- type of `b` is unknkown -- TODO remove this if unneeded
             , equals thenType elseType -- types of `b` and `c` are the same
             , equals thenType type_ -- types of `b` and `if a then b else c` are the same
             ]
@@ -338,7 +326,6 @@ generateEquations ( expr, type_ ) =
                 ++ generateEquations else_
 
         Typed.Let { bindings, body } ->
-            -- TODO no let polymorphism?
             let
                 ( _, bodyType ) =
                     body
@@ -375,7 +362,6 @@ substituteType substitutionMap ( expr, type_ ) =
 
 getType : SubstitutionMap -> Type -> Type
 getType substitutionMap type_ =
-    -- TODO rename types afterwards? (t0,t1,t2 -> a,b,c)
     if SubstitutionMap.isEmpty substitutionMap then
         type_
 

@@ -42,8 +42,8 @@ findPathToMain { programGraph, mainModuleName } =
                 ctx.node.label :: list
             )
         )
-        -- start with "main" function(s)
-        (findMains programGraph mainModuleName)
+        -- start with "main" function
+        (findMain programGraph mainModuleName)
         -- we could make sure some declaration gets always emmited by adding it here
         []
         programGraph
@@ -51,12 +51,8 @@ findPathToMain { programGraph, mainModuleName } =
         |> Tuple.first
 
 
-findMains : Backend.Graph -> ModuleName -> List Int
-findMains graph mainModuleName =
-    {- TODO This will currently only find one main (we don't support more of those,
-       see TODOs in Types.Project), so the name of the fn is misleading.
-       The arguments to this fn will probably have to change (multiple main module names).
-    -}
+findMain : Backend.Graph -> ModuleName -> List Int
+findMain graph mainModuleName =
     Graph.nodes graph
         |> List.filterMap
             (\{ id, label } ->
@@ -118,7 +114,6 @@ emitExpr ( expr, type_ ) =
             "((" ++ emitExpr test ++ ") ? (" ++ emitExpr then_ ++ ") : (" ++ emitExpr else_ ++ "))"
 
         Let { bindings, body } ->
-            -- TODO emit in the right order? (dependencies, cycles...)
             let
                 bindingsJS =
                     bindings
@@ -136,11 +131,9 @@ mangleQualifiedVar moduleName varName =
 
 mangleModuleName : ModuleName -> String
 mangleModuleName (ModuleName moduleName) =
-    -- TODO what does the original Elm compiler do?
     String.replace "." "$" moduleName
 
 
 mangleVarName : VarName -> String
 mangleVarName (VarName varName) =
-    -- TODO what does the original Elm compiler do?
     varName

@@ -8,16 +8,17 @@ Elm compiler written in Elm!
 
 <a href="https://travis-ci.com/elm-in-elm/compiler" alt="Build Status">
   <img src="https://img.shields.io/travis/com/elm-in-elm/compiler/master.svg" /></a>
-<a href="https://github.com/elm-in-elm/compiler/issues" alt="Contributions welcome!">
-  <img src="https://img.shields.io/badge/contributions-welcome-brightgreen.svg" /></a>
-<a href="https://github.com/elm-in-elm/compiler/pulse" alt="Activity">
-  <img src="https://img.shields.io/github/commit-activity/m/elm-in-elm/compiler.svg" /></a>
 <a href="https://github.com/elm-in-elm/compiler/commits/master" alt="Latest commits">
   <img src="https://badgen.net/github/last-commit/elm-in-elm/compiler" /></a>
-<a href="https://github.com/elm-in-elm/compiler/graphs/contributors" alt="Contributors">
-  <img src="https://img.shields.io/github/contributors/elm-in-elm/compiler.svg" /></a>
+<a href="https://github.com/elm-in-elm/compiler/pulse" alt="Activity">
+  <img src="https://img.shields.io/github/commit-activity/m/elm-in-elm/compiler.svg" /></a>
 <a href="https://discordapp.com/invite/d6kkjg7" alt="Discord">
   <img src="https://img.shields.io/discord/578305644780716039.svg?label=discord" /></a>
+
+<a href="https://github.com/elm-in-elm/compiler/issues" alt="Contributions welcome!">
+  <img src="https://img.shields.io/badge/contributions-welcome-brightgreen.svg" /></a>
+<a href="https://github.com/elm-in-elm/compiler/graphs/contributors" alt="Contributors">
+  <img src="https://img.shields.io/github/contributors/elm-in-elm/compiler.svg" /></a>
 <a href="https://github.com/elm-in-elm/compiler/labels/help%20wanted" alt="'help wanted' issues">
   <img src="https://img.shields.io/github/issues/elm-in-elm/compiler/help wanted.svg" /></a>
 <a href="https://github.com/elm-in-elm/compiler/labels/good%20first%20issue" alt="'good first issue' issues">
@@ -32,13 +33,15 @@ Elm compiler written in Elm!
 3. :bulb: **exploration ready:** the first two points enable folks to hack on the compiler (as it's in Elm, which they know, and the code is new-people-friendly) and answer some questions! (For example, what's the best order of optimizations? How would emitting to JavaScript have to look like to make it extra amenable to Google Closure Compiler's advanced optimizations?)
 4. :wrench: **extensible:** again, the first two (three?) points make it easy and invite extending the compiler in various ways, eg. a native binary target, different type inference algorithm, new optimizations, `where` syntax, etc.
 
-Essentially, elm-in-elm should unblock people to play with compilers, explore and have fun!
+Essentially, `elm-in-elm` should unblock people to play with compilers, explore and have fun!
+
+:tv: For more context and information, you can watch [Martin Janiczek's talk from Elm Europe 2019](#todo) (:construction: TODO :construction:) which served as an unveiling of `elm-in-elm` to public.
 
 ## Non goals :negative_squared_cross_mark:
 
 1. To dethrone or replace [the official Elm compiler](https://github.com/elm/compiler/) written in Haskell.
 
-This is :negative_squared_cross_mark::negative_squared_cross_mark::negative_squared_cross_mark: NOT THE REASON and NOT THE GOAL :negative_squared_cross_mark::negative_squared_cross_mark::negative_squared_cross_mark: of `elm-in-elm`. We don't want to and aren't planning to divide the community into multiple Elm derivatives, and will actively try to prevent that. `elm-in-elm` is, for all intents and purposes, a sandbox, a place to try out ideas, an experimentation environment.
+This is :negative_squared_cross_mark::negative_squared_cross_mark::negative_squared_cross_mark: **NOT THE REASON** and **NOT THE GOAL** :negative_squared_cross_mark::negative_squared_cross_mark::negative_squared_cross_mark: of `elm-in-elm`. We don't want to and aren't planning to divide the community into multiple Elm derivatives, and will actively try to prevent that. `elm-in-elm` is, for all intents and purposes, a sandbox, a place to try out ideas, an experimentation environment.
 
 ## What?
 
@@ -50,6 +53,10 @@ This is :negative_squared_cross_mark::negative_squared_cross_mark::negative_squa
 * and [a test suite](tests/).
 
 It is written in Elm, and compiles Elm to JavaScript, but lays the foundation to be able to compile to different targets in the future.
+
+## ### Warning! :warning:
+
+`elm-in-elm` is more 
 
 
 ## Contributing
@@ -82,43 +89,79 @@ Runs `elm-test` on the test suite (gasp!)
 
 ## TODOs
 
+>  This is a brain-dump of both low-level and high-level stuff. My apologies if you're trying to make sense of this. After creating a roadmap this will probably be a bit more understandable. ~janiczek
+
 #### Project management
 
 - [ ] Create issues for all the TODOs in the codebase, tag some with <kbd>help wanted</kbd> and <kbd>good first issue</kbd>
-- [ ] [@janiczek](https://twitter.com/janiczek/): Write some more TODOs/issues off the top of your head, and maybe some of the long-term plans
 - [ ] [@janiczek](https://twitter.com/janiczek/): Share your Firefox bookmarks relevant to `elm-in-elm` (ie. talks about Haskell hierarchical optimizations etc.)
 - [x] Travis integration + shields.io badge about it
+- [ ] After Elm Europe 2019 videos are out, add a link to the talk to the README
+- [ ] Create a roadmap (or GitHub projects?) for how to move forward
 
 #### Library
 
 - [ ] Draft the API of the library
 - [ ] Implement the library code (probably in different source-dir from the compiler itself)
 - [ ] Publish the library
-- [ ] Add a shields.io badge :wink: `/elm-package/v/:user/:packageName.svg`
+- [ ] After publishing, Add a shields.io badge :wink: `/elm-package/v/:user/:packageName.svg`
 - [ ] Revise the API after trying it out with some toy project
 
-#### Tooling
+#### CLI tool
 
-- [ ] Nix expression for the dependencies and building this project
-- [ ] Make the CLI tool not a joke
+- [ ] Don't hardcode `out.js` as the output filename - allow the user to give an output path themselves
+
+#### General
+
+- [ ] Nix expression for the dependencies and building this project? Would that be helpful?
+- [ ] How can users of `elm-in-elm` use packages from package.elm-lang.org?
+- [ ] Allow for multiple `main` entry points instead of just one (or think about whether it makes sense! I guess it does for the CLI tool, maybe less for the library... ~janiczek)
+- [ ] Compare our `Main.compile` with official compiler's `Compile.compile` - is that a better API?
+- [ ] Types module: remove, refactor into "module per datastructure" style?
+- [ ] Allow for multiple source directories?
 
 #### Parsing
 
-- [ ] Hex integers
+- [ ] No sense in writing various TODOs here: after fleshing out the parser test suite (see below), see what fails and fix it :man_shrugging:
+- [ ] Consider adding contexts to various parsers (for debuggability? for better error messages?)
 
 #### Type inference
 
 - [ ] Try the [Complete and Easy Bidirectional Typechecking for Higher-Rank Polymorphism](https://arxiv.org/abs/1306.6032) and see where that leads
+- [ ] Let polymorphism :no_mouth:: `Stage.InferTypes.generateEquations`, the `Typed.Let` case.
+- [ ] Typecheck across modules, not each module separately. This will probably be clearer after we try and implement the library.
+- [ ] Annotate type errors with position in source code (for better error messages)
+- [ ] Try to find a better name for "occurs check" and make the error message easier to understand
+- [ ] Document the typechecking stages better (ie. at all)
+- [ ] Find a (probably monadic) abstraction for `assignIds` so we don't have to thread the state in such a way. (This might not be possible because of lack of do notation. Ie. callback hell would always have to happen... Dunno!) For example see `Stage.InferTypes.assignIdsHelp`, the `Canonical.Plus` case.
+- [ ] Rename types to be able to show nice type variables (ie. the classic `a` instead of `type #0` or something). `Stage.InferTypes.getType`
 
 #### Optimizations
 
-- [ ] [Prepack](https://prepack.io/)-like optimization: compute everything you can in the compile-time instead of runtime
+- [ ] Experiment with [Prepack](https://prepack.io/)-like optimization: compute everything you can in the compile-time instead of runtime
+- [ ] Implement constant propagation?
+- [ ] Implement inlining (maybe it will need some heuristic? Look at how other langs do it?)
+- [ ] Implement `(<|)` and `(|>)` fusion (eg. transform both `x |> f` and `f <| x` into `f x`)
+
+#### PrepareForBackend
+
+- [ ] Check that the `Lambda` case of `Stage.PrepareForBackend.findDependencies` works correctly
 
 #### Emit
 
 - [ ] Native binary target (x86_64), possibly through LLVM?
+- [ ] WebAssembly?
+- [ ] Would this simplify / be a good fit for [Elchemy](https://github.com/wende/elchemy) (Elm -> Elixir)?
+- [ ] Would this simplify / be a good fit for [philip2](https://github.com/darklang/philip2) (Elm -> OCaml)?
+- [ ] Would it be worth concatenating single-arg lambdas back to multi-arg ones (so that we emit eg. `(a,b) => a+b` instead of `(a) => (b) => a+b`)?
+- [ ] How to emit `let`? How does official compiler do it? Seems the dependency graph will have to be computed for its binidng too, similarly to how the path to `main` gets computed for the program itself. `Stage.Emit.emitExpr`, the `Let` case.
+- [ ] Do we need to mangle variable names? (ie. do what the official compiler does) Maybe not! Check
 
+#### Tests
 
+- [ ] Parsing: Add tests for all the (even non-implemented) various Elm syntax: comments, booleans, ints, floats (don't forget hex variants), chars, strings (don't forget multiline), lists, cons, if, case...of, records, accessors, record update syntax, functions, lambdas, operators, let...in, module declarations, imports, type annotations (don't forget extensible records), type aliases, custom types, ports... and possibly more. (This **doesn't** need to be all done in one PR :grimacing: it's a lot of stuff!)
+- [ ] Test `Common.unalias`
+- [ ] Test `Stage.Desugar.findModuleOfVar`
 
 ## Contributors
 

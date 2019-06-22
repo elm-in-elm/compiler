@@ -18,10 +18,6 @@ module Common.Types exposing
     , VarName(..)
     )
 
-{-| TODO is this an OK way to do the module hierarchy? Eg. the Types module.
-Is there a better one?
--}
-
 import Dict.Any exposing (AnyDict)
 import Elm.Project
 import Set.Any exposing (AnySet)
@@ -54,14 +50,8 @@ and on the backend we have `graph : Backend.Graph`.
 type alias Project r =
     { r
         | elmJson : Elm.Project.Project
-
-        {- TODO allow multiple main file paths -}
         , mainFilePath : FilePath
-
-        {- TODO allow multiple main modules; probably tuple them together with the filepaths -}
         , mainModuleName : ModuleName
-
-        {- TODO allow multiple source directories -}
         , sourceDirectory : FilePath
     }
 
@@ -81,7 +71,6 @@ type ModuleType
 
 
 type alias EffectMetadata =
-    -- TODO figure effect managers out
     {}
 
 

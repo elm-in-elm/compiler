@@ -4,7 +4,6 @@ module Error exposing
     , Error(..)
     , ErrorCode(..)
     , GeneralError(..)
-    , OptimizeError(..)
     , ParseContext(..)
     , ParseError(..)
     , ParseProblem(..)
@@ -18,7 +17,7 @@ import AST.Common.Type as Type exposing (Type)
 import Common.Types
     exposing
         ( FilePath(..)
-          -- TODO we can't depend on Common, so we deconstruct by hand
+          -- We can't depend on Common, so we deconstruct by hand
         , ModuleName(..)
         , VarName(..)
         )
@@ -104,36 +103,25 @@ type ParseProblem
     | CompilerBug String
 
 
-{-| TODO records are probably better for communicating the meaning of args.
--}
 type DesugarError
-    = VarNotInEnvOfModule (Maybe ModuleName) VarName ModuleName
-    | AmbiguousVar (Maybe ModuleName) VarName ModuleName
+    = VarNotInEnvOfModule
+        { var : ( Maybe ModuleName, VarName )
+        , module_ : ModuleName
+        }
+    | AmbiguousVar
+        { var : ( Maybe ModuleName, VarName )
+        , module_ : ModuleName
+        }
 
 
-{-| TODO annotate all type errors so that we can show the position in source code!
--}
 type TypeError
     = UnknownName VarName
     | TypeMismatch Type Type
-      -- TODO explain what "occurs check" is
     | OccursCheckFailed Int Type
-
-
-{-| TODO
--}
-type OptimizeError
-    = TodoFirstOptimizeError
 
 
 type PrepareForBackendError
     = MainDeclarationNotFound
-
-
-{-| TODO
--}
-type EmitError
-    = TodoFirstEmitError
 
 
 toString : Error -> String
@@ -211,22 +199,15 @@ toString error =
                         ++ " don't match."
 
                 OccursCheckFailed varId type_ ->
-                    -- TODO better error. Is this cycle? Infinite type?
                     "An \"occurs check\" failed while typechecking: "
                         ++ Type.toString (Type.Var varId)
                         ++ " occurs in "
                         ++ Type.toString type_
 
-        OptimizeError _ ->
-            Debug.todo "toString optimizeError"
-
         PrepareForBackendError prepareForBackendError ->
             case prepareForBackendError of
                 MainDeclarationNotFound ->
                     "Couldn't find the value `main` in the main module given to the compiler!"
-
-        EmitError _ ->
-            Debug.todo "toString emitBackendError"
 
 
 fullVarName : Maybe ModuleName -> VarName -> String
