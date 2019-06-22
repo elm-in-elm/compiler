@@ -26,7 +26,7 @@ Elm compiler written in Elm!
 
 ----
 
-## Why?
+## Goals
 
 1. :book: **compiler as library:** so that we can publish it on https://package.elm-lang.org/ and unlock new kinds of Elm applications (like Slack bots, Klipse integration, stepping debuggers, ...)!
 2. :children_crossing: **learning friendly:** so that folks can learn how to write a compiler in Elm (similarly to Richard Feldman's [elm-spa-example](https://github.com/rtfeldman/elm-spa-example)). This means `elm-in-elm` is focused on readability, beauty, approachability, simplicity, great docs and great tests first, and completeness and speed second.
@@ -37,7 +37,7 @@ Essentially, `elm-in-elm` should unblock people to play with compilers, explore 
 
 :tv: For more context and information, you can watch [Martin Janiczek's talk from Elm Europe 2019](#todo) (:construction: TODO :construction:) which served as an unveiling of `elm-in-elm` to public.
 
-## False "Why?" :negative_squared_cross_mark:
+## Non goals :negative_squared_cross_mark:
 
 1. To dethrone or replace [the official Elm compiler](https://github.com/elm/compiler/) written in Haskell.
 
