@@ -8,13 +8,13 @@ Elm compiler written in Elm!
 
 <a href="https://travis-ci.com/elm-in-elm/compiler" alt="Build Status">
   <img src="https://img.shields.io/travis/com/elm-in-elm/compiler/master.svg" /></a>
+<a href="https://discordapp.com/invite/d6kkjg7" alt="Discord">
+  <img src="https://img.shields.io/discord/578305644780716039.svg?label=discord" /></a>
 <a href="https://github.com/elm-in-elm/compiler/commits/master" alt="Latest commits">
   <img src="https://badgen.net/github/last-commit/elm-in-elm/compiler" /></a>
 <a href="https://github.com/elm-in-elm/compiler/pulse" alt="Activity">
   <img src="https://img.shields.io/github/commit-activity/m/elm-in-elm/compiler.svg" /></a>
-<a href="https://discordapp.com/invite/d6kkjg7" alt="Discord">
-  <img src="https://img.shields.io/discord/578305644780716039.svg?label=discord" /></a>
-
+<br/>
 <a href="https://github.com/elm-in-elm/compiler/issues" alt="Contributions welcome!">
   <img src="https://img.shields.io/badge/contributions-welcome-brightgreen.svg" /></a>
 <a href="https://github.com/elm-in-elm/compiler/graphs/contributors" alt="Contributors">
