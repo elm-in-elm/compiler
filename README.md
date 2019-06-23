@@ -102,7 +102,7 @@ Runs `elm-test` on the test suite (gasp!)
 - [ ] Draft the API of the library
 - [ ] Implement the library code (probably in different source-dir from the compiler itself)
 - [ ] Publish the library
-- [ ] After publishing, Add a shields.io badge :wink: `/elm-package/v/:user/:packageName.svg`
+- [ ] After publishing, add a shields.io badge :wink: `/elm-package/v/:user/:packageName.svg`
 - [ ] Revise the API after trying it out with some toy project
 
 #### CLI tool
