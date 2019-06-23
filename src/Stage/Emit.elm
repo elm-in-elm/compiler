@@ -13,11 +13,10 @@ import Common.Types
         , VarName(..)
         )
 import Dict.Any
-import Error exposing (EmitError(..), Error(..))
 import Graph
 
 
-emit : Project Backend.ProjectFields -> Result Error ProjectToEmit
+emit : Project Backend.ProjectFields -> ProjectToEmit
 emit project =
     project
         |> findPathToMain
@@ -25,7 +24,6 @@ emit project =
         |> String.join "\n"
         |> FileContents
         |> ProjectToEmit
-        |> Ok
 
 
 {-| We want to be able to emit `main`. We only emit what's needed for that.

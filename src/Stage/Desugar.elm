@@ -76,7 +76,7 @@ desugarLiteral literal =
 desugarVar : Modules Frontend.Expr -> Module Frontend.Expr -> Maybe ModuleName -> VarName -> Result DesugarError Canonical.Expr
 desugarVar modules thisModule maybeModuleName varName =
     findModuleOfVar modules thisModule maybeModuleName varName
-        |> Result.fromMaybe (VarNotInEnvOfModule maybeModuleName varName thisModule.name)
+        |> Result.fromMaybe (VarNotInEnvOfModule { var = ( maybeModuleName, varName ), module_ = thisModule.name })
         |> Result.map (\moduleName -> Canonical.var moduleName varName)
 
 

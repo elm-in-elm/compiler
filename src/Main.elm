@@ -341,7 +341,7 @@ compile project =
         |> Result.andThen InferTypes.inferTypes
         |> Result.andThen Optimize.optimize
         |> Result.andThen PrepareForBackend.prepareForBackend
-        |> Result.andThen Emit.emit
+        |> Result.map Emit.emit
         |> writeToFSAndExit
 
 

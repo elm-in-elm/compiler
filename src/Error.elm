@@ -1,6 +1,5 @@
 module Error exposing
     ( DesugarError(..)
-    , EmitError(..)
     , Error(..)
     , ErrorCode(..)
     , GeneralError(..)
@@ -30,9 +29,7 @@ type Error
     | ParseError ParseError
     | DesugarError DesugarError
     | TypeError TypeError
-    | OptimizeError OptimizeError
     | PrepareForBackendError PrepareForBackendError
-    | EmitError EmitError
 
 
 type GeneralError
@@ -171,14 +168,28 @@ toString error =
 
         DesugarError desugarError ->
             case desugarError of
-                VarNotInEnvOfModule maybeModuleName varName (ModuleName moduleName) ->
+                VarNotInEnvOfModule { var, module_ } ->
+                    let
+                        ( maybeModuleName, varName ) =
+                            var
+
+                        (ModuleName moduleName) =
+                            module_
+                    in
                     "Can't find the variable `"
                         ++ fullVarName maybeModuleName varName
                         ++ "` in the module `"
                         ++ moduleName
                         ++ "`. Have you imported it?"
 
-                AmbiguousVar maybeModuleName varName (ModuleName moduleName) ->
+                AmbiguousVar { var, module_ } ->
+                    let
+                        ( maybeModuleName, varName ) =
+                            var
+
+                        (ModuleName moduleName) =
+                            module_
+                    in
                     "There are multiple definitions for variable `"
                         ++ fullVarName maybeModuleName varName
                         ++ "` in the module `"
