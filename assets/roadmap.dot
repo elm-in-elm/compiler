@@ -1,0 +1,39 @@
+digraph G {
+    
+    node[shape=box]
+
+    {
+        node[style=filled,fillcolor="#e0ff4f"]
+        A[label="write comprehensive parser tests"]
+        B[label="implement parsers"]
+        C[label="implement type inference and emit\nfor new Expr constructors"]
+    }
+    
+    {
+        node[style=filled,fillcolor="#cfd5ec"]
+        E[label="split into compiler / library / CLI codebases"]
+    }
+    
+    {
+        node[style=filled,fillcolor="#84f4ff"]
+        F[label="make a draft of library API"]
+        G[label="implement the library"]
+        H[label="publish the library"]
+        L[label="dogfeed library on a toy project locally"]
+    }
+    
+    
+    {
+        node[style=filled,fillcolor="#ff6663"]
+        I[label="implement the CLI\naccording to the tests"]
+        J[label="publish the CLI"]
+        K[label="create test suite for CLI tool\ndirectory-based (in, cmd, out)"]
+    }
+
+    A -> B -> C
+    C -> L
+    E -> F -> G -> L -> H
+    E -> I -> J
+    K -> I
+
+}
