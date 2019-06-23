@@ -97,13 +97,13 @@ Runs `elm-test` on the test suite (gasp!)
 
 #### Project management
 
-- [ ] Create issues for all the TODOs in the codebase, tag some with <kbd>help wanted</kbd> and <kbd>good first issue</kbd>
+- [ ] Create issues with <kbd>help wanted</kbd> and <kbd>good first issue</kbd>
 - [ ] [@janiczek](https://twitter.com/janiczek/): Share your Firefox bookmarks relevant to `elm-in-elm` (ie. talks about Haskell hierarchical optimizations etc.)
 - [ ] After Elm Europe 2019 videos are out, add a link to the talk to the README
 
 #### Library
 
-- [ ] After publishing, Add a shields.io badge :wink: `/elm-package/v/:user/:packageName.svg`
+- [ ] After publishing, add a shields.io badge :wink: `/elm-package/v/:user/:packageName.svg`
 
 #### General
 
