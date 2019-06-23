@@ -91,42 +91,28 @@ $ make test
 ```
 Runs `elm-test` on the test suite (gasp!)
 
-## TODOs
+## Small TODOs
 
->  This is a brain-dump of both low-level and high-level stuff. My apologies if you're trying to make sense of this. After creating a roadmap this will probably be a bit more understandable. ~janiczek
+>  This is a brain-dump of some low-level stuff. (High-level stuff should be in the roadmap.) My apologies if it's hard to make sense of this! ~janiczek
 
 #### Project management
 
 - [ ] Create issues for all the TODOs in the codebase, tag some with <kbd>help wanted</kbd> and <kbd>good first issue</kbd>
 - [ ] [@janiczek](https://twitter.com/janiczek/): Share your Firefox bookmarks relevant to `elm-in-elm` (ie. talks about Haskell hierarchical optimizations etc.)
-- [x] Travis integration + shields.io badge about it
 - [ ] After Elm Europe 2019 videos are out, add a link to the talk to the README
-- [ ] Create a roadmap (or GitHub projects?) for how to move forward
 
 #### Library
 
-- [ ] Draft the API of the library
-- [ ] Implement the library code (probably in different source-dir from the compiler itself)
-- [ ] Publish the library
-- [ ] After publishing, add a shields.io badge :wink: `/elm-package/v/:user/:packageName.svg`
-- [ ] Revise the API after trying it out with some toy project
-
-#### CLI tool
-
-- [ ] Don't hardcode `out.js` as the output filename - allow the user to give an output path themselves
+- [ ] After publishing, Add a shields.io badge :wink: `/elm-package/v/:user/:packageName.svg`
 
 #### General
 
 - [ ] Nix expression for the dependencies and building this project? Would that be helpful?
-- [ ] How can users of `elm-in-elm` use packages from package.elm-lang.org?
-- [ ] Allow for multiple `main` entry points instead of just one (or think about whether it makes sense! I guess it does for the CLI tool, maybe less for the library... ~janiczek)
 - [ ] Compare our `Main.compile` with official compiler's `Compile.compile` - is that a better API?
 - [ ] Types module: remove, refactor into "module per datastructure" style?
-- [ ] Allow for multiple source directories?
 
 #### Parsing
 
-- [ ] No sense in writing various TODOs here: after fleshing out the parser test suite (see below), see what fails and fix it :man_shrugging:
 - [ ] Consider adding contexts to various parsers (for debuggability? for better error messages?)
 
 #### Type inference
@@ -166,10 +152,8 @@ Runs `elm-test` on the test suite (gasp!)
 
 #### Tests
 
-- [ ] Parsing: Add tests for all the (even non-implemented) various Elm syntax: comments, booleans, ints, floats (don't forget hex variants), chars, strings (don't forget multiline), lists, cons, if, case...of, records, accessors, record update syntax, functions, lambdas, operators, let...in, module declarations, imports, type annotations (don't forget extensible records), type aliases, custom types, ports... and possibly more. (This **doesn't** need to be all done in one PR :grimacing: it's a lot of stuff!)
 - [ ] Test `Common.unalias`
 - [ ] Test `Stage.Desugar.findModuleOfVar`
-- [ ] Instead of a single `example-project`, have a directory with multiple such projects, and probably `in` and `out` directories to allow testing the CLI tool. The library can be tested through Elm tests.
 
 ## Contributors
 
