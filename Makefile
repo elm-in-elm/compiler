@@ -10,4 +10,5 @@ build:
 
 .PHONY: test
 test:
+	elm make src/library/Todo.elm --output /dev/null # build the library just to test it compiles
 	elm-test
