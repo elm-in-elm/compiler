@@ -10,11 +10,6 @@ digraph G {
     }
     
     {
-        node[style=filled,fillcolor="#cfd5ec"]
-        E[label="split into compiler / library / CLI codebases"]
-    }
-    
-    {
         node[style=filled,fillcolor="#84f4ff"]
         F[label="make a draft of library API"]
         G[label="implement the library"]
@@ -32,8 +27,8 @@ digraph G {
 
     A -> B -> C
     C -> L
-    E -> F -> G -> L -> H
-    E -> I -> J
+    F -> G -> L -> H
+    I -> J
     K -> I
 
 }
