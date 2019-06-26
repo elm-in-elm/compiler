@@ -64,7 +64,7 @@ Oh God please yes! :heart: Feel free to look around the [<kbd>help wanted</kbd>]
 ## Roadmap
 
 <p align="center">
-<img src="https://raw.github.com/elm-in-elm/compiler/master/assets/roadmap.png" alt="Roadmap" width="916" height="465">
+<img src="https://raw.github.com/elm-in-elm/compiler/master/assets/roadmap.png" alt="Roadmap" width="755" height="465">
 </p>
 
 ## Prerequisites
