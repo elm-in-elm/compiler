@@ -33,11 +33,11 @@ Elm compiler written in Elm!
 3. :bulb: **exploration ready:** the first two points enable folks to hack on the compiler (as it's written in Elm, which they know, and the code is new-people-friendly) and answer some questions! (For example, what's the best order of optimizations? How would emitting to JavaScript have to look like to make it extra amenable to Google Closure Compiler's advanced optimizations?)
 4. :wrench: **extensible:** again, the first two (three?) points make it easy and invite extending the compiler in various ways, eg. a native binary target, different type inference algorithm, new optimizations, `where` syntax, etc.
 
-Essentially, `elm-in-elm` should unblock people to play with compilers, explore and have fun!
+**In short, `elm-in-elm` aims to unblock and encourage people to play with compilers and the Elm language itself, explore new frontiers and have fun!**
 
 :tv: For more context and information, you can watch [Martin Janiczek's talk from Elm Europe 2019](#todo) (:construction: `TODO` :construction:) which served as an unveiling of `elm-in-elm` to public.
 
-## Non goals :negative_squared_cross_mark:
+## Non-goals :negative_squared_cross_mark:
 
 1. To dethrone or replace [the official Elm compiler](https://github.com/elm/compiler/) written in Haskell.
 
@@ -47,9 +47,9 @@ This is :negative_squared_cross_mark::negative_squared_cross_mark::negative_squa
 
 `elm-in-elm` consists of:
 
-* [a compiler implementation](src/)
-* a library :construction: `TODO` :construction:
-* [a CLI tool](src/index.js) :construction: `TODO` :construction:
+* [a compiler implementation](src/compiler/)
+* [a library](src/library/) :construction: `TODO` :construction:
+* [a CLI tool](src/cli/) :construction: `TODO` :construction:
 * and [a test suite](tests/).
 
 It is written in Elm, and compiles Elm to JavaScript, but lays the foundation to be able to compile to different targets in the future.
