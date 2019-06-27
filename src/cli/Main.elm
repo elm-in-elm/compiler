@@ -339,7 +339,7 @@ compile project =
     Ok project
         |> Result.andThen Desugar.desugar
         |> Result.andThen InferTypes.inferTypes
-        |> Result.andThen Optimize.optimize
+        |> Result.map Optimize.optimize
         |> Result.andThen PrepareForBackend.prepareForBackend
         |> Result.map Emit.emit
         |> writeToFSAndExit

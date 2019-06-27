@@ -67,6 +67,29 @@ Oh God please yes! :heart: Feel free to look around the [<kbd>help wanted</kbd>]
 <img src="https://raw.github.com/elm-in-elm/compiler/master/assets/roadmap.png" alt="Roadmap" width="755" height="465">
 </p>
 
+
+|                   | parser tests       | parse              | desugar            | infer types        | optimize           | emit               |
+| ----------------- | ------------------ | ---------          | ------------------ | ------------------ | ------------------ | ------------------ |
+| integers          | :warning:          | :warning:          | :heavy_check_mark: | :heavy_check_mark: | :warning:          | :heavy_check_mark: |
+| floats            | :warning:          | :warning:          | :heavy_check_mark: | :heavy_check_mark: | :warning:          | :heavy_check_mark: |
+| characters        | :warning:          | :warning:          | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: |
+| strings           | :warning:          | :warning:          | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: |
+| booleans          | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: |
+| variables         | :warning:          | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :warning:          | :heavy_check_mark: |
+| lists             | :x:                | :x:                | :x:                | :x:                | :x:                | :x:                |
+| binary operators  | :warning:          | :warning:          | :heavy_check_mark: | :x:                | :warning:          | :warning:          |
+| lambdas           | :warning:          | :warning:          | :heavy_check_mark: | :heavy_check_mark: | :warning:          | :warning:          |
+| function calls    | :warning:          | :warning:          | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: |
+| if...then...else  | :warning:          | :warning:          | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: |
+| let..in           | :warning:          | :warning:          | :heavy_check_mark: | :warning:          | :heavy_check_mark: | :warning:          |
+| case...of         | :x:                | :x:                | :x:                | :x:                | :x:                | :x:                |
+| records           | :x:                | :x:                | :x:                | :x:                | :x:                | :x:                |
+| record accessors  | :x:                | :x:                | :x:                | :x:                | :x:                | :x:                |
+| record updates    | :x:                | :x:                | :x:                | :x:                | :x:                | :x:                |
+| unit type         | :x:                | :x:                | :x:                | :x:                | :x:                | :x:                |
+| tuples, 3-tuples  | :x:                | :x:                | :x:                | :x:                | :x:                | :x:                |
+| shaders (?)       | :x:                | :x:                | :x:                | :x:                | :x:                | :x:                |
+
 ## Prerequisites
 
 The tooling around this project requires:
@@ -100,6 +123,7 @@ Runs `elm-test` on the test suite (gasp!)
 - [ ] Create issues with <kbd>help wanted</kbd> and <kbd>good first issue</kbd>
 - [ ] [@janiczek](https://twitter.com/janiczek/): Share your Firefox bookmarks relevant to `elm-in-elm` (ie. talks about Haskell hierarchical optimizations etc.)
 - [ ] After Elm Europe 2019 videos are out, add a link to the talk to the README
+- [ ] Add tests for stages other than parsing into the matrix above. Eg. emit tests
 
 #### Library
 
@@ -110,6 +134,12 @@ Runs `elm-test` on the test suite (gasp!)
 - [ ] Nix expression for the dependencies and building this project? Would that be helpful?
 - [ ] Compare our `Main.compile` with official compiler's `Compile.compile` - is that a better API?
 - [ ] Types module: remove, refactor into "module per datastructure" style?
+- [ ] Deal with kernel modules
+- [ ] Deal with ports
+- [ ] Deal with effect modules
+- [ ] Deal with typeclasses (number, comparable, ...)
+- [ ] Deal with pattern matching
+- [ ] Deal with custom binary operators
 
 #### Parsing
 

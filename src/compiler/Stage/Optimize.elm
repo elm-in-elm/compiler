@@ -8,9 +8,9 @@ import Error exposing (Error)
 import Stage.Optimize.Boilerplate as Boilerplate
 
 
-optimize : Project Typed.ProjectFields -> Result x (Project Typed.ProjectFields)
+optimize : Project Typed.ProjectFields -> Project Typed.ProjectFields
 optimize project =
-    Ok (Boilerplate.optimizeProject optimizeExpr project)
+    Boilerplate.optimizeProject optimizeExpr project
 
 
 optimizeExpr : Typed.Expr -> Typed.Expr
