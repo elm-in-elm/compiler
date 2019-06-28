@@ -204,7 +204,7 @@ Runs `elm-test` on the test suite (gasp!)
       </td>
       <td align="center">
         <img width="150" height="150"
-        src="https://avatars0.githubusercontent.com/u/16308754">
+        src="https://avatars0.githubusercontent.com/u/16308754?v=3&s=150">
         </br>
         <a href="https://github.com/harrysarson">Harry Sarson</a>
       </td>
