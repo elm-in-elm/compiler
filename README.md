@@ -71,7 +71,7 @@ Oh God please yes! :heart: Feel free to look around the [<kbd>help wanted</kbd>]
 |                   | parser tests       | parse              | desugar            | infer types        | optimize           | emit               |
 | ----------------- | ------------------ | ---------          | ------------------ | ------------------ | ------------------ | ------------------ |
 | integers          | :warning:          | :warning:          | :heavy_check_mark: | :heavy_check_mark: | :warning:          | :heavy_check_mark: |
-| floats            | :warning:          | :warning:          | :heavy_check_mark: | :heavy_check_mark: | :warning:          | :heavy_check_mark: |
+| floats            | :x:                | :x:                | :x:                | :x:                | :x:                | :x:                |
 | characters        | :warning:          | :warning:          | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: |
 | strings           | :warning:          | :warning:          | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: |
 | booleans          | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: |
