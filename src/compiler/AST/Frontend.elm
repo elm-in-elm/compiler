@@ -31,6 +31,7 @@ type Expr
     | Call { fn : Expr, argument : Expr }
     | If { test : Expr, then_ : Expr, else_ : Expr }
     | Let { bindings : List (Binding Expr), body : Expr }
+    | Unit
 
 
 var : Maybe ModuleName -> VarName -> Expr
@@ -104,6 +105,9 @@ recurse f expr =
                 { bindings = List.map (Common.mapBinding f) bindings
                 , body = f body
                 }
+
+        Unit ->
+            expr
 
 
 transform : (Expr -> Expr) -> Expr -> Expr
