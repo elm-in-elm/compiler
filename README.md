@@ -88,6 +88,9 @@ Oh God please yes! :heart: Feel free to look around the [<kbd>help wanted</kbd>]
 | record updates    | :x:                | :x:                | :x:                | :x:                | :x:                | :x:                |
 | unit type         | :x:                | :x:                | :x:                | :x:                | :x:                | :x:                |
 | tuples, 3-tuples  | :x:                | :x:                | :x:                | :x:                | :x:                | :x:                |
+| type annotations  | :x:                | :x:                | :x:                | :x:                | :x:                | :x:                |
+| type aliases      | :x:                | :x:                | :x:                | :x:                | :x:                | :x:                |
+| custom types      | :x:                | :x:                | :x:                | :x:                | :x:                | :x:                |
 | shaders (?)       | :x:                | :x:                | :x:                | :x:                | :x:                | :x:                |
 
 ## Prerequisites
