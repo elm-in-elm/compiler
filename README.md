@@ -91,6 +91,7 @@ Oh God please yes! :heart: Feel free to look around the [<kbd>help wanted</kbd>]
 | type annotations  | :x:                | :x:                | :x:                | :x:                | :x:                | :x:                |
 | type aliases      | :x:                | :x:                | :x:                | :x:                | :x:                | :x:                |
 | custom types      | :x:                | :x:                | :x:                | :x:                | :x:                | :x:                |
+| custom operators  | :x:                | :x:                | :x:                | :x:                | :x:                | :x:                |
 | shaders (?)       | :x:                | :x:                | :x:                | :x:                | :x:                | :x:                |
 
 ## Prerequisites
