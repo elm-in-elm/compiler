@@ -1,10 +1,10 @@
-module Stage.Emit.JavaScript exposing (emitExpr, emitTopLevelDeclaration, mangleQualifiedVar)
+module Stage.Emit.JavaScript exposing (emitExpr, emitTopLevelDeclaration)
 
 -- TODO after we figure out module headers, compiling to one vs many files, revise the exposed values here
 
 import AST.Backend as Backend
 import AST.Common.Literal exposing (Literal(..))
-import AST.Typed exposing (Expr_(..))
+import AST.Typed as Typed exposing (Expr_(..))
 import Common.Types
     exposing
         ( ModuleName(..)
@@ -14,8 +14,6 @@ import Common.Types
 import Dict.Any
 
 
-{-| TODO
--}
 emitExpr : Backend.Expr -> String
 emitExpr ( expr, type_ ) =
     case expr of
@@ -45,13 +43,15 @@ emitExpr ( expr, type_ ) =
             "(" ++ emitExpr e1 ++ " + " ++ emitExpr e2 ++ ")"
 
         Lambda { argument, body } ->
+            -- TODO are these parentheses needed?
             "((" ++ mangleVarName argument ++ ") => " ++ emitExpr body ++ ")"
 
         Call { fn, argument } ->
-            "((" ++ emitExpr fn ++ ")(" ++ emitExpr argument ++ "))"
+            -- TODO are these parentheses needed?
+            "(" ++ emitExpr fn ++ "(" ++ emitExpr argument ++ "))"
 
         If { test, then_, else_ } ->
-            "((" ++ emitExpr test ++ ") ? (" ++ emitExpr then_ ++ ") : (" ++ emitExpr else_ ++ "))"
+            "(" ++ emitExpr test ++ " ? " ++ emitExpr then_ ++ " : " ++ emitExpr else_ ++ ")"
 
         Let { bindings, body } ->
             let
@@ -59,13 +59,11 @@ emitExpr ( expr, type_ ) =
                     bindings
                         |> Dict.Any.values
                         |> List.map (\binding -> "const " ++ mangleVarName binding.name ++ " = " ++ emitExpr binding.body)
-                        |> String.join ";"
+                        |> String.join "; "
             in
-            "(() => {" ++ bindingsJS ++ "; return " ++ emitExpr body ++ ";})()"
+            "((() => {" ++ bindingsJS ++ "; return " ++ emitExpr body ++ ";})())"
 
 
-{-| TODO test
--}
 emitTopLevelDeclaration : TopLevelDeclaration Backend.Expr -> String
 emitTopLevelDeclaration { module_, name, body } =
     "const "
@@ -75,8 +73,6 @@ emitTopLevelDeclaration { module_, name, body } =
         ++ ";"
 
 
-{-| TODO test
--}
 mangleQualifiedVar : ModuleName -> VarName -> String
 mangleQualifiedVar moduleName varName =
     mangleModuleName moduleName ++ "$" ++ mangleVarName varName

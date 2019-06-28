@@ -309,7 +309,13 @@ topLevelDeclarations =
 
 topLevelDeclaration : Parser_ (ModuleName -> TopLevelDeclaration Frontend.Expr)
 topLevelDeclaration =
-    P.succeed TopLevelDeclaration
+    P.succeed
+        (\name body module__ ->
+            { module_ = module__
+            , name = name
+            , body = body
+            }
+        )
         |= P.map VarName varName
         |. P.spaces
         |. P.symbol (P.Token "=" ExpectingEqualsSign)

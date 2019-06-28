@@ -117,9 +117,9 @@ type VarName
 
 
 type alias TopLevelDeclaration expr =
-    { name : VarName
+    { module_ : ModuleName
+    , name : VarName
     , body : expr
-    , module_ : ModuleName
     }
 
 

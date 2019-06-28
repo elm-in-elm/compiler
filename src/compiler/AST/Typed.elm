@@ -28,7 +28,8 @@ type alias ProjectFields =
 {-| Differs from Canonical.Expr by:
 
   - being a tuple of the underlying Expr\_ type and its type
-  - Lambda taking `argumentId` to help with typechecking (TODO write a better description)
+  - Lambda taking `argumentId` to help with typechecking
+    (TODO describe what it is and what it means)
 
 TODO make this opaque, add accessors etc.
 
