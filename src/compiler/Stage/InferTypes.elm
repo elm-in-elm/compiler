@@ -220,6 +220,13 @@ assignIdsHelp unusedId0 varIds0 expr =
                                     )
                                 )
                     )
+
+        Canonical.Unit ->
+            Ok
+                ( unusedId0
+                , varIds0
+                , Typed.Unit
+                )
     )
         |> Result.map
             (\( unusedIdN, varIdsN, recursedExpr ) ->
@@ -342,6 +349,10 @@ generateEquations ( expr, type_ ) =
                 :: generateEquations body
                 ++ bindingEquations
 
+        Typed.Unit ->
+            -- unit is unit
+            [ equals type_ Type.Unit ]
+
 
 {-| This function takes care of recursively applying `substituteType`
 from the bottom up.
@@ -388,3 +399,6 @@ getType substitutionMap type_ =
                 Type.Function
                     (getType substitutionMap arg)
                     (getType substitutionMap result)
+
+            Type.Unit ->
+                type_

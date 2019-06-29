@@ -63,6 +63,9 @@ desugarExpr modules thisModule expr =
         Frontend.Let { bindings, body } ->
             desugarLet recurse bindings body
 
+        Frontend.Unit ->
+            desugarUnit
+
 
 
 -- DESUGAR PASSES
@@ -142,6 +145,10 @@ desugarLet recurse bindings body =
         (Result.Extra.combine (List.map (Common.mapBinding recurse >> Common.combineBinding) bindings))
         (recurse body)
 
+
+desugarUnit : Result DesugarError Canonical.Expr
+desugarUnit =
+    Ok Canonical.Unit
 
 
 -- HELPERS

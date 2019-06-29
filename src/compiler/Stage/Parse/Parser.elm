@@ -330,9 +330,10 @@ expr =
             [ if_
             , let_
             , lambda
-            , parenthesizedExpr
             , PP.literal literal
             , always var
+            , unit
+            , parenthesizedExpr
             ]
         , andThenOneOf =
             -- TODO test this: does `x =\n  call 1\n+ something` work? (it shouldn't: no space before '+')
@@ -594,6 +595,12 @@ promoteArguments arguments expr_ =
         _ ->
             expr_
 
+
+unit : ExprConfig -> Parser_ Frontend.Expr
+unit _ =
+    P.succeed Frontend.Unit
+    |. P.keyword (P.Token "()" ExpectingUnit)
+    |> P.inContext InUnit
 
 
 -- Helpers

@@ -86,7 +86,7 @@ Oh God please yes! :heart: Feel free to look around the [<kbd>help wanted</kbd>]
 | records           | :x:                | :x:                | :x:                | :x:                | :x:                | :x:                |
 | record accessors  | :x:                | :x:                | :x:                | :x:                | :x:                | :x:                |
 | record updates    | :x:                | :x:                | :x:                | :x:                | :x:                | :x:                |
-| unit type         | :x:                | :x:                | :x:                | :x:                | :x:                | :x:                |
+| unit type         | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: |
 | tuples, 3-tuples  | :x:                | :x:                | :x:                | :x:                | :x:                | :x:                |
 | type annotations  | :x:                | :x:                | :x:                | :x:                | :x:                | :x:                |
 | type aliases      | :x:                | :x:                | :x:                | :x:                | :x:                | :x:                |
@@ -211,6 +211,12 @@ Runs `elm-test` on the test suite (gasp!)
         src="https://avatars0.githubusercontent.com/u/16308754?v=3&s=150">
         </br>
         <a href="https://github.com/harrysarson">Harry Sarson</a>
+      </td>
+      <td align="center">
+        <img width="150" height="150"
+        src="https://avatars0.githubusercontent.com/u/197573">
+        </br>
+        <a href="https://github.com/Warry">Maxime Dantec</a>
       </td>
     </tr>
   <tbody>

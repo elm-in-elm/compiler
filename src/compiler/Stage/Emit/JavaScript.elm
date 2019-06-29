@@ -63,6 +63,8 @@ emitExpr ( expr, type_ ) =
             in
             "((() => {" ++ bindingsJS ++ "; return " ++ emitExpr body ++ ";})())"
 
+        Unit ->
+            """{ "type": "unit" }"""
 
 emitTopLevelDeclaration : TopLevelDeclaration Backend.Expr -> String
 emitTopLevelDeclaration { module_, name, body } =
