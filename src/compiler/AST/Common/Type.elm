@@ -15,6 +15,7 @@ type Type
     | Char
     | String
     | Bool
+    | Unit
 
 
 getVarId : Type -> Maybe Int
@@ -47,3 +48,6 @@ toString type_ =
 
         Bool ->
             "Bool"
+
+        Unit ->
+            "()"

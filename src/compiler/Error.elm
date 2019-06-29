@@ -53,6 +53,7 @@ type ParseContext
     | InLet
     | InLetBinding
     | InLambda
+    | InUnit
 
 
 type ParseProblem
@@ -77,6 +78,7 @@ type ParseProblem
     | ExpectingEqualsSign -- `x >=< 1`
     | ExpectingMinusSign -- `>-<42`
     | ExpectingInt
+    | ExpectingHexadecimals
     | ExpectingSingleQuote
     | ExpectingChar
     | ExpectingDoubleQuote
@@ -96,6 +98,7 @@ type ParseProblem
     | ExpectingIn
     | ExpectingAtLeastOne
     | ExpectingNewline
+    | ExpectingUnit
     | InvalidInt
     | CompilerBug String
 

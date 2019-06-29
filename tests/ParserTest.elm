@@ -596,6 +596,14 @@ expr =
                   )
                 ]
               )
+            , ( "unit"
+              , [ ( "simple case"
+                  , "()"
+                  , Ok Unit
+                  )
+                ]
+              )
+
             ]
         )
 

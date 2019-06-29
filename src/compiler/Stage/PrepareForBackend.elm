@@ -185,3 +185,6 @@ findDependencies modules ( expr, type_ ) =
             in
             bindingsDependencies
                 ++ findDependencies_ body
+
+        Unit ->
+            []

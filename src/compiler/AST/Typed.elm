@@ -51,6 +51,7 @@ type Expr_
     | Call { fn : Expr, argument : Expr }
     | If { test : Expr, then_ : Expr, else_ : Expr }
     | Let { bindings : AnyDict String VarName (Binding Expr), body : Expr }
+    | Unit
 
 
 lambda : VarName -> Expr -> Int -> Expr_
@@ -100,6 +101,9 @@ recurse f ( expr, type_ ) =
                 { bindings = Dict.Any.map (always (Common.mapBinding f)) bindings
                 , body = f body
                 }
+
+        Unit ->
+            expr
     , type_
     )
 
