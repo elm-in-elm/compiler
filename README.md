@@ -196,19 +196,19 @@ Runs `elm-test` on the test suite (gasp!)
     <tr>
       <td align="center">
         <img width="150" height="150"
-        src="https://avatars3.githubusercontent.com/u/149425?v=3&s=150">
+        src="https://avatars3.githubusercontent.com/u/149425">
         </br>
         <a href="https://github.com/Janiczek">Martin Janiczek</a>
       </td>
       <td align="center">
         <img width="150" height="150"
-        src="https://avatars2.githubusercontent.com/u/5399281?v=3&s=150">
+        src="https://avatars2.githubusercontent.com/u/5399281">
         </br>
         <a href="https://github.com/rlefevre">Rémi Lefèvre</a>
       </td>
       <td align="center">
         <img width="150" height="150"
-        src="https://avatars0.githubusercontent.com/u/16308754?v=3&s=150">
+        src="https://avatars0.githubusercontent.com/u/16308754">
         </br>
         <a href="https://github.com/harrysarson">Harry Sarson</a>
       </td>
