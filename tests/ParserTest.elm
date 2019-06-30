@@ -524,6 +524,10 @@ expr =
                   , "0x123abc"
                   , Ok (Literal (Int 1194684))
                   )
+                , ( "hexadecimal int - uppercase"
+                  , "0x789DEF"
+                  , Ok (Literal (Int 7904751))
+                  )
                 , ( "negative int"
                   , "-42"
                   , Ok (Literal (Int -42))
@@ -611,7 +615,6 @@ expr =
                   )
                 ]
               )
-
             ]
         )
 

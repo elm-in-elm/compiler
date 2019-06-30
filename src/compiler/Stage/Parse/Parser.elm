@@ -32,6 +32,7 @@ import Error
         , ParseError(..)
         , ParseProblem(..)
         )
+import Hex
 import Parser.Advanced as P exposing ((|.), (|=), Parser)
 import Pratt.Advanced as PP
 import Set exposing (Set)
@@ -386,8 +387,6 @@ literal =
         |> P.inContext InLiteral
 
 
-{-| TODO deal with hex values. Use P.number and solve this+floats in one go?
--}
 literalInt : Parser_ Literal
 literalInt =
     let
@@ -399,13 +398,29 @@ literalInt =
             -}
             P.backtrackable <|
                 P.int ExpectingInt InvalidInt
+
+        hexInt =
+            P.succeed identity
+                |. P.symbol (P.Token "0x" ExpectingHexPrefix)
+                |= P.getChompedString (P.chompWhile Char.isHexDigit)
+                |> P.andThen
+                    (\hexString ->
+                        Hex.fromString hexString
+                            |> Result.map P.succeed
+                            |> Result.withDefault (P.problem InvalidHexInt)
+                    )
+                |> P.inContext InHexInt
     in
     P.succeed Int
         |= P.oneOf
             [ P.succeed negate
                 |. P.symbol (P.Token "-" ExpectingMinusSign)
-                |= int
+                |= P.oneOf
+                    [ int
+                    , hexInt
+                    ]
             , int
+            , hexInt
             ]
         |> P.inContext InLiteralInt
 
@@ -599,8 +614,9 @@ promoteArguments arguments expr_ =
 unit : ExprConfig -> Parser_ Frontend.Expr
 unit _ =
     P.succeed Frontend.Unit
-    |. P.keyword (P.Token "()" ExpectingUnit)
-    |> P.inContext InUnit
+        |. P.keyword (P.Token "()" ExpectingUnit)
+        |> P.inContext InUnit
+
 
 
 -- Helpers
