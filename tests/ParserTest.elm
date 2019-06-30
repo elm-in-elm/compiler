@@ -548,7 +548,7 @@ expr =
                   , Ok (Literal (Char '😃'))
                   )
                 , ( "escaped single quote"
-                  , "'\''"
+                  , "'\\\''"
                   , Ok (Literal (Char '\''))
                   )
                 , ( "emoji code point"
