@@ -72,7 +72,7 @@ Oh God please yes! :heart: Feel free to look around the [<kbd>help wanted</kbd>]
 | ----------------- | ------------------ | ---------          | ------------------ | ------------------ | ------------------ | ------------------ |
 | integers          | :warning:          | :warning:          | :heavy_check_mark: | :heavy_check_mark: | :warning:          | :heavy_check_mark: |
 | floats            | :x:                | :x:                | :x:                | :x:                | :x:                | :x:                |
-| characters        | :warning:          | :warning:          | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: |
+| characters        | :heavy_check_mark: | :warning:          | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: |
 | strings           | :warning:          | :warning:          | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: |
 | booleans          | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: |
 | variables         | :warning:          | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :warning:          | :heavy_check_mark: |
