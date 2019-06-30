@@ -543,6 +543,18 @@ expr =
                   , "'A'"
                   , Ok (Literal (Char 'A'))
                   )
+                , ( "emoji"
+                  , "'😃'"
+                  , Ok (Literal (Char '😃'))
+                  )
+                , ( "escaped single quote"
+                  , "'\''"
+                  , Ok (Literal (Char '\''))
+                  )
+                , ( "emoji code point"
+                  , "'\u{1F648}'"
+                  , Ok (Literal (Char '🙈'))
+                  )
                 ]
               )
             , ( "literal string"
