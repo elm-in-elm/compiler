@@ -556,7 +556,7 @@ expr =
                   , Ok (Literal (Char '\''))
                   )
                 , ( "emoji code point"
-                  , "'\u{1F648}'"
+                  , "'\\u{1F648}'"
                   , Ok (Literal (Char '🙈'))
                   )
                 ]
