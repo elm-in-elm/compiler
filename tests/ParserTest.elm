@@ -543,6 +543,10 @@ expr =
                   , "'A'"
                   , Ok (Literal (Char 'A'))
                   )
+                , ( "double quote"
+                  , "'\"'"
+                  , Ok (Literal (Char '\"'))
+                  )
                 , ( "emoji"
                   , "'😃'"
                   , Ok (Literal (Char '😃'))
