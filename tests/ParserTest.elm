@@ -520,9 +520,17 @@ expr =
                   , "0"
                   , Ok (Literal (Int 0))
                   )
-                , ( "negative"
+                , ( "hexadecimal int"
+                  , "0x123abc"
+                  , Ok (Literal (Int 1194684))
+                  )
+                , ( "negative int"
                   , "-42"
                   , Ok (Literal (Int -42))
+                  )
+                , ( "negative hexadecimal"
+                  , "-0x123abc"
+                  , Ok (Literal (Int -1194684))
                   )
                 ]
               )
