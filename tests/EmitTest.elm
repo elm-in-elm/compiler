@@ -152,6 +152,11 @@ javascript =
                       )
                     ]
                 )
+            , runTest
+                ( "Unit"
+                , Unit
+                , """{type: "unit"}"""
+                )
             , describe "Let"
                 (List.map runTest
                     [ ( "one binding"

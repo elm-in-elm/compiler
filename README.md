@@ -68,31 +68,41 @@ Oh God please yes! :heart: Feel free to look around the [<kbd>help wanted</kbd>]
 </p>
 
 
-|                   | parser tests       | parse              | desugar            | infer types        | optimize           | emit               |
-| ----------------- | ------------------ | ---------          | ------------------ | ------------------ | ------------------ | ------------------ |
-| integers          | :heavy_check_mark: | :warning:          | :heavy_check_mark: | :heavy_check_mark: | :warning:          | :heavy_check_mark: |
-| floats            | :x:                | :x:                | :x:                | :x:                | :x:                | :x:                |
-| characters        | :warning:          | :warning:          | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: |
-| strings           | :warning:          | :warning:          | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: |
-| booleans          | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: |
-| variables         | :warning:          | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :warning:          | :heavy_check_mark: |
-| lists             | :x:                | :x:                | :x:                | :x:                | :x:                | :x:                |
-| binary operators  | :warning:          | :warning:          | :heavy_check_mark: | :x:                | :warning:          | :warning:          |
-| lambdas           | :warning:          | :warning:          | :heavy_check_mark: | :heavy_check_mark: | :warning:          | :warning:          |
-| function calls    | :warning:          | :warning:          | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: |
-| if...then...else  | :warning:          | :warning:          | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: |
-| let..in           | :warning:          | :warning:          | :heavy_check_mark: | :warning:          | :heavy_check_mark: | :warning:          |
-| case...of         | :x:                | :x:                | :x:                | :x:                | :x:                | :x:                |
-| records           | :x:                | :x:                | :x:                | :x:                | :x:                | :x:                |
-| record accessors  | :x:                | :x:                | :x:                | :x:                | :x:                | :x:                |
-| record updates    | :x:                | :x:                | :x:                | :x:                | :x:                | :x:                |
-| unit type         | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: |
-| tuples, 3-tuples  | :x:                | :x:                | :x:                | :x:                | :x:                | :x:                |
-| type annotations  | :x:                | :x:                | :x:                | :x:                | :x:                | :x:                |
-| type aliases      | :x:                | :x:                | :x:                | :x:                | :x:                | :x:                |
-| custom types      | :x:                | :x:                | :x:                | :x:                | :x:                | :x:                |
-| custom operators  | :x:                | :x:                | :x:                | :x:                | :x:                | :x:                |
-| shaders (?)       | :x:                | :x:                | :x:                | :x:                | :x:                | :x:                |
+|                   | parser tests         | parse                | desugar            | infer types        | optimize             | emit               | emit tests         |
+| ----------------- | -------------------- | -------------------- | ------------------ | ------------------ | -------------------- | ------------------ | ------------------ |
+| integers          | :heavy_check_mark:   | :warning: [[1]](#f1) | :heavy_check_mark: | :heavy_check_mark: | :warning: [[2]](#f2) | :heavy_check_mark: | :heavy_check_mark: |
+| floats            | :x: [[3]](#f3)       | :x: [[4]](#f4)       | :x: [[3]](#f3)     | :x: [[3]](#f3)     | :x: [[5]](#f5)       | :x: [[3]](#f3)     | :x: [[3]](#f3)     |
+| characters        | :warning: [[6]](#f6) | :warning: [[7]](#f7) | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark:   | :heavy_check_mark: | :heavy_check_mark: |
+| strings           | :warning: [[8]](#f8) | :warning: [[9]](#f9) | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark:   | :heavy_check_mark: | :heavy_check_mark: |
+| booleans          | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark:   | :heavy_check_mark: | :heavy_check_mark: |
+| variables         | :warning:            | :heavy_check_mark:   | :heavy_check_mark: | :heavy_check_mark: | :warning:            | :heavy_check_mark: | :heavy_check_mark: |
+| lists             | :x:                  | :x:                  | :x:                | :x:                | :x:                  | :x:                | :x:                |
+| binary operators  | :warning:            | :warning:            | :heavy_check_mark: | :x:                | :warning:            | :warning:          | :heavy_check_mark: |
+| lambdas           | :warning:            | :warning:            | :heavy_check_mark: | :heavy_check_mark: | :warning:            | :heavy_check_mark: | :heavy_check_mark: |
+| function calls    | :warning:            | :warning:            | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark:   | :heavy_check_mark: | :heavy_check_mark: |
+| if...then...else  | :warning:            | :warning:            | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark:   | :heavy_check_mark: | :heavy_check_mark: |
+| let..in           | :warning:            | :warning:            | :heavy_check_mark: | :warning:          | :heavy_check_mark:   | :warning:          | :heavy_check_mark: |
+| case...of         | :x:                  | :x:                  | :x:                | :x:                | :x:                  | :x:                | :x:                |
+| records           | :x:                  | :x:                  | :x:                | :x:                | :x:                  | :x:                | :x:                |
+| record accessors  | :x:                  | :x:                  | :x:                | :x:                | :x:                  | :x:                | :x:                |
+| record updates    | :x:                  | :x:                  | :x:                | :x:                | :x:                  | :x:                | :x:                |
+| unit type         | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark:   | :heavy_check_mark: | :heavy_check_mark: |
+| tuples, 3-tuples  | :x:                  | :x:                  | :x:                | :x:                | :x:                  | :x:                | :x:                |
+| type annotations  | :x:                  | :x:                  | :x:                | :x:                | :x:                  | :x:                | :x:                |
+| type aliases      | :x:                  | :x:                  | :x:                | :x:                | :x:                  | :x:                | :x:                |
+| custom types      | :x:                  | :x:                  | :x:                | :x:                | :x:                  | :x:                | :x:                |
+| custom operators  | :x:                  | :x:                  | :x:                | :x:                | :x:                  | :x:                | :x:                |
+| shaders (?)       | :x:                  | :x:                  | :x:                | :x:                | :x:                  | :x:                | :x:                |
+
+1. <span id="f1"></span> Hex integers not implemented; will be fixed in [#19](https://github.com/elm-in-elm/compiler/pull/19)
+2. <span id="f2"></span> To be optimized with multiplication, subtraction, division, modulo, exponentiation... maybe more?; not tracked yet
+3. <span id="f3"></span> Not implemented; tracked in [#17](https://github.com/elm-in-elm/compiler/issues/17)
+4. <span id="f4"></span> Not implemented; not tracked yet
+5. <span id="f5"></span> To be optimized the same way Ints are; not tracked yet
+6. <span id="f6"></span> Comprehensive tests missing; will be fixed in [#15](https://github.com/elm-in-elm/compiler/pull/15)
+7. <span id="f7"></span> Escape sequences not implemented; not tracked yet
+8. <span id="f8"></span> Comprehensive tests missing; not tracked yet
+9. <span id="f9"></span> Multiline strings (and maybe more) missing; not tracked yet
 
 ## Prerequisites
 
