@@ -410,23 +410,74 @@ literalInt =
         |> P.inContext InLiteralInt
 
 
-{-| TODO escapes
-TODO Unicode escapes
--}
+-- for literalChar and, in the future, literalString
+stringHelp = 
+    P.oneOf
+    [ P.succeed (identity)
+        |. P.token (P.Token "\\" ExpectingEscapeBackslash)
+        |= P.oneOf
+            [ P.map (\_ -> '\"') (P.token (P.Token "\"" ExpectingEscapeCharacter))
+            , P.map (\_ -> '\'') (P.token (P.Token "'"  ExpectingEscapeCharacter))
+            , P.map (\_ -> '\n') (P.token (P.Token "n"  ExpectingEscapeCharacter))
+            , P.map (\_ -> '\t') (P.token (P.Token "t"  ExpectingEscapeCharacter))
+            , P.map (\_ -> '\r') (P.token (P.Token "r"  ExpectingEscapeCharacter))
+            , P.succeed identity
+                |. P.token (P.Token "u" ExpectingEscapeCharacter)
+                |. P.token (P.Token "{" ExpectingUnicodeEscapeLeftBrace)
+                |= unicode
+                |. P.token (P.Token "}" ExpectingUnicodeEscapeRightBrace)
+            ]
+    ,  P.succeed identity
+        |= P.getChompedString (P.chompIf (always True) ExpectingChar)
+        |> P.andThen (\string ->
+                    string
+                        |> String.uncons
+                        |> Maybe.map (Tuple.first >> P.succeed)
+                        |> Maybe.withDefault (P.problem (CompilerBug "Multiple characters chomped in `literalChar`"))
+                )
+    ]
+
+
 literalChar : Parser_ Literal
 literalChar =
     (P.succeed identity
         |. P.symbol (P.Token "'" ExpectingSingleQuote)
-        |= P.getChompedString (P.chompIf (always True) ExpectingChar)
+        |= stringHelp
         |. P.symbol (P.Token "'" ExpectingSingleQuote)
     )
-        |> P.andThen
-            (\string ->
-                string
-                    |> String.uncons
-                    |> Maybe.map (Tuple.first >> Char >> P.succeed)
-                    |> Maybe.withDefault (P.problem (CompilerBug "Multiple characters chomped in `literalChar`"))
-            )
+    |> P.map (\n -> Char n)
+
+unicode : Parser_ Char
+unicode =
+  P.getChompedString (P.chompWhile Char.isHexDigit)
+    |> P.andThen codeToChar
+
+
+codeToChar : String -> Parser_ Char
+codeToChar str =
+  let
+    length = String.length str 
+    code = String.foldl addHex 0 str
+  in
+  if length < 4 || length > 6 then
+    P.problem InvalidUnicodeCodePoint
+  else if 0 <= code && code <= 0x10FFFF then
+    P.succeed (Char.fromCode code)
+  else
+    P.problem InvalidUnicodeCodePoint
+
+
+addHex : Char -> Int -> Int
+addHex char total =
+  let
+    code = Char.toCode char
+  in
+  if 0x30 <= code && code <= 0x39 then
+    16 * total + (code - 0x30)
+  else if 0x41 <= code && code <= 0x46 then
+    16 * total + (10 + code - 0x41)
+  else
+    16 * total + (10 + code - 0x61)
 
 
 {-| TODO escapes
