@@ -167,7 +167,7 @@ Runs `elm-test` on the test suite (gasp!)
 - [ ] Annotate type errors with position in source code (for better error messages)
 - [ ] Try to find a better name for "occurs check" and make the error message easier to understand
 - [ ] Document the typechecking stages better (ie. at all)
-- [ ] Find a (probably monadic) abstraction for `assignIds` so we don't have to thread the state in such a way. (This might not be possible because of lack of do notation. Ie. callback hell would always have to happen... Dunno!) For example see `Stage.InferTypes.assignIdsHelp`, the `Canonical.Plus` case.
+- [ ] Find a (probably monadic) abstraction for `assignIds` so we don't have to thread the state in such a way. (This might not be possible because of lack of do notation. Ie. callback hell would always have to happen... Dunno!) For example see `Stage.InferTypes.assignIdsHelp`, the `Canonical.Plus` case. (Update: see [notes/AssignIdsAbstraction.elm](/notes/AssignIdsAbstraction.elm))
 - [ ] Rename types to be able to show nice type variables (ie. the classic `a` instead of `type #0` or something). `Stage.InferTypes.getType`
 
 #### Optimizations
