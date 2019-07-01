@@ -101,7 +101,7 @@ Oh God please yes! :heart: Feel free to look around the [<kbd>help wanted</kbd>]
 5. <span id="f5"></span> To be optimized the same way Ints are; not tracked yet
 6. <span id="f6"></span> Comprehensive tests missing; will be fixed in [#15](https://github.com/elm-in-elm/compiler/pull/15)
 7. <span id="f7"></span> Escape sequences not implemented; not tracked yet
-8. <span id="f8"></span> Comprehensive tests missing; not tracked yet
+8. <span id="f8"></span> Comprehensive tests missing; tracked in [#21](https://github.com/elm-in-elm/compiler/issues/21)
 9. <span id="f9"></span> Multiline strings (and maybe more) missing; not tracked yet
 
 ## Prerequisites
