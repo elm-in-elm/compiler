@@ -145,7 +145,6 @@ Runs `elm-test` on the test suite (gasp!)
 
 #### General
 
-- [ ] Nix expression for the dependencies and building this project? Would that be helpful?
 - [ ] Compare our `Main.compile` with official compiler's `Compile.compile` - is that a better API?
 - [ ] Types module: remove, refactor into "module per datastructure" style?
 - [ ] Deal with kernel modules
