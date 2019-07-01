@@ -226,6 +226,12 @@ Runs `elm-test` on the test suite (gasp!)
         </br>
         <a href="https://github.com/Warry">Maxime Dantec</a>
       </td>
+      <td align="center">
+        <img width="150" height="150"
+        src="https://avatars0.githubusercontent.com/u/16829510">
+        </br>
+        <a href="https://github.com/aaronjanse">Aaron Janse</a>
+      </td>
     </tr>
   <tbody>
 </table>
