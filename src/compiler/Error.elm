@@ -47,6 +47,7 @@ type ParseError
 type ParseContext
     = InLiteral
     | InLiteralInt
+    | InHexInt
     | InExpr
     | InIf
     | InLet
@@ -95,7 +96,9 @@ type ParseProblem
     | ExpectingLet
     | ExpectingIn
     | ExpectingUnit
+    | ExpectingHexPrefix
     | InvalidInt
+    | InvalidHexInt
     | CompilerBug String
 
 
