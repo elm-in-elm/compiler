@@ -109,7 +109,8 @@ The tooling around this project requires:
 
 * **`make`** for the [Makefile](Makefile)
 * **NodeJS 10+** for the [CLI tool](src/index.js)
-* **`elm`** and **`elm-test`**
+* **`elm`**, **`elm-test`** and **`elm-format`**
+
 
 or alternatively a good amount of ingenuity to do stuff in a different-than-planned way.
 
@@ -126,6 +127,14 @@ Essentially compiles the compiler (using the official Elm compiler :wink: ) to a
 $ make test
 ```
 Runs `elm-test` on the test suite (gasp!)
+
+## Formatting code
+
+```
+$ make format 
+```
+Runs elm-format.
+Make sure to format code before submitting a pull request!
 
 ## Small TODOs
 
