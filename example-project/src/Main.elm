@@ -2,8 +2,8 @@ module Main exposing (main)
 
 
 main =
-    let
-        x =
-            1
-    in
-    x
+    if 1 + 2 then
+        ()
+
+    else
+        True

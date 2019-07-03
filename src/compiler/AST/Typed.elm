@@ -3,6 +3,7 @@ module AST.Typed exposing
     , Expr_(..)
     , ProjectFields
     , lambda
+    , let_
     , transformAll
     , transformOnce
     )
@@ -59,6 +60,14 @@ lambda argument body argumentId =
     Lambda
         { argument = argument
         , argumentId = argumentId
+        , body = body
+        }
+
+
+let_ : AnyDict String VarName (Binding Expr) -> Expr -> Expr_
+let_ bindings body =
+    Let
+        { bindings = bindings
         , body = body
         }
 

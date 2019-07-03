@@ -4,6 +4,7 @@ import AST.Canonical as Canonical
 import AST.Common.Literal as Literal
 import AST.Common.Type as Type exposing (Type)
 import AST.Typed as Typed
+import Basics.Extra exposing (uncurry)
 import Common
 import Common.Types
     exposing
@@ -15,6 +16,7 @@ import Error exposing (Error(..), TypeError(..))
 import Extra.Dict.Any
 import Extra.Tuple
 import Stage.InferTypes.Boilerplate as Boilerplate
+import Stage.InferTypes.IdSource as Id exposing (IdGenerator)
 import Stage.InferTypes.SubstitutionMap as SubstitutionMap exposing (SubstitutionMap)
 import Stage.InferTypes.TypeEquation exposing (TypeEquation, equals)
 import Stage.InferTypes.Unify as Unify
@@ -47,6 +49,7 @@ inferExpr expr =
         exprWithIds : Result TypeError Typed.Expr
         exprWithIds =
             assignIds expr
+                |> Debug.log "ids"
 
         {- We have an interesting dilemma:
 
@@ -82,159 +85,91 @@ TODO document better
 -}
 assignIds : Canonical.Expr -> Result TypeError Typed.Expr
 assignIds expr =
-    assignIdsHelp 0 (Dict.Any.empty Common.varNameToString) expr
-        |> Result.map Extra.Tuple.third
+    expr
+        |> toIdGenerator
+        |> Id.generate
 
 
-assignIdsHelp : Int -> AnyDict String VarName Int -> Canonical.Expr -> Result TypeError ( Int, AnyDict String VarName Int, Typed.Expr )
-assignIdsHelp unusedId0 varIds0 expr =
-    (case expr of
+toIdGenerator : Canonical.Expr -> IdGenerator Typed.Expr_
+toIdGenerator expr =
+    case expr of
         {- With literals, we could plug their final type in right here
            (no solving needed!) but let's be uniform and do everything through
            the constraint solver in stages 2 and 3.
         -}
         Canonical.Literal literal ->
-            Ok
-                ( unusedId0
-                , varIds0
-                , Typed.Literal literal
-                )
+            Id.fresh (Typed.Literal literal)
 
         -- We remember argument's IDs so that we can later use them in Lambda
         Canonical.Argument name ->
-            Ok
-                ( unusedId0
-                , Dict.Any.insert name unusedId0 varIds0
-                , Typed.Argument name
-                )
+            Id.fresh (Typed.Argument name)
+                |> Id.rememberVar name
 
         Canonical.Var name ->
-            Ok
-                ( unusedId0
-                  -- TODO is this right?
-                , varIds0
-                , Typed.Var name
-                )
+            Id.fresh (Typed.Var name)
 
         Canonical.Plus e1 e2 ->
-            assignIdsHelp unusedId0 varIds0 e1
-                |> Result.andThen
-                    (\( unusedId1, varIds1, e1_ ) ->
-                        assignIdsHelp unusedId1 varIds1 e2
-                            |> Result.map
-                                (\( unusedId2, varIds2, e2_ ) ->
-                                    ( unusedId2
-                                    , varIds2
-                                    , Typed.Plus e1_ e2_
-                                    )
-                                )
-                    )
+            Id.freshWith2 Typed.Plus
+                (toIdGenerator e1)
+                (toIdGenerator e2)
 
         Canonical.Lambda { argument, body } ->
-            assignIdsHelp unusedId0 varIds0 body
-                |> Result.andThen
-                    (\( unusedId1, varIds1, body_ ) ->
-                        Dict.Any.get argument varIds1
-                            |> Result.fromMaybe (UnknownName argument)
-                            |> Result.map
-                                (\argumentId ->
-                                    ( unusedId1
-                                    , varIds1
-                                    , Typed.lambda argument body_ argumentId
-                                    )
-                                )
-                    )
+            Id.freshWith1AndVar (Typed.lambda argument)
+                (toIdGenerator body)
+                argument
 
         Canonical.Call { fn, argument } ->
-            assignIdsHelp unusedId0 varIds0 fn
-                |> Result.andThen
-                    (\( unusedId1, varIds1, fn_ ) ->
-                        assignIdsHelp unusedId1 varIds1 argument
-                            |> Result.map
-                                (\( unusedId2, varIds2, argument_ ) ->
-                                    ( unusedId2
-                                    , varIds2
-                                    , Typed.Call
-                                        { fn = fn_
-                                        , argument = argument_
-                                        }
-                                    )
-                                )
-                    )
+            Id.freshWith2
+                (\fn_ argument_ ->
+                    Typed.Call
+                        { fn = fn_
+                        , argument = argument_
+                        }
+                )
+                (toIdGenerator fn)
+                (toIdGenerator argument)
 
         Canonical.If { test, then_, else_ } ->
-            assignIdsHelp unusedId0 varIds0 test
-                |> Result.andThen
-                    (\( unusedId1, varIds1, test_ ) ->
-                        assignIdsHelp unusedId1 varIds1 then_
-                            |> Result.andThen
-                                (\( unusedId2, varIds2, then__ ) ->
-                                    assignIdsHelp unusedId2 varIds2 else_
-                                        |> Result.map
-                                            (\( unusedId3, varIds3, else__ ) ->
-                                                ( unusedId3
-                                                , varIds3
-                                                , Typed.If
-                                                    { test = test_
-                                                    , then_ = then__
-                                                    , else_ = else__
-                                                    }
-                                                )
-                                            )
-                                )
-                    )
+            Id.freshWith3
+                (\test_ then__ else__ ->
+                    Typed.If
+                        { test = test_
+                        , then_ = then__
+                        , else_ = else__
+                        }
+                )
+                (toIdGenerator test)
+                (toIdGenerator then_)
+                (toIdGenerator else_)
 
         Canonical.Let { bindings, body } ->
-            assignIdsHelp unusedId0 varIds0 body
-                |> Result.andThen
-                    (\( unusedId1, varIds1, body_ ) ->
-                        bindings
-                            |> Dict.Any.foldl
-                                (\_ binding accResult ->
-                                    accResult
-                                        |> Result.andThen
-                                            (\( unusedId2, varIds2, newBindings ) ->
-                                                assignIdsHelp unusedId2 varIds2 binding.body
-                                                    |> Result.map
-                                                        (\( unusedId3, varIds3, newBody ) ->
-                                                            ( unusedId3
-                                                            , varIds3
-                                                            , newBindings
-                                                                |> Dict.Any.insert binding.name
-                                                                    { name = binding.name
-                                                                    , body = newBody
-                                                                    }
-                                                            )
-                                                        )
-                                            )
-                                )
-                                (Ok ( unusedId1, varIds1, Dict.Any.empty Common.varNameToString ))
-                            |> Result.map
-                                (\( unusedId4, varIds4, bindings_ ) ->
-                                    ( unusedId4
-                                    , varIds4
-                                    , Typed.Let
-                                        { bindings = bindings_
-                                        , body = body_
-                                        }
-                                    )
-                                )
-                    )
+            {- We don't thread the full (VarName, Binding) thing to IdSource
+               as that would bloat the type signatures of IdGenerator too much.
+
+               We unwrap the exprs from the bindings and then carefully put them
+               back together in the same order (see the List.map2 below).
+            -}
+            let
+                bindingsList =
+                    Dict.Any.toList bindings
+            in
+            Id.freshWith1AndMultiple
+                (\bindingsList_ body_ ->
+                    Typed.let_
+                        (Dict.Any.fromList
+                            Common.varNameToString
+                            (List.map2 (\( name, _ ) body__ -> ( name, { name = name, body = body__ } ))
+                                bindingsList
+                                bindingsList_
+                            )
+                        )
+                        body_
+                )
+                (List.map (Tuple.second >> .body >> toIdGenerator) bindingsList)
+                (toIdGenerator body)
 
         Canonical.Unit ->
-            Ok
-                ( unusedId0
-                , varIds0
-                , Typed.Unit
-                )
-    )
-        |> Result.map
-            (\( unusedIdN, varIdsN, recursedExpr ) ->
-                ( unusedIdN + 1
-                , varIdsN
-                , ( recursedExpr, Type.Var unusedIdN )
-                )
-            )
+            Id.fresh Typed.Unit
 
 
 {-| Stage 2

@@ -1,5 +1,6 @@
 module Common exposing
-    ( combineBinding
+    ( bindingToBody
+    , combineBinding
     , expectedFilePath
     , expectedModuleName
     , exposes
@@ -137,6 +138,11 @@ mapBinding fn { name, body } =
     { name = name
     , body = fn body
     }
+
+
+bindingToBody : Binding e -> e
+bindingToBody { body } =
+    body
 
 
 combineBinding : Binding (Result x a) -> Result x (Binding a)
