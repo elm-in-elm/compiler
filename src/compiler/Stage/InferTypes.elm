@@ -15,8 +15,9 @@ import Dict.Any exposing (AnyDict)
 import Error exposing (Error(..), TypeError(..))
 import Extra.Dict.Any
 import Extra.Tuple
+import Stage.InferTypes.AssignIds as AssignIds
 import Stage.InferTypes.Boilerplate as Boilerplate
-import Stage.InferTypes.IdSource as Id exposing (IdGenerator)
+import Stage.InferTypes.IdSource as Id
 import Stage.InferTypes.SubstitutionMap as SubstitutionMap exposing (SubstitutionMap)
 import Stage.InferTypes.TypeEquation exposing (TypeEquation, equals)
 import Stage.InferTypes.Unify as Unify
@@ -79,96 +80,47 @@ inferExpr expr =
 
 {-| Stage 1
 
-TODO document better
+Gives every subexpression an unique auto-incremented ID and converts
+from Canonical.Expr to Typed.Expr.
+
+Example:
+
+Input (forgive the nonsense AST):
+
+    Canonical.If
+        { test =
+            Canonical.Plus
+                (Canonical.Literal (Int 1))
+                (Canonical.Literal (Int 2))
+        , then_ = Canonical.Unit
+        , else_ = Canonical.Literal (Bool True)
+        }
+
+Output:
+
+    ( Typed.If
+        { test =
+            ( Typed.Plus
+                ( Typed.Literal (Int 1)
+                , Var 0
+                )
+                ( Typed.Literal (Int 2)
+                , Var 1
+                )
+            , Var 2
+            )
+        , then_ = ( Typed.Unit, Var 3 )
+        , else_ = ( Typed.Literal (Bool True), Var 4 )
+        }
+    , Var 5
+    )
 
 -}
 assignIds : Canonical.Expr -> Result TypeError Typed.Expr
 assignIds expr =
     expr
-        |> toIdGenerator
+        |> AssignIds.toIdGenerator
         |> Id.generate
-
-
-toIdGenerator : Canonical.Expr -> IdGenerator Typed.Expr_
-toIdGenerator expr =
-    case expr of
-        {- With literals, we could plug their final type in right here
-           (no solving needed!) but let's be uniform and do everything through
-           the constraint solver in stages 2 and 3.
-        -}
-        Canonical.Literal literal ->
-            Id.fresh (Typed.Literal literal)
-
-        -- We remember argument's IDs so that we can later use them in Lambda
-        Canonical.Argument name ->
-            Id.fresh (Typed.Argument name)
-                |> Id.rememberVar name
-
-        Canonical.Var name ->
-            Id.fresh (Typed.Var name)
-
-        Canonical.Plus e1 e2 ->
-            Id.freshWith2 Typed.Plus
-                (toIdGenerator e1)
-                (toIdGenerator e2)
-
-        Canonical.Lambda { argument, body } ->
-            Id.freshWith1AndVar (Typed.lambda argument)
-                (toIdGenerator body)
-                argument
-
-        Canonical.Call { fn, argument } ->
-            Id.freshWith2
-                (\fn_ argument_ ->
-                    Typed.Call
-                        { fn = fn_
-                        , argument = argument_
-                        }
-                )
-                (toIdGenerator fn)
-                (toIdGenerator argument)
-
-        Canonical.If { test, then_, else_ } ->
-            Id.freshWith3
-                (\test_ then__ else__ ->
-                    Typed.If
-                        { test = test_
-                        , then_ = then__
-                        , else_ = else__
-                        }
-                )
-                (toIdGenerator test)
-                (toIdGenerator then_)
-                (toIdGenerator else_)
-
-        Canonical.Let { bindings, body } ->
-            {- We don't thread the full (VarName, Binding) thing to IdSource
-               as that would bloat the type signatures of IdGenerator too much.
-
-               We unwrap the exprs from the bindings and then carefully put them
-               back together in the same order (see the List.map2 below).
-            -}
-            let
-                bindingsList =
-                    Dict.Any.toList bindings
-            in
-            Id.freshWith1AndMultiple
-                (\bindingsList_ body_ ->
-                    Typed.let_
-                        (Dict.Any.fromList
-                            Common.varNameToString
-                            (List.map2 (\( name, _ ) body__ -> ( name, { name = name, body = body__ } ))
-                                bindingsList
-                                bindingsList_
-                            )
-                        )
-                        body_
-                )
-                (List.map (Tuple.second >> .body >> toIdGenerator) bindingsList)
-                (toIdGenerator body)
-
-        Canonical.Unit ->
-            Id.fresh Typed.Unit
 
 
 {-| Stage 2

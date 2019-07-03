@@ -1,15 +1,19 @@
 module Stage.InferTypes.IdSource exposing
     ( IdGenerator
-    , fresh
-    , freshWith1AndMultiple
-    , freshWith1AndVar
-    , freshWith2
-    , freshWith3
+    , constant
     , generate
+    , map1AndMultiple
+    , map1AndVar
+    , map2
+    , map3
     , rememberVar
     )
 
 {-| A boilerplate-reducing abstraction for the `assignIds` stage of InferTypes stage.
+
+Allows the user to not think about incrementing IDs after every subexpression
+and use a `Generator`-like API.
+
 -}
 
 import AST.Common.Type as Type exposing (Type)
@@ -19,17 +23,17 @@ import Dict.Any exposing (AnyDict)
 import Error exposing (TypeError(..))
 
 
-{-| TODO better names? Constant instead of Fresh?
+{-| TODO better names?
 
 TODO any idea about how to make this more generic? (something like andMap?)
 
 -}
 type IdGenerator expr
-    = Fresh expr
-    | FreshWith1AndMultiple (List ( expr, Id ) -> ( expr, Id ) -> expr) (List (IdGenerator expr)) (IdGenerator expr)
-    | FreshWith1AndVar (( expr, Id ) -> Int -> expr) (IdGenerator expr) VarName
-    | FreshWith2 (( expr, Id ) -> ( expr, Id ) -> expr) (IdGenerator expr) (IdGenerator expr)
-    | FreshWith3 (( expr, Id ) -> ( expr, Id ) -> ( expr, Id ) -> expr) (IdGenerator expr) (IdGenerator expr) (IdGenerator expr)
+    = Constant expr
+    | Map1AndMultiple (List ( expr, Id ) -> ( expr, Id ) -> expr) (List (IdGenerator expr)) (IdGenerator expr)
+    | Map1AndVar (( expr, Id ) -> Int -> expr) (IdGenerator expr) VarName
+    | Map2 (( expr, Id ) -> ( expr, Id ) -> expr) (IdGenerator expr) (IdGenerator expr)
+    | Map3 (( expr, Id ) -> ( expr, Id ) -> ( expr, Id ) -> expr) (IdGenerator expr) (IdGenerator expr) (IdGenerator expr)
     | RememberVar VarName (IdGenerator expr)
 
 
@@ -73,27 +77,27 @@ generateWith unusedId varIds gen =
     -- TODO think of how to not depend on the VarName?
     -- TODO maybe do the ID incrementing here after the `case...of`, instead of in all the case functions?
     case gen of
-        Fresh expr ->
-            generateFresh unusedId varIds expr
+        Constant expr ->
+            generateConstant unusedId varIds expr
 
-        FreshWith1AndVar constructor gen1 name ->
-            generateFreshWith1AndVar unusedId varIds constructor gen1 name
+        Map1AndMultiple constructor gens gen1 ->
+            generateMap1AndMultiple unusedId varIds constructor gens gen1
 
-        FreshWith2 constructor gen1 gen2 ->
-            generateFreshWith2 unusedId varIds constructor gen1 gen2
+        Map1AndVar constructor gen1 name ->
+            generateMap1AndVar unusedId varIds constructor gen1 name
 
-        FreshWith3 constructor gen1 gen2 gen3 ->
-            generateFreshWith3 unusedId varIds constructor gen1 gen2 gen3
+        Map2 constructor gen1 gen2 ->
+            generateMap2 unusedId varIds constructor gen1 gen2
+
+        Map3 constructor gen1 gen2 gen3 ->
+            generateMap3 unusedId varIds constructor gen1 gen2 gen3
 
         RememberVar name gen1 ->
             generateRememberVar unusedId varIds name gen1
 
-        FreshWith1AndMultiple constructor gens gen1 ->
-            generateFreshWith1AndMultiple unusedId varIds constructor gens gen1
 
-
-generateFresh : Int -> VarIds -> expr -> Output ( expr, Id )
-generateFresh unusedId varIds expr =
+generateConstant : Int -> VarIds -> expr -> Output ( expr, Id )
+generateConstant unusedId varIds expr =
     Ok
         { expr = ( expr, toId unusedId )
         , exprRawId = unusedId
@@ -102,8 +106,8 @@ generateFresh unusedId varIds expr =
         }
 
 
-generateFreshWith1AndMultiple : Int -> VarIds -> (List ( expr, Id ) -> ( expr, Id ) -> expr) -> List (IdGenerator expr) -> IdGenerator expr -> Output ( expr, Id )
-generateFreshWith1AndMultiple unusedId0 varIds0 constructor gens gen1 =
+generateMap1AndMultiple : Int -> VarIds -> (List ( expr, Id ) -> ( expr, Id ) -> expr) -> List (IdGenerator expr) -> IdGenerator expr -> Output ( expr, Id )
+generateMap1AndMultiple unusedId0 varIds0 constructor gens gen1 =
     -- TODO make the callback hell nicer?
     generateWith unusedId0 varIds0 gen1
         |> andThen
@@ -148,8 +152,8 @@ generateFreshWith1AndMultiple unusedId0 varIds0 constructor gens gen1 =
             )
 
 
-generateFreshWith1AndVar : Int -> VarIds -> (( expr, Id ) -> Int -> expr) -> IdGenerator expr -> VarName -> Output ( expr, Id )
-generateFreshWith1AndVar unusedId0 varIds0 constructor gen1 name =
+generateMap1AndVar : Int -> VarIds -> (( expr, Id ) -> Int -> expr) -> IdGenerator expr -> VarName -> Output ( expr, Id )
+generateMap1AndVar unusedId0 varIds0 constructor gen1 name =
     -- TODO make the callback hell nicer?
     -- TODO also this is veeery specific
     generateWith unusedId0 varIds0 gen1
@@ -171,8 +175,8 @@ generateFreshWith1AndVar unusedId0 varIds0 constructor gen1 name =
             )
 
 
-generateFreshWith2 : Int -> VarIds -> (( expr, Id ) -> ( expr, Id ) -> expr) -> IdGenerator expr -> IdGenerator expr -> Output ( expr, Id )
-generateFreshWith2 unusedId0 varIds0 constructor gen1 gen2 =
+generateMap2 : Int -> VarIds -> (( expr, Id ) -> ( expr, Id ) -> expr) -> IdGenerator expr -> IdGenerator expr -> Output ( expr, Id )
+generateMap2 unusedId0 varIds0 constructor gen1 gen2 =
     -- TODO make the callback hell nicer?
     generateWith unusedId0 varIds0 gen1
         |> andThen
@@ -193,8 +197,8 @@ generateFreshWith2 unusedId0 varIds0 constructor gen1 gen2 =
             )
 
 
-generateFreshWith3 : Int -> VarIds -> (( expr, Id ) -> ( expr, Id ) -> ( expr, Id ) -> expr) -> IdGenerator expr -> IdGenerator expr -> IdGenerator expr -> Output ( expr, Id )
-generateFreshWith3 unusedId0 varIds0 constructor gen1 gen2 gen3 =
+generateMap3 : Int -> VarIds -> (( expr, Id ) -> ( expr, Id ) -> ( expr, Id ) -> expr) -> IdGenerator expr -> IdGenerator expr -> IdGenerator expr -> Output ( expr, Id )
+generateMap3 unusedId0 varIds0 constructor gen1 gen2 gen3 =
     -- TODO make the callback hell nicer?
     generateWith unusedId0 varIds0 gen1
         |> andThen
@@ -252,24 +256,24 @@ fresh =
     Fresh
 
 
-freshWith1AndVar : (( expr, Id ) -> Int -> expr) -> IdGenerator expr -> VarName -> IdGenerator expr
-freshWith1AndVar =
-    FreshWith1AndVar
+map1AndVar : (( expr, Id ) -> Int -> expr) -> IdGenerator expr -> VarName -> IdGenerator expr
+map1AndVar =
+    Map1AndVar
 
 
-freshWith1AndMultiple : (List ( expr, Id ) -> ( expr, Id ) -> expr) -> List (IdGenerator expr) -> IdGenerator expr -> IdGenerator expr
-freshWith1AndMultiple =
-    FreshWith1AndMultiple
+map1AndMultiple : (List ( expr, Id ) -> ( expr, Id ) -> expr) -> List (IdGenerator expr) -> IdGenerator expr -> IdGenerator expr
+map1AndMultiple =
+    Map1AndMultiple
 
 
-freshWith2 : (( expr, Id ) -> ( expr, Id ) -> expr) -> IdGenerator expr -> IdGenerator expr -> IdGenerator expr
-freshWith2 =
-    FreshWith2
+map2 : (( expr, Id ) -> ( expr, Id ) -> expr) -> IdGenerator expr -> IdGenerator expr -> IdGenerator expr
+map2 =
+    Map2
 
 
-freshWith3 : (( expr, Id ) -> ( expr, Id ) -> ( expr, Id ) -> expr) -> IdGenerator expr -> IdGenerator expr -> IdGenerator expr -> IdGenerator expr
-freshWith3 =
-    FreshWith3
+map3 : (( expr, Id ) -> ( expr, Id ) -> ( expr, Id ) -> expr) -> IdGenerator expr -> IdGenerator expr -> IdGenerator expr -> IdGenerator expr
+map3 =
+    Map3
 
 
 rememberVar : VarName -> IdGenerator expr -> IdGenerator expr
