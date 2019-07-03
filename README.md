@@ -70,7 +70,7 @@ Oh God please yes! :heart: Feel free to look around the [<kbd>help wanted</kbd>]
 
 |                   | parser tests         | parse                | desugar            | infer types        | optimize             | emit               | emit tests         |
 | ----------------- | -------------------- | -------------------- | ------------------ | ------------------ | -------------------- | ------------------ | ------------------ |
-| integers          | :heavy_check_mark:   | :warning: [[1]](#f1) | :heavy_check_mark: | :heavy_check_mark: | :warning: [[2]](#f2) | :heavy_check_mark: | :heavy_check_mark: |
+| integers          | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark: | :heavy_check_mark: | :warning: [[2]](#f2) | :heavy_check_mark: | :heavy_check_mark: |
 | floats            | :x: [[3]](#f3)       | :x: [[4]](#f4)       | :x: [[3]](#f3)     | :x: [[3]](#f3)     | :x: [[5]](#f5)       | :x: [[3]](#f3)     | :x: [[3]](#f3)     |
 | characters        | :warning: [[6]](#f6) | :warning: [[7]](#f7) | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark:   | :heavy_check_mark: | :heavy_check_mark: |
 | strings           | :warning: [[8]](#f8) | :warning: [[9]](#f9) | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark:   | :heavy_check_mark: | :heavy_check_mark: |
@@ -94,7 +94,6 @@ Oh God please yes! :heart: Feel free to look around the [<kbd>help wanted</kbd>]
 | custom operators  | :x:                  | :x:                  | :x:                | :x:                | :x:                  | :x:                | :x:                |
 | shaders (?)       | :x:                  | :x:                  | :x:                | :x:                | :x:                  | :x:                | :x:                |
 
-1. <span id="f1"></span> Hex integers not implemented; will be fixed in [#19](https://github.com/elm-in-elm/compiler/pull/19)
 2. <span id="f2"></span> To be optimized with multiplication, subtraction, division, modulo, exponentiation... maybe more?; not tracked yet
 3. <span id="f3"></span> Not implemented; tracked in [#17](https://github.com/elm-in-elm/compiler/issues/17)
 4. <span id="f4"></span> Not implemented; not tracked yet
