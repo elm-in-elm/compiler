@@ -4,7 +4,6 @@ node_js:
   lts/*
 
 before_install:
-  - npm install -g elm@0.19.0-no-deps elm-test@0.19.0-rev6
+  - npm install -g elm@0.19.0-no-deps elm-test@0.19.0-rev6 elm-format@0.8.1
 
-script: make && make test
-
+script: make && make test && make lint
