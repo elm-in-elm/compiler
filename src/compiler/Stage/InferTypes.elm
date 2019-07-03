@@ -49,7 +49,6 @@ inferExpr expr =
         exprWithIds : Result TypeError Typed.Expr
         exprWithIds =
             assignIds expr
-                |> Debug.log "ids"
 
         {- We have an interesting dilemma:
 
