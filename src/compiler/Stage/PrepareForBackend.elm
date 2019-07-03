@@ -2,7 +2,7 @@ module Stage.PrepareForBackend exposing (prepareForBackend)
 
 import AST.Backend as Backend
 import AST.Common.Literal exposing (Literal(..))
-import AST.Typed as Typed exposing (Expr, Expr_(..))
+import AST.Typed as Typed exposing (Expr_(..))
 import Common
 import Common.Types
     exposing
@@ -140,7 +140,7 @@ collectTopLevelDependencies modules remainingDeclarations doneDeclarations doneD
 
 
 findDependencies : Modules Typed.Expr -> Typed.Expr -> List (TopLevelDeclaration Typed.Expr)
-findDependencies modules ( expr, type_ ) =
+findDependencies modules ( expr, _ ) =
     let
         findDependencies_ =
             findDependencies modules

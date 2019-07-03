@@ -4,7 +4,6 @@ import AST.Common.Literal as Literal
 import AST.Common.Type as Type
 import AST.Typed as Typed
 import Common.Types exposing (Project)
-import Error exposing (Error)
 import Stage.Optimize.Boilerplate as Boilerplate
 
 

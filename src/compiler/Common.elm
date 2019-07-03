@@ -6,7 +6,6 @@ module Common exposing
     , filePathToString
     , mapBinding
     , moduleNameToString
-    , moduleNames
     , topLevelDeclarationToString
     , unalias
     , varNameToString
@@ -20,15 +19,12 @@ import Common.Types
         , FilePath(..)
         , Module
         , ModuleName(..)
-        , Modules
-        , Set_
         , TopLevelDeclaration
         , VarName(..)
         )
 import Dict.Any
 import Error exposing (Error(..), GeneralError(..))
 import Extra.Dict.Any
-import Set.Any
 
 
 filePathToString : FilePath -> String
@@ -39,18 +35,6 @@ filePathToString (FilePath filePath) =
 moduleNameToString : ModuleName -> String
 moduleNameToString (ModuleName moduleName) =
     moduleName
-
-
-moduleNames : Modules expr -> Set_ ModuleName
-moduleNames program =
-    let
-        toSet : Modules expr -> Set_ ModuleName
-        toSet dict =
-            dict
-                |> Dict.Any.keys
-                |> Set.Any.fromList moduleNameToString
-    in
-    toSet program
 
 
 {-| Expects the source directory filepaths to be normalized so that there's no `/` at the end.
