@@ -160,7 +160,6 @@ desugarUnit =
     -- from
     Frontend.Lambda [ arg1, arg2 ] body
 
-
     -- to
     Canonical.Lambda arg1 (Canonical.Lambda arg2 body)
 
