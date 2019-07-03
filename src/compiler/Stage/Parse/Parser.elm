@@ -405,7 +405,10 @@ literalInt =
                 |= P.getChompedString (P.chompWhile Char.isHexDigit)
                 |> P.andThen
                     (\hexString ->
-                        Hex.fromString hexString
+                        hexString
+                            -- TODO this String.toLower shouldn't be needed - see https://github.com/rtfeldman/elm-hex/pull/1
+                            |> String.toLower
+                            |> Hex.fromString
                             |> Result.map P.succeed
                             |> Result.withDefault (P.problem InvalidHexInt)
                     )
