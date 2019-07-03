@@ -117,7 +117,27 @@ assignIds expr =
 
 {-| Stage 2
 
-TODO document better
+We try to bind various subexpressions together here.
+For example consider this:
+
+    42
+
+This is an Integer (or a `number`, we don't care here for the sake of simplicity).
+
+    foo 42
+
+What can we say about `foo`? It's a function from Integer (as evidenced by 42),
+but we don't know to what. Right now the best we could say is `foo : Int -> a`.
+
+    foo 42 == "abc"
+
+Suddenly everything's clear: the whole thing is Bool because of `==`, and thanks
+to the right side of `==` being a String and the two sides having to match in types,
+we know `foo 42` is a String too, and thus `foo : Int -> String`.
+
+The "two sides of `==` have to match" insight could be expressed here as something like
+
+    equals leftType rightType
 
 -}
 generateEquations : Typed.Expr -> List TypeEquation
