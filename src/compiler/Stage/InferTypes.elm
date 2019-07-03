@@ -4,17 +4,9 @@ import AST.Canonical as Canonical
 import AST.Common.Literal as Literal
 import AST.Common.Type as Type exposing (Type)
 import AST.Typed as Typed
-import Basics.Extra exposing (uncurry)
-import Common
-import Common.Types
-    exposing
-        ( Project
-        , VarName
-        )
-import Dict.Any exposing (AnyDict)
+import Common.Types exposing (Project)
+import Dict.Any
 import Error exposing (Error(..), TypeError(..))
-import Extra.Dict.Any
-import Extra.Tuple
 import Stage.InferTypes.AssignIds as AssignIds
 import Stage.InferTypes.Boilerplate as Boilerplate
 import Stage.InferTypes.IdSource as Id

@@ -1,8 +1,9 @@
 module Stage.InferTypes.AssignIds exposing (toIdGenerator)
 
 import AST.Canonical as Canonical
-import AST.Common.Literal as Literal
 import AST.Typed as Typed
+import Common
+import Dict.Any
 import Stage.InferTypes.IdSource as Id exposing (IdGenerator)
 
 

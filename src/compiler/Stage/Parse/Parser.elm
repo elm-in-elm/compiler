@@ -450,7 +450,7 @@ literalBool =
     P.succeed Bool
         |= P.oneOf
             [ P.map (always True) <| P.keyword (P.Token "True" ExpectingTrue)
-            , P.map (always False) <| P.keyword (P.Token "False" ExpectingTrue)
+            , P.map (always False) <| P.keyword (P.Token "False" ExpectingFalse)
             ]
 
 
@@ -478,7 +478,7 @@ qualifiedVar : Parser_ Expr
 qualifiedVar =
     P.sequence
         { start = P.Token "" (CompilerBug "qualifiedVar start parser failed") -- TODO is this the right way?
-        , separator = P.Token "." ExpectingModuleDot
+        , separator = P.Token "." ExpectingQualifiedVarNameDot
         , end = P.Token "" (CompilerBug "qualifiedVar end parser failed") -- TODO is this the right way?
         , spaces = P.succeed ()
         , item = moduleNameWithoutDots
@@ -530,6 +530,7 @@ lambda config =
         |. P.symbol (P.Token "->" ExpectingRightArrow)
         |. P.spaces
         |= PP.subExpression 0 config
+        |> P.inContext InLambda
 
 
 if_ : ExprConfig -> Parser_ Frontend.Expr
@@ -548,6 +549,7 @@ if_ config =
         |= PP.subExpression 0 config
         |. P.keyword (P.Token "else" ExpectingElse)
         |= PP.subExpression 0 config
+        |> P.inContext InIf
 
 
 let_ : ExprConfig -> Parser_ Frontend.Expr
@@ -560,11 +562,11 @@ let_ config =
                 , body = body
                 }
         )
-        |. P.keyword (P.Token "let" ExpectingIf)
+        |. P.keyword (P.Token "let" ExpectingLet)
         |. P.spaces
         |= binding config
         |. P.spaces
-        |. P.keyword (P.Token "in" ExpectingThen)
+        |. P.keyword (P.Token "in" ExpectingIn)
         |. P.spaces
         |= PP.subExpression 0 config
         |> P.inContext InLet
@@ -599,8 +601,9 @@ promoteArguments arguments expr_ =
 unit : ExprConfig -> Parser_ Frontend.Expr
 unit _ =
     P.succeed Frontend.Unit
-    |. P.keyword (P.Token "()" ExpectingUnit)
-    |> P.inContext InUnit
+        |. P.keyword (P.Token "()" ExpectingUnit)
+        |> P.inContext InUnit
+
 
 
 -- Helpers
@@ -614,14 +617,6 @@ spacesOnly =
 newlines : Parser_ ()
 newlines =
     P.chompWhile ((==) '\n')
-
-
-newlinesAndOptionallySpaces : Parser_ ()
-newlinesAndOptionallySpaces =
-    P.succeed ()
-        |. P.spaces
-        |. newlines
-        |. P.spaces
 
 
 {-| Taken from Punie/elm-parser-extras, made to work with Parser.Advanced.Parser

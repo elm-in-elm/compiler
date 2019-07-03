@@ -76,24 +76,32 @@ generateWith :
 generateWith unusedId varIds gen =
     -- TODO think of how to not depend on the VarName?
     -- TODO maybe do the ID incrementing here after the `case...of`, instead of in all the case functions?
-    case gen of
-        Constant expr ->
-            generateConstant unusedId varIds expr
+    incrementId <|
+        case gen of
+            Constant expr ->
+                generateConstant unusedId varIds expr
 
-        Map1AndMultiple constructor gens gen1 ->
-            generateMap1AndMultiple unusedId varIds constructor gens gen1
+            Map1AndMultiple constructor gens gen1 ->
+                generateMap1AndMultiple unusedId varIds constructor gens gen1
 
-        Map1AndVar constructor gen1 name ->
-            generateMap1AndVar unusedId varIds constructor gen1 name
+            Map1AndVar constructor gen1 name ->
+                generateMap1AndVar unusedId varIds constructor gen1 name
 
-        Map2 constructor gen1 gen2 ->
-            generateMap2 unusedId varIds constructor gen1 gen2
+            Map2 constructor gen1 gen2 ->
+                generateMap2 unusedId varIds constructor gen1 gen2
 
-        Map3 constructor gen1 gen2 gen3 ->
-            generateMap3 unusedId varIds constructor gen1 gen2 gen3
+            Map3 constructor gen1 gen2 gen3 ->
+                generateMap3 unusedId varIds constructor gen1 gen2 gen3
 
-        RememberVar name gen1 ->
-            generateRememberVar unusedId varIds name gen1
+            RememberVar name gen1 ->
+                generateRememberVar unusedId varIds name gen1
+
+
+incrementId : Output a -> Output a
+incrementId output =
+    map
+        (\data -> { data | unusedId = data.unusedId + 1 })
+        output
 
 
 generateConstant : Int -> VarIds -> expr -> Output ( expr, Id )
@@ -101,7 +109,7 @@ generateConstant unusedId varIds expr =
     Ok
         { expr = ( expr, toId unusedId )
         , exprRawId = unusedId
-        , unusedId = unusedId + 1
+        , unusedId = unusedId
         , varIds = varIds
         }
 
@@ -145,7 +153,7 @@ generateMap1AndMultiple unusedId0 varIds0 constructor gens gen1 =
                                     , toId unusedId4
                                     )
                                 , exprRawId = rawId4
-                                , unusedId = unusedId4 + 1
+                                , unusedId = unusedId4
                                 , varIds = varIds4
                                 }
                         )
@@ -158,7 +166,7 @@ generateMap1AndVar unusedId0 varIds0 constructor gen1 name =
     -- TODO also this is veeery specific
     generateWith unusedId0 varIds0 gen1
         |> andThen
-            (\unusedId1 varIds1 expr1 rawId1 ->
+            (\unusedId1 varIds1 expr1 _ ->
                 Dict.Any.get name varIds1
                     |> Result.fromMaybe (UnknownName name)
                     |> Result.map
@@ -168,7 +176,7 @@ generateMap1AndVar unusedId0 varIds0 constructor gen1 name =
                                 , toId unusedId1
                                 )
                             , exprRawId = unusedId1
-                            , unusedId = unusedId1 + 1
+                            , unusedId = unusedId1
                             , varIds = varIds1
                             }
                         )
@@ -180,17 +188,17 @@ generateMap2 unusedId0 varIds0 constructor gen1 gen2 =
     -- TODO make the callback hell nicer?
     generateWith unusedId0 varIds0 gen1
         |> andThen
-            (\unusedId1 varIds1 expr1 rawId1 ->
+            (\unusedId1 varIds1 expr1 _ ->
                 generateWith unusedId1 varIds1 gen2
                     |> andThen
-                        (\unusedId2 varIds2 expr2 rawId2 ->
+                        (\unusedId2 varIds2 expr2 _ ->
                             Ok
                                 { expr =
                                     ( constructor expr1 expr2
                                     , toId unusedId2
                                     )
                                 , exprRawId = unusedId2
-                                , unusedId = unusedId2 + 1
+                                , unusedId = unusedId2
                                 , varIds = varIds2
                                 }
                         )
@@ -202,20 +210,20 @@ generateMap3 unusedId0 varIds0 constructor gen1 gen2 gen3 =
     -- TODO make the callback hell nicer?
     generateWith unusedId0 varIds0 gen1
         |> andThen
-            (\unusedId1 varIds1 expr1 rawId1 ->
+            (\unusedId1 varIds1 expr1 _ ->
                 generateWith unusedId1 varIds1 gen2
                     |> andThen
-                        (\unusedId2 varIds2 expr2 rawId2 ->
+                        (\unusedId2 varIds2 expr2 _ ->
                             generateWith unusedId2 varIds2 gen3
                                 |> andThen
-                                    (\unusedId3 varIds3 expr3 rawId3 ->
+                                    (\unusedId3 varIds3 expr3 _ ->
                                         Ok
                                             { expr =
                                                 ( constructor expr1 expr2 expr3
                                                 , toId unusedId3
                                                 )
                                             , exprRawId = unusedId3
-                                            , unusedId = unusedId3 + 1
+                                            , unusedId = unusedId3
                                             , varIds = varIds3
                                             }
                                     )
@@ -234,7 +242,7 @@ generateRememberVar unusedId0 varIds0 name gen =
 
 map : (OutputData a -> OutputData b) -> Output a -> Output b
 map fn output =
-    -- TODO for some reason this doesn't work well with the typesystem sometimes (so we use andThen)
+    -- TODO for some reason this doesn't work well with the typesystem in some cases (so we use andThen+Ok)
     Result.map fn output
 
 
@@ -251,9 +259,9 @@ andThen fn output =
         output
 
 
-fresh : expr -> IdGenerator expr
-fresh =
-    Fresh
+constant : expr -> IdGenerator expr
+constant =
+    Constant
 
 
 map1AndVar : (( expr, Id ) -> Int -> expr) -> IdGenerator expr -> VarName -> IdGenerator expr
