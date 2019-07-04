@@ -1,4 +1,4 @@
-module Stage.Optimize exposing (optimize)
+module Stage.Optimize exposing (optimize, optimizeExpr)
 
 import AST.Common.Literal as Literal
 import AST.Common.Type as Type
