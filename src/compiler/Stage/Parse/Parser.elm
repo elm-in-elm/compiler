@@ -437,13 +437,13 @@ character =
         [ P.succeed identity
             |. P.token (P.Token "\\" ExpectingEscapeBackslash)
             |= P.oneOf
-                [ P.map (\_ -> '"') (P.token (P.Token "\"" ExpectingEscapeCharacter))
-                , P.map (\_ -> '\'') (P.token (P.Token "'" ExpectingEscapeCharacter))
-                , P.map (\_ -> '\n') (P.token (P.Token "n" ExpectingEscapeCharacter))
-                , P.map (\_ -> '\t') (P.token (P.Token "t" ExpectingEscapeCharacter))
-                , P.map (\_ -> '\u{000D}') (P.token (P.Token "r" ExpectingEscapeCharacter))
+                [ P.map (\_ -> '"') (P.token (P.Token "\"" (ExpectingEscapeCharacter '"'))) -- " (elm-vscode workaround)
+                , P.map (\_ -> '\'') (P.token (P.Token "'" (ExpectingEscapeCharacter '\'')))
+                , P.map (\_ -> '\n') (P.token (P.Token "n" (ExpectingEscapeCharacter 'n')))
+                , P.map (\_ -> '\t') (P.token (P.Token "t" (ExpectingEscapeCharacter 't')))
+                , P.map (\_ -> '\u{000D}') (P.token (P.Token "r" (ExpectingEscapeCharacter 'r')))
                 , P.succeed identity
-                    |. P.token (P.Token "u" ExpectingEscapeCharacter)
+                    |. P.token (P.Token "u" (ExpectingEscapeCharacter 'u'))
                     |. P.token (P.Token "{" ExpectingUnicodeEscapeLeftBrace)
                     |= unicode
                     |. P.token (P.Token "}" ExpectingUnicodeEscapeRightBrace)

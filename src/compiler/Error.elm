@@ -81,7 +81,7 @@ type ParseProblem
     | ExpectingSingleQuote
     | ExpectingChar
     | ExpectingEscapeBackslash
-    | ExpectingEscapeCharacter
+    | ExpectingEscapeCharacter Char
     | ExpectingUnicodeEscapeLeftBrace
     | ExpectingUnicodeEscapeRightBrace
     | InvalidUnicodeCodePoint
