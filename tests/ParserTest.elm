@@ -555,6 +555,37 @@ expr =
                   , "'A'"
                   , Ok (Literal (Char 'A'))
                   )
+
+                -- https://github.com/elm/compiler/blob/dcbe51fa22879f83b5d94642e117440cb5249bb1/compiler/src/Parse/String.hs#L279-L285
+                , ( "escape n"
+                  , "'\\n'"
+                  , Ok (Literal (Char '\n'))
+                  )
+                , ( "escape r"
+                  , "'\\r'"
+                  , Ok (Literal (Char '\u{000D}'))
+                  )
+                , ( "escape t"
+                  , "'\\t'"
+                  , Ok (Literal (Char '\t'))
+                  )
+                , ( "double quote"
+                  , "'\\\"'"
+                  , Ok (Literal (Char '"'))
+                    -- " (for vscode-elm bug)
+                  )
+                , ( "single quote"
+                  , "'\\''"
+                  , Ok (Literal (Char '\''))
+                  )
+                , ( "emoji"
+                  , "'😃'"
+                  , Ok (Literal (Char '😃'))
+                  )
+                , ( "escaped unicode code point"
+                  , "'\\u{1F648}'"
+                  , Ok (Literal (Char '🙈'))
+                  )
                 ]
               )
             , ( "literal string"

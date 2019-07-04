@@ -428,22 +428,67 @@ literalInt =
         |> P.inContext InLiteralInt
 
 
-{-| TODO escapes
-TODO Unicode escapes
--}
+
+-- for literalChar and, in the future, literalString
+
+
+character =
+    P.oneOf
+        [ P.succeed identity
+            |. P.token (P.Token "\\" ExpectingEscapeBackslash)
+            |= P.oneOf
+                [ P.map (\_ -> '"') (P.token (P.Token "\"" (ExpectingEscapeCharacter '"'))) -- " (elm-vscode workaround)
+                , P.map (\_ -> '\'') (P.token (P.Token "'" (ExpectingEscapeCharacter '\'')))
+                , P.map (\_ -> '\n') (P.token (P.Token "n" (ExpectingEscapeCharacter 'n')))
+                , P.map (\_ -> '\t') (P.token (P.Token "t" (ExpectingEscapeCharacter 't')))
+                , P.map (\_ -> '\u{000D}') (P.token (P.Token "r" (ExpectingEscapeCharacter 'r')))
+                , P.succeed identity
+                    |. P.token (P.Token "u" (ExpectingEscapeCharacter 'u'))
+                    |. P.token (P.Token "{" ExpectingUnicodeEscapeLeftBrace)
+                    |= unicode
+                    |. P.token (P.Token "}" ExpectingUnicodeEscapeRightBrace)
+                ]
+        , P.succeed identity
+            |= P.getChompedString (P.chompIf (always True) ExpectingChar)
+            |> P.andThen
+                (\string ->
+                    string
+                        |> String.uncons
+                        |> Maybe.map (Tuple.first >> P.succeed)
+                        |> Maybe.withDefault (P.problem (CompilerBug "Multiple characters chomped in `character`"))
+                )
+        ]
+
+
 literalChar : Parser_ Literal
 literalChar =
     (P.succeed identity
         |. P.symbol (P.Token "'" ExpectingSingleQuote)
-        |= P.getChompedString (P.chompIf (always True) ExpectingChar)
+        |= character
         |. P.symbol (P.Token "'" ExpectingSingleQuote)
     )
+        |> P.map Char
+
+
+unicode : Parser_ Char
+unicode =
+    P.getChompedString (P.chompWhile Char.isHexDigit)
         |> P.andThen
-            (\string ->
-                string
-                    |> String.uncons
-                    |> Maybe.map (Tuple.first >> Char >> P.succeed)
-                    |> Maybe.withDefault (P.problem (CompilerBug "Multiple characters chomped in `literalChar`"))
+            (\str ->
+                let
+                    len =
+                        String.length str
+                in
+                if len < 4 || len > 6 then
+                    P.problem InvalidUnicodeCodePoint
+
+                else
+                    str
+                        |> String.toLower
+                        |> Hex.fromString
+                        |> Result.map Char.fromCode
+                        |> Result.map P.succeed
+                        |> Result.withDefault (P.problem InvalidUnicodeCodePoint)
             )
 
 
