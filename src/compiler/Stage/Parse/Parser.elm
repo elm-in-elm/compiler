@@ -468,34 +468,20 @@ literalChar =
 unicode : Parser_ Char
 unicode =
   P.getChompedString (P.chompWhile Char.isHexDigit)
-    |> P.andThen codeToChar
-
-
-codeToChar : String -> Parser_ Char
-codeToChar str =
-  let
-    length = String.length str 
-    code = String.foldl addHex 0 str
-  in
-  if length < 4 || length > 6 then
-    P.problem InvalidUnicodeCodePoint
-  else if 0 <= code && code <= 0x10FFFF then
-    P.succeed (Char.fromCode code)
-  else
-    P.problem InvalidUnicodeCodePoint
-
-
-addHex : Char -> Int -> Int
-addHex char total =
-  let
-    code = Char.toCode char
-  in
-  if 0x30 <= code && code <= 0x39 then
-    16 * total + (code - 0x30)
-  else if 0x41 <= code && code <= 0x46 then
-    16 * total + (10 + code - 0x41)
-  else
-    16 * total + (10 + code - 0x61)
+    |> P.andThen (\str ->
+        let
+            len = String.length str
+        in
+        if len < 4 || len > 6 then
+            P.problem InvalidUnicodeCodePoint
+        else
+            str
+                |> String.toLower
+                |> Hex.fromString
+                |> Result.map Char.fromCode
+                |> Result.map P.succeed
+                |> Result.withDefault (P.problem InvalidUnicodeCodePoint)
+    )
 
 
 {-| TODO escapes
