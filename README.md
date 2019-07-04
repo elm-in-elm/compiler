@@ -70,7 +70,7 @@ Oh God please yes! :heart: Feel free to look around the [<kbd>help wanted</kbd>]
 
 |                   | parser tests         | parse                | desugar            | infer types        | optimize             | emit               | emit tests         |
 | ----------------- | -------------------- | -------------------- | ------------------ | ------------------ | -------------------- | ------------------ | ------------------ |
-| integers          | :heavy_check_mark:   | :warning: [[1]](#f1) | :heavy_check_mark: | :heavy_check_mark: | :warning: [[2]](#f2) | :heavy_check_mark: | :heavy_check_mark: |
+| integers          | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark: | :heavy_check_mark: | :warning: [[2]](#f2) | :heavy_check_mark: | :heavy_check_mark: |
 | floats            | :x: [[3]](#f3)       | :x: [[4]](#f4)       | :x: [[3]](#f3)     | :x: [[3]](#f3)     | :x: [[5]](#f5)       | :x: [[3]](#f3)     | :x: [[3]](#f3)     |
 | characters        | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark:   | :heavy_check_mark: | :heavy_check_mark: |
 | strings           | :warning: [[6]](#f6) | :warning: [[7]](#f7) | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark:   | :heavy_check_mark: | :heavy_check_mark: |
@@ -94,7 +94,6 @@ Oh God please yes! :heart: Feel free to look around the [<kbd>help wanted</kbd>]
 | custom operators  | :x:                  | :x:                  | :x:                | :x:                | :x:                  | :x:                | :x:                |
 | shaders (?)       | :x:                  | :x:                  | :x:                | :x:                | :x:                  | :x:                | :x:                |
 
-1. <span id="f1"></span> Hex integers not implemented; will be fixed in [#19](https://github.com/elm-in-elm/compiler/pull/19)
 2. <span id="f2"></span> To be optimized with multiplication, subtraction, division, modulo, exponentiation... maybe more?; not tracked yet
 3. <span id="f3"></span> Not implemented; tracked in [#17](https://github.com/elm-in-elm/compiler/issues/17)
 4. <span id="f4"></span> Not implemented; not tracked yet
@@ -108,7 +107,8 @@ The tooling around this project requires:
 
 * **`make`** for the [Makefile](Makefile)
 * **NodeJS 10+** for the [CLI tool](src/index.js)
-* **`elm`** and **`elm-test`**
+* **`elm`**, **`elm-test`** and **`elm-format`**
+
 
 or alternatively a good amount of ingenuity to do stuff in a different-than-planned way.
 
@@ -125,6 +125,14 @@ Essentially compiles the compiler (using the official Elm compiler :wink: ) to a
 $ make test
 ```
 Runs `elm-test` on the test suite (gasp!)
+
+## Formatting code
+
+```
+$ make format 
+```
+Runs elm-format.
+Make sure to format code before submitting a pull request!
 
 ## Small TODOs
 
@@ -143,7 +151,6 @@ Runs `elm-test` on the test suite (gasp!)
 
 #### General
 
-- [ ] Nix expression for the dependencies and building this project? Would that be helpful?
 - [ ] Compare our `Main.compile` with official compiler's `Compile.compile` - is that a better API?
 - [ ] Types module: remove, refactor into "module per datastructure" style?
 - [ ] Deal with kernel modules
@@ -165,7 +172,6 @@ Runs `elm-test` on the test suite (gasp!)
 - [ ] Annotate type errors with position in source code (for better error messages)
 - [ ] Try to find a better name for "occurs check" and make the error message easier to understand
 - [ ] Document the typechecking stages better (ie. at all)
-- [ ] Find a (probably monadic) abstraction for `assignIds` so we don't have to thread the state in such a way. (This might not be possible because of lack of do notation. Ie. callback hell would always have to happen... Dunno!) For example see `Stage.InferTypes.assignIdsHelp`, the `Canonical.Plus` case.
 - [ ] Rename types to be able to show nice type variables (ie. the classic `a` instead of `type #0` or something). `Stage.InferTypes.getType`
 
 #### Optimizations

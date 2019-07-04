@@ -4,17 +4,12 @@ import AST.Canonical as Canonical
 import AST.Common.Literal as Literal
 import AST.Common.Type as Type exposing (Type)
 import AST.Typed as Typed
-import Common
-import Common.Types
-    exposing
-        ( Project
-        , VarName
-        )
-import Dict.Any exposing (AnyDict)
+import Common.Types exposing (Project)
+import Dict.Any
 import Error exposing (Error(..), TypeError(..))
-import Extra.Dict.Any
-import Extra.Tuple
+import Stage.InferTypes.AssignIds as AssignIds
 import Stage.InferTypes.Boilerplate as Boilerplate
+import Stage.InferTypes.IdSource as Id
 import Stage.InferTypes.SubstitutionMap as SubstitutionMap exposing (SubstitutionMap)
 import Stage.InferTypes.TypeEquation exposing (TypeEquation, equals)
 import Stage.InferTypes.Unify as Unify
@@ -77,169 +72,72 @@ inferExpr expr =
 
 {-| Stage 1
 
-TODO document better
+Gives every subexpression an unique auto-incremented ID and converts
+from Canonical.Expr to Typed.Expr.
+
+Example:
+
+Input (forgive the nonsense AST):
+
+    Canonical.If
+        { test =
+            Canonical.Plus
+                (Canonical.Literal (Int 1))
+                (Canonical.Literal (Int 2))
+        , then_ = Canonical.Unit
+        , else_ = Canonical.Literal (Bool True)
+        }
+
+Output:
+
+    ( Typed.If
+        { test =
+            ( Typed.Plus
+                ( Typed.Literal (Int 1)
+                , Var 0
+                )
+                ( Typed.Literal (Int 2)
+                , Var 1
+                )
+            , Var 2
+            )
+        , then_ = ( Typed.Unit, Var 3 )
+        , else_ = ( Typed.Literal (Bool True), Var 4 )
+        }
+    , Var 5
+    )
 
 -}
 assignIds : Canonical.Expr -> Result TypeError Typed.Expr
 assignIds expr =
-    assignIdsHelp 0 (Dict.Any.empty Common.varNameToString) expr
-        |> Result.map Extra.Tuple.third
-
-
-assignIdsHelp : Int -> AnyDict String VarName Int -> Canonical.Expr -> Result TypeError ( Int, AnyDict String VarName Int, Typed.Expr )
-assignIdsHelp unusedId0 varIds0 expr =
-    (case expr of
-        {- With literals, we could plug their final type in right here
-           (no solving needed!) but let's be uniform and do everything through
-           the constraint solver in stages 2 and 3.
-        -}
-        Canonical.Literal literal ->
-            Ok
-                ( unusedId0
-                , varIds0
-                , Typed.Literal literal
-                )
-
-        -- We remember argument's IDs so that we can later use them in Lambda
-        Canonical.Argument name ->
-            Ok
-                ( unusedId0
-                , Dict.Any.insert name unusedId0 varIds0
-                , Typed.Argument name
-                )
-
-        Canonical.Var name ->
-            Ok
-                ( unusedId0
-                  -- TODO is this right?
-                , varIds0
-                , Typed.Var name
-                )
-
-        Canonical.Plus e1 e2 ->
-            assignIdsHelp unusedId0 varIds0 e1
-                |> Result.andThen
-                    (\( unusedId1, varIds1, e1_ ) ->
-                        assignIdsHelp unusedId1 varIds1 e2
-                            |> Result.map
-                                (\( unusedId2, varIds2, e2_ ) ->
-                                    ( unusedId2
-                                    , varIds2
-                                    , Typed.Plus e1_ e2_
-                                    )
-                                )
-                    )
-
-        Canonical.Lambda { argument, body } ->
-            assignIdsHelp unusedId0 varIds0 body
-                |> Result.andThen
-                    (\( unusedId1, varIds1, body_ ) ->
-                        Dict.Any.get argument varIds1
-                            |> Result.fromMaybe (UnknownName argument)
-                            |> Result.map
-                                (\argumentId ->
-                                    ( unusedId1
-                                    , varIds1
-                                    , Typed.lambda argument body_ argumentId
-                                    )
-                                )
-                    )
-
-        Canonical.Call { fn, argument } ->
-            assignIdsHelp unusedId0 varIds0 fn
-                |> Result.andThen
-                    (\( unusedId1, varIds1, fn_ ) ->
-                        assignIdsHelp unusedId1 varIds1 argument
-                            |> Result.map
-                                (\( unusedId2, varIds2, argument_ ) ->
-                                    ( unusedId2
-                                    , varIds2
-                                    , Typed.Call
-                                        { fn = fn_
-                                        , argument = argument_
-                                        }
-                                    )
-                                )
-                    )
-
-        Canonical.If { test, then_, else_ } ->
-            assignIdsHelp unusedId0 varIds0 test
-                |> Result.andThen
-                    (\( unusedId1, varIds1, test_ ) ->
-                        assignIdsHelp unusedId1 varIds1 then_
-                            |> Result.andThen
-                                (\( unusedId2, varIds2, then__ ) ->
-                                    assignIdsHelp unusedId2 varIds2 else_
-                                        |> Result.map
-                                            (\( unusedId3, varIds3, else__ ) ->
-                                                ( unusedId3
-                                                , varIds3
-                                                , Typed.If
-                                                    { test = test_
-                                                    , then_ = then__
-                                                    , else_ = else__
-                                                    }
-                                                )
-                                            )
-                                )
-                    )
-
-        Canonical.Let { bindings, body } ->
-            assignIdsHelp unusedId0 varIds0 body
-                |> Result.andThen
-                    (\( unusedId1, varIds1, body_ ) ->
-                        bindings
-                            |> Dict.Any.foldl
-                                (\_ binding accResult ->
-                                    accResult
-                                        |> Result.andThen
-                                            (\( unusedId2, varIds2, newBindings ) ->
-                                                assignIdsHelp unusedId2 varIds2 binding.body
-                                                    |> Result.map
-                                                        (\( unusedId3, varIds3, newBody ) ->
-                                                            ( unusedId3
-                                                            , varIds3
-                                                            , newBindings
-                                                                |> Dict.Any.insert binding.name
-                                                                    { name = binding.name
-                                                                    , body = newBody
-                                                                    }
-                                                            )
-                                                        )
-                                            )
-                                )
-                                (Ok ( unusedId1, varIds1, Dict.Any.empty Common.varNameToString ))
-                            |> Result.map
-                                (\( unusedId4, varIds4, bindings_ ) ->
-                                    ( unusedId4
-                                    , varIds4
-                                    , Typed.Let
-                                        { bindings = bindings_
-                                        , body = body_
-                                        }
-                                    )
-                                )
-                    )
-
-        Canonical.Unit ->
-            Ok
-                ( unusedId0
-                , varIds0
-                , Typed.Unit
-                )
-    )
-        |> Result.map
-            (\( unusedIdN, varIdsN, recursedExpr ) ->
-                ( unusedIdN + 1
-                , varIdsN
-                , ( recursedExpr, Type.Var unusedIdN )
-                )
-            )
+    expr
+        |> AssignIds.toIdGenerator
+        |> Id.generate
 
 
 {-| Stage 2
 
-TODO document better
+We try to bind various subexpressions together here.
+For example consider this:
+
+    42
+
+This is an Integer (or a `number`, we don't care here for the sake of simplicity).
+
+    foo 42
+
+What can we say about `foo`? It's a function from Integer (as evidenced by 42),
+but we don't know to what. Right now the best we could say is `foo : Int -> a`.
+
+    foo 42 == "abc"
+
+Suddenly everything's clear: the whole thing is Bool because of `==`, and thanks
+to the right side of `==` being a String and the two sides having to match in types,
+we know `foo 42` is a String too, and thus `foo : Int -> String`.
+
+The "two sides of `==` have to match" insight could be expressed here as something like
+
+    equals leftType rightType
 
 -}
 generateEquations : Typed.Expr -> List TypeEquation

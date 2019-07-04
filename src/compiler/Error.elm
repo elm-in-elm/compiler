@@ -39,7 +39,6 @@ type GeneralError
 
 type ParseError
     = ModuleNameDoesntMatchFilePath ModuleName FilePath
-    | FileNotFound FilePath
     | EmptySourceDirectories
     | InvalidElmJson JD.Error
     | ParseProblem (List (P.DeadEnd ParseContext ParseProblem))
@@ -48,6 +47,7 @@ type ParseError
 type ParseContext
     = InLiteral
     | InLiteralInt
+    | InHexInt
     | InExpr
     | InIf
     | InLet
@@ -78,7 +78,6 @@ type ParseProblem
     | ExpectingEqualsSign -- `x >=< 1`
     | ExpectingMinusSign -- `>-<42`
     | ExpectingInt
-    | ExpectingHexadecimals
     | ExpectingSingleQuote
     | ExpectingChar
     | ExpectingEscapeBackslash
@@ -101,19 +100,15 @@ type ParseProblem
     | ExpectingFalse
     | ExpectingLet
     | ExpectingIn
-    | ExpectingAtLeastOne
-    | ExpectingNewline
     | ExpectingUnit
+    | ExpectingHexPrefix
     | InvalidInt
+    | InvalidHexInt
     | CompilerBug String
 
 
 type DesugarError
     = VarNotInEnvOfModule
-        { var : ( Maybe ModuleName, VarName )
-        , module_ : ModuleName
-        }
-    | AmbiguousVar
         { var : ( Maybe ModuleName, VarName )
         , module_ : ModuleName
         }
@@ -156,11 +151,6 @@ toString error =
                         ++ filePath
                         ++ "`."
 
-                FileNotFound (FilePath filePath) ->
-                    "File `"
-                        ++ filePath
-                        ++ "` not found."
-
                 EmptySourceDirectories ->
                     "Empty `sourceDirectories`!"
 
@@ -189,20 +179,6 @@ toString error =
                         ++ "` in the module `"
                         ++ moduleName
                         ++ "`. Have you imported it?"
-
-                AmbiguousVar { var, module_ } ->
-                    let
-                        ( maybeModuleName, varName ) =
-                            var
-
-                        (ModuleName moduleName) =
-                            module_
-                    in
-                    "There are multiple definitions for variable `"
-                        ++ fullVarName maybeModuleName varName
-                        ++ "` in the module `"
-                        ++ moduleName
-                        ++ "`. Keep only one in the code! Maybe alias some imports to fix the collision?"
 
         TypeError typeError ->
             case typeError of

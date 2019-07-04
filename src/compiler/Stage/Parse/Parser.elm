@@ -32,6 +32,7 @@ import Error
         , ParseError(..)
         , ParseProblem(..)
         )
+import Hex
 import Parser.Advanced as P exposing ((|.), (|=), Parser)
 import Pratt.Advanced as PP
 import Set exposing (Set)
@@ -386,8 +387,6 @@ literal =
         |> P.inContext InLiteral
 
 
-{-| TODO deal with hex values. Use P.number and solve this+floats in one go?
--}
 literalInt : Parser_ Literal
 literalInt =
     let
@@ -399,13 +398,32 @@ literalInt =
             -}
             P.backtrackable <|
                 P.int ExpectingInt InvalidInt
+
+        hexInt =
+            P.succeed identity
+                |. P.symbol (P.Token "0x" ExpectingHexPrefix)
+                |= P.getChompedString (P.chompWhile Char.isHexDigit)
+                |> P.andThen
+                    (\hexString ->
+                        hexString
+                            -- TODO this String.toLower shouldn't be needed - see https://github.com/rtfeldman/elm-hex/pull/1
+                            |> String.toLower
+                            |> Hex.fromString
+                            |> Result.map P.succeed
+                            |> Result.withDefault (P.problem InvalidHexInt)
+                    )
+                |> P.inContext InHexInt
     in
     P.succeed Int
         |= P.oneOf
             [ P.succeed negate
                 |. P.symbol (P.Token "-" ExpectingMinusSign)
-                |= int
+                |= P.oneOf
+                    [ int
+                    , hexInt
+                    ]
             , int
+            , hexInt
             ]
         |> P.inContext InLiteralInt
 
@@ -501,7 +519,7 @@ literalBool =
     P.succeed Bool
         |= P.oneOf
             [ P.map (always True) <| P.keyword (P.Token "True" ExpectingTrue)
-            , P.map (always False) <| P.keyword (P.Token "False" ExpectingTrue)
+            , P.map (always False) <| P.keyword (P.Token "False" ExpectingFalse)
             ]
 
 
@@ -529,7 +547,7 @@ qualifiedVar : Parser_ Expr
 qualifiedVar =
     P.sequence
         { start = P.Token "" (CompilerBug "qualifiedVar start parser failed") -- TODO is this the right way?
-        , separator = P.Token "." ExpectingModuleDot
+        , separator = P.Token "." ExpectingQualifiedVarNameDot
         , end = P.Token "" (CompilerBug "qualifiedVar end parser failed") -- TODO is this the right way?
         , spaces = P.succeed ()
         , item = moduleNameWithoutDots
@@ -581,6 +599,7 @@ lambda config =
         |. P.symbol (P.Token "->" ExpectingRightArrow)
         |. P.spaces
         |= PP.subExpression 0 config
+        |> P.inContext InLambda
 
 
 if_ : ExprConfig -> Parser_ Frontend.Expr
@@ -599,6 +618,7 @@ if_ config =
         |= PP.subExpression 0 config
         |. P.keyword (P.Token "else" ExpectingElse)
         |= PP.subExpression 0 config
+        |> P.inContext InIf
 
 
 let_ : ExprConfig -> Parser_ Frontend.Expr
@@ -611,11 +631,11 @@ let_ config =
                 , body = body
                 }
         )
-        |. P.keyword (P.Token "let" ExpectingIf)
+        |. P.keyword (P.Token "let" ExpectingLet)
         |. P.spaces
         |= binding config
         |. P.spaces
-        |. P.keyword (P.Token "in" ExpectingThen)
+        |. P.keyword (P.Token "in" ExpectingIn)
         |. P.spaces
         |= PP.subExpression 0 config
         |> P.inContext InLet
@@ -650,8 +670,9 @@ promoteArguments arguments expr_ =
 unit : ExprConfig -> Parser_ Frontend.Expr
 unit _ =
     P.succeed Frontend.Unit
-    |. P.keyword (P.Token "()" ExpectingUnit)
-    |> P.inContext InUnit
+        |. P.keyword (P.Token "()" ExpectingUnit)
+        |> P.inContext InUnit
+
 
 
 -- Helpers
@@ -665,14 +686,6 @@ spacesOnly =
 newlines : Parser_ ()
 newlines =
     P.chompWhile ((==) '\n')
-
-
-newlinesAndOptionallySpaces : Parser_ ()
-newlinesAndOptionallySpaces =
-    P.succeed ()
-        |. P.spaces
-        |. newlines
-        |. P.spaces
 
 
 {-| Taken from Punie/elm-parser-extras, made to work with Parser.Advanced.Parser

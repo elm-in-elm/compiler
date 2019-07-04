@@ -14,7 +14,6 @@ import Common.Types
         , TopLevelDeclaration
         , VarName(..)
         )
-import Dict.Any
 import Graph
 import Stage.Emit.JavaScript as JS
 

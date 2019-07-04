@@ -4,7 +4,7 @@ module Stage.Emit.JavaScript exposing (emitExpr, emitTopLevelDeclaration)
 
 import AST.Backend as Backend
 import AST.Common.Literal exposing (Literal(..))
-import AST.Typed as Typed exposing (Expr_(..))
+import AST.Typed exposing (Expr_(..))
 import Common.Types
     exposing
         ( ModuleName(..)
@@ -15,7 +15,7 @@ import Dict.Any
 
 
 emitExpr : Backend.Expr -> String
-emitExpr ( expr, type_ ) =
+emitExpr ( expr, _ ) =
     case expr of
         Literal (Int int) ->
             String.fromInt int
