@@ -411,7 +411,7 @@ literalInt =
 
 
 -- for literalChar and, in the future, literalString
-stringHelp = 
+character = 
     P.oneOf
     [ P.succeed identity
         |. P.token (P.Token "\\" ExpectingEscapeBackslash)
@@ -433,7 +433,7 @@ stringHelp =
                     string
                         |> String.uncons
                         |> Maybe.map (Tuple.first >> P.succeed)
-                        |> Maybe.withDefault (P.problem (CompilerBug "Multiple characters chomped in `literalChar`"))
+                        |> Maybe.withDefault (P.problem (CompilerBug "Multiple characters chomped in `character`"))
                 )
     ]
 
@@ -442,7 +442,7 @@ literalChar : Parser_ Literal
 literalChar =
     (P.succeed identity
         |. P.symbol (P.Token "'" ExpectingSingleQuote)
-        |= stringHelp
+        |= character
         |. P.symbol (P.Token "'" ExpectingSingleQuote)
     )
     |> P.map (\n -> Char n)
