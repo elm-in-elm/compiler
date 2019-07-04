@@ -605,6 +605,34 @@ expr =
                   , "\"'\""
                   , Ok (Literal (String "'"))
                   )
+                , ( "double quote"
+                  , "\"\\\"\""
+                  , Ok (Literal (String "\""))
+                  )
+                , ( "escape n"
+                  , "\"\\n\""
+                  , Ok (Literal (String "\n"))
+                  )
+                , ( "escape r"
+                  , "\"\\r\""
+                  , Ok (Literal (String "\u{000D}"))
+                  )
+                , ( "escape t"
+                  , "\"\\t\""
+                  , Ok (Literal (String "\t"))
+                  )
+                , ( "emoji"
+                  , "\"😃\""
+                  , Ok (Literal (String "😃"))
+                  )
+                , ( "escaped unicode code point"
+                  , "\"\\u{1F648}\""
+                  , Ok (Literal (String "🙈"))
+                  )
+                , ( "combo of escapes and chars"
+                  , "\"\\u{1F648}\\n\\r\\t\\abc123\""
+                  , Ok (Literal (String "🙈\n\r\tabc123"))
+                  )
                 ]
               )
             , ( "literal bool"
