@@ -445,7 +445,7 @@ literalChar =
         |= character
         |. P.symbol (P.Token "'" ExpectingSingleQuote)
     )
-    |> P.map (\n -> Char n)
+    |> P.map Char
 
 unicode : Parser_ Char
 unicode =
