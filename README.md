@@ -72,8 +72,8 @@ Oh God please yes! :heart: Feel free to look around the [<kbd>help wanted</kbd>]
 | ----------------- | -------------------- | -------------------- | ------------------ | ------------------ | -------------------- | ------------------ | ------------------ |
 | integers          | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark: | :heavy_check_mark: | :warning: [[2]](#f2) | :heavy_check_mark: | :heavy_check_mark: |
 | floats            | :x: [[3]](#f3)       | :x: [[4]](#f4)       | :x: [[3]](#f3)     | :x: [[3]](#f3)     | :x: [[5]](#f5)       | :x: [[3]](#f3)     | :x: [[3]](#f3)     |
-| characters        | :warning: [[6]](#f6) | :warning: [[7]](#f7) | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark:   | :heavy_check_mark: | :heavy_check_mark: |
-| strings           | :warning: [[8]](#f8) | :warning: [[9]](#f9) | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark:   | :heavy_check_mark: | :heavy_check_mark: |
+| characters        | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark:   | :heavy_check_mark: | :heavy_check_mark: |
+| strings           | :warning: [[6]](#f6) | :warning: [[7]](#f7) | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark:   | :heavy_check_mark: | :heavy_check_mark: |
 | booleans          | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark:   | :heavy_check_mark: | :heavy_check_mark: |
 | variables         | :warning:            | :heavy_check_mark:   | :heavy_check_mark: | :heavy_check_mark: | :warning:            | :heavy_check_mark: | :heavy_check_mark: |
 | lists             | :x:                  | :x:                  | :x:                | :x:                | :x:                  | :x:                | :x:                |
@@ -98,10 +98,8 @@ Oh God please yes! :heart: Feel free to look around the [<kbd>help wanted</kbd>]
 3. <span id="f3"></span> Not implemented; tracked in [#17](https://github.com/elm-in-elm/compiler/issues/17)
 4. <span id="f4"></span> Not implemented; not tracked yet
 5. <span id="f5"></span> To be optimized the same way Ints are; not tracked yet
-6. <span id="f6"></span> Comprehensive tests missing; will be fixed in [#15](https://github.com/elm-in-elm/compiler/pull/15)
-7. <span id="f7"></span> Escape sequences not implemented; not tracked yet
-8. <span id="f8"></span> Comprehensive tests missing; tracked in [#21](https://github.com/elm-in-elm/compiler/issues/21)
-9. <span id="f9"></span> Multiline strings (and maybe more) missing; not tracked yet
+6. <span id="f6"></span> Comprehensive tests missing; not tracked yet
+7. <span id="f7"></span> Multiline strings (and maybe more) missing; not tracked yet
 
 ## Prerequisites
 
@@ -233,6 +231,12 @@ Make sure to format code before submitting a pull request!
         src="https://avatars0.githubusercontent.com/u/197573">
         </br>
         <a href="https://github.com/Warry">Maxime Dantec</a>
+      </td>
+      <td align="center">
+        <img width="150" height="150"
+        src="https://avatars0.githubusercontent.com/u/16829510">
+        </br>
+        <a href="https://github.com/aaronjanse">Aaron Janse</a>
       </td>
     </tr>
   <tbody>

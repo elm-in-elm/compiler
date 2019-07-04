@@ -80,6 +80,11 @@ type ParseProblem
     | ExpectingInt
     | ExpectingSingleQuote
     | ExpectingChar
+    | ExpectingEscapeBackslash
+    | ExpectingEscapeCharacter Char
+    | ExpectingUnicodeEscapeLeftBrace
+    | ExpectingUnicodeEscapeRightBrace
+    | InvalidUnicodeCodePoint
     | ExpectingDoubleQuote
     | ExpectingPlusOperator
     | ExpectingModuleDot -- `import Foo>.<Bar`
