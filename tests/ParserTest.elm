@@ -682,7 +682,7 @@ expr =
                   )
                 , ( "combo of escapes, newlines, and chars"
                   , "\"\"\"\\u{1F648}\\n\n\n\\r\\t\\abc123\"\"\""
-                  , Ok (Literal (String "🙈\n\n\n\r\tabc123"))
+                  , Ok (Literal (String "🙈\n\n\n\r\t\\abc123"))
                   )
                 ]
               )
