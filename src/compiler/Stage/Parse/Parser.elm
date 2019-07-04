@@ -413,7 +413,7 @@ literalInt =
 -- for literalChar and, in the future, literalString
 stringHelp = 
     P.oneOf
-    [ P.succeed (identity)
+    [ P.succeed identity
         |. P.token (P.Token "\\" ExpectingEscapeBackslash)
         |= P.oneOf
             [ P.map (\_ -> '\"') (P.token (P.Token "\"" ExpectingEscapeCharacter))
