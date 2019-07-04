@@ -428,32 +428,36 @@ literalInt =
         |> P.inContext InLiteralInt
 
 
+
 -- for literalChar and, in the future, literalString
-character = 
+
+
+character =
     P.oneOf
-    [ P.succeed identity
-        |. P.token (P.Token "\\" ExpectingEscapeBackslash)
-        |= P.oneOf
-            [ P.map (\_ -> '\"') (P.token (P.Token "\"" ExpectingEscapeCharacter))
-            , P.map (\_ -> '\'') (P.token (P.Token "'"  ExpectingEscapeCharacter))
-            , P.map (\_ -> '\n') (P.token (P.Token "n"  ExpectingEscapeCharacter))
-            , P.map (\_ -> '\t') (P.token (P.Token "t"  ExpectingEscapeCharacter))
-            , P.map (\_ -> '\r') (P.token (P.Token "r"  ExpectingEscapeCharacter))
-            , P.succeed identity
-                |. P.token (P.Token "u" ExpectingEscapeCharacter)
-                |. P.token (P.Token "{" ExpectingUnicodeEscapeLeftBrace)
-                |= unicode
-                |. P.token (P.Token "}" ExpectingUnicodeEscapeRightBrace)
-            ]
-    ,  P.succeed identity
-        |= P.getChompedString (P.chompIf (always True) ExpectingChar)
-        |> P.andThen (\string ->
+        [ P.succeed identity
+            |. P.token (P.Token "\\" ExpectingEscapeBackslash)
+            |= P.oneOf
+                [ P.map (\_ -> '"') (P.token (P.Token "\"" ExpectingEscapeCharacter))
+                , P.map (\_ -> '\'') (P.token (P.Token "'" ExpectingEscapeCharacter))
+                , P.map (\_ -> '\n') (P.token (P.Token "n" ExpectingEscapeCharacter))
+                , P.map (\_ -> '\t') (P.token (P.Token "t" ExpectingEscapeCharacter))
+                , P.map (\_ -> '\u{000D}') (P.token (P.Token "r" ExpectingEscapeCharacter))
+                , P.succeed identity
+                    |. P.token (P.Token "u" ExpectingEscapeCharacter)
+                    |. P.token (P.Token "{" ExpectingUnicodeEscapeLeftBrace)
+                    |= unicode
+                    |. P.token (P.Token "}" ExpectingUnicodeEscapeRightBrace)
+                ]
+        , P.succeed identity
+            |= P.getChompedString (P.chompIf (always True) ExpectingChar)
+            |> P.andThen
+                (\string ->
                     string
                         |> String.uncons
                         |> Maybe.map (Tuple.first >> P.succeed)
                         |> Maybe.withDefault (P.problem (CompilerBug "Multiple characters chomped in `character`"))
                 )
-    ]
+        ]
 
 
 literalChar : Parser_ Literal
@@ -463,25 +467,29 @@ literalChar =
         |= character
         |. P.symbol (P.Token "'" ExpectingSingleQuote)
     )
-    |> P.map Char
+        |> P.map Char
+
 
 unicode : Parser_ Char
 unicode =
-  P.getChompedString (P.chompWhile Char.isHexDigit)
-    |> P.andThen (\str ->
-        let
-            len = String.length str
-        in
-        if len < 4 || len > 6 then
-            P.problem InvalidUnicodeCodePoint
-        else
-            str
-                |> String.toLower
-                |> Hex.fromString
-                |> Result.map Char.fromCode
-                |> Result.map P.succeed
-                |> Result.withDefault (P.problem InvalidUnicodeCodePoint)
-    )
+    P.getChompedString (P.chompWhile Char.isHexDigit)
+        |> P.andThen
+            (\str ->
+                let
+                    len =
+                        String.length str
+                in
+                if len < 4 || len > 6 then
+                    P.problem InvalidUnicodeCodePoint
+
+                else
+                    str
+                        |> String.toLower
+                        |> Hex.fromString
+                        |> Result.map Char.fromCode
+                        |> Result.map P.succeed
+                        |> Result.withDefault (P.problem InvalidUnicodeCodePoint)
+            )
 
 
 {-| TODO escapes
