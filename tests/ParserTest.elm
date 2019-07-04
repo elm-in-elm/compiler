@@ -635,6 +635,57 @@ expr =
                   )
                 ]
               )
+            , ( "literal multiline string"
+              , [ ( "empty"
+                  , "\"\"\"\"\"\""
+                  , Ok (Literal (String ""))
+                  )
+                , ( "one space"
+                  , "\"\"\" \"\"\""
+                  , Ok (Literal (String " "))
+                  )
+                , ( "newline"
+                  , "\"\"\"\n\"\"\""
+                  , Ok (Literal (String "\n"))
+                  )
+                , ( "two numbers"
+                  , "\"\"\"42\"\"\""
+                  , Ok (Literal (String "42"))
+                  )
+                , ( "single quote"
+                  , "\"\"\"'\"\"\""
+                  , Ok (Literal (String "'"))
+                  )
+                , ( "double quote"
+                  , "\"\"\"\"\"\"\"\""
+                  , Ok (Literal (String "\""))
+                  )
+                , ( "escape n"
+                  , "\"\"\"\\n\"\"\""
+                  , Ok (Literal (String "\n"))
+                  )
+                , ( "escape r"
+                  , "\"\"\"\\t\"\"\""
+                  , Ok (Literal (String "\u{000D}"))
+                  )
+                , ( "escape t"
+                  , "\"\"\"\\t\"\"\""
+                  , Ok (Literal (String "\t"))
+                  )
+                , ( "emoji"
+                  , "\"\"\"😃\"\"\""
+                  , Ok (Literal (String "😃"))
+                  )
+                , ( "escaped unicode code point"
+                  , "\"\"\"\\u{1F648}\"\"\""
+                  , Ok (Literal (String "🙈"))
+                  )
+                , ( "combo of escapes, newlines, and chars"
+                  , "\"\"\"\\u{1F648}\\n\n\n\\r\\t\\abc123\"\"\""
+                  , Ok (Literal (String "🙈\n\n\n\r\tabc123"))
+                  )
+                ]
+              )
             , ( "literal bool"
               , [ ( "True"
                   , "True"
