@@ -404,6 +404,21 @@ moduleName =
         )
 
 
+singleQuote : String -> String
+singleQuote txt =
+  "\'" ++ txt ++ "\'"
+
+
+doubleQuote : String -> String
+doubleQuote txt =
+  "\"" ++ txt ++ "\""
+
+
+tripleQuote : String -> String
+tripleQuote txt =
+  "\"\"\"" ++ txt ++ "\"\"\""
+
+
 expr : Test
 expr =
     let
@@ -558,130 +573,130 @@ expr =
 
                 -- https://github.com/elm/compiler/blob/dcbe51fa22879f83b5d94642e117440cb5249bb1/compiler/src/Parse/String.hs#L279-L285
                 , ( "escape n"
-                  , "'\\n'"
+                  , singleQuote "\\n"
                   , Ok (Literal (Char '\n'))
                   )
                 , ( "escape r"
-                  , "'\\r'"
+                  , singleQuote "\\r"
                   , Ok (Literal (Char '\u{000D}'))
                   )
                 , ( "escape t"
-                  , "'\\t'"
+                  , singleQuote "\\t"
                   , Ok (Literal (Char '\t'))
                   )
                 , ( "double quote"
-                  , "'\\\"'"
+                  , singleQuote "\\\""
                   , Ok (Literal (Char '"'))
                     -- " (for vscode-elm bug)
                   )
                 , ( "single quote"
-                  , "'\\''"
+                  , singleQuote "'\\''"
                   , Ok (Literal (Char '\''))
                   )
                 , ( "emoji"
-                  , "'😃'"
+                  , singleQuote "😃"
                   , Ok (Literal (Char '😃'))
                   )
                 , ( "escaped unicode code point"
-                  , "'\\u{1F648}'"
+                  , singleQuote "\\u{1F648}"
                   , Ok (Literal (Char '🙈'))
                   )
                 ]
               )
             , ( "literal string"
               , [ ( "empty"
-                  , "\"\""
+                  , doubleQuote ""
                   , Ok (Literal (String ""))
                   )
                 , ( "one space"
-                  , "\" \""
+                  , doubleQuote " "
                   , Ok (Literal (String " "))
                   )
                 , ( "two numbers"
-                  , "\"42\""
+                  , doubleQuote "42"
                   , Ok (Literal (String "42"))
                   )
                 , ( "single quote"
-                  , "\"'\""
+                  , doubleQuote "'"
                   , Ok (Literal (String "'"))
                   )
                 , ( "double quote"
-                  , "\"\\\"\""
+                  , doubleQuote "\\\""
                   , Ok (Literal (String "\""))
                   )
                 , ( "escape n"
-                  , "\"\\n\""
+                  , doubleQuote "\\n"
                   , Ok (Literal (String "\n"))
                   )
                 , ( "escape r"
-                  , "\"\\r\""
+                  , doubleQuote "\\r"
                   , Ok (Literal (String "\u{000D}"))
                   )
                 , ( "escape t"
-                  , "\"\\t\""
+                  , doubleQuote "\\t"
                   , Ok (Literal (String "\t"))
                   )
                 , ( "emoji"
-                  , "\"😃\""
+                  , doubleQuote "😃"
                   , Ok (Literal (String "😃"))
                   )
                 , ( "escaped unicode code point"
-                  , "\"\\u{1F648}\""
+                  , doubleQuote "\\u{1F648}"
                   , Ok (Literal (String "🙈"))
                   )
                 , ( "combo of escapes and chars"
-                  , "\"\\u{1F648}\\n\\r\\t\\abc123\""
+                  , doubleQuote "\\u{1F648}\\n\\r\\t\\abc123"
                   , Ok (Literal (String "🙈\n\r\tabc123"))
                   )
                 ]
               )
             , ( "literal multiline string"
               , [ ( "empty"
-                  , "\"\"\"\"\"\""
+                  , tripleQuote ""
                   , Ok (Literal (String ""))
                   )
                 , ( "one space"
-                  , "\"\"\" \"\"\""
+                  , tripleQuote " "
                   , Ok (Literal (String " "))
                   )
                 , ( "newline"
-                  , "\"\"\"\n\"\"\""
+                  , tripleQuote "\n"
                   , Ok (Literal (String "\n"))
                   )
                 , ( "two numbers"
-                  , "\"\"\"42\"\"\""
+                  , tripleQuote "42"
                   , Ok (Literal (String "42"))
                   )
                 , ( "single quote"
-                  , "\"\"\"'\"\"\""
+                  , tripleQuote "'"
                   , Ok (Literal (String "'"))
                   )
                 , ( "double quote"
-                  , "\"\"\"\"\"\"\"\""
+                  , tripleQuote "\"\""
                   , Ok (Literal (String "\""))
                   )
                 , ( "escape n"
-                  , "\"\"\"\\n\"\"\""
+                  , tripleQuote "\\n"
                   , Ok (Literal (String "\n"))
                   )
                 , ( "escape r"
-                  , "\"\"\"\\t\"\"\""
+                  , tripleQuote "\\r"
                   , Ok (Literal (String "\u{000D}"))
                   )
                 , ( "escape t"
-                  , "\"\"\"\\t\"\"\""
+                  , tripleQuote "\\t"
                   , Ok (Literal (String "\t"))
                   )
                 , ( "emoji"
-                  , "\"\"\"😃\"\"\""
+                  , tripleQuote "😃"
                   , Ok (Literal (String "😃"))
                   )
                 , ( "escaped unicode code point"
-                  , "\"\"\"\\u{1F648}\"\"\""
+                  , tripleQuote "\\u{1F648}"
                   , Ok (Literal (String "🙈"))
                   )
                 , ( "combo of escapes, newlines, and chars"
-                  , "\"\"\"\\u{1F648}\\n\n\n\\r\\t\\abc123\"\"\""
+                  , tripleQuote "\\u{1F648}\\n\n\n\\r\\t\\abc123"
                   , Ok (Literal (String "🙈\n\n\n\r\t\\abc123"))
                   )
                 ]
