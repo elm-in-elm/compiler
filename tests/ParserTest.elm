@@ -672,7 +672,7 @@ expr =
                   , Ok (Literal (String "'"))
                   )
                 , ( "double quote"
-                  , tripleQuote "\"\""
+                  , tripleQuote " \" "
                   , Ok (Literal (String "\""))
                   )
                 , ( "escape n"
