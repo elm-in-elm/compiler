@@ -147,7 +147,6 @@ Make sure to format code before submitting a pull request!
 
 #### Project management
 
-- [ ] Create issues with <kbd>help wanted</kbd> and <kbd>good first issue</kbd>
 - [ ] [@janiczek](https://twitter.com/janiczek/): Share your Firefox bookmarks relevant to `elm-in-elm` (ie. talks about Haskell hierarchical optimizations etc.)
 - [ ] After Elm Europe 2019 videos are out, add a link to the talk to the README
 - [ ] Add tests for stages other than parsing and emit into the matrix above
