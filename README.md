@@ -107,6 +107,16 @@ Oh God please yes! :heart: Feel free to look around the [<kbd>help wanted</kbd>]
 11. <span id="f11"></span> Not implemented; tracked in [#35](https://github.com/elm-in-elm/compiler/issues/35)
 
 
+## FAQ
+
+1. - **Q:** Why not use [`stil4m/elm-syntax`](https://github.com/stil4m/elm-syntax/) for the parsers?
+   - **A:** We'd *love* to use `elm-syntax` - it would save us so much trouble. But that would not be ideal in some regards:
+     - less flexibility wrt. how our types look
+     - would be less educational (compare with the *learning resource* goal) - would skip parsers entirely
+     - even if we didn't use it as a library but copypasted the parsers code, those are written in the 0.18 [`elm-community/parser-combinators`](https://github.com/elm-community/parser-combinators) style - we'd like, again because of the learning resource goal, to have the parsers written in idiomatic [`elm/parser`](https://github.com/elm/parser) style
+
+     But yeah, there's definitely a little bit of NIH syndrome happening :wink:
+
 
 ## Prerequisites
 
