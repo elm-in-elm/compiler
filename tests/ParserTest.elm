@@ -590,7 +590,7 @@ expr =
                     -- " (for vscode-elm bug)
                   )
                 , ( "single quote"
-                  , singleQuote "'\\''"
+                  , singleQuote "\\'"
                   , Ok (Literal (Char '\''))
                   )
                 , ( "emoji"
@@ -646,7 +646,7 @@ expr =
                   )
                 , ( "combo of escapes and chars"
                   , doubleQuote "\\u{1F648}\\n\\r\\t\\abc123"
-                  , Ok (Literal (String "🙈\n\r\tabc123"))
+                  , Ok (Literal (String "🙈\n\r\t\\abc123"))
                   )
                 ]
               )
@@ -673,7 +673,7 @@ expr =
                   )
                 , ( "double quote"
                   , tripleQuote " \" "
-                  , Ok (Literal (String "\""))
+                  , Ok (Literal (String " \" "))
                   )
                 , ( "escape n"
                   , tripleQuote "\\n"
