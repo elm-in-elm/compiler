@@ -585,7 +585,7 @@ expr =
                   , Ok (Literal (Char '\t'))
                   )
                 , ( "double quote"
-                  , singleQuote "\\\""
+                  , singleQuote "\""
                   , Ok (Literal (Char '"'))
                     -- " (for vscode-elm bug)
                   )
