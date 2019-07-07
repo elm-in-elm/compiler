@@ -406,17 +406,17 @@ moduleName =
 
 singleQuote : String -> String
 singleQuote txt =
-  "\'" ++ txt ++ "\'"
+    "'" ++ txt ++ "'"
 
 
 doubleQuote : String -> String
 doubleQuote txt =
-  "\"" ++ txt ++ "\""
+    "\"" ++ txt ++ "\""
 
 
 tripleQuote : String -> String
 tripleQuote txt =
-  "\"\"\"" ++ txt ++ "\"\"\""
+    "\"\"\"" ++ txt ++ "\"\"\""
 
 
 expr : Test
@@ -646,7 +646,7 @@ expr =
                   )
                 , ( "combo of escapes and chars"
                   , doubleQuote "\\u{1F648}\\n\\r\\t\\abc123"
-                  , Ok (Literal (String "🙈\n\r\t\\abc123"))
+                  , Ok (Literal (String "🙈\n\u{000D}\t\\abc123"))
                   )
                 ]
               )
@@ -697,7 +697,7 @@ expr =
                   )
                 , ( "combo of escapes, newlines, and chars"
                   , tripleQuote "\\u{1F648}\\n\n\n\\r\\t\\abc123"
-                  , Ok (Literal (String "🙈\n\n\n\r\t\\abc123"))
+                  , Ok (Literal (String "🙈\n\n\n\u{000D}\t\\abc123"))
                   )
                 ]
               )
