@@ -393,8 +393,8 @@ literalNumber =
             P.number
                 { int = Ok Int
                 , hex = Ok Int
-                , octal = Ok Int
-                , binary = Ok Int
+                , octal = Err InvalidNumber -- Elm do not supports octal notation
+                , binary = Err InvalidNumber -- Elm do not supports binary notation
                 , float = Ok Float
                 , invalid = InvalidNumber
                 , expecting = ExpectingNumber 
