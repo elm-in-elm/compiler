@@ -71,7 +71,7 @@ Oh God please yes! :heart: Feel free to look around the [<kbd>help wanted</kbd>]
 |                   | parser tests         | optimize tests       | emit tests         | parse                | desugar            | infer types        | optimize             | emit               |
 | ----------------- | -------------------- | -------------------- | ------------------ | -------------------- | ------------------ | ------------------ | -------------------- | ------------------ |
 | integers          | :heavy_check_mark:   | :warning: [[2]](#f2) | :heavy_check_mark: | :heavy_check_mark:   | :heavy_check_mark: | :heavy_check_mark: | :warning: [[2]](#f2) | :heavy_check_mark: |
-| floats            | :heavy_check_mark:   | :x: [[5]](#f5)       | :x: [[3]](#f3)     | :heavy_check_mark:   | :x: [[3]](#f3)     | :x: [[3]](#f3)     | :x: [[5]](#f5)       | :heavy_check_mark: |
+| floats            | :heavy_check_mark:   | :x: [[5]](#f5)       | :heavy_check_mark: | :heavy_check_mark:   | :x: [[3]](#f3)     | :x: [[3]](#f3)     | :x: [[5]](#f5)       | :heavy_check_mark: |
 | characters        | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark: | :heavy_check_mark:   | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark:   | :heavy_check_mark: |
 | strings           | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark: | :warning: [[7]](#f7) | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark:   | :heavy_check_mark: |
 | booleans          | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark: | :heavy_check_mark:   | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark:   | :heavy_check_mark: |
