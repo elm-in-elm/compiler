@@ -96,8 +96,8 @@ Oh God please yes! :heart: Feel free to look around the [<kbd>help wanted</kbd>]
 
 1. <span id="f1"></span> Not implemented; tracked in [#27](https://github.com/elm-in-elm/compiler/issues/27)
 2. <span id="f2"></span> To be optimized with multiplication, subtraction, division, modulo, exponentiation... maybe more?; not tracked yet
-3. <span id="f3"></span> Not implemented; tracked in [#17](https://github.com/elm-in-elm/compiler/issues/17)
-4. <span id="f4"></span> Not implemented; not tracked yet
+3. <span id="f3"></span> ... this space left intentionally blank :smile: ...
+4. <span id="f4"></span> ... this space left intentionally blank :smile: ...
 5. <span id="f5"></span> To be optimized the same way Ints are; not tracked yet
 6. <span id="f6"></span> ... this space left intentionally blank :smile: ...
 7. <span id="f7"></span> Multiline strings (and maybe more) missing; tracked in [#33](https://github.com/elm-in-elm/compiler/issues/33)
