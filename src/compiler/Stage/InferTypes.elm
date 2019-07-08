@@ -251,6 +251,12 @@ generateEquations ( expr, type_ ) =
                 :: generateEquations body
                 ++ bindingEquations
 
+        Typed.List { list } ->
+            [ List.fold (\isEqual currentType ->
+                equals type_ currentType
+              ) True list
+            ]
+
         Typed.Unit ->
             -- unit is unit
             [ equals type_ Type.Unit ]
