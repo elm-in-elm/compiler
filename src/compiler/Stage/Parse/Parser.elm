@@ -389,7 +389,7 @@ literal =
 literalNumber : Parser_ Literal
 literalNumber =
     let
-        parseLitteralNumber =
+        parseLiteralNumber =
             P.number
                 { int = Ok Int
                 , hex = Ok Int
@@ -400,7 +400,7 @@ literalNumber =
                 , expecting = ExpectingNumber 
                 }
 
-        negateLitteral toBeNegated =
+        negateLiteral toBeNegated =
             case toBeNegated of
                 Int int ->
                     Int (negate int)
@@ -413,10 +413,10 @@ literalNumber =
 
     in
     P.oneOf
-        [ P.succeed negateLitteral
+        [ P.succeed negateLiteral
             |. P.symbol (P.Token "-" ExpectingMinusSign)
-            |= parseLitteralNumber
-        , parseLitteralNumber
+            |= parseLiteralNumber
+        , parseLiteralNumber
         ]
     |> P.inContext InLiteralNumber
 
