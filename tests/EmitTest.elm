@@ -163,6 +163,22 @@ javascript =
                       )
                     ]
                 )
+            , describe "List"
+                (List.map runTest
+                    [ ( "empty list"
+                      , List { list = [] }
+                      , "[]"
+                      )
+                    , ( "single item in list"
+                      , List { list = [ typed (Literal (Int 1)) ] }
+                      , "[1]"
+                      )
+                    , ( "simple list"
+                      , List { list = [ typed (Literal (Int 1)), typed (Literal (Int 2)), typed (Literal (Int 3)) ] }
+                      , "[1, 2, 3]"
+                      )
+                    ]
+                )
             , runTest
                 ( "Unit"
                 , Unit

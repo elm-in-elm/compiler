@@ -35,6 +35,7 @@ type Expr
     | Call { fn : Expr, argument : Expr }
     | If { test : Expr, then_ : Expr, else_ : Expr }
     | Let { bindings : AnyDict String VarName (Binding Expr), body : Expr }
+    | List (List Type)
     | Unit
 
 
