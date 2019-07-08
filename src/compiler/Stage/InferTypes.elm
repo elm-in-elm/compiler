@@ -147,6 +147,10 @@ generateEquations ( expr, type_ ) =
             -- integer is an integer ¯\_(ツ)_/¯
             [ equals type_ Type.Int ]
 
+        Typed.Literal (Literal.Float _) ->
+            -- float is a float
+            [ equals type_ Type.Float ]
+
         Typed.Literal (Literal.Char _) ->
             -- char is a char
             [ equals type_ Type.Char ]
@@ -277,6 +281,9 @@ getType substitutionMap type_ =
     else
         case type_ of
             Type.Int ->
+                type_
+
+            Type.Float ->
                 type_
 
             Type.Char ->

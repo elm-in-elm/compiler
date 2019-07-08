@@ -45,6 +45,12 @@ javascript =
                     , ( "negative int", Literal (Int -998), "-998" )
                     ]
                 )
+            , describe "Float"
+                (List.map runTest
+                    [ ( "positive float", Literal (Float 12.3), "12.3" )
+                    , ( "negative float", Literal (Float -12.3), "-12.3" )
+                    ]
+                )
             , describe "Char"
                 (List.map runTest
                     [ ( "simple ASCII", Literal (Char 'x'), "\"x\"" )
