@@ -46,8 +46,7 @@ type ParseError
 
 type ParseContext
     = InLiteral
-    | InLiteralInt
-    | InHexInt
+    | InLiteralNumber
     | InExpr
     | InIf
     | InLet
@@ -78,6 +77,7 @@ type ParseProblem
     | ExpectingEqualsSign -- `x >=< 1`
     | ExpectingMinusSign -- `>-<42`
     | ExpectingInt
+    | ExpectingNumber
     | ExpectingSingleQuote
     | ExpectingChar
     | ExpectingEscapeBackslash
@@ -101,9 +101,7 @@ type ParseProblem
     | ExpectingLet
     | ExpectingIn
     | ExpectingUnit
-    | ExpectingHexPrefix
-    | InvalidInt
-    | InvalidHexInt
+    | InvalidNumber
     | CompilerBug String
 
 

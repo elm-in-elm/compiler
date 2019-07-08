@@ -553,6 +553,37 @@ expr =
                   )
                 ]
               )
+            , ( "literal float"
+              , [ ( "positive"
+                  , "12.3"
+                  , Ok (Literal (Float 12.3))
+                  )
+                , ( "zero"
+                  , "0.0"
+                  , Ok (Literal (Float 0.0))
+                  )
+                , ( "negative float"
+                  , "-4.2"
+                  , Ok (Literal (Float -4.2))
+                  )
+                , ( "Scientific notation"
+                  , "5.12e2"
+                  , Ok (Literal (Float 512))
+                  )
+                , ( "Uppercase scientific notation"
+                  , "5.12E2"
+                  , Ok (Literal (Float 512))
+                  )
+                , ( "Negative scientific notation"
+                  , "-5.12e2"
+                  , Ok (Literal (Float -512))
+                  )
+                , ( "Negative exponent"
+                  , "5e-2"
+                  , Ok (Literal (Float 0.05))
+                  )
+                ]
+              )
             , ( "literal char"
               , [ ( "number"
                   , "'1'"

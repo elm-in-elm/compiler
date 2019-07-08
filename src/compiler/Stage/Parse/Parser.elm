@@ -378,8 +378,7 @@ literal : Parser_ Frontend.Expr
 literal =
     P.succeed Literal
         |= P.oneOf
-            -- TODO literalFloat
-            [ literalInt
+            [ literalNumber
             , literalChar
             , literalString
             , literalBool
@@ -387,45 +386,40 @@ literal =
         |> P.inContext InLiteral
 
 
-literalInt : Parser_ Literal
-literalInt =
+literalNumber : Parser_ Literal
+literalNumber =
     let
-        int =
-            {- This deals with the bug [elm/parser#25](https://github.com/elm/parser/issues/25).
-               In our case it was interfering with `if ... then ... >e<lse ...`.
-
-               For more info see @dmy's assessment at [dmy/elm-pratt-parser#1](https://github.com/dmy/elm-pratt-parser/issues/1).
-            -}
+        parseLiteralNumber =
             P.backtrackable <|
-                P.int ExpectingInt InvalidInt
+                P.number
+                    { int = Ok Int
+                    , hex = Ok Int
+                    , octal = Err InvalidNumber -- Elm does not support octal notation
+                    , binary = Err InvalidNumber -- Elm does not support binary notation
+                    , float = Ok Float
+                    , invalid = InvalidNumber
+                    , expecting = ExpectingNumber 
+                    }
 
-        hexInt =
-            P.succeed identity
-                |. P.symbol (P.Token "0x" ExpectingHexPrefix)
-                |= P.getChompedString (P.chompWhile Char.isHexDigit)
-                |> P.andThen
-                    (\hexString ->
-                        hexString
-                            -- TODO this String.toLower shouldn't be needed - see https://github.com/rtfeldman/elm-hex/pull/1
-                            |> String.toLower
-                            |> Hex.fromString
-                            |> Result.map P.succeed
-                            |> Result.withDefault (P.problem InvalidHexInt)
-                    )
-                |> P.inContext InHexInt
+        negateLiteral toBeNegated =
+            case toBeNegated of
+                Int int ->
+                    Int (negate int)
+
+                Float float ->
+                    Float (negate float)
+
+                _ ->
+                    toBeNegated
+
     in
-    P.succeed Int
-        |= P.oneOf
-            [ P.succeed negate
-                |. P.symbol (P.Token "-" ExpectingMinusSign)
-                |= P.oneOf
-                    [ int
-                    , hexInt
-                    ]
-            , int
-            , hexInt
-            ]
-        |> P.inContext InLiteralInt
+    P.oneOf
+        [ P.succeed negateLiteral
+            |. P.symbol (P.Token "-" ExpectingMinusSign)
+            |= parseLiteralNumber
+        , parseLiteralNumber
+        ]
+    |> P.inContext InLiteralNumber
 
 
 

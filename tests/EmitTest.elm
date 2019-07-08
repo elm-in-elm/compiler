@@ -45,6 +45,17 @@ javascript =
                     , ( "negative int", Literal (Int -998), "-998" )
                     ]
                 )
+            -- See https://ellie-app.com/62Ydd5JYgxca1
+            , describe "Float"
+                (List.map runTest
+                    [ ( "positive float", Literal (Float 12.3), "12.3" )
+                    , ( "negative float", Literal (Float -12.3), "-12.3" )
+                    , ( "positive zero float", Literal (Float 0.0), "0" )
+                    , ( "negative zero float", Literal (Float -0.0), "0" )
+                    , ( "positive infitiny", Literal (Float (1 / 0.0)), "Infinity" )
+                    , ( "negative infitiny", Literal (Float (1 / -0.0)), "-Infinity" )
+                    ]
+                )
             , describe "Char"
                 (List.map runTest
                     [ ( "simple ASCII", Literal (Char 'x'), "\"x\"" )

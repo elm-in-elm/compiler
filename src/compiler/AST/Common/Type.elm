@@ -12,6 +12,7 @@ type Type
     = Var Int
     | Function Type Type
     | Int
+    | Float
     | Char
     | String
     | Bool
@@ -39,6 +40,9 @@ toString type_ =
 
         Int ->
             "Int"
+
+        Float ->
+            "Float"
 
         Char ->
             "Char"

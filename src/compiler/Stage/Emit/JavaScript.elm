@@ -20,6 +20,9 @@ emitExpr ( expr, _ ) =
         Literal (Int int) ->
             String.fromInt int
 
+        Literal (Float float) ->
+            String.fromFloat float
+
         Literal (Char char) ->
             "\"" ++ String.fromChar char ++ "\""
 
