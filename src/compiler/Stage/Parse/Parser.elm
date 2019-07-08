@@ -390,15 +390,16 @@ literalNumber : Parser_ Literal
 literalNumber =
     let
         parseLiteralNumber =
-            P.number
-                { int = Ok Int
-                , hex = Ok Int
-                , octal = Err InvalidNumber -- Elm do not supports octal notation
-                , binary = Err InvalidNumber -- Elm do not supports binary notation
-                , float = Ok Float
-                , invalid = InvalidNumber
-                , expecting = ExpectingNumber 
-                }
+            P.backtrackable <|
+                P.number
+                    { int = Ok Int
+                    , hex = Ok Int
+                    , octal = Err InvalidNumber -- Elm do not supports octal notation
+                    , binary = Err InvalidNumber -- Elm do not supports binary notation
+                    , float = Ok Float
+                    , invalid = InvalidNumber
+                    , expecting = ExpectingNumber 
+                    }
 
         negateLiteral toBeNegated =
             case toBeNegated of
