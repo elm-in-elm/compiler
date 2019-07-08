@@ -49,6 +49,8 @@ javascript =
                 (List.map runTest
                     [ ( "positive float", Literal (Float 12.3), "12.3" )
                     , ( "negative float", Literal (Float -12.3), "-12.3" )
+                    , ( "positive zero float", Literal (Float 0.0), "0" )
+                    , ( "negative zero float", Literal (Float -0.0), "0" )
                     ]
                 )
             , describe "Char"

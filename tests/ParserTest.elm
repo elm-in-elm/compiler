@@ -567,20 +567,20 @@ expr =
                   , Ok (Literal (Float -4.2))
                   )
                 , ( "Scientific notation"
-                  , "5.2e3"
-                  , Ok (Literal (Float 5.2e3))
+                  , "5.12e2"
+                  , Ok (Literal (Float 512))
                   )
                 , ( "Uppercase scientific notation"
-                  , "5.2E3"
-                  , Ok (Literal (Float 5.2e3))
+                  , "5.12E2"
+                  , Ok (Literal (Float 512))
                   )
                 , ( "Negative scientific notation"
-                  , "-5.2e3"
-                  , Ok (Literal (Float -5.2e3))
+                  , "-5.12e2"
+                  , Ok (Literal (Float -512))
                   )
                 , ( "Negative exponent"
                   , "5e-2"
-                  , Ok (Literal (Float 5e-2))
+                  , Ok (Literal (Float 0.05))
                   )
                 ]
               )
