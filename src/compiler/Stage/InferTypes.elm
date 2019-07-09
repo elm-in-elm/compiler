@@ -252,16 +252,16 @@ generateEquations ( expr, type_ ) =
                 ++ bindingEquations
 
         Typed.List list ->
-            case type_ of
-                Type.List type1 ->
-                    List.foldl
-                        (\(entry, type2) acc ->
-                            (equals type1 type2) :: acc
+            case list of
+                (_, headType) :: xs ->
+                    List.map
+                        (\(_, entryType) ->
+                            equals headType entryType
                         )
-                        []
-                        list
-                
-                _ ->
+                        xs
+                        |> Debug.log "InferType equations" 
+
+                [] ->
                     []
 
         Typed.Unit ->

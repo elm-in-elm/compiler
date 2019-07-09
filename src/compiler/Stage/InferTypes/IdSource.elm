@@ -190,11 +190,17 @@ generateMap1AndVar unusedId0 varIds0 constructor gen1 name =
 
 generateMapList : Int -> VarIds -> (List (expr, Id) -> expr) -> List (IdGenerator expr) -> Output ( expr, Id )
 generateMapList unusedId0 varIds0 constructor gens =
+    let
+        dedlbug = Debug.log "generateMapList" (unusedId0, gens)
+    in
     List.foldl
             (\gen output ->
                 output
                     |> andThen
                         (\unusedId1 varIds1 exprsAcc _ ->
+                            let
+                                ddebug = Debug.log "generateMapList 1" (unusedId1, varIds1, exprsAcc)
+                            in
                             generateWith unusedId1 varIds1 gen
                                 |> andThen
                                     (\unusedId2 varIds2 newExpr rawId2 ->
@@ -217,6 +223,9 @@ generateMapList unusedId0 varIds0 constructor gens =
             gens
         |> andThen
             (\unusedId4 varIds4 exprs rawId4 ->
+                let
+                    debussg = Debug.log "generateMapList 4" (unusedId4, varIds4, exprs)
+                in
                 Ok
                     { expr =
                         ( constructor exprs

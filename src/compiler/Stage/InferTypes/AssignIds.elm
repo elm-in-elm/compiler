@@ -9,6 +9,9 @@ import Stage.InferTypes.IdSource as Id exposing (IdGenerator)
 
 toIdGenerator : Canonical.Expr -> IdGenerator Typed.Expr_
 toIdGenerator expr =
+    let
+        debug = Debug.log "AssignId expr" (expr)
+    in
     case expr of
         {- With literals, we could plug their final type in right here
            (no solving needed!) but let's be uniform and do everything through
