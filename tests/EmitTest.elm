@@ -166,15 +166,15 @@ javascript =
             , describe "List"
                 (List.map runTest
                     [ ( "empty list"
-                      , List { list = [] }
+                      , List []
                       , "[]"
                       )
                     , ( "single item in list"
-                      , List { list = [ typed (Literal (Int 1)) ] }
+                      , List [ typed (Literal (Int 1)) ]
                       , "[1]"
                       )
                     , ( "simple list"
-                      , List { list = [ typed (Literal (Int 1)), typed (Literal (Int 2)), typed (Literal (Int 3)) ] }
+                      , List [ typed (Literal (Int 1)), typed (Literal (Int 2)), typed (Literal (Int 3)) ]
                       , "[1, 2, 3]"
                       )
                     ]

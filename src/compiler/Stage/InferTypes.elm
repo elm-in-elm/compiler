@@ -251,11 +251,18 @@ generateEquations ( expr, type_ ) =
                 :: generateEquations body
                 ++ bindingEquations
 
-        Typed.List { list } ->
-            [ List.fold (\isEqual currentType ->
-                equals type_ currentType
-              ) True list
-            ]
+        Typed.List list ->
+            case type_ of
+                Type.List type1 ->
+                    List.foldl
+                        (\(entry, type2) acc ->
+                            (equals type1 type2) :: acc
+                        )
+                        []
+                        list
+                
+                _ ->
+                    []
 
         Typed.Unit ->
             -- unit is unit
@@ -310,6 +317,9 @@ getType substitutionMap type_ =
                 Type.Function
                     (getType substitutionMap arg)
                     (getType substitutionMap result)
+
+            Type.List list ->
+                list
 
             Type.Unit ->
                 type_

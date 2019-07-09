@@ -4,6 +4,7 @@ module Stage.InferTypes.IdSource exposing
     , generate
     , map1AndMultiple
     , map1AndVar
+    , mapList
     , map2
     , map3
     , rememberVar
@@ -32,6 +33,7 @@ type IdGenerator expr
     = Constant expr
     | Map1AndMultiple (List ( expr, Id ) -> ( expr, Id ) -> expr) (List (IdGenerator expr)) (IdGenerator expr)
     | Map1AndVar (( expr, Id ) -> Int -> expr) (IdGenerator expr) VarName
+    | MapList (List ( expr, Id ) -> expr) (List (IdGenerator expr))
     | Map2 (( expr, Id ) -> ( expr, Id ) -> expr) (IdGenerator expr) (IdGenerator expr)
     | Map3 (( expr, Id ) -> ( expr, Id ) -> ( expr, Id ) -> expr) (IdGenerator expr) (IdGenerator expr) (IdGenerator expr)
     | RememberVar VarName (IdGenerator expr)
@@ -86,6 +88,9 @@ generateWith unusedId varIds gen =
 
             Map1AndVar constructor gen1 name ->
                 generateMap1AndVar unusedId varIds constructor gen1 name
+
+            MapList constructor gens ->
+                generateMapList unusedId varIds constructor gens
 
             Map2 constructor gen1 gen2 ->
                 generateMap2 unusedId varIds constructor gen1 gen2
@@ -183,6 +188,48 @@ generateMap1AndVar unusedId0 varIds0 constructor gen1 name =
             )
 
 
+generateMapList : Int -> VarIds -> (List (expr, Id) -> expr) -> List (IdGenerator expr) -> Output ( expr, Id )
+generateMapList unusedId0 varIds0 constructor gens =
+    List.foldl
+            (\gen output ->
+                output
+                    |> andThen
+                        (\unusedId1 varIds1 exprsAcc _ ->
+                            generateWith unusedId1 varIds1 gen
+                                |> andThen
+                                    (\unusedId2 varIds2 newExpr rawId2 ->
+                                        Ok
+                                            { unusedId = unusedId2
+                                            , varIds = varIds2
+                                            , expr = newExpr :: exprsAcc
+                                            , exprRawId = rawId2
+                                            }
+                                    )
+                        )
+            )
+            (Ok
+                { unusedId = unusedId0
+                , varIds = varIds0
+                , expr = []
+                , exprRawId = unusedId0
+                }
+            )
+            gens
+        |> andThen
+            (\unusedId4 varIds4 exprs rawId4 ->
+                Ok
+                    { expr =
+                        ( constructor exprs
+                        , toId unusedId4
+                        )
+                    , exprRawId = rawId4
+                    , unusedId = unusedId4
+                    , varIds = varIds4
+                    }
+            )
+
+
+
 generateMap2 : Int -> VarIds -> (( expr, Id ) -> ( expr, Id ) -> expr) -> IdGenerator expr -> IdGenerator expr -> Output ( expr, Id )
 generateMap2 unusedId0 varIds0 constructor gen1 gen2 =
     -- TODO make the callback hell nicer?
@@ -272,6 +319,11 @@ map1AndVar =
 map1AndMultiple : (List ( expr, Id ) -> ( expr, Id ) -> expr) -> List (IdGenerator expr) -> IdGenerator expr -> IdGenerator expr
 map1AndMultiple =
     Map1AndMultiple
+
+
+mapList : (List (expr, Id) -> expr) -> List (IdGenerator expr) -> IdGenerator expr
+mapList =
+    MapList
 
 
 map2 : (( expr, Id ) -> ( expr, Id ) -> expr) -> IdGenerator expr -> IdGenerator expr -> IdGenerator expr

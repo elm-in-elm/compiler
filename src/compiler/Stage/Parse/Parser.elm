@@ -665,11 +665,7 @@ unit _ =
 
 list : ExprConfig -> Parser_ Frontend.Expr
 list config =
-    P.succeed
-        (\list_ ->
-            Frontend.List
-                { list = list_ }
-        )
+    P.succeed Frontend.List
         |= P.sequence
             { start = P.Token "[" ExpectingLeftBracket
             , separator = P.Token "," ExpectingListSeparator

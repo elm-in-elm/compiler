@@ -767,27 +767,27 @@ expr =
             , ( "list"
               , [ ( "empty list"
                   , "[]"
-                  , Ok (AST.Frontend.List { list = [] })
+                  , Ok (AST.Frontend.List [])
                   )
                 , ( "empty list with inner spaces"
                   , "[  ]"
-                  , Ok (AST.Frontend.List { list = [] })
+                  , Ok (AST.Frontend.List [])
                   )
                 , ( "single item in list"
                   , "[1]"
-                  , Ok (AST.Frontend.List { list = [ Literal (Int 1) ] })
+                  , Ok (AST.Frontend.List [ Literal (Int 1) ])
                   )
                 , ( "single item in list with inner spaces"
                   , "[ 1 ]"
-                  , Ok (AST.Frontend.List { list = [ Literal (Int 1) ] })
+                  , Ok (AST.Frontend.List [ Literal (Int 1) ])
                   )
                 , ( "simple list"
                   , "[1,2,3]"
-                  , Ok (AST.Frontend.List { list = [ Literal (Int 1),  Literal (Int 2), Literal (Int 3)] })
+                  , Ok (AST.Frontend.List [ Literal (Int 1),  Literal (Int 2), Literal (Int 3)])
                   )
                 , ( "simple list with inner spaces"
                   , "[ 1,  2  , 3 ]"
-                  , Ok (AST.Frontend.List { list = [ Literal (Int 1),  Literal (Int 2), Literal (Int 3)] })
+                  , Ok (AST.Frontend.List [ Literal (Int 1),  Literal (Int 2), Literal (Int 3)])
                   )
                 ]
               )

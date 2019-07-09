@@ -85,5 +85,12 @@ toIdGenerator expr =
                 (List.map (Tuple.second >> .body >> toIdGenerator) bindingsList)
                 (toIdGenerator body)
 
+        Canonical.List list ->
+            Id.mapList
+                Typed.List
+                (List.map toIdGenerator list)
+
+
         Canonical.Unit ->
             Id.constant Typed.Unit
+

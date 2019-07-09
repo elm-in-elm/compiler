@@ -16,7 +16,7 @@ type Type
     | Char
     | String
     | Bool
-    | List (List Type)
+    | List Type
     | Unit
 
 
@@ -54,10 +54,8 @@ toString type_ =
         Bool ->
             "Bool"
 
-        List list ->
-            "[ "
-            ++ (List.map toString list |> String.join ", ")
-            ++ " ]"
+        List t1 ->
+            "List " ++ toString t1
 
         Unit ->
             "()"

@@ -121,6 +121,7 @@ type TypeError
     = UnknownName VarName
     | TypeMismatch Type Type
     | OccursCheckFailed Int Type
+    | ListTypeMismatch Int Type Type
 
 
 type PrepareForBackendError
@@ -202,11 +203,25 @@ toString error =
                         ++ " occurs in "
                         ++ Type.toString type_
 
+                ListTypeMismatch position t1 t2 ->
+                    "The " ++ ordinal position ++ " element of this list does not match all the previous elements:"
+                        ++ Type.toString t1
+                        ++ " and "
+                        ++ Type.toString t2
+
         PrepareForBackendError prepareForBackendError ->
             case prepareForBackendError of
                 MainDeclarationNotFound ->
                     "Couldn't find the value `main` in the main module given to the compiler!"
 
+
+ordinal : Int -> String
+ordinal position =
+    case position of
+        1 -> "1st"
+        2 -> "2nd"
+        3 -> "3rd"
+        _ -> String.fromInt position ++ "th"
 
 fullVarName : Maybe ModuleName -> VarName -> String
 fullVarName maybeModuleAlias (VarName varName) =
