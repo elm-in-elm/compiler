@@ -183,7 +183,7 @@ Make sure to format code before submitting a pull request!
 #### Type inference
 
 - [ ] Try the [Complete and Easy Bidirectional Typechecking for Higher-Rank Polymorphism](https://arxiv.org/abs/1306.6032) and see where that leads
-- [ ] Let polymorphism :no_mouth:: `Stage.InferTypes.generateEquations`, the `Typed.Let` case.
+- [ ] Let polymorphism :no_mouth:: `Stage.InferTypes.generateEquations`, the `Typed.Let` case. [This paper](http://gallium.inria.fr/~fpottier/publis/fpottier-elaboration.pdf) might have a parable written well enough that we might actually understand type schemes from this. Otherwise, ["Write you a Haskell"](http://dev.stephendiehl.com/fun/006_hindley_milner.html) for the rescue!
 - [ ] Typecheck across modules, not each module separately. This will probably be clearer after we try and implement the library.
 - [ ] Annotate type errors with position in source code (for better error messages)
 - [ ] Try to find a better name for "occurs check" and make the error message easier to understand
