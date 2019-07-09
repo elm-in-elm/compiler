@@ -121,7 +121,6 @@ type TypeError
     = UnknownName VarName
     | TypeMismatch Type Type
     | OccursCheckFailed Int Type
-    | ListTypeMismatch Int Type Type
 
 
 type PrepareForBackendError
@@ -202,12 +201,6 @@ toString error =
                         ++ Type.toString (Type.Var varId)
                         ++ " occurs in "
                         ++ Type.toString type_
-
-                ListTypeMismatch position t1 t2 ->
-                    "The " ++ ordinal position ++ " element of this list does not match all the previous elements:"
-                        ++ Type.toString t1
-                        ++ " and "
-                        ++ Type.toString t2
 
         PrepareForBackendError prepareForBackendError ->
             case prepareForBackendError of

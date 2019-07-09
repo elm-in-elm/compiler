@@ -177,6 +177,10 @@ javascript =
                       , List [ typed (Literal (Int 1)), typed (Literal (Int 2)), typed (Literal (Int 3)) ]
                       , "[1, 2, 3]"
                       )
+                    , ( "simple list2"
+                      , List [ typed (Literal (String "one")), typed (Literal (Int 2)), typed (Literal (Int 3)) ]
+                      , "[\"one\", 2, 3]"
+                      )
                     ]
                 )
             , runTest
