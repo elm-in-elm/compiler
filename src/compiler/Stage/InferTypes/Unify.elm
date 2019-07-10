@@ -19,7 +19,7 @@ unifyAllEquations equations =
             Result.andThen (unify t1 t2) substitutionMap
         )
         (Ok SubstitutionMap.empty)
-        (Debug.log "DEBUG:EQUATIONS" equations)
+        equations
 
 
 unify : Type -> Type -> SubstitutionMap -> Result TypeError SubstitutionMap

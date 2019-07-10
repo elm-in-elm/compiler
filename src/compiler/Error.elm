@@ -77,7 +77,6 @@ type ParseProblem
     | ExpectingQualifiedVarNameDot -- `x = Foo>.<y`
     | ExpectingEqualsSign -- `x >=< 1`
     | ExpectingMinusSign -- `>-<42`
-    | ExpectingInt
     | ExpectingNumber
     | ExpectingSingleQuote
     | ExpectingChar

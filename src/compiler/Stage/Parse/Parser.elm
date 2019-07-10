@@ -399,7 +399,7 @@ literalNumber =
                     , binary = Err InvalidNumber -- Elm does not support binary notation
                     , float = Ok Float
                     , invalid = InvalidNumber
-                    , expecting = ExpectingNumber 
+                    , expecting = ExpectingNumber
                     }
 
         negateLiteral toBeNegated =
@@ -412,7 +412,6 @@ literalNumber =
 
                 _ ->
                     toBeNegated
-
     in
     P.oneOf
         [ P.succeed negateLiteral
@@ -420,13 +419,12 @@ literalNumber =
             |= parseLiteralNumber
         , parseLiteralNumber
         ]
-    |> P.inContext InLiteralNumber
+        |> P.inContext InLiteralNumber
 
 
-
--- for literalChar and, in the future, literalString
-
-
+{-| for literalChar and, in the future, literalString
+-}
+character : Parser_ Char
 character =
     P.oneOf
         [ P.succeed identity
