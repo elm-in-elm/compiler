@@ -32,6 +32,14 @@ typeInference =
                   , Canonical.List [ Canonical.Literal (Int 1),  Canonical.Literal (String "two") ]
                   , Err (Error.TypeMismatch (Type.Int) (Type.String))
                   )
+                --, ( "more items types"
+                --  , Ok (Canonical.List [(Canonical.Literal (Int 2),Var 0),(Canonical.Literal (Int 1),Var 1)],Var 2)
+                --  , Err (Error.TypeMismatch (Type.Int) (Type.Int))
+                --  )
+                --, ( "same types"
+                --  , Ok (Canonical.List [(Canonical.Literal (Int 2),Var 0),(Canonical.Literal (Int 1),Var 1)],Var 2)
+                --  , Ok (Canonical.List [(Canonical.Literal (Int 2),Var 0),(Canonical.Literal (Int 1),Var 1)],Var 2)
+                --  )
                 ]
               )
             ]
@@ -48,17 +56,8 @@ expectEqualInferType expected actual =
     else
         case actual of
             Err typeError ->
-                Expect.fail <|
-                    case typeError of
-                        Error.TypeMismatch t1 t2 ->
-                            "The types "
-                                ++ Type.toString t1
-                                ++ " and "
-                                ++ Type.toString t2
-                                ++ " don't match."
-                        _ ->
-                            "wft"
+                Expect.fail (Error.toString (Error.TypeError typeError))
             _ ->
-                actual |> Expect.equal expected
+                Expect.equal expected actual
 
 

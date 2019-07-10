@@ -1,6 +1,7 @@
 module Stage.InferTypes.AssignIds exposing (toIdGenerator)
 
 import AST.Canonical as Canonical
+import AST.Common.Type as Type exposing (Type)
 import AST.Typed as Typed
 import Common
 import Dict.Any
@@ -9,9 +10,6 @@ import Stage.InferTypes.IdSource as Id exposing (IdGenerator)
 
 toIdGenerator : Canonical.Expr -> IdGenerator Typed.Expr_
 toIdGenerator expr =
-    let
-        debug = Debug.log "AssignId expr" (expr)
-    in
     case expr of
         {- With literals, we could plug their final type in right here
            (no solving needed!) but let's be uniform and do everything through
@@ -89,6 +87,18 @@ toIdGenerator expr =
                 (toIdGenerator body)
 
         Canonical.List list ->
+            --case list of
+            --    hd :: xs ->
+            --        Id.map1AndMultiple
+            --            (\(exprs, inferedType) -> 
+            --                (Typed.List exprs, Type.List inferedType)
+            --            )
+            --            (List.map toIdGenerator list)
+            --            (toIdGenerator hd)
+
+            --    [] ->
+            --        Id.constant (Typed.List [])
+
             Id.mapList
                 Typed.List
                 (List.map toIdGenerator list)

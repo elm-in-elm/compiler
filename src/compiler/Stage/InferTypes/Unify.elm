@@ -19,14 +19,11 @@ unifyAllEquations equations =
             Result.andThen (unify t1 t2) substitutionMap
         )
         (Ok SubstitutionMap.empty)
-        equations
+        (Debug.log "DEBUG:EQUATIONS" equations)
 
 
 unify : Type -> Type -> SubstitutionMap -> Result TypeError SubstitutionMap
 unify t1 t2 substitutionMap =
-    let
-        debug = Debug.log "Unify" (t1, t2, substitutionMap)
-    in
     if t1 == t2 then
         Ok substitutionMap
 
@@ -48,14 +45,8 @@ unify t1 t2 substitutionMap =
 
 unifyVariable : Int -> Type -> SubstitutionMap -> Result TypeError SubstitutionMap
 unifyVariable id type_ substitutionMap =
-    let
-        debug = Debug.log "unifyVariable" (id, type_, substitutionMap)
-    in
     case SubstitutionMap.get id substitutionMap of
         Just typeForId ->
-            let
-                debudssg = Debug.log "unifyVariable 2" (typeForId)
-            in
             unify typeForId type_ substitutionMap
 
         Nothing ->
@@ -65,9 +56,6 @@ unifyVariable id type_ substitutionMap =
                     |> Maybe.map (\typeForId2 -> unify (Type.Var id) typeForId2 substitutionMap)
             of
                 Just newSubstitutionMap ->
-                    let
-                        debuddsdssg = Debug.log "unifyVariable 3" (newSubstitutionMap)
-                    in
                     newSubstitutionMap
 
                 Nothing ->
@@ -75,18 +63,11 @@ unifyVariable id type_ substitutionMap =
                         Err (OccursCheckFailed id type_)
 
                     else
-                        let
-                            debsdssg = Debug.log "unifyVariable 4" (id)
-                        in
-
                         Ok (SubstitutionMap.insert id type_ substitutionMap)
 
 
 occurs : Int -> Type -> SubstitutionMap -> Bool
 occurs id type_ substitutionMap =
-    let
-        debug = Debug.log "Occurs" (id, type_, substitutionMap)
-    in
     if type_ == Type.Var id then
         True
 

@@ -252,16 +252,18 @@ generateEquations ( expr, type_ ) =
                 ++ bindingEquations
 
         Typed.List list ->
-            case list of
-                (_, headType) :: xs ->
-                    List.map
+            case (type_, list) of
+                (Type.List listType, (_, headType) :: xs) ->
+                    -- Compare list's type to head's type
+                    equals listType headType
+                    -- Compare items' type with head's type
+                    :: List.map
                         (\(_, entryType) ->
-                            equals headType entryType
+                            equals entryType headType
                         )
                         xs
-                        |> Debug.log "InferType equations" 
 
-                [] ->
+                _ ->
                     []
 
         Typed.Unit ->

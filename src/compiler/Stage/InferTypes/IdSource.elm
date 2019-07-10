@@ -18,6 +18,7 @@ and use a `Generator`-like API.
 -}
 
 import AST.Common.Type as Type exposing (Type)
+import AST.Typed as Typed
 import Common
 import Common.Types exposing (VarName)
 import Dict.Any exposing (AnyDict)
@@ -190,52 +191,59 @@ generateMap1AndVar unusedId0 varIds0 constructor gen1 name =
 
 generateMapList : Int -> VarIds -> (List (expr, Id) -> expr) -> List (IdGenerator expr) -> Output ( expr, Id )
 generateMapList unusedId0 varIds0 constructor gens =
-    let
-        dedlbug = Debug.log "generateMapList" (unusedId0, gens)
-    in
-    List.foldl
-            (\gen output ->
-                output
-                    |> andThen
-                        (\unusedId1 varIds1 exprsAcc _ ->
-                            let
-                                ddebug = Debug.log "generateMapList 1" (unusedId1, varIds1, exprsAcc)
-                            in
-                            generateWith unusedId1 varIds1 gen
-                                |> andThen
-                                    (\unusedId2 varIds2 newExpr rawId2 ->
-                                        Ok
-                                            { unusedId = unusedId2
-                                            , varIds = varIds2
-                                            , expr = newExpr :: exprsAcc
-                                            , exprRawId = rawId2
-                                            }
-                                    )
-                        )
-            )
-            (Ok
-                { unusedId = unusedId0
-                , varIds = varIds0
-                , expr = []
+    case gens of
+        [] ->
+            Ok
+                { expr =
+                    ( constructor []
+                    , Type.List (toId unusedId0)
+                    )
                 , exprRawId = unusedId0
+                , unusedId = unusedId0
+                , varIds = varIds0
                 }
-            )
-            gens
-        |> andThen
-            (\unusedId4 varIds4 exprs rawId4 ->
-                let
-                    debussg = Debug.log "generateMapList 4" (unusedId4, varIds4, exprs)
-                in
-                Ok
-                    { expr =
-                        ( constructor exprs
-                        , toId unusedId4
-                        )
-                    , exprRawId = rawId4
-                    , unusedId = unusedId4
-                    , varIds = varIds4
-                    }
-            )
+
+        hd :: xs ->
+            generateWith unusedId0 varIds0 hd
+                |> andThen
+                    (\unusedIdHead varIdsHead _ _ ->
+                        List.foldr
+                            (\gen output ->
+                                output
+                                    |> andThen
+                                        (\unusedId1 varIds1 exprsAcc _ ->
+                                            generateWith unusedId1 varIds1 gen
+                                                |> andThen
+                                                    (\unusedId2 varIds2 newExpr rawId2 ->
+                                                        Ok
+                                                            { unusedId = unusedId2
+                                                            , varIds = varIds2
+                                                            , expr = newExpr :: exprsAcc
+                                                            , exprRawId = rawId2
+                                                            }
+                                                    )
+                                        )
+                            )
+                            (Ok
+                                { unusedId = unusedId0
+                                , varIds = varIds0
+                                , expr = []
+                                , exprRawId = unusedId0
+                                })
+                            gens
+                            |> andThen
+                                (\unusedId4 varIds4 exprs rawId4 ->
+                                    Ok
+                                        { expr =
+                                            ( constructor exprs
+                                            , Type.List (toId unusedIdHead)
+                                            )
+                                        , exprRawId = rawId4
+                                        , unusedId = unusedId4
+                                        , varIds = varIds4
+                                        }
+                                )
+                    )
 
 
 
