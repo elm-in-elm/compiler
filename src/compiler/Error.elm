@@ -210,10 +210,18 @@ toString error =
 ordinal : Int -> String
 ordinal position =
     case position of
-        1 -> "1st"
-        2 -> "2nd"
-        3 -> "3rd"
-        _ -> String.fromInt position ++ "th"
+        1 ->
+            "1st"
+
+        2 ->
+            "2nd"
+
+        3 ->
+            "3rd"
+
+        _ ->
+            String.fromInt position ++ "th"
+
 
 fullVarName : Maybe ModuleName -> VarName -> String
 fullVarName maybeModuleAlias (VarName varName) =

@@ -783,11 +783,11 @@ expr =
                   )
                 , ( "simple list"
                   , "[1,2,3]"
-                  , Ok (AST.Frontend.List [ Literal (Int 1),  Literal (Int 2), Literal (Int 3)])
+                  , Ok (AST.Frontend.List [ Literal (Int 1), Literal (Int 2), Literal (Int 3) ])
                   )
                 , ( "simple list with inner spaces"
                   , "[ 1,  2  , 3 ]"
-                  , Ok (AST.Frontend.List [ Literal (Int 1),  Literal (Int 2), Literal (Int 3)])
+                  , Ok (AST.Frontend.List [ Literal (Int 1), Literal (Int 2), Literal (Int 3) ])
                   )
                 ]
               )

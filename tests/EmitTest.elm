@@ -45,6 +45,7 @@ javascript =
                     , ( "negative int", Literal (Int -998), "-998" )
                     ]
                 )
+
             -- See https://ellie-app.com/62Ydd5JYgxca1
             , describe "Float"
                 (List.map runTest

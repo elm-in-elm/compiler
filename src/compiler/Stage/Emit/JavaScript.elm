@@ -68,8 +68,8 @@ emitExpr ( expr, _ ) =
 
         List list ->
             "["
-            ++ (List.map emitExpr list |> String.join ", ")
-            ++ "]"
+                ++ (List.map emitExpr list |> String.join ", ")
+                ++ "]"
 
         Unit ->
             """{type: "unit"}"""

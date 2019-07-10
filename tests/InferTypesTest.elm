@@ -1,8 +1,8 @@
 module InferTypesTest exposing (typeInference)
 
+import AST.Canonical as Canonical
 import AST.Common.Literal exposing (Literal(..))
 import AST.Common.Type as Type exposing (Type)
-import AST.Canonical as Canonical
 import AST.Typed as Typed
 import Common
 import Dict.Any
@@ -29,9 +29,10 @@ typeInference =
         (List.map runSection
             [ ( "list"
               , [ ( "different types"
-                  , Canonical.List [ Canonical.Literal (Int 1),  Canonical.Literal (String "two") ]
-                  , Err (Error.TypeMismatch (Type.Int) (Type.String))
+                  , Canonical.List [ Canonical.Literal (Int 1), Canonical.Literal (String "two") ]
+                  , Err (Error.TypeMismatch Type.Int Type.String)
                   )
+
                 --, ( "more items types"
                 --  , Ok (Canonical.List [(Canonical.Literal (Int 2),Var 0),(Canonical.Literal (Int 1),Var 1)],Var 2)
                 --  , Err (Error.TypeMismatch (Type.Int) (Type.Int))
@@ -53,11 +54,11 @@ expectEqualInferType :
 expectEqualInferType expected actual =
     if actual == expected then
         Expect.pass
+
     else
         case actual of
             Err typeError ->
                 Expect.fail (Error.toString (Error.TypeError typeError))
+
             _ ->
                 Expect.equal expected actual
-
-
