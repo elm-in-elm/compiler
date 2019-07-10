@@ -58,7 +58,6 @@ assignIdsWith idSource expr =
     let
         wrap : IdSource -> Typed.Expr_ -> ( Typed.Expr, IdSource )
         wrap idSource_ expr_ =
-            -- TODO generalize what is in the lambda here into some function usable with IdSource.list too?
             IdSource.one idSource_ (\id -> ( expr_, Type.Var id ))
     in
     case expr of
