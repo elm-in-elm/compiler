@@ -40,10 +40,9 @@ Output:
 -}
 
 import AST.Canonical as Canonical
-import AST.Common.Type as Type exposing (Type)
+import AST.Common.Type as Type
 import AST.Typed as Typed
 import Common
-import Common.Types exposing (Binding)
 import Dict.Any
 import Stage.InferTypes.IdSource as IdSource exposing (IdSource)
 
@@ -142,7 +141,7 @@ assignIdsWith idSource expr =
 
                 ( bindingBodiesList, idSource2 ) =
                     List.foldl
-                        (\( name, binding ) ( acc, currentIdSource ) ->
+                        (\( _, binding ) ( acc, currentIdSource ) ->
                             let
                                 ( body__, nextIdSource ) =
                                     assignIdsWith currentIdSource binding.body

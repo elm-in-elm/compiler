@@ -112,8 +112,7 @@ type DesugarError
 
 
 type TypeError
-    = UnknownName VarName
-    | TypeMismatch Type Type
+    = TypeMismatch Type Type
     | OccursCheckFailed Int Type
 
 
@@ -179,10 +178,6 @@ toString error =
 
         TypeError typeError ->
             case typeError of
-                UnknownName (VarName varName) ->
-                    "I've encountered a variable name I haven't seen before while typechecking your program: "
-                        ++ varName
-
                 TypeMismatch t1 t2 ->
                     "The types "
                         ++ Type.toString t1
