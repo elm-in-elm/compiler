@@ -2,8 +2,10 @@ module AST.Typed exposing
     ( Expr
     , Expr_(..)
     , ProjectFields
+    , isArgument
     , lambda
     , let_
+    , recursiveChildren
     , transformAll
     , transformOnce
     )
@@ -29,8 +31,6 @@ type alias ProjectFields =
 {-| Differs from Canonical.Expr by:
 
   - being a tuple of the underlying Expr\_ type and its type
-  - Lambda taking `argumentId` to help with typechecking
-    (TODO describe what it is and what it means)
 
 TODO make this opaque, add accessors etc.
 
@@ -46,7 +46,6 @@ type Expr_
     | Plus Expr Expr
     | Lambda
         { argument : VarName
-        , argumentId : Int
         , body : Expr
         }
     | Call { fn : Expr, argument : Expr }
@@ -55,11 +54,10 @@ type Expr_
     | Unit
 
 
-lambda : VarName -> Expr -> Int -> Expr_
-lambda argument body argumentId =
+lambda : VarName -> Expr -> Expr_
+lambda argument body =
     Lambda
         { argument = argument
-        , argumentId = argumentId
         , body = body
         }
 
@@ -131,3 +129,49 @@ transformAll passes expr =
         recurse
         (Transform.orList passes)
         expr
+
+
+isArgument : VarName -> Expr -> Bool
+isArgument name ( expr_, _ ) =
+    case expr_ of
+        Argument argName ->
+            argName == name
+
+        _ ->
+            False
+
+
+recursiveChildren : (Expr -> List Expr) -> Expr -> List Expr
+recursiveChildren fn ( expr, _ ) =
+    case expr of
+        Literal _ ->
+            []
+
+        Var _ ->
+            []
+
+        Argument _ ->
+            []
+
+        Plus left right ->
+            fn left
+                ++ fn right
+
+        Lambda { body } ->
+            fn body
+
+        Call data ->
+            fn data.fn
+                ++ fn data.argument
+
+        If { test, then_, else_ } ->
+            fn test
+                ++ fn then_
+                ++ fn else_
+
+        Let { bindings, body } ->
+            fn body
+                ++ List.concatMap (.body >> fn) (Dict.Any.values bindings)
+
+        Unit ->
+            []

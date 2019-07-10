@@ -1,63 +1,131 @@
-module Stage.InferTypes.AssignIds exposing (toIdGenerator)
+module Stage.InferTypes.AssignIds exposing (assignIds)
+
+{-| Stage 1
+
+Gives every subexpression an unique auto-incremented ID and converts
+from Canonical.Expr to Typed.Expr.
+
+Example:
+
+Input (forgive the nonsense AST):
+
+    Canonical.If
+        { test =
+            Canonical.Plus
+                (Canonical.Literal (Int 1))
+                (Canonical.Literal (Int 2))
+        , then_ = Canonical.Unit
+        , else_ = Canonical.Literal (Bool True)
+        }
+
+Output:
+
+    ( Typed.If
+        { test =
+            ( Typed.Plus
+                ( Typed.Literal (Int 1)
+                , Var 0
+                )
+                ( Typed.Literal (Int 2)
+                , Var 1
+                )
+            , Var 2
+            )
+        , then_ = ( Typed.Unit, Var 3 )
+        , else_ = ( Typed.Literal (Bool True), Var 4 )
+        }
+    , Var 5
+    )
+
+-}
 
 import AST.Canonical as Canonical
+import AST.Common.Type as Type exposing (Type)
 import AST.Typed as Typed
 import Common
+import Common.Types exposing (Binding)
 import Dict.Any
-import Stage.InferTypes.IdSource as Id exposing (IdGenerator)
+import Stage.InferTypes.IdSource as IdSource exposing (IdSource)
 
 
-toIdGenerator : Canonical.Expr -> IdGenerator Typed.Expr_
-toIdGenerator expr =
+assignIds : Canonical.Expr -> ( Typed.Expr, IdSource )
+assignIds expr =
+    assignIdsWith IdSource.empty expr
+
+
+assignIdsWith : IdSource -> Canonical.Expr -> ( Typed.Expr, IdSource )
+assignIdsWith idSource expr =
+    let
+        wrap : IdSource -> Typed.Expr_ -> ( Typed.Expr, IdSource )
+        wrap idSource_ expr_ =
+            -- TODO generalize what is in the lambda here into some function usable with IdSource.list too?
+            IdSource.one idSource_ (\id -> ( expr_, Type.Var id ))
+    in
     case expr of
         {- With literals, we could plug their final type in right here
            (no solving needed!) but let's be uniform and do everything through
            the constraint solver in stages 2 and 3.
         -}
         Canonical.Literal literal ->
-            Id.constant (Typed.Literal literal)
+            wrap idSource (Typed.Literal literal)
 
         -- We remember argument's IDs so that we can later use them in Lambda
         Canonical.Argument name ->
-            Id.constant (Typed.Argument name)
-                |> Id.rememberVar name
+            wrap idSource (Typed.Argument name)
 
         Canonical.Var name ->
-            Id.constant (Typed.Var name)
+            wrap idSource (Typed.Var name)
 
         Canonical.Plus e1 e2 ->
-            Id.map2 Typed.Plus
-                (toIdGenerator e1)
-                (toIdGenerator e2)
+            let
+                ( e1_, idSource1 ) =
+                    assignIdsWith idSource e1
+
+                ( e2_, idSource2 ) =
+                    assignIdsWith idSource1 e2
+            in
+            wrap idSource2 (Typed.Plus e1_ e2_)
 
         Canonical.Lambda { argument, body } ->
-            Id.map1AndVar (Typed.lambda argument)
-                (toIdGenerator body)
-                argument
+            let
+                ( body_, idSource1 ) =
+                    assignIdsWith idSource body
+            in
+            wrap idSource1 (Typed.lambda argument body_)
 
         Canonical.Call { fn, argument } ->
-            Id.map2
-                (\fn_ argument_ ->
-                    Typed.Call
-                        { fn = fn_
-                        , argument = argument_
-                        }
+            let
+                ( fn_, idSource1 ) =
+                    assignIdsWith idSource fn
+
+                ( argument_, idSource2 ) =
+                    assignIdsWith idSource1 argument
+            in
+            wrap idSource2
+                (Typed.Call
+                    { fn = fn_
+                    , argument = argument_
+                    }
                 )
-                (toIdGenerator fn)
-                (toIdGenerator argument)
 
         Canonical.If { test, then_, else_ } ->
-            Id.map3
-                (\test_ then__ else__ ->
-                    Typed.If
-                        { test = test_
-                        , then_ = then__
-                        , else_ = else__
-                        }
+            let
+                ( test_, idSource1 ) =
+                    assignIdsWith idSource test
+
+                ( then__, idSource2 ) =
+                    assignIdsWith idSource1 then_
+
+                ( else__, idSource3 ) =
+                    assignIdsWith idSource2 else_
+            in
+            wrap idSource3
+                (Typed.If
+                    { test = test_
+                    , then_ = then__
+                    , else_ = else__
+                    }
                 )
-                (toIdGenerator test)
-                (toIdGenerator then_)
-                (toIdGenerator else_)
 
         Canonical.Let { bindings, body } ->
             {- We don't thread the full (VarName, Binding) thing to IdSource
@@ -69,21 +137,36 @@ toIdGenerator expr =
             let
                 bindingsList =
                     Dict.Any.toList bindings
-            in
-            Id.map1AndMultiple
-                (\bindingsList_ body_ ->
-                    Typed.let_
-                        (Dict.Any.fromList
-                            Common.varNameToString
-                            (List.map2 (\( name, _ ) body__ -> ( name, { name = name, body = body__ } ))
-                                bindingsList
-                                bindingsList_
+
+                ( body_, idSource1 ) =
+                    assignIdsWith idSource body
+
+                ( bindingBodiesList, idSource2 ) =
+                    List.foldl
+                        (\( name, binding ) ( acc, currentIdSource ) ->
+                            let
+                                ( body__, nextIdSource ) =
+                                    assignIdsWith currentIdSource binding.body
+                            in
+                            ( body__ :: acc
+                            , nextIdSource
                             )
                         )
-                        body_
+                        ( [], idSource1 )
+                        bindingsList
+            in
+            wrap idSource2
+                (Typed.let_
+                    (Dict.Any.fromList
+                        Common.varNameToString
+                        (List.map2
+                            (\( name, _ ) body__ -> ( name, { name = name, body = body__ } ))
+                            bindingsList
+                            bindingBodiesList
+                        )
+                    )
+                    body_
                 )
-                (List.map (Tuple.second >> .body >> toIdGenerator) bindingsList)
-                (toIdGenerator body)
 
         Canonical.Unit ->
-            Id.constant Typed.Unit
+            wrap idSource Typed.Unit
