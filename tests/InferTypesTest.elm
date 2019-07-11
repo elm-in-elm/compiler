@@ -8,8 +8,9 @@ import Common
 import Dict.Any
 import Error exposing (TypeError)
 import Expect exposing (Expectation)
+import Fuzz exposing (Fuzzer)
 import Stage.InferTypes
-import Test exposing (Test, describe, test)
+import Test exposing (Test, describe, fuzz, test)
 
 
 typeInference : Test
@@ -37,6 +38,9 @@ typeInference =
               , Err (Error.TypeMismatch Type.Bool Type.String)
               )
             ]
+        , describe "fuzz exprInfer"
+            [-- TODO: Fill this with calls to fuzzExpr
+            ]
         ]
 
 
@@ -52,3 +56,17 @@ runTest ( description, input, output ) =
         \() ->
             Stage.InferTypes.inferExpr input
                 |> Expect.equal output
+
+
+fuzzExpr : ( String, Type ) -> Test
+fuzzExpr ( description, typeWanted ) =
+    fuzz (randomExprFromType typeWanted) description <|
+        \input ->
+            Stage.InferTypes.inferExpr input
+                |> Result.map Tuple.second
+                |> Expect.equal (Ok typeWanted)
+
+
+randomExprFromType : Type -> Fuzzer Canonical.Expr
+randomExprFromType _ =
+    Debug.todo "randomExprFromType"
