@@ -31,10 +31,11 @@ getVarId type_ =
         _ ->
             Nothing
 
+
 toString : Type -> String
 toString type_ =
     getTypeVariablesIndex type_
-    |> toStringHelp type_
+        |> toStringHelp type_
 
 
 toStringHelp : Type -> Dict Int String -> String
@@ -42,7 +43,7 @@ toStringHelp type_ dict =
     case type_ of
         Var int ->
             Dict.get int dict
-            |> Maybe.withDefault ("t" ++ String.fromInt int)
+                |> Maybe.withDefault ("t" ++ String.fromInt int)
 
         Function t1 t2 ->
             wrapParens t1 dict ++ " -> " ++ toStringHelp t2 dict
@@ -71,51 +72,57 @@ toStringHelp type_ dict =
 
 getTypeVariablesIndex : Type -> Dict Int String
 getTypeVariablesIndex type_ =
-    getTypeVariablesIndexHelp type_ (typeVariablesLetters, Dict.empty)
-    |> Tuple.second
+    ( typeVariablesLetters, Dict.empty )
+        |> getTypeVariablesIndexHelp type_
+        |> Tuple.second
 
 
-getTypeVariablesIndexHelp : Type -> (List String, Dict Int String) -> (List String, Dict Int String)
-getTypeVariablesIndexHelp type_ (freeLetters, dict) =
+getTypeVariablesIndexHelp : Type -> ( List String, Dict Int String ) -> ( List String, Dict Int String )
+getTypeVariablesIndexHelp type_ ( freeLetters, dict ) =
     case type_ of
         Var int ->
             case freeLetters of
                 [] ->
-                    ([], dict)
+                    ( [], dict )
 
                 hd :: xs ->
                     if Dict.member int dict then
-                        (freeLetters, dict)
+                        ( freeLetters, dict )
+
                     else
-                        (xs, Dict.insert int hd dict)
+                        ( xs, Dict.insert int hd dict )
 
         Function t1 t2 ->
-            getTypeVariablesIndexHelp t1 (freeLetters, dict)
-            |> getTypeVariablesIndexHelp t2
+            ( freeLetters, dict )
+                |> getTypeVariablesIndexHelp t1
+                |> getTypeVariablesIndexHelp t2
 
         List param ->
-            getTypeVariablesIndexHelp param (freeLetters, dict)
+            getTypeVariablesIndexHelp param ( freeLetters, dict )
 
         Int ->
-            (freeLetters, dict)
+            ( freeLetters, dict )
 
         Float ->
-            (freeLetters, dict)
+            ( freeLetters, dict )
 
         Char ->
-            (freeLetters, dict)
+            ( freeLetters, dict )
 
         String ->
-            (freeLetters, dict)
+            ( freeLetters, dict )
 
         Bool ->
-            (freeLetters, dict)
+            ( freeLetters, dict )
 
         Unit ->
-            (freeLetters, dict)
+            ( freeLetters, dict )
+
 
 
 -- Stops at letter `s`, so that outbound variables display `tN`
+
+
 typeVariablesLetters =
     [ "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s" ]
 
