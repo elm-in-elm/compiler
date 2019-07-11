@@ -419,13 +419,11 @@ literalNumber =
             |= parseLiteralNumber
         , parseLiteralNumber
         ]
-        |> P.inContext InLiteralNumber
+        |> P.inContext InNumber
 
 
-{-| for literalChar and, in the future, literalString
--}
-character : Parser_ Char
-character =
+character : Maybe Char -> Parser_ Char
+character stoppingDelimiter =
     P.oneOf
         [ P.succeed identity
             |. P.token (P.Token "\\" ExpectingEscapeBackslash)
@@ -438,11 +436,12 @@ character =
                 , P.succeed identity
                     |. P.token (P.Token "u" (ExpectingEscapeCharacter 'u'))
                     |. P.token (P.Token "{" ExpectingUnicodeEscapeLeftBrace)
-                    |= unicode
+                    |= unicodeCharacter
                     |. P.token (P.Token "}" ExpectingUnicodeEscapeRightBrace)
                 ]
+            |> P.inContext InCharEscapeMode
         , P.succeed identity
-            |= P.getChompedString (P.chompIf (always True) ExpectingChar)
+            |= P.getChompedString (P.chompIf (Just >> (/=) stoppingDelimiter) ExpectingChar)
             |> P.andThen
                 (\string ->
                     string
@@ -453,18 +452,8 @@ character =
         ]
 
 
-literalChar : Parser_ Literal
-literalChar =
-    (P.succeed identity
-        |. P.symbol (P.Token "'" ExpectingSingleQuote)
-        |= character
-        |. P.symbol (P.Token "'" ExpectingSingleQuote)
-    )
-        |> P.map Char
-
-
-unicode : Parser_ Char
-unicode =
+unicodeCharacter : Parser_ Char
+unicodeCharacter =
     P.getChompedString (P.chompWhile Char.isHexDigit)
         |> P.andThen
             (\str ->
@@ -483,22 +472,29 @@ unicode =
                         |> Result.map P.succeed
                         |> Result.withDefault (P.problem InvalidUnicodeCodePoint)
             )
+        |> P.inContext InUnicodeCharacter
 
 
-{-| TODO escapes
-TODO unicode escapes
-TODO triple-quoted strings with different escaping
--}
+literalChar : Parser_ Literal
+literalChar =
+    P.succeed Char
+        |. P.symbol (P.Token "'" ExpectingSingleQuote)
+        |= character Nothing
+        |. P.symbol (P.Token "'" ExpectingSingleQuote)
+        |> P.inContext InChar
+
+
 literalString : Parser_ Literal
 literalString =
     let
         doubleQuote =
             P.Token "\"" ExpectingDoubleQuote
     in
-    P.succeed String
+    P.succeed (String.fromList >> String)
         |. P.symbol doubleQuote
-        |= P.getChompedString (P.chompUntil doubleQuote)
+        |= manyWith (P.succeed ()) (character (Just '"'))
         |. P.symbol doubleQuote
+        |> P.inContext InString
 
 
 literalBool : Parser_ Literal

@@ -46,7 +46,11 @@ type ParseError
 
 type ParseContext
     = InLiteral
-    | InLiteralNumber
+    | InNumber
+    | InChar
+    | InCharEscapeMode
+    | InUnicodeCharacter
+    | InString
     | InExpr
     | InIf
     | InLet
