@@ -490,11 +490,23 @@ literalString =
     let
         doubleQuote =
             P.Token "\"" ExpectingDoubleQuote
+
+        tripleQuote =
+            P.Token "\"\"\"" ExpectingTripleQuote
     in
     P.succeed (String.fromList >> String)
-        |. P.symbol doubleQuote
-        |= manyWith (P.succeed ()) (character (Just '"'))
-        |. P.symbol doubleQuote
+        |= P.oneOf
+            [ P.succeed identity
+                |. P.symbol doubleQuote
+                |= manyWith (P.succeed ()) (character (Just '"'))
+                |. P.symbol doubleQuote
+                |> P.inContext InDoubleQuoteString
+            , P.succeed identity
+                |. P.symbol tripleQuote
+                |= manyWith (P.succeed ()) {- TODO this is wrong, start here ----> -} (character (Just '"'))
+                |. P.symbol tripleQuote
+                |> P.inContext InTripleQuoteString
+            ]
         |> P.inContext InString
 
 

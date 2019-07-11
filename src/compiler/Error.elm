@@ -51,6 +51,8 @@ type ParseContext
     | InCharEscapeMode
     | InUnicodeCharacter
     | InString
+    | InDoubleQuoteString
+    | InTripleQuoteString
     | InExpr
     | InIf
     | InLet
@@ -90,6 +92,7 @@ type ParseProblem
     | ExpectingUnicodeEscapeRightBrace
     | InvalidUnicodeCodePoint
     | ExpectingDoubleQuote
+    | ExpectingTripleQuote
     | ExpectingPlusOperator
     | ExpectingModuleDot -- `import Foo>.<Bar`
     | ExpectingBackslash -- `>\<x -> x + 1`
