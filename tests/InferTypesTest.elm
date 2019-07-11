@@ -58,10 +58,16 @@ typeInference =
 typeToString : Test
 typeToString =
     let
+        toStringOnce : Type -> String
+        toStringOnce type_ =
+            type_
+                |> Type.toString Type.emptyState
+                |> Tuple.first
+
         runTest ( description, input, output ) =
             test description <|
                 \() ->
-                    Type.dump input
+                    toStringOnce input
                         |> Expect.equal output
 
         runEqual ( description, input, output ) =
@@ -112,8 +118,8 @@ typeToString =
         , describe "edges"
             [ runEqual
                 ( "Var number doesn't count"
-                , Type.dump <| Type.List (Type.Var 0)
-                , Type.dump <| Type.List (Type.Var 1)
+                , toStringOnce <| Type.List (Type.Var 0)
+                , toStringOnce <| Type.List (Type.Var 1)
                 )
             , runEqual
                 ( "TypeMismatch types share vars index"
@@ -128,3 +134,35 @@ typeToString =
                 )
             ]
         ]
+
+
+niceVarName : Test
+niceVarName =
+    let
+        runTest ( input, output ) =
+            test output <|
+                \() ->
+                    Type.niceVarName input
+                        |> Expect.equal output
+    in
+    describe "Type.niceVarName" <|
+        List.map runTest
+            [ ( 0, "a" )
+            , ( 1, "b" )
+            , ( 2, "c" )
+            , ( 25, "z" )
+
+            --
+            , ( 26, "a1" )
+            , ( 49, "x1" )
+            , ( 50, "y1" )
+            , ( 51, "z1" )
+
+            --
+            , ( 52, "a2" )
+            , ( 77, "z2" )
+
+            --
+            , ( 259, "z9" )
+            , ( 260, "a10" )
+            ]

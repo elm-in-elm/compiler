@@ -186,10 +186,10 @@ toString error =
                     let
                         -- Share index between types
                         ( type1, state1 ) =
-                            Type.toString t1 Type.empty
+                            Type.toString Type.emptyState t1
 
                         ( type2, _ ) =
-                            Type.toString t2 state1
+                            Type.toString state1 t2
                     in
                     "The types `"
                         ++ type1
@@ -200,10 +200,10 @@ toString error =
                 OccursCheckFailed varId type_ ->
                     let
                         ( type1, state1 ) =
-                            Type.toString (Type.Var varId) Type.empty
+                            Type.toString Type.emptyState (Type.Var varId)
 
                         ( type2, _ ) =
-                            Type.toString type_ state1
+                            Type.toString state1 type_
                     in
                     "An \"occurs check\" failed while typechecking: "
                         ++ type1
