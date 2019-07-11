@@ -28,13 +28,25 @@ typeInference =
     describe "Stage.InferType"
         (List.map runSection
             [ ( "list"
-              , [ ( "different types"
+              , [ ( "empty list"
+                  , Canonical.List []
+                  , Ok ( Typed.List [], Type.Var 1 )
+                  )
+                , ( "one item"
+                  , Canonical.List [ Canonical.Literal (Bool True) ]
+                  , Ok ( Typed.List [ ( Typed.Literal (Bool True), Type.Bool ) ], Type.Var 2 )
+                  )
+                , ( "more items"
+                  , Canonical.List [ Canonical.Literal (Int 1), Canonical.Literal (Int 2) ]
+                  , Ok ( Typed.List [ ( Typed.Literal (Int 2), Type.Int ), ( Typed.Literal (Int 1), Type.Int ) ], Type.Var 3 )
+                  )
+                , ( "different types"
                   , Canonical.List [ Canonical.Literal (Int 1), Canonical.Literal (String "two") ]
                   , Err (Error.TypeMismatch Type.Int Type.String)
                   )
-                , ( "more items types"
-                  , Canonical.List [ Canonical.Literal (Int 2), Canonical.Literal (Int 3), Canonical.Literal (Bool False) ]
-                  , Err (Error.TypeMismatch Type.Int Type.Bool)
+                , ( "more items with different types"
+                  , Canonical.List [ Canonical.Literal (Bool True), Canonical.Literal (String "two"), Canonical.Literal (Int 3) ]
+                  , Err (Error.TypeMismatch Type.Bool Type.String)
                   )
                 ]
               )
