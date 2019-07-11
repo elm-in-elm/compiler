@@ -186,8 +186,8 @@ findDependencies modules ( expr, _ ) =
             bindingsDependencies
                 ++ findDependencies_ body
 
-        List list_ ->
-            List.concatMap findDependencies_ list_
+        List list ->
+            List.concatMap findDependencies_ list
 
         Unit ->
             []
