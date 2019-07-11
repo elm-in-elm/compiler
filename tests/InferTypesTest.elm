@@ -23,7 +23,7 @@ typeInference =
             test description <|
                 \() ->
                     Stage.InferTypes.inferExpr input
-                        |> expectEqualInferType output
+                        |> Expect.equal output
     in
     describe "Stage.InferType"
         (List.map runSection
@@ -37,8 +37,8 @@ typeInference =
                   , Ok ( Typed.List [ ( Typed.Literal (Bool True), Type.Bool ) ], Type.Var 2 )
                   )
                 , ( "more items"
-                  , Canonical.List [ Canonical.Literal (Int 1), Canonical.Literal (Int 2) ]
-                  , Ok ( Typed.List [ ( Typed.Literal (Int 2), Type.Int ), ( Typed.Literal (Int 1), Type.Int ) ], Type.Var 3 )
+                  , Canonical.List [ Canonical.Literal (Int 1), Canonical.Literal (Int 2), Canonical.Literal (Int 3) ]
+                  , Ok ( Typed.List [ ( Typed.Literal (Int 1), Type.Int ), ( Typed.Literal (Int 2), Type.Int ), ( Typed.Literal (Int 3), Type.Int ) ], Type.Var 4 )
                   )
                 , ( "different types"
                   , Canonical.List [ Canonical.Literal (Int 1), Canonical.Literal (String "two") ]
@@ -53,19 +53,3 @@ typeInference =
             ]
         )
 
-
-expectEqualInferType :
-    Result TypeError Typed.Expr
-    -> Result TypeError Typed.Expr
-    -> Expectation
-expectEqualInferType expected actual =
-    if actual == expected then
-        Expect.pass
-
-    else
-        case actual of
-            Err typeError ->
-                Expect.fail (Error.toString (Error.TypeError typeError))
-
-            _ ->
-                Expect.equal expected actual

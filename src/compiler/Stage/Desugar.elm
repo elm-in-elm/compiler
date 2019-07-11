@@ -63,8 +63,8 @@ desugarExpr modules thisModule expr =
         Frontend.Let { bindings, body } ->
             desugarLet recurse bindings body
 
-        Frontend.List list_ ->
-            desugarList recurse list_
+        Frontend.List list ->
+            desugarList recurse list
 
         Frontend.Unit ->
             desugarUnit
@@ -150,9 +150,9 @@ desugarLet recurse bindings body =
 
 
 desugarList : (Frontend.Expr -> Result DesugarError Canonical.Expr) -> List Frontend.Expr -> Result DesugarError Canonical.Expr
-desugarList recurse list_ =
-    List.map recurse list_
-        |> List.foldr (Result.map2 (::)) (Ok [])
+desugarList recurse list =
+    List.map recurse list
+        |> List.foldl (Result.map2 (::)) (Ok [])
         |> Result.map Canonical.List
 
 

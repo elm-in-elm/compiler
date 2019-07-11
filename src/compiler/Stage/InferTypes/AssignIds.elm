@@ -174,7 +174,7 @@ assignIdsWith idSource expr =
         Canonical.List list_ ->
             let
                 ( items_, idSource1 ) =
-                    List.foldl
+                    List.foldr
                         (\item ( acc, currentIdSource ) ->
                             let
                                 ( item_, nextIdSource ) =

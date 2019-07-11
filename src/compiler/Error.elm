@@ -103,7 +103,6 @@ type ParseProblem
     | ExpectingFalse
     | ExpectingLet
     | ExpectingIn
-    | ExpectingList
     | ExpectingUnit
     | InvalidNumber
     | CompilerBug String
@@ -205,22 +204,6 @@ toString error =
             case prepareForBackendError of
                 MainDeclarationNotFound ->
                     "Couldn't find the value `main` in the main module given to the compiler!"
-
-
-ordinal : Int -> String
-ordinal position =
-    case position of
-        1 ->
-            "1st"
-
-        2 ->
-            "2nd"
-
-        3 ->
-            "3rd"
-
-        _ ->
-            String.fromInt position ++ "th"
 
 
 fullVarName : Maybe ModuleName -> VarName -> String

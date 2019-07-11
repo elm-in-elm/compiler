@@ -227,7 +227,7 @@ generateEquations idSource ( expr, type_ ) =
                     Type.Var listParamId
 
                 ( bodyEquations, idSource2 ) =
-                    List.foldl
+                    List.foldr
                         (\(( _, itemType ) as item) ( acc, currentIdSource ) ->
                             let
                                 ( equations, nextIdSource ) =
