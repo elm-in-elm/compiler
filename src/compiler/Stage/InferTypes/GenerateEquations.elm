@@ -30,7 +30,7 @@ subexpression.
 -}
 
 import AST.Common.Literal as Literal
-import AST.Common.Type as Type exposing (Type)
+import AST.Common.Type as Type
 import AST.Typed as Typed
 import Common.Types exposing (VarName)
 import Dict.Any
@@ -106,7 +106,7 @@ generateEquations idSource ( expr, type_ ) =
 
         Typed.Lambda { body, argument } ->
             let
-                ( bodyExpr, bodyType ) =
+                ( _, bodyType ) =
                     body
 
                 ( argumentId, idSource1 ) =

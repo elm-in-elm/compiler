@@ -1,20 +1,14 @@
 module Stage.InferTypes exposing (inferExpr, inferTypes)
 
 import AST.Canonical as Canonical
-import AST.Common.Literal as Literal
 import AST.Common.Type as Type exposing (Type)
 import AST.Typed as Typed
-import Common
 import Common.Types exposing (Project)
-import Dict.Any
 import Error exposing (Error(..), TypeError(..))
-import Maybe.Extra
 import Stage.InferTypes.AssignIds as AssignIds
 import Stage.InferTypes.Boilerplate as Boilerplate
 import Stage.InferTypes.GenerateEquations as GenerateEquations
-import Stage.InferTypes.IdSource as IdSource exposing (IdSource)
 import Stage.InferTypes.SubstitutionMap as SubstitutionMap exposing (SubstitutionMap)
-import Stage.InferTypes.TypeEquation exposing (TypeEquation, equals)
 import Stage.InferTypes.Unify as Unify
 
 
