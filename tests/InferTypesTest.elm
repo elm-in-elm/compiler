@@ -39,7 +39,7 @@ typeInference =
               )
             ]
         , describe "fuzz exprInfer"
-            [-- TODO: Fill this with calls to fuzzExpr
+            [ fuzzExpr "Int" Type.Int
             ]
         ]
 
@@ -58,8 +58,8 @@ runTest ( description, input, output ) =
                 |> Expect.equal output
 
 
-fuzzExpr : ( String, Type ) -> Test
-fuzzExpr ( description, typeWanted ) =
+fuzzExpr : String -> Type -> Test
+fuzzExpr description typeWanted =
     fuzz (randomExprFromType typeWanted) description <|
         \input ->
             Stage.InferTypes.inferExpr input
@@ -68,5 +68,7 @@ fuzzExpr ( description, typeWanted ) =
 
 
 randomExprFromType : Type -> Fuzzer Canonical.Expr
-randomExprFromType _ =
-    Debug.todo "randomExprFromType"
+randomExprFromType targetType =
+    case targetType of
+        _ ->
+            Debug.todo <| "Cannot fuzz " ++ Type.toString targetType ++ " expressions."
