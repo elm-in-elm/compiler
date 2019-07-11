@@ -46,14 +46,13 @@ inferExpr expr =
             AssignIds.assignIds expr
 
         typeEquations =
-            GenerateEquations.generateEquations idSource (Debug.log "before" exprWithIds)
+            GenerateEquations.generateEquations idSource exprWithIds
                 {- We throw away the IdSource. It shouldn't be needed anymore!
 
                    BTW GenerateEquations needed it because in case of some Exprs
                    (like List) it needed to create a new type ID on the fly.
                 -}
                 |> Tuple.first
-                |> Debug.log "eqs"
 
         {- We have an interesting dilemma:
 
@@ -70,12 +69,10 @@ inferExpr expr =
         substitutionMap : Result TypeError SubstitutionMap
         substitutionMap =
             Unify.unifyAllEquations typeEquations
-                |> Debug.log "subst map"
     in
     Result.map
         (substituteAllTypes exprWithIds)
         substitutionMap
-        |> Debug.log "after"
 
 
 {-| This function takes care of recursively applying `substituteType`
