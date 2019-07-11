@@ -30,15 +30,15 @@ typeInference =
             [ ( "list"
               , [ ( "empty list"
                   , Canonical.List []
-                  , Ok ( Typed.List [], Type.Var 1 )
+                  , Ok ( Typed.List [], Type.List (Type.Var 1) )
                   )
                 , ( "one item"
                   , Canonical.List [ Canonical.Literal (Bool True) ]
-                  , Ok ( Typed.List [ ( Typed.Literal (Bool True), Type.Bool ) ], Type.Var 2 )
+                  , Ok ( Typed.List [ ( Typed.Literal (Bool True), Type.Bool ) ], Type.List Type.Bool )
                   )
                 , ( "more items"
                   , Canonical.List [ Canonical.Literal (Int 1), Canonical.Literal (Int 2), Canonical.Literal (Int 3) ]
-                  , Ok ( Typed.List [ ( Typed.Literal (Int 1), Type.Int ), ( Typed.Literal (Int 2), Type.Int ), ( Typed.Literal (Int 3), Type.Int ) ], Type.Var 4 )
+                  , Ok ( Typed.List [ ( Typed.Literal (Int 1), Type.Int ), ( Typed.Literal (Int 2), Type.Int ), ( Typed.Literal (Int 3), Type.Int ) ], Type.List Type.Int )
                   )
                 , ( "different types"
                   , Canonical.List [ Canonical.Literal (Int 1), Canonical.Literal (String "two") ]
@@ -52,4 +52,3 @@ typeInference =
               )
             ]
         )
-
