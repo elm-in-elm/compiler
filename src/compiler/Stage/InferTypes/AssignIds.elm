@@ -170,7 +170,7 @@ assignIdsWith idSource expr =
         Canonical.Unit ->
             wrap idSource Typed.Unit
 
-        Canonical.List list ->
+        Canonical.List items ->
             let
                 ( items_, idSource1 ) =
                     List.foldr
@@ -184,6 +184,6 @@ assignIdsWith idSource expr =
                             )
                         )
                         ( [], idSource )
-                        list
+                        items
             in
             wrap idSource1 (Typed.List items_)
