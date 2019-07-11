@@ -79,20 +79,24 @@ typeToString =
                   , Type.List Type.Bool
                   , "List Bool"
                   )
+                , ( "list of list of String"
+                  , Type.List (Type.List Type.String)
+                  , "List (List String)"
+                  )
                 ]
               )
             , ( "lambda"
               , [ ( "function with one param"
-                  , Type.Function (Type.Var 0) Type.Int
+                  , Type.Function (Type.Var 99) Type.Int
                   , "a -> Int"
                   )
                 , ( "function with two params"
                   , Type.Function (Type.Var 0) (Type.Function (Type.Var 1) (Type.Var 1))
                   , "a -> b -> b"
                   )
-                , ( "function as params"
-                  , Type.Function (Type.Function (Type.Var 1) (Type.Var 1)) (Type.Var 0)
-                  , "(b -> b) -> a"
+                , ( "function as param"
+                  , Type.Function (Type.Function (Type.Var 9) (Type.Var 9)) (Type.Var 0)
+                  , "(a -> a) -> b"
                   )
                 , ( "list of functions"
                   , Type.List (Type.Function (Type.Var 0) (Type.Var 0))

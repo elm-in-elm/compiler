@@ -45,7 +45,7 @@ toStringHelp type_ dict =
             |> Maybe.withDefault ("t" ++ String.fromInt int)
 
         Function t1 t2 ->
-            toString t1 ++ " -> " ++ toString t2
+            wrapParens t1 dict ++ " -> " ++ toStringHelp t2 dict
 
         Int ->
             "Int"
@@ -63,7 +63,7 @@ toStringHelp type_ dict =
             "Bool"
 
         List param ->
-            "List " ++ toString param
+            "List " ++ wrapParens param dict
 
         Unit ->
             "()"
@@ -76,15 +76,18 @@ getTypeVariablesIndex type_ =
 
 
 getTypeVariablesIndexHelp : Type -> (List String, Dict Int String) -> (List String, Dict Int String)
-getTypeVariablesIndexHelp currentType (freeLetters, dict) =
-    case currentType of
+getTypeVariablesIndexHelp type_ (freeLetters, dict) =
+    case type_ of
         Var int ->
             case freeLetters of
                 [] ->
                     ([], dict)
 
                 hd :: xs ->
-                    (xs, Dict.insert int hd dict)
+                    if Dict.member int dict then
+                        (freeLetters, dict)
+                    else
+                        (xs, Dict.insert int hd dict)
 
         Function t1 t2 ->
             getTypeVariablesIndexHelp t1 (freeLetters, dict)
@@ -115,3 +118,16 @@ getTypeVariablesIndexHelp currentType (freeLetters, dict) =
 -- Stops at letter `s`, so that outbound variables display `tN`
 typeVariablesLetters =
     [ "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s" ]
+
+
+wrapParens : Type -> Dict Int String -> String
+wrapParens type_ dict =
+    case type_ of
+        Function t1 t2 ->
+            "(" ++ toStringHelp type_ dict ++ ")"
+
+        List param ->
+            "(" ++ toStringHelp type_ dict ++ ")"
+
+        _ ->
+            toStringHelp type_ dict
