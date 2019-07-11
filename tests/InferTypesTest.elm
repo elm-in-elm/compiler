@@ -40,6 +40,10 @@ typeInference =
             ]
         , describe "fuzz exprInfer"
             [ fuzzExpr "Int" Type.Int
+            , fuzzExpr "Float" Type.Float
+            , fuzzExpr "Bool" Type.Bool
+            , fuzzExpr "Char" Type.Char
+            , fuzzExpr "String" Type.String
             ]
         ]
 
@@ -69,6 +73,25 @@ fuzzExpr description typeWanted =
 
 randomExprFromType : Type -> Fuzzer Canonical.Expr
 randomExprFromType targetType =
-    case targetType of
-        _ ->
+    let
+        cannotFuzz () =
             Debug.todo <| "Cannot fuzz " ++ Type.toString targetType ++ " expressions."
+    in
+    case targetType of
+        Type.Int ->
+            Fuzz.map Canonical.Literal <| Fuzz.map Int <| Fuzz.int
+
+        Type.Float ->
+            Fuzz.map Canonical.Literal <| Fuzz.map Float <| Fuzz.float
+
+        Type.Bool ->
+            Fuzz.map Canonical.Literal <| Fuzz.map Bool <| Fuzz.bool
+
+        Type.Char ->
+            Fuzz.map Canonical.Literal <| Fuzz.map Char <| Fuzz.map Char.fromCode <| Fuzz.intRange 0 0x0010FFFF
+
+        Type.String ->
+            Fuzz.map Canonical.Literal <| Fuzz.map String <| Fuzz.map String.fromList <| Fuzz.map (List.map Char.fromCode) <| Fuzz.list <| Fuzz.intRange 0 0x0010FFFF
+
+        _ ->
+            cannotFuzz ()
