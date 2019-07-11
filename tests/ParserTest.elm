@@ -749,7 +749,9 @@ expr =
                   )
                 , ( "combo of escapes, newlines, and chars"
                   , tripleQuote "\\u{1F648}\\n\n\n\\r\\t\\\\abc123"
-                  , Just (Literal (String "🙈\n\n\n\u{000D}\t\\abc123"))
+                  , Just (Literal (String """🙈\n
+
+\u{000D}\t\\abc123"""))
                   )
                 ]
               )
