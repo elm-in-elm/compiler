@@ -464,7 +464,7 @@ expr =
               , [ ( "simple"
                   , "fn 1"
                   , Ok
-                        (AST.Frontend.Call
+                        (Call
                             { fn = AST.Frontend.var Nothing (VarName "fn")
                             , argument = Literal (Int 1)
                             }
@@ -473,7 +473,7 @@ expr =
                 , ( "with var"
                   , "fn arg"
                   , Ok
-                        (AST.Frontend.Call
+                        (Call
                             { fn = AST.Frontend.var Nothing (VarName "fn")
                             , argument = AST.Frontend.var Nothing (VarName "arg")
                             }
@@ -482,9 +482,9 @@ expr =
                 , ( "multiple"
                   , "fn arg1 arg2"
                   , Ok
-                        (AST.Frontend.Call
+                        (Call
                             { fn =
-                                AST.Frontend.Call
+                                Call
                                     { fn = AST.Frontend.var Nothing (VarName "fn")
                                     , argument = AST.Frontend.var Nothing (VarName "arg1")
                                     }
@@ -495,7 +495,7 @@ expr =
                 , ( "space not needed if parenthesized arg"
                   , "fn(arg1)"
                   , Ok
-                        (AST.Frontend.Call
+                        (Call
                             { fn = AST.Frontend.var Nothing (VarName "fn")
                             , argument = AST.Frontend.var Nothing (VarName "arg1")
                             }
@@ -747,7 +747,7 @@ expr =
               , [ ( "one liner"
                   , "let x = 1 in 2"
                   , Ok
-                        (AST.Frontend.Let
+                        (Let
                             { bindings = [ { name = VarName "x", body = Literal (Int 1) } ]
                             , body = Literal (Int 2)
                             }
@@ -756,7 +756,7 @@ expr =
                 , ( "one binding, generous whitespace"
                   , "let\n  x =\n      1\nin\n  2"
                   , Ok
-                        (AST.Frontend.Let
+                        (Let
                             { bindings = [ { name = VarName "x", body = Literal (Int 1) } ]
                             , body = Literal (Int 2)
                             }
@@ -767,27 +767,27 @@ expr =
             , ( "list"
               , [ ( "empty list"
                   , "[]"
-                  , Ok (AST.Frontend.List [])
+                  , Ok (List [])
                   )
                 , ( "empty list with inner spaces"
                   , "[  ]"
-                  , Ok (AST.Frontend.List [])
+                  , Ok (List [])
                   )
                 , ( "single item in list"
                   , "[1]"
-                  , Ok (AST.Frontend.List [ Literal (Int 1) ])
+                  , Ok (List [ Literal (Int 1) ])
                   )
                 , ( "single item in list with inner spaces"
                   , "[ 1 ]"
-                  , Ok (AST.Frontend.List [ Literal (Int 1) ])
+                  , Ok (List [ Literal (Int 1) ])
                   )
                 , ( "simple list"
                   , "[1,2,3]"
-                  , Ok (AST.Frontend.List [ Literal (Int 1), Literal (Int 2), Literal (Int 3) ])
+                  , Ok (List [ Literal (Int 1), Literal (Int 2), Literal (Int 3) ])
                   )
                 , ( "simple list with inner spaces"
                   , "[ 1,  2  , 3 ]"
-                  , Ok (AST.Frontend.List [ Literal (Int 1), Literal (Int 2), Literal (Int 3) ])
+                  , Ok (List [ Literal (Int 1), Literal (Int 2), Literal (Int 3) ])
                   )
                 ]
               )
