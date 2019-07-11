@@ -1,4 +1,4 @@
-module Stage.InferTypes exposing (inferTypes)
+module Stage.InferTypes exposing (inferExpr, inferTypes)
 
 import AST.Canonical as Canonical
 import AST.Common.Type as Type exposing (Type)
@@ -83,11 +83,19 @@ substituteAllTypes expr substitutionMap =
 -}
 substituteType : SubstitutionMap -> Typed.Expr -> Typed.Expr
 substituteType substitutionMap ( expr, type_ ) =
-    ( expr, getType substitutionMap type_ )
+    ( expr, getBetterType substitutionMap type_ )
 
 
-getType : SubstitutionMap -> Type -> Type
-getType substitutionMap type_ =
+{-| Tries to resolve `Var 0`-like references through the SubstitutionMap.
+
+Only goes one step, but that should be enough if we created the SubstitutionMap
+correctly. (TODO check that assumption)
+
+Remember to call itself recursively on children Exprs!
+
+-}
+getBetterType : SubstitutionMap -> Type -> Type
+getBetterType substitutionMap type_ =
     if SubstitutionMap.isEmpty substitutionMap then
         type_
 
@@ -109,14 +117,18 @@ getType substitutionMap type_ =
                 type_
 
             Type.Var id ->
+                -- walk one extra level
                 SubstitutionMap.get id substitutionMap
-                    |> Maybe.map (\typeForId -> getType substitutionMap typeForId)
+                    |> Maybe.map (\typeForId -> getBetterType substitutionMap typeForId)
                     |> Maybe.withDefault type_
 
             Type.Function arg result ->
                 Type.Function
-                    (getType substitutionMap arg)
-                    (getType substitutionMap result)
+                    (getBetterType substitutionMap arg)
+                    (getBetterType substitutionMap result)
+
+            Type.List param ->
+                Type.List <| getBetterType substitutionMap param
 
             Type.Unit ->
                 type_

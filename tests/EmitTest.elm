@@ -45,6 +45,7 @@ javascript =
                     , ( "negative int", Literal (Int -998), "-998" )
                     ]
                 )
+
             -- See https://ellie-app.com/62Ydd5JYgxca1
             , describe "Float"
                 (List.map runTest
@@ -97,7 +98,6 @@ javascript =
                     [ ( "simple"
                       , Lambda
                             { argument = VarName "x"
-                            , argumentId = 0
                             , body = typedInt 1
                             }
                       , "((x) => 1)"
@@ -119,7 +119,6 @@ javascript =
                                 typed
                                     (Lambda
                                         { argument = VarName "x"
-                                        , argumentId = 0
                                         , body = typedInt 2
                                         }
                                     )
@@ -160,6 +159,24 @@ javascript =
                             , else_ = typedInt 2
                             }
                       , """((String$isEmpty("foo")) ? 1 : 2)"""
+                      )
+                    ]
+                )
+
+            -- this [ _ , _ ] format will eventually have to change to something like List$fromArray([...]) when we add (::), (++), etc
+            , describe "List"
+                (List.map runTest
+                    [ ( "empty list"
+                      , List []
+                      , "[]"
+                      )
+                    , ( "single item in list"
+                      , List [ typed (Literal (Int 1)) ]
+                      , "[1]"
+                      )
+                    , ( "simple list"
+                      , List [ typed (Literal (Int 1)), typed (Literal (Int 2)), typed (Literal (Int 3)) ]
+                      , "[1, 2, 3]"
                       )
                     ]
                 )

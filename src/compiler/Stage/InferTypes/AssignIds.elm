@@ -168,3 +168,21 @@ assignIdsWith idSource expr =
 
         Canonical.Unit ->
             wrap idSource Typed.Unit
+
+        Canonical.List items ->
+            let
+                ( items_, idSource1 ) =
+                    List.foldr
+                        (\item ( acc, currentIdSource ) ->
+                            let
+                                ( item_, nextIdSource ) =
+                                    assignIdsWith currentIdSource item
+                            in
+                            ( item_ :: acc
+                            , nextIdSource
+                            )
+                        )
+                        ( [], idSource )
+                        items
+            in
+            wrap idSource1 (Typed.List items_)

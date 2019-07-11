@@ -52,6 +52,7 @@ type ParseContext
     | InLet
     | InLetBinding
     | InLambda
+    | InList
     | InUnit
 
 
@@ -91,6 +92,9 @@ type ParseProblem
     | ExpectingRightArrow -- `\x >->< x + 1`
     | ExpectingLeftParen
     | ExpectingRightParen
+    | ExpectingLeftBracket
+    | ExpectingRightBracket
+    | ExpectingListSeparator
     | ExpectingNotBeginningOfLine
     | ExpectingIf
     | ExpectingThen

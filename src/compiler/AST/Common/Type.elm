@@ -16,6 +16,7 @@ type Type
     | Char
     | String
     | Bool
+    | List Type
     | Unit
 
 
@@ -52,6 +53,9 @@ toString type_ =
 
         Bool ->
             "Bool"
+
+        List t1 ->
+            "List " ++ toString t1
 
         Unit ->
             "()"

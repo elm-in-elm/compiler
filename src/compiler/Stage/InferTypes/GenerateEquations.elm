@@ -218,6 +218,37 @@ generateEquations idSource ( expr, type_ ) =
             , idSource
             )
 
+        Typed.List items ->
+            let
+                ( listParamId, idSource1 ) =
+                    IdSource.increment idSource
+
+                listParamType =
+                    Type.Var listParamId
+
+                ( bodyEquations, idSource2 ) =
+                    List.foldr
+                        (\(( _, itemType ) as item) ( acc, currentIdSource ) ->
+                            let
+                                ( equations, nextIdSource ) =
+                                    generateEquations currentIdSource item
+                            in
+                            ( equals itemType listParamType
+                                :: equations
+                                ++ acc
+                            , nextIdSource
+                            )
+                        )
+                        ( [], idSource1 )
+                        items
+            in
+            ( -- for expression `[ a, b, c ]`
+              -- the `x` in `List x` type and types of all the items are the same
+              equals type_ (Type.List listParamType)
+                :: bodyEquations
+            , idSource2
+            )
+
 
 findArgumentUsages : VarName -> Typed.Expr -> List Typed.Expr
 findArgumentUsages argument bodyExpr =

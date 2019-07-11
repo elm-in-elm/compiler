@@ -183,12 +183,12 @@ moduleName =
         , trailing = P.Forbidden
         }
         |> P.andThen
-            (\list ->
-                if List.isEmpty list then
+            (\list_ ->
+                if List.isEmpty list_ then
                     P.problem ExpectingModuleName
 
                 else
-                    P.succeed (String.join "." list)
+                    P.succeed (String.join "." list_)
             )
 
 
@@ -227,12 +227,12 @@ exposingSome =
         , trailing = P.Forbidden
         }
         |> P.andThen
-            (\list ->
-                if List.isEmpty list then
+            (\list_ ->
+                if List.isEmpty list_ then
                     P.problem ExposingListCantBeEmpty
 
                 else
-                    P.succeed (ExposingSome list)
+                    P.succeed (ExposingSome list_)
             )
 
 
@@ -334,6 +334,7 @@ expr =
             , PP.literal literal
             , always var
             , unit
+            , list
             , parenthesizedExpr
             ]
         , andThenOneOf =
@@ -540,14 +541,14 @@ qualifiedVar =
         , trailing = P.Mandatory -- this is the difference from `moduleName`
         }
         |> P.andThen
-            (\list ->
+            (\list_ ->
                 let
                     maybeModuleName =
-                        if List.isEmpty list then
+                        if List.isEmpty list_ then
                             Nothing
 
                         else
-                            Just (ModuleName (String.join "." list))
+                            Just (ModuleName (String.join "." list_))
                 in
                 P.map
                     (\varName_ -> Frontend.var maybeModuleName (VarName varName_))
@@ -658,6 +659,20 @@ unit _ =
     P.succeed Frontend.Unit
         |. P.keyword (P.Token "()" ExpectingUnit)
         |> P.inContext InUnit
+
+
+list : ExprConfig -> Parser_ Frontend.Expr
+list config =
+    P.succeed Frontend.List
+        |= P.sequence
+            { start = P.Token "[" ExpectingLeftBracket
+            , separator = P.Token "," ExpectingListSeparator
+            , end = P.Token "]" ExpectingRightBracket
+            , spaces = spacesOnly
+            , item = PP.subExpression 0 config
+            , trailing = P.Forbidden
+            }
+        |> P.inContext InList
 
 
 
