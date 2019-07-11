@@ -54,8 +54,8 @@ toString type_ =
         Bool ->
             "Bool"
 
-        List t1 ->
-            "List " ++ toString t1
+        List param ->
+            "List " ++ toString param
 
         Unit ->
             "()"

@@ -107,8 +107,8 @@ recurse f expr =
                 , body = f body
                 }
 
-        List list ->
-            List (List.map f list)
+        List items ->
+            List (List.map f items)
 
         Unit ->
             expr
