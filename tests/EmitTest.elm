@@ -98,7 +98,6 @@ javascript =
                     [ ( "simple"
                       , Lambda
                             { argument = VarName "x"
-                            , argumentId = 0
                             , body = typedInt 1
                             }
                       , "((x) => 1)"
@@ -120,7 +119,6 @@ javascript =
                                 typed
                                     (Lambda
                                         { argument = VarName "x"
-                                        , argumentId = 0
                                         , body = typedInt 2
                                         }
                                     )
