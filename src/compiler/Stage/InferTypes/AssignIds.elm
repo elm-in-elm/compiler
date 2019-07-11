@@ -186,3 +186,15 @@ assignIdsWith idSource expr =
                         items
             in
             wrap idSource1 (Typed.List items_)
+            Id.constant Typed.Unit
+
+        Canonical.Tuple e1 e2 ->
+            Id.map2 Typed.Tuple
+                (toIdGenerator e1)
+                (toIdGenerator e2)
+
+        Canonical.Tuple3 e1 e2 e3 ->
+            Id.map3 Typed.Tuple3
+                (toIdGenerator e1)
+                (toIdGenerator e2)
+                (toIdGenerator e3)

@@ -68,6 +68,12 @@ inferExpr expr =
         (substituteAllTypes exprWithIds)
         substitutionMap
 
+        Typed.Tuple e1 e2 ->
+            generateEquations e1 ++ generateEquations e2
+
+        Typed.Tuple3 e1 e2 e3 ->
+            generateEquations e1 ++ generateEquations e2 ++ generateEquations e3
+
 
 {-| This function takes care of recursively applying `substituteType`
 from the bottom up.

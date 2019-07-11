@@ -71,9 +71,10 @@ desugarExpr modules thisModule expr =
 
         Frontend.Tuple e1 e2 ->
             desugarTuple recurse e1 e2
-        
+
         Frontend.Tuple3 e1 e2 e3 ->
             desugarTuple3 recurse e1 e2 e3
+
 
 
 -- DESUGAR PASSES
@@ -165,6 +166,7 @@ desugarUnit : Result DesugarError Canonical.Expr
 desugarUnit =
     Ok Canonical.Unit
 
+
 desugarTuple : (Frontend.Expr -> Result DesugarError Canonical.Expr) -> Frontend.Expr -> Frontend.Expr -> Result DesugarError Canonical.Expr
 desugarTuple recurse e1 e2 =
     Result.map2 Canonical.Tuple
@@ -178,6 +180,7 @@ desugarTuple3 recurse e1 e2 e3 =
         (recurse e1)
         (recurse e2)
         (recurse e3)
+
 
 
 -- HELPERS

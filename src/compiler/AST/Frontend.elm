@@ -114,7 +114,7 @@ recurse f expr =
 
         Unit ->
             expr
-        
+
         Tuple e1 e2 ->
             Tuple (f e1) (f e2)
 
