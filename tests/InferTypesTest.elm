@@ -39,12 +39,12 @@ typeInference =
               )
             ]
         , describe "fuzz exprInfer"
-            [ fuzzExpr "Int" Type.Int
-            , fuzzExpr "Float" Type.Float
-            , fuzzExpr "Bool" Type.Bool
-            , fuzzExpr "Char" Type.Char
-            , fuzzExpr "String" Type.String
-            , fuzzExpr "()" Type.Unit
+            [ fuzzExpr Type.Int
+            , fuzzExpr Type.Float
+            , fuzzExpr Type.Bool
+            , fuzzExpr Type.Char
+            , fuzzExpr Type.String
+            , fuzzExpr Type.Unit
             ]
         ]
 
@@ -63,8 +63,12 @@ runTest ( description, input, output ) =
                 |> Expect.equal output
 
 
-fuzzExpr : String -> Type -> Test
-fuzzExpr description typeWanted =
+fuzzExpr : Type -> Test
+fuzzExpr typeWanted =
+    let
+        description =
+            Type.toString typeWanted
+    in
     fuzz (randomExprFromType typeWanted) description <|
         \input ->
             Stage.InferTypes.inferExpr input
