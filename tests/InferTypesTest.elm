@@ -18,12 +18,6 @@ typeInference =
         runSection ( description, tests ) =
             describe description
                 (List.map runTest tests)
-
-        runTest ( description, input, output ) =
-            test description <|
-                \() ->
-                    Stage.InferTypes.inferExpr input
-                        |> Expect.equal output
     in
     describe "Stage.InferType"
         (List.map runSection
@@ -52,3 +46,11 @@ typeInference =
               )
             ]
         )
+
+
+runTest : ( String, Canonical.Expr, Result Error.TypeError Typed.Expr ) -> Test
+runTest ( description, input, output ) =
+    test description <|
+        \() ->
+            Stage.InferTypes.inferExpr input
+                |> Expect.equal output
