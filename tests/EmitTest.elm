@@ -233,7 +233,7 @@ javascript =
             , describe "Tuple"
                 (List.map runTest
                     [ ( "simple tuple", Tuple (typedInt 1) (typedInt 2), "[1,2]" )
-                    , ( "mixed tuple", Tuple (typedInt 1) (typedString "hello"), "[1,\"hello\"]")
+                    , ( "mixed tuple", Tuple (typedInt 1) (typedString "hello"), "[1,\"hello\"]" )
                     ]
                 )
             , describe "Tuple3"
