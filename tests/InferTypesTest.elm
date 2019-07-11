@@ -32,15 +32,10 @@ typeInference =
                   , Canonical.List [ Canonical.Literal (Int 1), Canonical.Literal (String "two") ]
                   , Err (Error.TypeMismatch Type.Int Type.String)
                   )
-
-                --, ( "more items types"
-                --  , Ok (Canonical.List [(Canonical.Literal (Int 2),Var 0),(Canonical.Literal (Int 1),Var 1)],Var 2)
-                --  , Err (Error.TypeMismatch (Type.Int) (Type.Int))
-                --  )
-                --, ( "same types"
-                --  , Ok (Canonical.List [(Canonical.Literal (Int 2),Var 0),(Canonical.Literal (Int 1),Var 1)],Var 2)
-                --  , Ok (Canonical.List [(Canonical.Literal (Int 2),Var 0),(Canonical.Literal (Int 1),Var 1)],Var 2)
-                --  )
+                , ( "more items types"
+                  , Canonical.List [ Canonical.Literal (Int 2), Canonical.Literal (Int 3), Canonical.Literal (Bool False) ]
+                  , Err (Error.TypeMismatch (Type.Int) (Type.Bool))
+                  )
                 ]
               )
             ]

@@ -68,33 +68,33 @@ Oh God please yes! :heart: Feel free to look around the [<kbd>help wanted</kbd>]
 </p>
 
 
-|                   | parser tests         | optimize tests       | emit tests         | parse                | desugar            | infer types          | optimize             | emit                 |
-| ----------------- | -------------------- | -------------------- | ------------------ | -------------------- | ------------------ | -------------------- | -------------------- | -------------------- |
-| integers          | :heavy_check_mark:   | :warning: [[2]](#f2) | :heavy_check_mark: | :heavy_check_mark:   | :heavy_check_mark: | :heavy_check_mark:   | :warning: [[2]](#f2) | :heavy_check_mark:   |
-| floats            | :heavy_check_mark:   | :x: [[5]](#f5)       | :heavy_check_mark: | :heavy_check_mark:   | :heavy_check_mark: | :heavy_check_mark:   | :x: [[5]](#f5)       | :heavy_check_mark:   |
-| characters        | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark: | :heavy_check_mark:   | :heavy_check_mark: | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark:   |
-| strings           | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark: | :warning: [[7]](#f7) | :heavy_check_mark: | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark:   |
-| booleans          | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark: | :heavy_check_mark:   | :heavy_check_mark: | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark:   |
-| variables         | :warning:            | :heavy_check_mark:   | :heavy_check_mark: | :heavy_check_mark:   | :heavy_check_mark: | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark:   |
-| lists             | :heavy_check_mark:   | :x: [[8]](#f8)       | :heavy_check_mark: | :warning: [[9]](#f9) | :heavy_check_mark: | :warning: [[1]](#f1) | :x: [[8]](#f8)       | :warning: [[1]](#f1) |
-| binary operators  | :warning:            | :heavy_check_mark:   | :heavy_check_mark: | :warning:            | :heavy_check_mark: | :x:                  | :warning:            | :warning:            |
-| lambdas           | :warning:            | :heavy_check_mark:   | :heavy_check_mark: | :warning:            | :heavy_check_mark: | :heavy_check_mark:   | :warning:            | :heavy_check_mark:   |
-| function calls    | :warning:            | :heavy_check_mark:   | :heavy_check_mark: | :warning:            | :heavy_check_mark: | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark:   |
-| if...then...else  | :warning:            | :heavy_check_mark:   | :heavy_check_mark: | :warning:            | :heavy_check_mark: | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark:   |
-| let..in           | :warning:            | :heavy_check_mark:   | :heavy_check_mark: | :warning:            | :heavy_check_mark: | :warning:            | :heavy_check_mark:   | :warning:            |
-| case...of         | :x:                  | :x:                  | :x:                | :x:                  | :x:                | :x:                  | :x:                  | :x:                  |
-| records           | :x:                  | :x:                  | :x:                | :x:                  | :x:                | :x:                  | :x:                  | :x:                  |
-| record accessors  | :x:                  | :x:                  | :x:                | :x:                  | :x:                | :x:                  | :x:                  | :x:                  |
-| record updates    | :x:                  | :x:                  | :x:                | :x:                  | :x:                | :x:                  | :x:                  | :x:                  |
-| unit type         | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark: | :heavy_check_mark:   | :heavy_check_mark: | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark:   |
-| tuples, 3-tuples  | :x: [[10]](#f10)     | :heavy_check_mark:   | :x: [[10]](#f10)   | :x: [[11]](#f11)     | :heavy_check_mark: | :x: [[10]](#f10)     | :heavy_check_mark:   | :x: [[10]](#f10)     |
-| type annotations  | :x:                  | :x:                  | :x:                | :x:                  | :x:                | :x:                  | :x:                  | :x:                  |
-| type aliases      | :x:                  | :x:                  | :x:                | :x:                  | :x:                | :x:                  | :x:                  | :x:                  |
-| custom types      | :x:                  | :x:                  | :x:                | :x:                  | :x:                | :x:                  | :x:                  | :x:                  |
-| custom operators  | :x:                  | :x:                  | :x:                | :x:                  | :x:                | :x:                  | :x:                  | :x:                  |
-| shaders (?)       | :x:                  | :x:                  | :x:                | :x:                  | :x:                | :x:                  | :x:                  | :x:                  |
+|                   | parser tests         | optimize tests       | emit tests           | parse                | desugar            | infer types          | optimize             | emit                 |
+| ----------------- | -------------------- | -------------------- | -------------------- | -------------------- | ------------------ | -------------------- | -------------------- | -------------------- |
+| integers          | :heavy_check_mark:   | :warning: [[2]](#f2) | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark: | :heavy_check_mark:   | :warning: [[2]](#f2) | :heavy_check_mark:   |
+| floats            | :heavy_check_mark:   | :x: [[5]](#f5)       | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark: | :heavy_check_mark:   | :x: [[5]](#f5)       | :heavy_check_mark:   |
+| characters        | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark: | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark:   |
+| strings           | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark:   | :warning: [[7]](#f7) | :heavy_check_mark: | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark:   |
+| booleans          | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark: | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark:   |
+| variables         | :warning:            | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark: | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark:   |
+| lists             | :warning: [[1]](#f1) | :x: [[8]](#f8)       | :warning: [[1]](#f1) | :warning: [[9]](#f9) | :heavy_check_mark: | :warning: [[1]](#f1) | :x: [[8]](#f8)       | :warning: [[1]](#f1) |
+| binary operators  | :warning:            | :heavy_check_mark:   | :heavy_check_mark:   | :warning:            | :heavy_check_mark: | :x:                  | :warning:            | :warning:            |
+| lambdas           | :warning:            | :heavy_check_mark:   | :heavy_check_mark:   | :warning:            | :heavy_check_mark: | :heavy_check_mark:   | :warning:            | :heavy_check_mark:   |
+| function calls    | :warning:            | :heavy_check_mark:   | :heavy_check_mark:   | :warning:            | :heavy_check_mark: | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark:   |
+| if...then...else  | :warning:            | :heavy_check_mark:   | :heavy_check_mark:   | :warning:            | :heavy_check_mark: | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark:   |
+| let..in           | :warning:            | :heavy_check_mark:   | :heavy_check_mark:   | :warning:            | :heavy_check_mark: | :warning:            | :heavy_check_mark:   | :warning:            |
+| case...of         | :x:                  | :x:                  | :x:                  | :x:                  | :x:                | :x:                  | :x:                  | :x:                  |
+| records           | :x:                  | :x:                  | :x:                  | :x:                  | :x:                | :x:                  | :x:                  | :x:                  |
+| record accessors  | :x:                  | :x:                  | :x:                  | :x:                  | :x:                | :x:                  | :x:                  | :x:                  |
+| record updates    | :x:                  | :x:                  | :x:                  | :x:                  | :x:                | :x:                  | :x:                  | :x:                  |
+| unit type         | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark: | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark:   |
+| tuples, 3-tuples  | :x: [[10]](#f10)     | :heavy_check_mark:   | :x: [[10]](#f10)     | :x: [[11]](#f11)     | :heavy_check_mark: | :x: [[10]](#f10)     | :heavy_check_mark:   | :x: [[10]](#f10)     |
+| type annotations  | :x:                  | :x:                  | :x:                  | :x:                  | :x:                | :x:                  | :x:                  | :x:                  |
+| type aliases      | :x:                  | :x:                  | :x:                  | :x:                  | :x:                | :x:                  | :x:                  | :x:                  |
+| custom types      | :x:                  | :x:                  | :x:                  | :x:                  | :x:                | :x:                  | :x:                  | :x:                  |
+| custom operators  | :x:                  | :x:                  | :x:                  | :x:                  | :x:                | :x:                  | :x:                  | :x:                  |
+| shaders (?)       | :x:                  | :x:                  | :x:                  | :x:                  | :x:                | :x:                  | :x:                  | :x:                  |
 
-1. <span id="f1"></span> Partially implemented; tracked in [#27](https://github.com/elm-in-elm/compiler/issues/27)
+1. <span id="f1"></span> Partially implemented: `[ _, _ ]` compiles to raw js array, `(::)` is not implemented.
 2. <span id="f2"></span> To be optimized with multiplication, subtraction, division, modulo, exponentiation... maybe more?; not tracked yet
 3. <span id="f3"></span> ... this space left intentionally blank :smile: ...
 4. <span id="f4"></span> ... this space left intentionally blank :smile: ...
