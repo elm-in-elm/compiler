@@ -44,6 +44,7 @@ typeInference =
             , fuzzExpr "Bool" Type.Bool
             , fuzzExpr "Char" Type.Char
             , fuzzExpr "String" Type.String
+            , fuzzExpr "()" Type.Unit
             ]
         ]
 
@@ -92,6 +93,9 @@ randomExprFromType targetType =
 
         Type.String ->
             Fuzz.map Canonical.Literal <| Fuzz.map String <| Fuzz.map String.fromList <| Fuzz.map (List.map Char.fromCode) <| Fuzz.list <| Fuzz.intRange 0 0x0010FFFF
+
+        Type.Unit ->
+            Fuzz.constant Canonical.Unit
 
         _ ->
             cannotFuzz ()
