@@ -37,6 +37,8 @@ type Expr
     | Let { bindings : AnyDict String VarName (Binding Expr), body : Expr }
     | List (List Expr)
     | Unit
+    | Tuple Expr Expr
+    | Tuple3 Expr Expr Expr
 
 
 var : ModuleName -> VarName -> Expr
