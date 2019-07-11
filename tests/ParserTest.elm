@@ -603,6 +603,10 @@ expr =
                   )
 
                 -- https://github.com/elm/compiler/blob/dcbe51fa22879f83b5d94642e117440cb5249bb1/compiler/src/Parse/String.hs#L279-L285
+                , ( "escape backslash"
+                  , singleQuote "\\\\"
+                  , Ok (Literal (Char '\\'))
+                  )
                 , ( "escape n"
                   , singleQuote "\\n"
                   , Ok (Literal (Char '\n'))
@@ -655,6 +659,10 @@ expr =
                   , doubleQuote "\\\""
                   , Ok (Literal (String "\""))
                   )
+                , ( "escape backslash"
+                  , doubleQuote "\\\\"
+                  , Ok (Literal (String "\\"))
+                  )
                 , ( "escape n"
                   , doubleQuote "\\n"
                   , Ok (Literal (String "\n"))
@@ -676,7 +684,7 @@ expr =
                   , Ok (Literal (String "🙈"))
                   )
                 , ( "combo of escapes and chars"
-                  , doubleQuote "\\u{1F648}\\n\\r\\t\\abc123"
+                  , doubleQuote "\\u{1F648}\\n\\r\\t\\\\abc123"
                   , Ok (Literal (String "🙈\n\u{000D}\t\\abc123"))
                   )
                 ]
@@ -705,6 +713,10 @@ expr =
                 , ( "double quote"
                   , tripleQuote " \" "
                   , Ok (Literal (String " \" "))
+                  )
+                , ( "escape backslash"
+                  , tripleQuote "\\\\"
+                  , Ok (Literal (String "\\"))
                   )
                 , ( "escape n"
                   , tripleQuote "\\n"
