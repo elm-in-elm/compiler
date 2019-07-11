@@ -798,6 +798,13 @@ expr =
                   )
                 ]
               )
+            , ( "tuple"
+              , [ ( "simple case"
+                  , "(1,1)"
+                  , Ok (Tuple (Literal (Int 1)) (Literal (Int 1)))
+                  )
+                ]
+              )
             ]
         )
 
