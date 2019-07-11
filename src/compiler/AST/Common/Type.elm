@@ -1,7 +1,9 @@
 module AST.Common.Type exposing
     ( Type(..)
+    , emptyVars
     , getVarId
     , toString
+    , toStringWithVars
     )
 
 {-| In its own module because both Error.TypeError and AST.Typed need to see it
@@ -22,6 +24,10 @@ type Type
     | Unit
 
 
+type alias TypeVariableIndex =
+    ( List String, Dict Int String )
+
+
 getVarId : Type -> Maybe Int
 getVarId type_ =
     case type_ of
@@ -34,107 +40,97 @@ getVarId type_ =
 
 toString : Type -> String
 toString type_ =
-    getTypeVariablesIndex type_
-        |> toStringHelp type_
+    toStringWithVars type_ emptyVars
+        |> Tuple.first
 
 
-toStringHelp : Type -> Dict Int String -> String
-toStringHelp type_ dict =
-    case type_ of
-        Var int ->
-            Dict.get int dict
-                |> Maybe.withDefault ("t" ++ String.fromInt int)
-
-        Function t1 t2 ->
-            wrapParens t1 dict ++ " -> " ++ toStringHelp t2 dict
-
-        Int ->
-            "Int"
-
-        Float ->
-            "Float"
-
-        Char ->
-            "Char"
-
-        String ->
-            "String"
-
-        Bool ->
-            "Bool"
-
-        List param ->
-            "List " ++ wrapParens param dict
-
-        Unit ->
-            "()"
-
-
-getTypeVariablesIndex : Type -> Dict Int String
-getTypeVariablesIndex type_ =
+emptyVars : TypeVariableIndex
+emptyVars =
     ( typeVariablesLetters, Dict.empty )
-        |> getTypeVariablesIndexHelp type_
-        |> Tuple.second
 
 
-getTypeVariablesIndexHelp : Type -> ( List String, Dict Int String ) -> ( List String, Dict Int String )
-getTypeVariablesIndexHelp type_ ( freeLetters, dict ) =
+toStringWithVars : Type -> TypeVariableIndex -> ( String, TypeVariableIndex )
+toStringWithVars type_ typeVariablesIndex =
     case type_ of
         Var int ->
-            case freeLetters of
-                [] ->
-                    ( [], dict )
-
-                hd :: xs ->
-                    if Dict.member int dict then
-                        ( freeLetters, dict )
-
-                    else
-                        ( xs, Dict.insert int hd dict )
+            getVariable int typeVariablesIndex
 
         Function t1 t2 ->
-            ( freeLetters, dict )
-                |> getTypeVariablesIndexHelp t1
-                |> getTypeVariablesIndexHelp t2
+            let
+                ( type1, typeVariablesIndex1 ) =
+                    wrapParens t1 typeVariablesIndex
+
+                ( type2, typeVariablesIndex2 ) =
+                    toStringWithVars t2 typeVariablesIndex1
+            in
+            ( type1 ++ " -> " ++ type2
+            , typeVariablesIndex2
+            )
 
         List param ->
-            getTypeVariablesIndexHelp param ( freeLetters, dict )
+            wrapParens param typeVariablesIndex
+                |> Tuple.mapFirst ((++) "List ")
 
         Int ->
-            ( freeLetters, dict )
+            ( "Int", typeVariablesIndex )
 
         Float ->
-            ( freeLetters, dict )
+            ( "Float", typeVariablesIndex )
 
         Char ->
-            ( freeLetters, dict )
+            ( "Char", typeVariablesIndex )
 
         String ->
-            ( freeLetters, dict )
+            ( "String", typeVariablesIndex )
 
         Bool ->
-            ( freeLetters, dict )
+            ( "Bool", typeVariablesIndex )
 
         Unit ->
-            ( freeLetters, dict )
+            ( "Unit", typeVariablesIndex )
 
 
+getVariable : Int -> TypeVariableIndex -> ( String, TypeVariableIndex )
+getVariable int (( letters, dict ) as typeVariablesIndex) =
+    case Dict.get int dict of
+        Just letter ->
+            ( letter
+            , typeVariablesIndex
+            )
 
--- Stops at letter `s`, so that outbound variables display `tN`
+        Nothing ->
+            case letters of
+                letter :: freeLetters ->
+                    ( letter
+                    , ( freeLetters
+                      , Dict.insert int letter dict
+                      )
+                    )
+
+                [] ->
+                    ( "t" ++ String.fromInt int
+                    , typeVariablesIndex
+                    )
 
 
+typeVariablesLetters : List String
 typeVariablesLetters =
+    -- Stops at letter `s`, so that outbound variables display `tN`
     [ "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s" ]
 
 
-wrapParens : Type -> Dict Int String -> String
-wrapParens type_ dict =
-    case type_ of
-        Function t1 t2 ->
-            "(" ++ toStringHelp type_ dict ++ ")"
+wrapParens : Type -> TypeVariableIndex -> ( String, TypeVariableIndex )
+wrapParens type_ typeVariablesIndex =
+    toStringWithVars type_ typeVariablesIndex
+        |> Tuple.mapFirst
+            (\t ->
+                case type_ of
+                    Function t1 t2 ->
+                        "(" ++ t ++ ")"
 
-        List param ->
-            "(" ++ toStringHelp type_ dict ++ ")"
+                    List param ->
+                        "(" ++ t ++ ")"
 
-        _ ->
-            toStringHelp type_ dict
+                    _ ->
+                        t
+            )

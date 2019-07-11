@@ -67,7 +67,7 @@ typeToString =
         runEqual ( description, input, output ) =
             test description <|
                 \() ->
-                    Expect.equal (Type.toString input) (Type.toString output)
+                    Expect.equal input output
     in
     describe "Type.toString"
         [ describe "list"
@@ -75,11 +75,6 @@ typeToString =
                 ( "empty list"
                 , Type.List (Type.Var 0)
                 , "List a"
-                )
-            , runEqual
-                ( "Var number doesn't count"
-                , Type.List (Type.Var 0)
-                , Type.List (Type.Var 1)
                 )
             , runTest
                 ( "one item in list"
@@ -112,6 +107,24 @@ typeToString =
                 ( "list of functions"
                 , Type.List (Type.Function (Type.Var 0) (Type.Var 0))
                 , "List (a -> a)"
+                )
+            ]
+        , describe "edges"
+            [ runEqual
+                ( "Var number doesn't count"
+                , Type.toString <| Type.List (Type.Var 0)
+                , Type.toString <| Type.List (Type.Var 1)
+                )
+            , runEqual
+                ( "TypeMismatch types share vars index"
+                , Error.toString
+                    (Error.TypeError
+                        (Error.TypeMismatch
+                            (Type.Function (Type.List (Type.Var 0)) (Type.Var 1))
+                            (Type.Function (Type.List (Type.Var 1)) (Type.Var 0))
+                        )
+                    )
+                , "The types `(List a) -> b` and `(List b) -> a` don't match."
                 )
             ]
         ]

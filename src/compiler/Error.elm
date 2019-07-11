@@ -183,11 +183,19 @@ toString error =
         TypeError typeError ->
             case typeError of
                 TypeMismatch t1 t2 ->
-                    "The types "
-                        ++ Type.toString t1
-                        ++ " and "
-                        ++ Type.toString t2
-                        ++ " don't match."
+                    let
+                        -- Share index between types
+                        ( type1, index1 ) =
+                            Type.toStringWithVars t1 Type.emptyVars
+
+                        ( type2, _ ) =
+                            Type.toStringWithVars t2 index1
+                    in
+                    "The types `"
+                        ++ type1
+                        ++ "` and `"
+                        ++ type2
+                        ++ "` don't match."
 
                 OccursCheckFailed varId type_ ->
                     "An \"occurs check\" failed while typechecking: "
