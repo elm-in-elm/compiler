@@ -487,27 +487,38 @@ literalChar =
 
 literalString : Parser_ Literal
 literalString =
+    P.succeed String
+        |= P.oneOf
+            [ tripleQuoteString
+            , doubleQuoteString
+            ]
+        |> P.inContext InString
+
+
+doubleQuoteString : Parser_ String
+doubleQuoteString =
     let
         doubleQuote =
             P.Token "\"" ExpectingDoubleQuote
+    in
+    P.succeed String.fromList
+        |. P.symbol doubleQuote
+        |= manyWith (P.succeed ()) (character (Just '"'))
+        |. P.symbol doubleQuote
+        |> P.inContext InDoubleQuoteString
 
+
+tripleQuoteString : Parser_ String
+tripleQuoteString =
+    let
         tripleQuote =
             P.Token "\"\"\"" ExpectingTripleQuote
     in
-    P.succeed (String.fromList >> String)
-        |= P.oneOf
-            [ P.succeed identity
-                |. P.symbol doubleQuote
-                |= manyWith (P.succeed ()) (character (Just '"'))
-                |. P.symbol doubleQuote
-                |> P.inContext InDoubleQuoteString
-            , P.succeed identity
-                |. P.symbol tripleQuote
-                |= manyWith (P.succeed ()) {- TODO this is wrong, start here ----> -} (character (Just '"'))
-                |. P.symbol tripleQuote
-                |> P.inContext InTripleQuoteString
-            ]
-        |> P.inContext InString
+    P.succeed String.fromList
+        |. P.symbol tripleQuote
+        |= manyWith (P.succeed ()) {- TODO this is wrong, start here... this needs to be char OR newlines, I think ----> -} (character (Just {- also we need to stop after """, not " -} '"'))
+        |. P.symbol tripleQuote
+        |> P.inContext InTripleQuoteString
 
 
 literalBool : Parser_ Literal

@@ -21,6 +21,7 @@ import Dict.Any
 import Error exposing (ParseContext, ParseProblem)
 import Expect exposing (Expectation)
 import Parser.Advanced as P
+import Result.Extra
 import Stage.Parse.Parser
 import Test exposing (Test, describe, test)
 
@@ -438,7 +439,7 @@ expr =
             [ ( "lambda"
               , [ ( "works with single argument"
                   , "\\x -> x + 1"
-                  , Ok
+                  , Just
                         (AST.Frontend.lambda
                             [ VarName "x" ]
                             (Plus
@@ -449,7 +450,7 @@ expr =
                   )
                 , ( "works with multiple arguments"
                   , "\\x y -> x + y"
-                  , Ok
+                  , Just
                         (AST.Frontend.lambda
                             [ VarName "x", VarName "y" ]
                             (Plus
@@ -463,7 +464,7 @@ expr =
             , ( "call"
               , [ ( "simple"
                   , "fn 1"
-                  , Ok
+                  , Just
                         (Call
                             { fn = AST.Frontend.var Nothing (VarName "fn")
                             , argument = Literal (Int 1)
@@ -472,7 +473,7 @@ expr =
                   )
                 , ( "with var"
                   , "fn arg"
-                  , Ok
+                  , Just
                         (Call
                             { fn = AST.Frontend.var Nothing (VarName "fn")
                             , argument = AST.Frontend.var Nothing (VarName "arg")
@@ -481,7 +482,7 @@ expr =
                   )
                 , ( "multiple"
                   , "fn arg1 arg2"
-                  , Ok
+                  , Just
                         (Call
                             { fn =
                                 Call
@@ -494,7 +495,7 @@ expr =
                   )
                 , ( "space not needed if parenthesized arg"
                   , "fn(arg1)"
-                  , Ok
+                  , Just
                         (Call
                             { fn = AST.Frontend.var Nothing (VarName "fn")
                             , argument = AST.Frontend.var Nothing (VarName "arg1")
@@ -506,7 +507,7 @@ expr =
             , ( "if"
               , [ ( "with one space"
                   , "if 1 then 2 else 3"
-                  , Ok
+                  , Just
                         (AST.Frontend.If
                             { test = Literal (Int 1)
                             , then_ = Literal (Int 2)
@@ -516,7 +517,7 @@ expr =
                   )
                 , ( "with multiple spaces"
                   , "if   1   then   2   else   3"
-                  , Ok
+                  , Just
                         (AST.Frontend.If
                             { test = Literal (Int 1)
                             , then_ = Literal (Int 2)
@@ -529,236 +530,244 @@ expr =
             , ( "literal int"
               , [ ( "positive"
                   , "123"
-                  , Ok (Literal (Int 123))
+                  , Just (Literal (Int 123))
                   )
                 , ( "zero"
                   , "0"
-                  , Ok (Literal (Int 0))
+                  , Just (Literal (Int 0))
                   )
                 , ( "hexadecimal int"
                   , "0x123abc"
-                  , Ok (Literal (Int 1194684))
+                  , Just (Literal (Int 1194684))
                   )
                 , ( "hexadecimal int - uppercase"
                   , "0x789DEF"
-                  , Ok (Literal (Int 7904751))
+                  , Just (Literal (Int 7904751))
                   )
                 , ( "negative int"
                   , "-42"
-                  , Ok (Literal (Int -42))
+                  , Just (Literal (Int -42))
                   )
                 , ( "negative hexadecimal"
                   , "-0x123abc"
-                  , Ok (Literal (Int -1194684))
+                  , Just (Literal (Int -1194684))
                   )
                 ]
               )
             , ( "literal float"
               , [ ( "positive"
                   , "12.3"
-                  , Ok (Literal (Float 12.3))
+                  , Just (Literal (Float 12.3))
                   )
                 , ( "zero"
                   , "0.0"
-                  , Ok (Literal (Float 0.0))
+                  , Just (Literal (Float 0.0))
                   )
                 , ( "negative float"
                   , "-4.2"
-                  , Ok (Literal (Float -4.2))
+                  , Just (Literal (Float -4.2))
                   )
                 , ( "Scientific notation"
                   , "5.12e2"
-                  , Ok (Literal (Float 512))
+                  , Just (Literal (Float 512))
                   )
                 , ( "Uppercase scientific notation"
                   , "5.12E2"
-                  , Ok (Literal (Float 512))
+                  , Just (Literal (Float 512))
                   )
                 , ( "Negative scientific notation"
                   , "-5.12e2"
-                  , Ok (Literal (Float -512))
+                  , Just (Literal (Float -512))
                   )
                 , ( "Negative exponent"
                   , "5e-2"
-                  , Ok (Literal (Float 0.05))
+                  , Just (Literal (Float 0.05))
                   )
                 ]
               )
             , ( "literal char"
               , [ ( "number"
                   , "'1'"
-                  , Ok (Literal (Char '1'))
+                  , Just (Literal (Char '1'))
                   )
                 , ( "space"
                   , "' '"
-                  , Ok (Literal (Char ' '))
+                  , Just (Literal (Char ' '))
+                  )
+                , ( "newline shouldn't work"
+                  , "'\n'"
+                  , Nothing
                   )
                 , ( "letter lowercase"
                   , "'a'"
-                  , Ok (Literal (Char 'a'))
+                  , Just (Literal (Char 'a'))
                   )
                 , ( "letter uppercase"
                   , "'A'"
-                  , Ok (Literal (Char 'A'))
+                  , Just (Literal (Char 'A'))
                   )
 
                 -- https://github.com/elm/compiler/blob/dcbe51fa22879f83b5d94642e117440cb5249bb1/compiler/src/Parse/String.hs#L279-L285
                 , ( "escape backslash"
                   , singleQuote "\\\\"
-                  , Ok (Literal (Char '\\'))
+                  , Just (Literal (Char '\\'))
                   )
                 , ( "escape n"
                   , singleQuote "\\n"
-                  , Ok (Literal (Char '\n'))
+                  , Just (Literal (Char '\n'))
                   )
                 , ( "escape r"
                   , singleQuote "\\r"
-                  , Ok (Literal (Char '\u{000D}'))
+                  , Just (Literal (Char '\u{000D}'))
                   )
                 , ( "escape t"
                   , singleQuote "\\t"
-                  , Ok (Literal (Char '\t'))
+                  , Just (Literal (Char '\t'))
                   )
                 , ( "double quote"
                   , singleQuote "\""
-                  , Ok (Literal (Char '"'))
+                  , Just (Literal (Char '"'))
                     -- " (for vscode-elm bug)
                   )
                 , ( "single quote"
                   , singleQuote "\\'"
-                  , Ok (Literal (Char '\''))
+                  , Just (Literal (Char '\''))
                   )
                 , ( "emoji"
                   , singleQuote "😃"
-                  , Ok (Literal (Char '😃'))
+                  , Just (Literal (Char '😃'))
                   )
                 , ( "escaped unicode code point"
                   , singleQuote "\\u{1F648}"
-                  , Ok (Literal (Char '🙈'))
+                  , Just (Literal (Char '🙈'))
                   )
                 ]
               )
             , ( "literal string"
               , [ ( "empty"
                   , doubleQuote ""
-                  , Ok (Literal (String ""))
+                  , Just (Literal (String ""))
                   )
                 , ( "one space"
                   , doubleQuote " "
-                  , Ok (Literal (String " "))
+                  , Just (Literal (String " "))
+                  )
+                , ( "newline shouldn't work"
+                  , doubleQuote "\n"
+                  , Nothing
                   )
                 , ( "two numbers"
                   , doubleQuote "42"
-                  , Ok (Literal (String "42"))
+                  , Just (Literal (String "42"))
                   )
                 , ( "single quote"
                   , doubleQuote "'"
-                  , Ok (Literal (String "'"))
+                  , Just (Literal (String "'"))
                   )
                 , ( "double quote"
                   , doubleQuote "\\\""
-                  , Ok (Literal (String "\""))
+                  , Just (Literal (String "\""))
                   )
                 , ( "escape backslash"
                   , doubleQuote "\\\\"
-                  , Ok (Literal (String "\\"))
+                  , Just (Literal (String "\\"))
                   )
                 , ( "escape n"
                   , doubleQuote "\\n"
-                  , Ok (Literal (String "\n"))
+                  , Just (Literal (String "\n"))
                   )
                 , ( "escape r"
                   , doubleQuote "\\r"
-                  , Ok (Literal (String "\u{000D}"))
+                  , Just (Literal (String "\u{000D}"))
                   )
                 , ( "escape t"
                   , doubleQuote "\\t"
-                  , Ok (Literal (String "\t"))
+                  , Just (Literal (String "\t"))
                   )
                 , ( "emoji"
                   , doubleQuote "😃"
-                  , Ok (Literal (String "😃"))
+                  , Just (Literal (String "😃"))
                   )
                 , ( "escaped unicode code point"
                   , doubleQuote "\\u{1F648}"
-                  , Ok (Literal (String "🙈"))
+                  , Just (Literal (String "🙈"))
                   )
                 , ( "combo of escapes and chars"
                   , doubleQuote "\\u{1F648}\\n\\r\\t\\\\abc123"
-                  , Ok (Literal (String "🙈\n\u{000D}\t\\abc123"))
+                  , Just (Literal (String "🙈\n\u{000D}\t\\abc123"))
                   )
                 ]
               )
             , ( "literal multiline string"
               , [ ( "empty"
                   , tripleQuote ""
-                  , Ok (Literal (String ""))
+                  , Just (Literal (String ""))
                   )
                 , ( "one space"
                   , tripleQuote " "
-                  , Ok (Literal (String " "))
+                  , Just (Literal (String " "))
                   )
                 , ( "newline"
                   , tripleQuote "\n"
-                  , Ok (Literal (String "\n"))
+                  , Just (Literal (String "\n"))
                   )
                 , ( "two numbers"
                   , tripleQuote "42"
-                  , Ok (Literal (String "42"))
+                  , Just (Literal (String "42"))
                   )
                 , ( "single quote"
                   , tripleQuote "'"
-                  , Ok (Literal (String "'"))
+                  , Just (Literal (String "'"))
                   )
                 , ( "double quote"
                   , tripleQuote " \" "
-                  , Ok (Literal (String " \" "))
+                  , Just (Literal (String " \" "))
                   )
                 , ( "escape backslash"
                   , tripleQuote "\\\\"
-                  , Ok (Literal (String "\\"))
+                  , Just (Literal (String "\\"))
                   )
                 , ( "escape n"
                   , tripleQuote "\\n"
-                  , Ok (Literal (String "\n"))
+                  , Just (Literal (String "\n"))
                   )
                 , ( "escape r"
                   , tripleQuote "\\r"
-                  , Ok (Literal (String "\u{000D}"))
+                  , Just (Literal (String "\u{000D}"))
                   )
                 , ( "escape t"
                   , tripleQuote "\\t"
-                  , Ok (Literal (String "\t"))
+                  , Just (Literal (String "\t"))
                   )
                 , ( "emoji"
                   , tripleQuote "😃"
-                  , Ok (Literal (String "😃"))
+                  , Just (Literal (String "😃"))
                   )
                 , ( "escaped unicode code point"
                   , tripleQuote "\\u{1F648}"
-                  , Ok (Literal (String "🙈"))
+                  , Just (Literal (String "🙈"))
                   )
                 , ( "combo of escapes, newlines, and chars"
                   , tripleQuote "\\u{1F648}\\n\n\n\\r\\t\\abc123"
-                  , Ok (Literal (String "🙈\n\n\n\u{000D}\t\\abc123"))
+                  , Just (Literal (String "🙈\n\n\n\u{000D}\t\\abc123"))
                   )
                 ]
               )
             , ( "literal bool"
               , [ ( "True"
                   , "True"
-                  , Ok (Literal (Bool True))
+                  , Just (Literal (Bool True))
                   )
                 , ( "False"
                   , "False"
-                  , Ok (Literal (Bool False))
+                  , Just (Literal (Bool False))
                   )
                 ]
               )
             , ( "let"
               , [ ( "one liner"
                   , "let x = 1 in 2"
-                  , Ok
+                  , Just
                         (Let
                             { bindings = [ { name = VarName "x", body = Literal (Int 1) } ]
                             , body = Literal (Int 2)
@@ -767,7 +776,7 @@ expr =
                   )
                 , ( "one binding, generous whitespace"
                   , "let\n  x =\n      1\nin\n  2"
-                  , Ok
+                  , Just
                         (Let
                             { bindings = [ { name = VarName "x", body = Literal (Int 1) } ]
                             , body = Literal (Int 2)
@@ -779,34 +788,34 @@ expr =
             , ( "list"
               , [ ( "empty list"
                   , "[]"
-                  , Ok (List [])
+                  , Just (List [])
                   )
                 , ( "empty list with inner spaces"
                   , "[  ]"
-                  , Ok (List [])
+                  , Just (List [])
                   )
                 , ( "single item in list"
                   , "[1]"
-                  , Ok (List [ Literal (Int 1) ])
+                  , Just (List [ Literal (Int 1) ])
                   )
                 , ( "single item in list with inner spaces"
                   , "[ 1 ]"
-                  , Ok (List [ Literal (Int 1) ])
+                  , Just (List [ Literal (Int 1) ])
                   )
                 , ( "simple list"
                   , "[1,2,3]"
-                  , Ok (List [ Literal (Int 1), Literal (Int 2), Literal (Int 3) ])
+                  , Just (List [ Literal (Int 1), Literal (Int 2), Literal (Int 3) ])
                   )
                 , ( "simple list with inner spaces"
                   , "[ 1,  2  , 3 ]"
-                  , Ok (List [ Literal (Int 1), Literal (Int 2), Literal (Int 3) ])
+                  , Just (List [ Literal (Int 1), Literal (Int 2), Literal (Int 3) ])
                   )
                 ]
               )
             , ( "unit"
               , [ ( "simple case"
                   , "()"
-                  , Ok Unit
+                  , Just Unit
                   )
                 ]
               )
@@ -816,27 +825,37 @@ expr =
 
 expectEqualParseResult :
     String
-    -> Result (List (P.DeadEnd ParseContext ParseProblem)) a
+    -> Maybe a
     -> Result (List (P.DeadEnd ParseContext ParseProblem)) a
     -> Expectation
 expectEqualParseResult input expected actual =
-    if actual == expected then
-        Expect.pass
+    case ( actual, expected ) of
+        ( Err _, Nothing ) ->
+            Expect.pass
 
-    else
-        case actual of
-            Err deadEnds ->
-                Expect.fail
-                    (String.join "\n"
-                        (input
-                            :: "===>"
-                            :: "Err"
-                            :: List.map deadEndToString deadEnds
-                        )
+        ( Err deadEnds, Just _ ) ->
+            Expect.fail
+                (String.join "\n"
+                    (input
+                        :: "===>"
+                        :: "Err"
+                        :: List.map deadEndToString deadEnds
                     )
+                )
 
-            _ ->
-                actual |> Expect.equal expected
+        ( Ok actual_, Nothing ) ->
+            Expect.fail
+                (String.join "\n"
+                    (input
+                        :: "===> should have failed but parsed into ==>"
+                        :: "Ok"
+                        :: [ "    " ++ Debug.toString actual_ ]
+                    )
+                )
+
+        ( Ok actual_, Just expected_ ) ->
+            actual_
+                |> Expect.equal expected_
 
 
 deadEndToString : P.DeadEnd ParseContext ParseProblem -> String
