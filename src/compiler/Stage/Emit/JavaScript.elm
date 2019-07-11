@@ -74,6 +74,12 @@ emitExpr ( expr, _ ) =
         Unit ->
             """{type: "unit"}"""
 
+        Tuple e1 e2 ->
+            "[" ++ emitExpr e1 ++ "," ++ emitExpr e2 ++ "]"
+
+        Tuple3 e1 e2 e3 ->
+            "[" ++ emitExpr e1 ++ "," ++ emitExpr e2 ++ "," ++ emitExpr e3 ++ "]"
+
 
 emitTopLevelDeclaration : TopLevelDeclaration Backend.Expr -> String
 emitTopLevelDeclaration { module_, name, body } =
