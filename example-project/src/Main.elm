@@ -2,9 +2,4 @@ module Main exposing (main)
 
 
 main =
-    \x ->
-        if x + 2 then
-            ()
-
-        else
-            x
+    [ 1, 2, 3 ]

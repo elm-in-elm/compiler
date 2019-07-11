@@ -8,6 +8,7 @@ import Common
 import Common.Types exposing (Project)
 import Dict.Any
 import Error exposing (Error(..), TypeError(..))
+import Maybe.Extra
 import Stage.InferTypes.AssignIds as AssignIds
 import Stage.InferTypes.Boilerplate as Boilerplate
 import Stage.InferTypes.GenerateEquations as GenerateEquations
@@ -45,13 +46,14 @@ inferExpr expr =
             AssignIds.assignIds expr
 
         typeEquations =
-            GenerateEquations.generateEquations idSource exprWithIds
+            GenerateEquations.generateEquations idSource (Debug.log "before" exprWithIds)
                 {- We throw away the IdSource. It shouldn't be needed anymore!
 
                    BTW GenerateEquations needed it because in case of some Exprs
                    (like List) it needed to create a new type ID on the fly.
                 -}
                 |> Tuple.first
+                |> Debug.log "eqs"
 
         {- We have an interesting dilemma:
 
@@ -68,10 +70,12 @@ inferExpr expr =
         substitutionMap : Result TypeError SubstitutionMap
         substitutionMap =
             Unify.unifyAllEquations typeEquations
+                |> Debug.log "subst map"
     in
     Result.map
         (substituteAllTypes exprWithIds)
         substitutionMap
+        |> Debug.log "after"
 
 
 {-| This function takes care of recursively applying `substituteType`
@@ -88,11 +92,19 @@ substituteAllTypes expr substitutionMap =
 -}
 substituteType : SubstitutionMap -> Typed.Expr -> Typed.Expr
 substituteType substitutionMap ( expr, type_ ) =
-    ( expr, getType substitutionMap type_ )
+    ( expr, getBetterType substitutionMap type_ )
 
 
-getType : SubstitutionMap -> Type -> Type
-getType substitutionMap type_ =
+{-| Tries to resolve `Var 0`-like references through the SubstitutionMap.
+
+Only goes one step, but that should be enough if we created the SubstitutionMap
+correctly. (TODO check that assumption)
+
+Remember to call itself recursively on children Exprs!
+
+-}
+getBetterType : SubstitutionMap -> Type -> Type
+getBetterType substitutionMap type_ =
     if SubstitutionMap.isEmpty substitutionMap then
         type_
 
@@ -114,17 +126,18 @@ getType substitutionMap type_ =
                 type_
 
             Type.Var id ->
+                -- walk one extra level
                 SubstitutionMap.get id substitutionMap
-                    |> Maybe.map (\typeForId -> getType substitutionMap typeForId)
+                    |> Maybe.map (\typeForId -> getBetterType substitutionMap typeForId)
                     |> Maybe.withDefault type_
 
             Type.Function arg result ->
                 Type.Function
-                    (getType substitutionMap arg)
-                    (getType substitutionMap result)
+                    (getBetterType substitutionMap arg)
+                    (getBetterType substitutionMap result)
 
-            Type.List listType ->
-                listType
+            Type.List param ->
+                Type.List <| getBetterType substitutionMap param
 
             Type.Unit ->
                 type_
