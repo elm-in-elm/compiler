@@ -58,51 +58,60 @@ typeInference =
 typeToString : Test
 typeToString =
     let
-        runSection ( description, tests ) =
-            describe description
-                (List.map runTest tests)
-
         runTest ( description, input, output ) =
             test description <|
                 \() ->
                     Type.toString input
                         |> Expect.equal output
+
+        runEqual ( description, input, output ) =
+            test description <|
+                \() ->
+                    Expect.equal (Type.toString input) (Type.toString output)
     in
     describe "Type.toString"
-        (List.map runSection
-            [ ( "list"
-              , [ ( "empty list"
-                  , Type.List (Type.Var 0)
-                  , "List a"
-                  )
-                , ( "one item in list"
-                  , Type.List Type.Bool
-                  , "List Bool"
-                  )
-                , ( "list of list of String"
-                  , Type.List (Type.List Type.String)
-                  , "List (List String)"
-                  )
-                ]
-              )
-            , ( "lambda"
-              , [ ( "function with one param"
-                  , Type.Function (Type.Var 99) Type.Int
-                  , "a -> Int"
-                  )
-                , ( "function with two params"
-                  , Type.Function (Type.Var 0) (Type.Function (Type.Var 1) (Type.Var 1))
-                  , "a -> b -> b"
-                  )
-                , ( "function as param"
-                  , Type.Function (Type.Function (Type.Var 9) (Type.Var 9)) (Type.Var 0)
-                  , "(a -> a) -> b"
-                  )
-                , ( "list of functions"
-                  , Type.List (Type.Function (Type.Var 0) (Type.Var 0))
-                  , "List (a -> a)"
-                  )
-                ]
-              )
+        [ describe "list"
+            [ runTest
+                ( "empty list"
+                , Type.List (Type.Var 0)
+                , "List a"
+                )
+            , runEqual
+                ( "Var number doesn't count"
+                , Type.List (Type.Var 0)
+                , Type.List (Type.Var 1)
+                )
+            , runTest
+                ( "one item in list"
+                , Type.List Type.Bool
+                , "List Bool"
+                )
+            , runTest
+                ( "list of list of String"
+                , Type.List (Type.List Type.String)
+                , "List (List String)"
+                )
             ]
-        )
+        , describe "lambda"
+            [ runTest
+                ( "function with one param"
+                , Type.Function (Type.Var 99) Type.Int
+                , "a -> Int"
+                )
+            , runTest
+                ( "function with two params"
+                , Type.Function (Type.Var 0) (Type.Function (Type.Var 1) (Type.Var 1))
+                , "a -> b -> b"
+                )
+            , runTest
+                ( "function as param"
+                , Type.Function (Type.Function (Type.Var 9) (Type.Var 9)) (Type.Var 0)
+                , "(a -> a) -> b"
+                )
+            , runTest
+                ( "list of functions"
+                , Type.List (Type.Function (Type.Var 0) (Type.Var 0))
+                , "List (a -> a)"
+                )
+            ]
+        ]
