@@ -1,4 +1,4 @@
-module Stage.InferTypes exposing (inferTypes)
+module Stage.InferTypes exposing (inferTypes, inferExpr)
 
 import AST.Canonical as Canonical
 import AST.Common.Literal as Literal
@@ -122,6 +122,9 @@ getType substitutionMap type_ =
                 Type.Function
                     (getType substitutionMap arg)
                     (getType substitutionMap result)
+
+            Type.List listType ->
+                listType
 
             Type.Unit ->
                 type_
