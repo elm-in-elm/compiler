@@ -66,9 +66,9 @@ emitExpr ( expr, _ ) =
             in
             "((() => {" ++ bindingsJS ++ "; return " ++ emitExpr body ++ ";})())"
 
-        List list_ ->
+        List list ->
             "["
-                ++ (List.map emitExpr list_ |> String.join ", ")
+                ++ (List.map emitExpr list |> String.join ", ")
                 ++ "]"
 
         Unit ->
