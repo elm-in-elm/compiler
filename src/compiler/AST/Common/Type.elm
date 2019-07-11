@@ -1,9 +1,10 @@
 module AST.Common.Type exposing
-    ( Type(..)
-    , emptyVars
+    ( State
+    , Type(..)
+    , dump
+    , empty
     , getVarId
     , toString
-    , toStringWithVars
     )
 
 {-| In its own module because both Error.TypeError and AST.Typed need to see it
@@ -24,8 +25,11 @@ type Type
     | Unit
 
 
-type alias TypeVariableIndex =
-    ( List String, Dict Int String )
+type State
+    = State
+        { freeLetters : List String
+        , mapping : Dict Int String
+        }
 
 
 getVarId : Type -> Maybe Int
@@ -38,90 +42,94 @@ getVarId type_ =
             Nothing
 
 
-toString : Type -> String
-toString type_ =
-    toStringWithVars type_ emptyVars
-        |> Tuple.first
+empty : State
+empty =
+    State
+        { freeLetters = varsLetters
+        , mapping = Dict.empty
+        }
 
 
-emptyVars : TypeVariableIndex
-emptyVars =
-    ( typeVariablesLetters, Dict.empty )
-
-
-toStringWithVars : Type -> TypeVariableIndex -> ( String, TypeVariableIndex )
-toStringWithVars type_ typeVariablesIndex =
+toString : Type -> State -> ( String, State )
+toString type_ state =
     case type_ of
         Var int ->
-            getVariable int typeVariablesIndex
+            getVariable int state
 
         Function t1 t2 ->
             let
-                ( type1, typeVariablesIndex1 ) =
-                    wrapParens t1 typeVariablesIndex
+                ( type1, state1 ) =
+                    wrapParens t1 state
 
-                ( type2, typeVariablesIndex2 ) =
-                    toStringWithVars t2 typeVariablesIndex1
+                ( type2, state2 ) =
+                    toString t2 state1
             in
             ( type1 ++ " -> " ++ type2
-            , typeVariablesIndex2
+            , state2
             )
 
         List param ->
-            wrapParens param typeVariablesIndex
+            wrapParens param state
                 |> Tuple.mapFirst ((++) "List ")
 
         Int ->
-            ( "Int", typeVariablesIndex )
+            ( "Int", state )
 
         Float ->
-            ( "Float", typeVariablesIndex )
+            ( "Float", state )
 
         Char ->
-            ( "Char", typeVariablesIndex )
+            ( "Char", state )
 
         String ->
-            ( "String", typeVariablesIndex )
+            ( "String", state )
 
         Bool ->
-            ( "Bool", typeVariablesIndex )
+            ( "Bool", state )
 
         Unit ->
-            ( "Unit", typeVariablesIndex )
+            ( "Unit", state )
 
 
-getVariable : Int -> TypeVariableIndex -> ( String, TypeVariableIndex )
-getVariable int (( letters, dict ) as typeVariablesIndex) =
-    case Dict.get int dict of
+dump : Type -> String
+dump type_ =
+    toString type_ empty
+        |> Tuple.first
+
+
+getVariable : Int -> State -> ( String, State )
+getVariable int ((State { freeLetters, mapping }) as state) =
+    case Dict.get int mapping of
         Just letter ->
             ( letter
-            , typeVariablesIndex
+            , state
             )
 
         Nothing ->
-            case letters of
-                letter :: freeLetters ->
+            case freeLetters of
+                letter :: letters ->
                     ( letter
-                    , ( freeLetters
-                      , Dict.insert int letter dict
-                      )
+                    , State
+                        { freeLetters = letters
+                        , mapping = Dict.insert int letter mapping
+                        }
                     )
 
                 [] ->
                     ( "t" ++ String.fromInt int
-                    , typeVariablesIndex
+                    , state
                     )
 
 
-typeVariablesLetters : List String
-typeVariablesLetters =
+varsLetters : List String
+varsLetters =
     -- Stops at letter `s`, so that outbound variables display `tN`
     [ "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s" ]
 
 
-wrapParens : Type -> TypeVariableIndex -> ( String, TypeVariableIndex )
-wrapParens type_ typeVariablesIndex =
-    toStringWithVars type_ typeVariablesIndex
+wrapParens : Type -> State -> ( String, State )
+wrapParens type_ state =
+    toString type_ state
         |> Tuple.mapFirst
             (\t ->
                 case type_ of

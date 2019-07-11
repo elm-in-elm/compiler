@@ -185,11 +185,11 @@ toString error =
                 TypeMismatch t1 t2 ->
                     let
                         -- Share index between types
-                        ( type1, index1 ) =
-                            Type.toStringWithVars t1 Type.emptyVars
+                        ( type1, state1 ) =
+                            Type.toString t1 Type.empty
 
                         ( type2, _ ) =
-                            Type.toStringWithVars t2 index1
+                            Type.toString t2 state1
                     in
                     "The types `"
                         ++ type1
@@ -198,10 +198,17 @@ toString error =
                         ++ "` don't match."
 
                 OccursCheckFailed varId type_ ->
+                    let
+                        ( type1, state1 ) =
+                            Type.toString (Type.Var varId) Type.empty
+
+                        ( type2, _ ) =
+                            Type.toString type_ state1
+                    in
                     "An \"occurs check\" failed while typechecking: "
-                        ++ Type.toString (Type.Var varId)
+                        ++ type1
                         ++ " occurs in "
-                        ++ Type.toString type_
+                        ++ type2
 
         PrepareForBackendError prepareForBackendError ->
             case prepareForBackendError of

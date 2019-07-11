@@ -61,7 +61,7 @@ typeToString =
         runTest ( description, input, output ) =
             test description <|
                 \() ->
-                    Type.toString input
+                    Type.dump input
                         |> Expect.equal output
 
         runEqual ( description, input, output ) =
@@ -112,8 +112,8 @@ typeToString =
         , describe "edges"
             [ runEqual
                 ( "Var number doesn't count"
-                , Type.toString <| Type.List (Type.Var 0)
-                , Type.toString <| Type.List (Type.Var 1)
+                , Type.dump <| Type.List (Type.Var 0)
+                , Type.dump <| Type.List (Type.Var 1)
                 )
             , runEqual
                 ( "TypeMismatch types share vars index"
