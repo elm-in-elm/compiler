@@ -34,7 +34,7 @@ typeInference =
                   )
                 , ( "more items types"
                   , Canonical.List [ Canonical.Literal (Int 2), Canonical.Literal (Int 3), Canonical.Literal (Bool False) ]
-                  , Err (Error.TypeMismatch (Type.Int) (Type.Bool))
+                  , Err (Error.TypeMismatch Type.Int Type.Bool)
                   )
                 ]
               )

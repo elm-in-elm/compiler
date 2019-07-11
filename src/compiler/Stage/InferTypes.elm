@@ -1,4 +1,4 @@
-module Stage.InferTypes exposing (inferTypes, inferExpr)
+module Stage.InferTypes exposing (inferExpr, inferTypes)
 
 import AST.Canonical as Canonical
 import AST.Common.Literal as Literal

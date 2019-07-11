@@ -152,8 +152,8 @@ desugarLet recurse bindings body =
 desugarList : (Frontend.Expr -> Result DesugarError Canonical.Expr) -> List Frontend.Expr -> Result DesugarError Canonical.Expr
 desugarList recurse list_ =
     List.map recurse list_
-    |> List.foldr (Result.map2 (::)) (Ok [])
-    |> Result.map Canonical.List
+        |> List.foldr (Result.map2 (::)) (Ok [])
+        |> Result.map Canonical.List
 
 
 desugarUnit : Result DesugarError Canonical.Expr
