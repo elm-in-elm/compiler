@@ -84,22 +84,66 @@ randomExprFromType targetType =
     in
     case targetType of
         Type.Int ->
-            Fuzz.map Canonical.Literal <| Fuzz.map Int <| Fuzz.int
+            intExpr
 
         Type.Float ->
-            Fuzz.map Canonical.Literal <| Fuzz.map Float <| Fuzz.float
+            floatExpr
 
         Type.Bool ->
-            Fuzz.map Canonical.Literal <| Fuzz.map Bool <| Fuzz.bool
+            boolExpr
 
         Type.Char ->
-            Fuzz.map Canonical.Literal <| Fuzz.map Char <| Fuzz.map Char.fromCode <| Fuzz.intRange 0 0x0010FFFF
+            charExpr
 
         Type.String ->
-            Fuzz.map Canonical.Literal <| Fuzz.map String <| Fuzz.map String.fromList <| Fuzz.map (List.map Char.fromCode) <| Fuzz.list <| Fuzz.intRange 0 0x0010FFFF
+            stringExpr
 
         Type.Unit ->
-            Fuzz.constant Canonical.Unit
+            unitExpr
 
         _ ->
             cannotFuzz ()
+
+
+intExpr : Fuzzer Canonical.Expr
+intExpr =
+    Fuzz.int
+        |> Fuzz.map Int
+        |> Fuzz.map Canonical.Literal
+
+
+floatExpr : Fuzzer Canonical.Expr
+floatExpr =
+    Fuzz.float
+        |> Fuzz.map Float
+        |> Fuzz.map Canonical.Literal
+
+
+boolExpr : Fuzzer Canonical.Expr
+boolExpr =
+    Fuzz.bool
+        |> Fuzz.map Bool
+        |> Fuzz.map Canonical.Literal
+
+
+charExpr : Fuzzer Canonical.Expr
+charExpr =
+    Fuzz.intRange 0 0x0010FFFF
+        |> Fuzz.map Char.fromCode
+        |> Fuzz.map Char
+        |> Fuzz.map Canonical.Literal
+
+
+stringExpr : Fuzzer Canonical.Expr
+stringExpr =
+    Fuzz.intRange 0 0x0010FFFF
+        |> Fuzz.list
+        |> Fuzz.map (List.map Char.fromCode)
+        |> Fuzz.map String.fromList
+        |> Fuzz.map String
+        |> Fuzz.map Canonical.Literal
+
+
+unitExpr : Fuzzer Canonical.Expr
+unitExpr =
+    Canonical.Unit |> Fuzz.constant
