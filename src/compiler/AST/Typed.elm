@@ -1,16 +1,21 @@
 module AST.Typed exposing
     ( Expr
     , Expr_(..)
+    , LocatedExpr
     , ProjectFields
+    , getExpr
+    , getType
     , isArgument
     , lambda
     , let_
+    , mapExpr
     , recursiveChildren
     , transformAll
     , transformOnce
     )
 
 import AST.Common.Literal exposing (Literal)
+import AST.Common.Located as Located exposing (Located)
 import AST.Common.Type exposing (Type)
 import Common
 import Common.Types
@@ -25,16 +30,20 @@ import Transform
 
 
 type alias ProjectFields =
-    { modules : Modules Expr }
+    { modules : Modules LocatedExpr }
 
 
-{-| Differs from Canonical.Expr by:
+{-| Differs from Canonical.LocatedExpr by:
 
-  - being a tuple of the underlying Expr\_ type and its type
+  - being a tuple of the underlying LocatedExpr\_ type and its type
 
 TODO make this opaque, add accessors etc.
 
 -}
+type alias LocatedExpr =
+    Located Expr
+
+
 type alias Expr =
     ( Expr_, Type )
 
@@ -43,21 +52,21 @@ type Expr_
     = Literal Literal
     | Var { qualifier : ModuleName, name : VarName }
     | Argument VarName
-    | Plus Expr Expr
+    | Plus LocatedExpr LocatedExpr
     | Lambda
         { argument : VarName
-        , body : Expr
+        , body : LocatedExpr
         }
-    | Call { fn : Expr, argument : Expr }
-    | If { test : Expr, then_ : Expr, else_ : Expr }
-    | Let { bindings : AnyDict String VarName (Binding Expr), body : Expr }
-    | List (List Expr)
+    | Call { fn : LocatedExpr, argument : LocatedExpr }
+    | If { test : LocatedExpr, then_ : LocatedExpr, else_ : LocatedExpr }
+    | Let { bindings : AnyDict String VarName (Binding LocatedExpr), body : LocatedExpr }
+    | List (List LocatedExpr)
     | Unit
-    | Tuple Expr Expr
-    | Tuple3 Expr Expr Expr
+    | Tuple LocatedExpr LocatedExpr
+    | Tuple3 LocatedExpr LocatedExpr LocatedExpr
 
 
-lambda : VarName -> Expr -> Expr_
+lambda : VarName -> LocatedExpr -> Expr_
 lambda argument body =
     Lambda
         { argument = argument
@@ -65,7 +74,7 @@ lambda argument body =
         }
 
 
-let_ : AnyDict String VarName (Binding Expr) -> Expr -> Expr_
+let_ : AnyDict String VarName (Binding LocatedExpr) -> LocatedExpr -> Expr_
 let_ bindings body =
     Let
         { bindings = bindings
@@ -73,79 +82,87 @@ let_ bindings body =
         }
 
 
+
+--TODO: Refactor the rest using Transform
+
+
 {-| A helper for the Transform library.
 -}
-recurse : (Expr -> Expr) -> Expr -> Expr
-recurse f ( expr, type_ ) =
-    ( case expr of
-        Literal _ ->
-            expr
+recurse : (LocatedExpr -> LocatedExpr) -> LocatedExpr -> LocatedExpr
+recurse f expr =
+    mapExpr
+        (\expr_ ->
+            case expr_ of
+                Literal _ ->
+                    expr_
 
-        Var _ ->
-            expr
+                Var _ ->
+                    expr_
 
-        Argument _ ->
-            expr
+                Argument _ ->
+                    expr_
 
-        Plus e1 e2 ->
-            Plus (f e1) (f e2)
+                Plus e1 e2 ->
+                    Plus
+                        (f e1)
+                        (f e2)
 
-        Lambda ({ body } as lambda_) ->
-            Lambda { lambda_ | body = f body }
+                Lambda ({ body } as lambda_) ->
+                    Lambda { lambda_ | body = f body }
 
-        Call { fn, argument } ->
-            Call
-                { fn = f fn
-                , argument = f argument
-                }
+                Call { fn, argument } ->
+                    Call
+                        { fn = f fn
+                        , argument = f argument
+                        }
 
-        If { test, then_, else_ } ->
-            If
-                { test = f test
-                , then_ = f then_
-                , else_ = f else_
-                }
+                If { test, then_, else_ } ->
+                    If
+                        { test = f test
+                        , then_ = f then_
+                        , else_ = f else_
+                        }
 
-        Let { bindings, body } ->
-            Let
-                { bindings = Dict.Any.map (always (Common.mapBinding f)) bindings
-                , body = f body
-                }
+                Let { bindings, body } ->
+                    Let
+                        { bindings = Dict.Any.map (always (Common.mapBinding f)) bindings
+                        , body = f body
+                        }
 
-        List items ->
-            List (List.map f items)
+                List items ->
+                    List (List.map f items)
 
-        Unit ->
-            expr
+                Tuple e1 e2 ->
+                    Tuple (f e1) (f e2)
 
-        Tuple e1 e2 ->
-            Tuple (f e1) (f e2)
+                Tuple3 e1 e2 e3 ->
+                    Tuple3 (f e1) (f e2) (f e3)
 
-        Tuple3 e1 e2 e3 ->
-            Tuple3 (f e1) (f e2) (f e3)
-    , type_
-    )
+                Unit ->
+                    expr_
+        )
+        expr
 
 
-transformOnce : (Expr -> Expr) -> Expr -> Expr
-transformOnce pass expr =
+transformOnce : (LocatedExpr -> LocatedExpr) -> LocatedExpr -> LocatedExpr
+transformOnce pass expr_ =
     Transform.transformOnce
         recurse
         pass
-        expr
+        expr_
 
 
-transformAll : List (Expr -> Maybe Expr) -> Expr -> Expr
-transformAll passes expr =
+transformAll : List (LocatedExpr -> Maybe LocatedExpr) -> LocatedExpr -> LocatedExpr
+transformAll passes expr_ =
     Transform.transformAll
         recurse
         (Transform.orList passes)
-        expr
+        expr_
 
 
-isArgument : VarName -> Expr -> Bool
-isArgument name ( expr_, _ ) =
-    case expr_ of
+isArgument : VarName -> LocatedExpr -> Bool
+isArgument name expr =
+    case getExpr expr of
         Argument argName ->
             argName == name
 
@@ -153,9 +170,9 @@ isArgument name ( expr_, _ ) =
             False
 
 
-recursiveChildren : (Expr -> List Expr) -> Expr -> List Expr
-recursiveChildren fn ( expr, _ ) =
-    case expr of
+recursiveChildren : (LocatedExpr -> List LocatedExpr) -> LocatedExpr -> List LocatedExpr
+recursiveChildren fn expr =
+    case getExpr expr of
         Literal _ ->
             []
 
@@ -196,3 +213,18 @@ recursiveChildren fn ( expr, _ ) =
 
         Tuple3 e1 e2 e3 ->
             fn e1 ++ fn e2 ++ fn e3
+
+
+mapExpr : (a -> b) -> Located ( a, c ) -> Located ( b, c )
+mapExpr =
+    Located.map << Tuple.mapFirst
+
+
+getExpr : Located ( a, b ) -> a
+getExpr =
+    Tuple.first << Located.unwrap
+
+
+getType : Located ( a, b ) -> b
+getType =
+    Tuple.second << Located.unwrap

@@ -1,8 +1,9 @@
 module InferTypesTest exposing (typeInference, typeToString)
 
 import AST.Canonical as Canonical
-import AST.Common.Literal exposing (Literal(..))
-import AST.Common.Type as Type exposing (Type)
+import AST.Common.Literal as Literal
+import AST.Common.Located as Located exposing (located)
+import AST.Common.Type as Type exposing (Type(..))
 import AST.Typed as Typed
 import Common
 import Common.Types as Types
@@ -30,86 +31,46 @@ typeInference =
         (List.map runSection
             [ ( "list"
               , [ ( "empty list"
-                  , Canonical.List []
-                  , Ok ( Typed.List [], Type.List (Type.Var 1) )
+                  , located { end = { col = 3, row = 1 }, start = { col = 1, row = 1 } } (Canonical.List [])
+                  , Ok (located { end = { col = 3, row = 1 }, start = { col = 1, row = 1 } } ( Typed.List [], List (Var 1) ))
                   )
                 , ( "one item"
-                  , Canonical.List [ Canonical.Literal (Bool True) ]
-                  , Ok ( Typed.List [ ( Typed.Literal (Bool True), Type.Bool ) ], Type.List Type.Bool )
+                  , located { end = { col = 4, row = 1 }, start = { col = 1, row = 1 } } (Canonical.List [ located { end = { col = 3, row = 1 }, start = { col = 2, row = 1 } } (Canonical.Literal (Literal.Int 1)) ])
+                  , Ok (located { end = { col = 4, row = 1 }, start = { col = 1, row = 1 } } ( Typed.List [ located { end = { col = 3, row = 1 }, start = { col = 2, row = 1 } } ( Typed.Literal (Literal.Int 1), Int ) ], List Int ))
                   )
                 , ( "more items"
-                  , Canonical.List [ Canonical.Literal (Int 1), Canonical.Literal (Int 2), Canonical.Literal (Int 3) ]
-                  , Ok ( Typed.List [ ( Typed.Literal (Int 1), Type.Int ), ( Typed.Literal (Int 2), Type.Int ), ( Typed.Literal (Int 3), Type.Int ) ], Type.List Type.Int )
+                  , located { end = { col = 8, row = 1 }, start = { col = 1, row = 1 } } (Canonical.List [ located { end = { col = 3, row = 1 }, start = { col = 2, row = 1 } } (Canonical.Literal (Literal.Int 1)), located { end = { col = 5, row = 1 }, start = { col = 4, row = 1 } } (Canonical.Literal (Literal.Int 2)), located { end = { col = 7, row = 1 }, start = { col = 6, row = 1 } } (Canonical.Literal (Literal.Int 3)) ])
+                  , Ok (located { end = { col = 8, row = 1 }, start = { col = 1, row = 1 } } ( Typed.List [ located { end = { col = 3, row = 1 }, start = { col = 2, row = 1 } } ( Typed.Literal (Literal.Int 1), Int ), located { end = { col = 5, row = 1 }, start = { col = 4, row = 1 } } ( Typed.Literal (Literal.Int 2), Int ), located { end = { col = 7, row = 1 }, start = { col = 6, row = 1 } } ( Typed.Literal (Literal.Int 3), Int ) ], List Int ))
                   )
                 , ( "different types"
-                  , Canonical.List [ Canonical.Literal (Int 1), Canonical.Literal (String "two") ]
+                  , located { end = { col = 10, row = 1 }, start = { col = 1, row = 1 } } (Canonical.List [ located { end = { col = 3, row = 1 }, start = { col = 2, row = 1 } } (Canonical.Literal (Literal.Int 1)), located { end = { col = 7, row = 1 }, start = { col = 4, row = 1 } } (Canonical.Literal (Literal.String "2")) ])
                   , Err (Error.TypeMismatch Type.Int Type.String)
                   )
                 , ( "more items with different types"
-                  , Canonical.List [ Canonical.Literal (Bool True), Canonical.Literal (String "two"), Canonical.Literal (Int 3) ]
+                  , located { end = { col = 10, row = 1 }, start = { col = 1, row = 1 } } (Canonical.List [ located { end = { col = 3, row = 1 }, start = { col = 2, row = 1 } } (Canonical.Literal (Literal.Bool True)), located { end = { col = 7, row = 1 }, start = { col = 4, row = 1 } } (Canonical.Literal (Literal.String "two")), located { end = { col = 7, row = 1 }, start = { col = 4, row = 1 } } (Canonical.Literal (Literal.Int 3)) ])
                   , Err (Error.TypeMismatch Type.Bool Type.String)
-                  )
-                , ( "List of List of Int"
-                  , Canonical.List [ Canonical.List [ Canonical.Literal (Int 1) ], Canonical.List [ Canonical.Literal (Int 2) ] ]
-                  , Ok ( Typed.List [ ( Typed.List [ ( Typed.Literal (Int 1), Type.Int ) ], Type.List Type.Int ), ( Typed.List [ ( Typed.Literal (Int 2), Type.Int ) ], Type.List Type.Int ) ], Type.List (Type.List Type.Int) )
-                  )
-                , ( "List of List of different types"
-                  , Canonical.List [ Canonical.List [ Canonical.Literal (Int 1) ], Canonical.List [ Canonical.Literal (Bool False) ] ]
-                  , Err (Error.TypeMismatch Type.Int Type.Bool)
                   )
                 ]
               )
             , ( "tuple"
               , [ ( "items with the same types"
-                  , Canonical.Tuple
-                        (Canonical.Literal (String "Hello"))
-                        (Canonical.Literal (String "Elm"))
-                  , Ok
-                        ( Typed.Tuple
-                            ( Typed.Literal (String "Hello"), Type.String )
-                            ( Typed.Literal (String "Elm"), Type.String )
-                        , Type.Tuple Type.String Type.String
-                        )
+                  , located { end = { col = 3, row = 1 }, start = { col = 1, row = 1 } } (Canonical.Tuple (located { end = { col = 3, row = 1 }, start = { col = 1, row = 1 } } (Canonical.Literal (Literal.String "Hello"))) (located { end = { col = 3, row = 1 }, start = { col = 1, row = 1 } } (Canonical.Literal (Literal.String "Elm"))))
+                  , Ok (located { end = { col = 3, row = 1 }, start = { col = 1, row = 1 } } ( Typed.Tuple (located { end = { col = 3, row = 1 }, start = { col = 1, row = 1 } } ( Typed.Literal (Literal.String "Hello"), String )) (located { end = { col = 3, row = 1 }, start = { col = 1, row = 1 } } ( Typed.Literal (Literal.String "Elm"), String )), Tuple String String ))
                   )
                 , ( "items of different types"
-                  , Canonical.Tuple
-                        (Canonical.Literal (Bool True))
-                        (Canonical.Literal (Int 1))
-                  , Ok
-                        ( Typed.Tuple
-                            ( Typed.Literal (Bool True), Type.Bool )
-                            ( Typed.Literal (Int 1), Type.Int )
-                        , Type.Tuple Type.Bool Type.Int
-                        )
+                  , located { end = { col = 3, row = 1 }, start = { col = 1, row = 1 } } (Canonical.Tuple (located { end = { col = 3, row = 1 }, start = { col = 1, row = 1 } } (Canonical.Literal (Literal.Bool True))) (located { end = { col = 3, row = 1 }, start = { col = 1, row = 1 } } (Canonical.Literal (Literal.Int 1))))
+                  , Ok (located { end = { col = 3, row = 1 }, start = { col = 1, row = 1 } } ( Typed.Tuple (located { end = { col = 3, row = 1 }, start = { col = 1, row = 1 } } ( Typed.Literal (Literal.Bool True), Bool )) (located { end = { col = 3, row = 1 }, start = { col = 1, row = 1 } } ( Typed.Literal (Literal.Int 1), Int )), Tuple Bool Int ))
                   )
                 ]
               )
             , ( "tuple3"
               , [ ( "same types"
-                  , Canonical.Tuple3
-                        (Canonical.Literal (String "FP"))
-                        (Canonical.Literal (String "is"))
-                        (Canonical.Literal (String "good"))
-                  , Ok
-                        ( Typed.Tuple3
-                            ( Typed.Literal (String "FP"), Type.String )
-                            ( Typed.Literal (String "is"), Type.String )
-                            ( Typed.Literal (String "good"), Type.String )
-                        , Type.Tuple3 Type.String Type.String Type.String
-                        )
+                  , located { end = { col = 3, row = 1 }, start = { col = 1, row = 1 } } (Canonical.Tuple3 (located { end = { col = 3, row = 1 }, start = { col = 1, row = 1 } } (Canonical.Literal (Literal.String "FP"))) (located { end = { col = 3, row = 1 }, start = { col = 1, row = 1 } } (Canonical.Literal (Literal.String "is"))) (located { end = { col = 3, row = 1 }, start = { col = 1, row = 1 } } (Canonical.Literal (Literal.String "good"))))
+                  , Ok (located { end = { col = 3, row = 1 }, start = { col = 1, row = 1 } } ( Typed.Tuple3 (located { end = { col = 3, row = 1 }, start = { col = 1, row = 1 } } ( Typed.Literal (Literal.String "FP"), String )) (located { end = { col = 3, row = 1 }, start = { col = 1, row = 1 } } ( Typed.Literal (Literal.String "is"), String )) (located { end = { col = 3, row = 1 }, start = { col = 1, row = 1 } } ( Typed.Literal (Literal.String "good"), String )), Tuple3 String String String ))
                   )
                 , ( "different types"
-                  , Canonical.Tuple3
-                        (Canonical.Literal (Bool True))
-                        (Canonical.Literal (Int 1))
-                        (Canonical.Literal (Char 'h'))
-                  , Ok
-                        ( Typed.Tuple3
-                            ( Typed.Literal (Bool True), Type.Bool )
-                            ( Typed.Literal (Int 1), Type.Int )
-                            ( Typed.Literal (Char 'h'), Type.Char )
-                        , Type.Tuple3 Type.Bool Type.Int Type.Char
-                        )
+                  , located { end = { col = 3, row = 1 }, start = { col = 1, row = 1 } } (Canonical.Tuple3 (located { end = { col = 3, row = 1 }, start = { col = 1, row = 1 } } (Canonical.Literal (Literal.Bool True))) (located { end = { col = 3, row = 1 }, start = { col = 1, row = 1 } } (Canonical.Literal (Literal.Int 1))) (located { end = { col = 3, row = 1 }, start = { col = 1, row = 1 } } (Canonical.Literal (Literal.Char 'h'))))
+                  , Ok (located { end = { col = 3, row = 1 }, start = { col = 1, row = 1 } } ( Typed.Tuple3 (located { end = { col = 3, row = 1 }, start = { col = 1, row = 1 } } ( Typed.Literal (Literal.Bool True), Bool )) (located { end = { col = 3, row = 1 }, start = { col = 1, row = 1 } } ( Typed.Literal (Literal.Int 1), Int )) (located { end = { col = 3, row = 1 }, start = { col = 1, row = 1 } } ( Typed.Literal (Literal.Char 'h'), Char )), Tuple3 Bool Int Char ))
                   )
                 ]
               )

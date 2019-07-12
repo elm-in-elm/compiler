@@ -31,7 +31,7 @@ emit project =
 {-| We want to be able to emit `main`. We only emit what's needed for that.
 Taken from the example in elm-community/graph README :sweat\_smile:
 -}
-findPathToMain : Project Backend.ProjectFields -> List (TopLevelDeclaration Backend.Expr)
+findPathToMain : Project Backend.ProjectFields -> List (TopLevelDeclaration Backend.LocatedExpr)
 findPathToMain { programGraph, mainModuleName } =
     Graph.guidedDfs
         Graph.alongIncomingEdges

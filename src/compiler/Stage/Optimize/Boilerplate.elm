@@ -13,36 +13,36 @@ import Common.Types
 import Dict.Any
 
 
-optimizeProject : (Typed.Expr -> Typed.Expr) -> Project Typed.ProjectFields -> Project Typed.ProjectFields
+optimizeProject : (Typed.LocatedExpr -> Typed.LocatedExpr) -> Project Typed.ProjectFields -> Project Typed.ProjectFields
 optimizeProject optimizeExpr project =
     project.modules
         |> Dict.Any.map (always (optimizeModule optimizeExpr))
         |> asModulesIn project
 
 
-asModulesIn : Project Typed.ProjectFields -> Modules Typed.Expr -> Project Typed.ProjectFields
+asModulesIn : Project Typed.ProjectFields -> Modules Typed.LocatedExpr -> Project Typed.ProjectFields
 asModulesIn project modules =
     { project | modules = modules }
 
 
-optimizeModule : (Typed.Expr -> Typed.Expr) -> Module Typed.Expr -> Module Typed.Expr
+optimizeModule : (Typed.LocatedExpr -> Typed.LocatedExpr) -> Module Typed.LocatedExpr -> Module Typed.LocatedExpr
 optimizeModule optimizeExpr module_ =
     module_.topLevelDeclarations
         |> Dict.Any.map (always (optimizeTopLevelDeclaration optimizeExpr))
         |> asTopLevelDeclarationsIn module_
 
 
-asTopLevelDeclarationsIn : Module Typed.Expr -> Dict_ VarName (TopLevelDeclaration Typed.Expr) -> Module Typed.Expr
+asTopLevelDeclarationsIn : Module Typed.LocatedExpr -> Dict_ VarName (TopLevelDeclaration Typed.LocatedExpr) -> Module Typed.LocatedExpr
 asTopLevelDeclarationsIn module_ topLevelDeclarations =
     { module_ | topLevelDeclarations = topLevelDeclarations }
 
 
-optimizeTopLevelDeclaration : (Typed.Expr -> Typed.Expr) -> TopLevelDeclaration Typed.Expr -> TopLevelDeclaration Typed.Expr
+optimizeTopLevelDeclaration : (Typed.LocatedExpr -> Typed.LocatedExpr) -> TopLevelDeclaration Typed.LocatedExpr -> TopLevelDeclaration Typed.LocatedExpr
 optimizeTopLevelDeclaration optimizeExpr decl =
     optimizeExpr decl.body
         |> asBodyIn decl
 
 
-asBodyIn : TopLevelDeclaration Typed.Expr -> Typed.Expr -> TopLevelDeclaration Typed.Expr
+asBodyIn : TopLevelDeclaration Typed.LocatedExpr -> Typed.LocatedExpr -> TopLevelDeclaration Typed.LocatedExpr
 asBodyIn decl body =
     { decl | body = body }
