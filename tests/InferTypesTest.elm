@@ -5,7 +5,6 @@ import AST.Common.Literal exposing (Literal(..))
 import AST.Common.Type as Type exposing (Type)
 import AST.Typed as Typed
 import Common
-import Common.Types exposing (VarName(..))
 import Dict.Any
 import Error exposing (TypeError)
 import Expect exposing (Expectation)
@@ -46,7 +45,6 @@ typeInference =
             , fuzzExpr Type.Char
             , fuzzExpr Type.String
             , fuzzExpr Type.Unit
-            , fuzzExpr (Type.Function Type.Int Type.Int)
             ]
         ]
 
@@ -103,9 +101,6 @@ randomExprFromType targetType =
         Type.Unit ->
             unitExpr
 
-        Type.Function _ outputType ->
-            lambdaExpr outputType
-
         _ ->
             cannotFuzz ()
 
@@ -152,17 +147,3 @@ stringExpr =
 unitExpr : Fuzzer Canonical.Expr
 unitExpr =
     Canonical.Unit |> Fuzz.constant
-
-
-lambdaExpr : Type -> Fuzzer Canonical.Expr
-lambdaExpr outputType =
-    let
-        wrapBody expr =
-            Canonical.Lambda
-                { argument = VarName "_"
-                , body = expr
-                }
-    in
-    outputType
-        |> randomExprFromType
-        |> Fuzz.map wrapBody
