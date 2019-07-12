@@ -45,6 +45,9 @@ typeInference =
             , fuzzExpr Type.Char
             , fuzzExpr Type.String
             , fuzzExpr Type.Unit
+            , fuzzExpr <| Type.List Type.Unit
+            , fuzzExpr <| Type.List Type.Int
+            , fuzzExpr <| Type.List (Type.List Type.String)
             ]
         ]
 
@@ -79,8 +82,19 @@ fuzzExpr typeWanted =
 randomExprFromType : Type -> Fuzzer Canonical.Expr
 randomExprFromType targetType =
     let
-        cannotFuzz () =
-            Debug.todo <| "Cannot fuzz " ++ Type.toString targetType ++ " expressions."
+        cannotFuzz details =
+            let
+                prefix =
+                    "Cannot fuzz `" ++ Type.toString targetType ++ "` expressions."
+
+                message =
+                    if details |> String.isEmpty then
+                        prefix
+
+                    else
+                        prefix ++ " " ++ details
+            in
+            message |> Debug.todo
     in
     case targetType of
         Type.Int ->
@@ -101,8 +115,15 @@ randomExprFromType targetType =
         Type.Unit ->
             unitExpr
 
+        Type.List elementType ->
+            if elementType |> Type.isNotParametric then
+                listExpr elementType
+
+            else
+                cannotFuzz "Only lists with non-parametric elements are supported."
+
         _ ->
-            cannotFuzz ()
+            cannotFuzz ""
 
 
 intExpr : Fuzzer Canonical.Expr
@@ -147,3 +168,15 @@ stringExpr =
 unitExpr : Fuzzer Canonical.Expr
 unitExpr =
     Canonical.Unit |> Fuzz.constant
+
+
+listExpr : Type -> Fuzzer Canonical.Expr
+listExpr elementType =
+    let
+        elementExpr =
+            elementType |> randomExprFromType
+    in
+    elementExpr
+        |> Fuzz.list
+        |> Fuzz.map2 (::) elementExpr
+        |> Fuzz.map Canonical.List

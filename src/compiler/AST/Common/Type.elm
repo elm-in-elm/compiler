@@ -1,6 +1,7 @@
 module AST.Common.Type exposing
     ( Type(..)
     , getVarId
+    , isNotParametric
     , toString
     )
 
@@ -28,6 +29,23 @@ getVarId type_ =
 
         _ ->
             Nothing
+
+
+isNotParametric : Type -> Bool
+isNotParametric type_ =
+    case type_ of
+        Var _ ->
+            False
+
+        Function input output ->
+            [ input, output ]
+                |> List.all isNotParametric
+
+        List element ->
+            element |> isNotParametric
+
+        _ ->
+            True
 
 
 toString : Type -> String
