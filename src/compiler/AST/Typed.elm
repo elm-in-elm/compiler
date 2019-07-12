@@ -190,3 +190,9 @@ recursiveChildren fn ( expr, _ ) =
 
         List items ->
             List.concatMap fn items
+
+        Tuple e1 e2 ->
+            fn e1 ++ fn e2
+
+        Tuple3 e1 e2 e3 ->
+            fn e1 ++ fn e2 ++ fn e3
