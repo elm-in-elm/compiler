@@ -5,6 +5,7 @@ import AST.Common.Literal exposing (Literal(..))
 import AST.Common.Type as Type exposing (Type)
 import AST.Typed as Typed
 import Common
+import Common.Types exposing (VarName(..))
 import Dict.Any
 import Error exposing (TypeError)
 import Expect exposing (Expectation)
@@ -48,6 +49,7 @@ typeInference =
             , fuzzExpr <| Type.List Type.Unit
             , fuzzExpr <| Type.List Type.Int
             , fuzzExpr <| Type.List (Type.List Type.String)
+            , fuzzExpr <| Type.Function Type.Int Type.Int
             ]
         ]
 
@@ -120,7 +122,13 @@ randomExprFromType targetType =
                 listExpr elementType
 
             else
-                cannotFuzz "Only lists with non-parametric elements are supported."
+                cannotFuzz "Only lists with non-parametric element types are supported."
+
+        Type.Function Type.Int Type.Int ->
+            intToIntFunctionExpr
+
+        Type.Function _ _ ->
+            cannotFuzz "Only `Int -> Int` functions are supported."
 
         _ ->
             cannotFuzz ""
@@ -180,3 +188,47 @@ listExpr elementType =
         |> Fuzz.list
         |> Fuzz.map2 (::) elementExpr
         |> Fuzz.map Canonical.List
+
+
+intToIntFunctionExpr : Fuzzer Canonical.Expr
+intToIntFunctionExpr =
+    let
+        wrapBody argumentName expr =
+            Canonical.Lambda
+                { argument = argumentName
+                , body = Canonical.Plus expr (Canonical.Argument argumentName)
+                }
+    in
+    Fuzz.map2 wrapBody
+        -- TODO: Later we will need something better to avoid shadowing.
+        randomVarName
+        (Type.Int |> randomExprFromType)
+
+
+randomVarName : Fuzzer VarName
+randomVarName =
+    let
+        starters =
+            "abcdefghijklnmoqprstuvwxyz"
+
+        others =
+            "ABCDEFGHIJKLMNOQPRSTUVQXYZ_0123456789"
+
+        all =
+            starters ++ others
+
+        charFrom string =
+            string
+                |> String.toList
+                |> List.map Fuzz.constant
+                |> Fuzz.oneOf
+
+        firstChar =
+            charFrom starters
+
+        rest =
+            Fuzz.list <| charFrom all
+    in
+    Fuzz.map2 (::) firstChar rest
+        |> Fuzz.map String.fromList
+        |> Fuzz.map VarName
