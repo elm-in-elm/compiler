@@ -120,21 +120,29 @@ Oh God please yes! :heart: Feel free to look around the [<kbd>help wanted</kbd>]
 
 ## Prerequisites
 
-The tooling around this project requires:
+**The easy way:** if you have Nix installed, run
+```
+$ nix-shell
+```
+and you'll drop into a shell that has all the dev dependencies set up and ready!
+
+**Alternatively,** this is what the project needs.
 
 * **`make`** for the [Makefile](Makefile)
 * **NodeJS 10+** for the [CLI tool](src/index.js)
 * **`elm`**, **`elm-test`** and **`elm-format`**
-
-
-or alternatively a good amount of ingenuity to do stuff in a different-than-planned way.
 
 ## Running the compiler
 
 ```
 $ make
 ```
+
 Essentially compiles the compiler (using the official Elm compiler :wink: ) to a `build/elm.js` file and runs it using `node`.
+
+**Very handy** for running the whole pipeline on an example project living in `example-project/`! In some cases this might be more convenient than writing tests - just `Debug.log` what you need and `make`!
+
+So feel free to edit the files in that project and `make` them - it's there for developer convenience!
 
 ## Running the tests
 
@@ -175,10 +183,6 @@ Make sure to format code before submitting a pull request!
 - [ ] Deal with typeclasses (number, comparable, ...)
 - [ ] Deal with pattern matching
 - [ ] Deal with custom binary operators
-
-#### Parsing
-
-- [ ] Consider adding contexts to various parsers (for debuggability? for better error messages?)
 
 #### Type inference
 
