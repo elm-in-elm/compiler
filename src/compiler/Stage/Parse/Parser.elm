@@ -100,7 +100,7 @@ dependencies =
         (List.map (\dep -> ( dep.moduleName, dep ))
             >> Dict.Any.fromList Common.moduleNameToString
         )
-        |= manyWith P.spaces dependency
+        |= oneOrMoreWith P.spaces dependency
 
 
 dependency : Parser_ Dependency
@@ -301,7 +301,7 @@ reservedWords =
 
 topLevelDeclarations : Parser_ (List (ModuleName -> TopLevelDeclaration Frontend.Expr))
 topLevelDeclarations =
-    manyWith P.spaces
+    oneOrMoreWith P.spaces
         (P.succeed identity
             |= topLevelDeclaration
             |. P.spaces
@@ -419,18 +419,52 @@ literalNumber =
             |= parseLiteralNumber
         , parseLiteralNumber
         ]
-        |> P.inContext InLiteralNumber
+        |> P.inContext InNumber
 
 
-{-| for literalChar and, in the future, literalString
--}
-character : Parser_ Char
-character =
+type Quotes
+    = {- ' -} SingleQuote
+    | {- " -} DoubleQuote
+    | {- """ -} TripleQuote
+
+
+isAllowedChar : Quotes -> Char -> Bool
+isAllowedChar quotes char =
+    case quotes of
+        SingleQuote ->
+            char /= '\n'
+
+        DoubleQuote ->
+            char /= '\n'
+
+        TripleQuote ->
+            True
+
+
+singleQuote : P.Token ParseProblem
+singleQuote =
+    P.Token "'" ExpectingSingleQuote
+
+
+doubleQuote : P.Token ParseProblem
+doubleQuote =
+    P.Token "\"" ExpectingDoubleQuote
+
+
+tripleQuote : P.Token ParseProblem
+tripleQuote =
+    P.Token "\"\"\"" ExpectingTripleQuote
+
+
+character : Quotes -> Parser_ Char
+character quotes =
     P.oneOf
-        [ P.succeed identity
+        [ -- escaped characters have priority
+          P.succeed identity
             |. P.token (P.Token "\\" ExpectingEscapeBackslash)
             |= P.oneOf
-                [ P.map (\_ -> '"') (P.token (P.Token "\"" (ExpectingEscapeCharacter '"'))) -- " (elm-vscode workaround)
+                [ P.map (\_ -> '\\') (P.token (P.Token "\\" (ExpectingEscapeCharacter '\\')))
+                , P.map (\_ -> '"') (P.token (P.Token "\"" (ExpectingEscapeCharacter '"'))) -- " (elm-vscode workaround)
                 , P.map (\_ -> '\'') (P.token (P.Token "'" (ExpectingEscapeCharacter '\'')))
                 , P.map (\_ -> '\n') (P.token (P.Token "n" (ExpectingEscapeCharacter 'n')))
                 , P.map (\_ -> '\t') (P.token (P.Token "t" (ExpectingEscapeCharacter 't')))
@@ -438,11 +472,25 @@ character =
                 , P.succeed identity
                     |. P.token (P.Token "u" (ExpectingEscapeCharacter 'u'))
                     |. P.token (P.Token "{" ExpectingUnicodeEscapeLeftBrace)
-                    |= unicode
+                    |= unicodeCharacter
                     |. P.token (P.Token "}" ExpectingUnicodeEscapeRightBrace)
                 ]
-        , P.succeed identity
-            |= P.getChompedString (P.chompIf (always True) ExpectingChar)
+            |> P.inContext InCharEscapeMode
+        , -- we don't want to eat the closing delimiter
+          (case quotes of
+            SingleQuote ->
+                P.token singleQuote
+
+            DoubleQuote ->
+                P.token doubleQuote
+
+            TripleQuote ->
+                P.token tripleQuote
+          )
+            |> P.andThen (always (P.problem TriedToParseCharacterStoppingDelimiter))
+        , -- all other characters (sometimes except newlines)
+          P.succeed identity
+            |= P.getChompedString (P.chompIf (isAllowedChar quotes) ExpectingChar)
             |> P.andThen
                 (\string ->
                     string
@@ -453,18 +501,8 @@ character =
         ]
 
 
-literalChar : Parser_ Literal
-literalChar =
-    (P.succeed identity
-        |. P.symbol (P.Token "'" ExpectingSingleQuote)
-        |= character
-        |. P.symbol (P.Token "'" ExpectingSingleQuote)
-    )
-        |> P.map Char
-
-
-unicode : Parser_ Char
-unicode =
+unicodeCharacter : Parser_ Char
+unicodeCharacter =
     P.getChompedString (P.chompWhile Char.isHexDigit)
         |> P.andThen
             (\str ->
@@ -483,22 +521,44 @@ unicode =
                         |> Result.map P.succeed
                         |> Result.withDefault (P.problem InvalidUnicodeCodePoint)
             )
+        |> P.inContext InUnicodeCharacter
 
 
-{-| TODO escapes
-TODO unicode escapes
-TODO triple-quoted strings with different escaping
--}
+literalChar : Parser_ Literal
+literalChar =
+    P.succeed Char
+        |. P.symbol singleQuote
+        |= character SingleQuote
+        |. P.symbol singleQuote
+        |> P.inContext InChar
+
+
 literalString : Parser_ Literal
 literalString =
-    let
-        doubleQuote =
-            P.Token "\"" ExpectingDoubleQuote
-    in
     P.succeed String
+        |= P.oneOf
+            [ tripleQuoteString
+            , doubleQuoteString
+            ]
+        |> P.inContext InString
+
+
+doubleQuoteString : Parser_ String
+doubleQuoteString =
+    P.succeed String.fromList
         |. P.symbol doubleQuote
-        |= P.getChompedString (P.chompUntil doubleQuote)
+        |= zeroOrMoreWith (P.succeed ()) (character DoubleQuote)
         |. P.symbol doubleQuote
+        |> P.inContext InDoubleQuoteString
+
+
+tripleQuoteString : Parser_ String
+tripleQuoteString =
+    P.succeed String.fromList
+        |. P.symbol tripleQuote
+        |= zeroOrMoreWith (P.succeed ()) (character TripleQuote)
+        |. P.symbol tripleQuote
+        |> P.inContext InTripleQuoteString
 
 
 literalBool : Parser_ Literal
@@ -581,7 +641,7 @@ lambda config =
                 (Frontend.transform (promoteArguments arguments) body)
         )
         |. P.symbol (P.Token "\\" ExpectingBackslash)
-        |= manyWith spacesOnly (P.map VarName varName)
+        |= oneOrMoreWith spacesOnly (P.map VarName varName)
         |. spacesOnly
         |. P.symbol (P.Token "->" ExpectingRightArrow)
         |. P.spaces
@@ -689,19 +749,49 @@ newlines =
     P.chompWhile ((==) '\n')
 
 
-{-| Taken from Punie/elm-parser-extras, made to work with Parser.Advanced.Parser
-instead of the simple one.
+{-| Taken from Punie/elm-parser-extras (original name: `many`), made to work with
+Parser.Advanced.Parser instead of the simple one.
+
+Adapted to behave like \* instead of +.
+
 -}
-manyWith : Parser_ () -> Parser_ a -> Parser_ (List a)
-manyWith spaces p =
-    P.loop [] (manyHelp spaces p)
+zeroOrMoreWith : Parser_ () -> Parser_ a -> Parser_ (List a)
+zeroOrMoreWith spaces p =
+    P.loop [] (zeroOrMoreHelp spaces p)
 
 
-{-| Taken from Punie/elm-parser-extras, made to work with Parser.Advanced.Parser
-instead of the simple one.
+{-| Taken from Punie/elm-parser-extras (original name: `many`), made to work with
+Parser.Advanced.Parser instead of the simple one.
+
+Adapted to behave like \* instead of +.
+
 -}
-manyHelp : Parser_ () -> Parser_ a -> List a -> Parser_ (P.Step (List a) (List a))
-manyHelp spaces p vs =
+zeroOrMoreHelp : Parser_ () -> Parser_ a -> List a -> Parser_ (P.Step (List a) (List a))
+zeroOrMoreHelp spaces p vs =
+    P.oneOf
+        [ P.backtrackable
+            (P.succeed (\v -> P.Loop (v :: vs))
+                |= p
+                |. spaces
+            )
+        , P.succeed ()
+            |> P.map (always (P.Done (List.reverse vs)))
+        ]
+
+
+{-| Taken from Punie/elm-parser-extras (original name: `many`), made to work with
+Parser.Advanced.Parser instead of the simple one.
+-}
+oneOrMoreWith : Parser_ () -> Parser_ a -> Parser_ (List a)
+oneOrMoreWith spaces p =
+    P.loop [] (oneOrMoreHelp spaces p)
+
+
+{-| Taken from Punie/elm-parser-extras (original name: `many`), made to work with
+Parser.Advanced.Parser instead of the simple one.
+-}
+oneOrMoreHelp : Parser_ () -> Parser_ a -> List a -> Parser_ (P.Step (List a) (List a))
+oneOrMoreHelp spaces p vs =
     P.oneOf
         [ P.succeed (\v -> P.Loop (v :: vs))
             |= p
