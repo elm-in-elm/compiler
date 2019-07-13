@@ -126,7 +126,7 @@ $ nix-shell
 ```
 and you'll drop into a shell that has all the dev dependencies set up and ready!
 
-**Alternatively,** this is what the project needs.
+Alternatively, this is what the project needs.
 
 * **`make`** for the [Makefile](Makefile)
 * **NodeJS 10+** for the [CLI tool](src/index.js)
@@ -140,9 +140,9 @@ $ make
 
 Essentially compiles the compiler (using the official Elm compiler :wink: ) to a `build/elm.js` file and runs it using `node`.
 
-**Very handy** for running the whole pipeline on an example project living in `example-project/`! In some cases this might be more convenient than writing tests - just `Debug.log` what you need and `make`!
+**Very handy** for running the whole compiler pipeline on an example project living in `example-project/`, which the CLI is currently hardcoded to try and compile! In some cases this might be more convenient than writing tests - just add an interesting snippet to `example-project/src/Main.elm`, `Debug.log` what you need in the compiler itself, and `make`!
 
-So feel free to edit the files in that project and `make` them - it's there for developer convenience!
+So absolutely feel free to go bonkers on that `example-project/` - it's there for developer convenience!
 
 ## Running the tests
 
