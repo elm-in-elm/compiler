@@ -100,7 +100,7 @@ dependencies =
         (List.map (\dep -> ( dep.moduleName, dep ))
             >> Dict.Any.fromList Common.moduleNameToString
         )
-        |= manyWith P.spaces dependency
+        |= oneOrMoreWith P.spaces dependency
 
 
 dependency : Parser_ Dependency
@@ -301,7 +301,7 @@ reservedWords =
 
 topLevelDeclarations : Parser_ (List (ModuleName -> TopLevelDeclaration Frontend.Expr))
 topLevelDeclarations =
-    manyWith P.spaces
+    oneOrMoreWith P.spaces
         (P.succeed identity
             |= topLevelDeclaration
             |. P.spaces
@@ -422,10 +422,45 @@ literalNumber =
         |> P.inContext InNumber
 
 
-character : Maybe Char -> Parser_ Char
-character stoppingDelimiter =
+type Quotes
+    = {- ' -} SingleQuote
+    | {- " -} DoubleQuote
+    | {- """ -} TripleQuote
+
+
+isAllowedChar : Quotes -> Char -> Bool
+isAllowedChar quotes char =
+    case quotes of
+        SingleQuote ->
+            char /= '\n'
+
+        DoubleQuote ->
+            char /= '\n'
+
+        TripleQuote ->
+            True
+
+
+singleQuote : P.Token ParseProblem
+singleQuote =
+    P.Token "'" ExpectingSingleQuote
+
+
+doubleQuote : P.Token ParseProblem
+doubleQuote =
+    P.Token "\"" ExpectingDoubleQuote
+
+
+tripleQuote : P.Token ParseProblem
+tripleQuote =
+    P.Token "\"\"\"" ExpectingTripleQuote
+
+
+character : Quotes -> Parser_ Char
+character quotes =
     P.oneOf
-        [ P.succeed identity
+        [ -- escaped characters have priority
+          P.succeed identity
             |. P.token (P.Token "\\" ExpectingEscapeBackslash)
             |= P.oneOf
                 [ P.map (\_ -> '\\') (P.token (P.Token "\\" (ExpectingEscapeCharacter '\\')))
@@ -441,8 +476,21 @@ character stoppingDelimiter =
                     |. P.token (P.Token "}" ExpectingUnicodeEscapeRightBrace)
                 ]
             |> P.inContext InCharEscapeMode
-        , P.succeed identity
-            |= P.getChompedString (P.chompIf (Just >> (/=) stoppingDelimiter) ExpectingChar)
+        , -- we don't want to eat the closing delimiter
+          (case quotes of
+            SingleQuote ->
+                P.token singleQuote
+
+            DoubleQuote ->
+                P.token doubleQuote
+
+            TripleQuote ->
+                P.token tripleQuote
+          )
+            |> P.andThen (always (P.problem TriedToParseCharacterStoppingDelimiter))
+        , -- all other characters (sometimes except newlines)
+          P.succeed identity
+            |= P.getChompedString (P.chompIf (isAllowedChar quotes) ExpectingChar)
             |> P.andThen
                 (\string ->
                     string
@@ -479,9 +527,9 @@ unicodeCharacter =
 literalChar : Parser_ Literal
 literalChar =
     P.succeed Char
-        |. P.symbol (P.Token "'" ExpectingSingleQuote)
-        |= character Nothing
-        |. P.symbol (P.Token "'" ExpectingSingleQuote)
+        |. P.symbol singleQuote
+        |= character SingleQuote
+        |. P.symbol singleQuote
         |> P.inContext InChar
 
 
@@ -497,26 +545,18 @@ literalString =
 
 doubleQuoteString : Parser_ String
 doubleQuoteString =
-    let
-        doubleQuote =
-            P.Token "\"" ExpectingDoubleQuote
-    in
     P.succeed String.fromList
         |. P.symbol doubleQuote
-        |= manyWith (P.succeed ()) (character (Just '"'))
+        |= zeroOrMoreWith (P.succeed ()) (character DoubleQuote)
         |. P.symbol doubleQuote
         |> P.inContext InDoubleQuoteString
 
 
 tripleQuoteString : Parser_ String
 tripleQuoteString =
-    let
-        tripleQuote =
-            P.Token "\"\"\"" ExpectingTripleQuote
-    in
     P.succeed String.fromList
         |. P.symbol tripleQuote
-        |= manyWith (P.succeed ()) {- TODO this is wrong, start here... this needs to be char OR newlines, I think ----> -} (character (Just {- also we need to stop after """, not " -} '"'))
+        |= zeroOrMoreWith (P.succeed ()) (character TripleQuote)
         |. P.symbol tripleQuote
         |> P.inContext InTripleQuoteString
 
@@ -601,7 +641,7 @@ lambda config =
                 (Frontend.transform (promoteArguments arguments) body)
         )
         |. P.symbol (P.Token "\\" ExpectingBackslash)
-        |= manyWith spacesOnly (P.map VarName varName)
+        |= oneOrMoreWith spacesOnly (P.map VarName varName)
         |. spacesOnly
         |. P.symbol (P.Token "->" ExpectingRightArrow)
         |. P.spaces
@@ -709,19 +749,49 @@ newlines =
     P.chompWhile ((==) '\n')
 
 
-{-| Taken from Punie/elm-parser-extras, made to work with Parser.Advanced.Parser
-instead of the simple one.
+{-| Taken from Punie/elm-parser-extras (original name: `many`), made to work with
+Parser.Advanced.Parser instead of the simple one.
+
+Adapted to behave like \* instead of +.
+
 -}
-manyWith : Parser_ () -> Parser_ a -> Parser_ (List a)
-manyWith spaces p =
-    P.loop [] (manyHelp spaces p)
+zeroOrMoreWith : Parser_ () -> Parser_ a -> Parser_ (List a)
+zeroOrMoreWith spaces p =
+    P.loop [] (zeroOrMoreHelp spaces p)
 
 
-{-| Taken from Punie/elm-parser-extras, made to work with Parser.Advanced.Parser
-instead of the simple one.
+{-| Taken from Punie/elm-parser-extras (original name: `many`), made to work with
+Parser.Advanced.Parser instead of the simple one.
+
+Adapted to behave like \* instead of +.
+
 -}
-manyHelp : Parser_ () -> Parser_ a -> List a -> Parser_ (P.Step (List a) (List a))
-manyHelp spaces p vs =
+zeroOrMoreHelp : Parser_ () -> Parser_ a -> List a -> Parser_ (P.Step (List a) (List a))
+zeroOrMoreHelp spaces p vs =
+    P.oneOf
+        [ P.backtrackable
+            (P.succeed (\v -> P.Loop (v :: vs))
+                |= p
+                |. spaces
+            )
+        , P.succeed ()
+            |> P.map (always (P.Done (List.reverse vs)))
+        ]
+
+
+{-| Taken from Punie/elm-parser-extras (original name: `many`), made to work with
+Parser.Advanced.Parser instead of the simple one.
+-}
+oneOrMoreWith : Parser_ () -> Parser_ a -> Parser_ (List a)
+oneOrMoreWith spaces p =
+    P.loop [] (oneOrMoreHelp spaces p)
+
+
+{-| Taken from Punie/elm-parser-extras (original name: `many`), made to work with
+Parser.Advanced.Parser instead of the simple one.
+-}
+oneOrMoreHelp : Parser_ () -> Parser_ a -> List a -> Parser_ (P.Step (List a) (List a))
+oneOrMoreHelp spaces p vs =
     P.oneOf
         [ P.succeed (\v -> P.Loop (v :: vs))
             |= p

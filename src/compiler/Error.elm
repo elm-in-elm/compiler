@@ -112,6 +112,7 @@ type ParseProblem
     | ExpectingIn
     | ExpectingUnit
     | InvalidNumber
+    | TriedToParseCharacterStoppingDelimiter
     | CompilerBug String
 
 
