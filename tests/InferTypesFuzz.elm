@@ -1,4 +1,4 @@
-module InferTypesFuzz exposing (randomExprFromType)
+module InferTypesFuzz exposing (exprTyped)
 
 import AST.Canonical as Canonical
 import AST.Common.Literal exposing (Literal(..))
@@ -7,8 +7,8 @@ import Common.Types exposing (VarName(..))
 import Fuzz exposing (Fuzzer)
 
 
-randomExprFromType : Type -> Fuzzer Canonical.Expr
-randomExprFromType targetType =
+exprTyped : Type -> Fuzzer Canonical.Expr
+exprTyped targetType =
     let
         cannotFuzz details =
             let
@@ -108,7 +108,7 @@ listExpr : Type -> Fuzzer Canonical.Expr
 listExpr elementType =
     let
         elementExpr =
-            elementType |> randomExprFromType
+            elementType |> exprTyped
     in
     elementExpr
         |> Fuzz.list
@@ -128,7 +128,7 @@ intToIntFunctionExpr =
     Fuzz.map2 wrapBody
         -- TODO: Later we will need something better to avoid shadowing.
         randomVarName
-        (Type.Int |> randomExprFromType)
+        (Type.Int |> exprTyped)
 
 
 randomVarName : Fuzzer VarName

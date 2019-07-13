@@ -10,7 +10,7 @@ import Dict.Any
 import Error exposing (TypeError)
 import Expect exposing (Expectation)
 import Fuzz exposing (Fuzzer)
-import InferTypesFuzz exposing (randomExprFromType)
+import InferTypesFuzz as Fuzz
 import Stage.InferTypes
 import Test exposing (Test, describe, fuzz, test)
 
@@ -42,7 +42,7 @@ typeInference =
                 description =
                     typeWanted |> dumpType
             in
-            fuzz (randomExprFromType typeWanted) description <|
+            fuzz (Fuzz.exprTyped typeWanted) description <|
                 \input ->
                     Stage.InferTypes.inferExpr input
                         |> Result.map Tuple.second
