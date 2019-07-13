@@ -76,6 +76,14 @@ typeInference =
               , Canonical.List [ Canonical.Literal (Bool True), Canonical.Literal (String "two"), Canonical.Literal (Int 3) ]
               , Err (Error.TypeMismatch Type.Bool Type.String)
               )
+            , ( "List of List of Int"
+              , Canonical.List [ Canonical.List [ Canonical.Literal (Int 1) ], Canonical.List [ Canonical.Literal (Int 2) ] ]
+              , Ok ( Typed.List [ ( Typed.List [ ( Typed.Literal (Int 1), Type.Int ) ], Type.List Type.Int ), ( Typed.List [ ( Typed.Literal (Int 2), Type.Int ) ], Type.List Type.Int ) ], Type.List (Type.List Type.Int) )
+              )
+            , ( "List of List of different types"
+              , Canonical.List [ Canonical.List [ Canonical.Literal (Int 1) ], Canonical.List [ Canonical.Literal (Bool False) ] ]
+              , Err (Error.TypeMismatch Type.Int Type.Bool)
+              )
             ]
         , describe "fuzz exprInfer"
             [ fuzzExpressions "literals"
