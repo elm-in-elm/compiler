@@ -46,7 +46,13 @@ type ParseError
 
 type ParseContext
     = InLiteral
-    | InLiteralNumber
+    | InNumber
+    | InChar
+    | InCharEscapeMode
+    | InUnicodeCharacter
+    | InString
+    | InDoubleQuoteString
+    | InTripleQuoteString
     | InExpr
     | InIf
     | InLet
@@ -86,6 +92,7 @@ type ParseProblem
     | ExpectingUnicodeEscapeRightBrace
     | InvalidUnicodeCodePoint
     | ExpectingDoubleQuote
+    | ExpectingTripleQuote
     | ExpectingPlusOperator
     | ExpectingModuleDot -- `import Foo>.<Bar`
     | ExpectingBackslash -- `>\<x -> x + 1`
@@ -105,6 +112,7 @@ type ParseProblem
     | ExpectingIn
     | ExpectingUnit
     | InvalidNumber
+    | TriedToParseCharacterStoppingDelimiter
     | CompilerBug String
 
 
