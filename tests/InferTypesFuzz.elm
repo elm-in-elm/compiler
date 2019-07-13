@@ -9,6 +9,12 @@ import Fuzz exposing (Fuzzer)
 
 exprTyped : Type -> Fuzzer Canonical.Expr
 exprTyped targetType =
+    targetType
+        |> exprTypedWith { depth = 2 }
+
+
+exprTypedWith : { depth : Int } -> Type -> Fuzzer Canonical.Expr
+exprTypedWith { depth } targetType =
     let
         cannotFuzz details =
             let
@@ -23,41 +29,44 @@ exprTyped targetType =
                         prefix ++ " " ++ details
             in
             message |> Debug.todo
+
+        baseCase =
+            case targetType of
+                Type.Int ->
+                    intExpr
+
+                Type.Float ->
+                    floatExpr
+
+                Type.Bool ->
+                    boolExpr
+
+                Type.Char ->
+                    charExpr
+
+                Type.String ->
+                    stringExpr
+
+                Type.Unit ->
+                    unitExpr
+
+                Type.List elementType ->
+                    if elementType |> Type.isNotParametric then
+                        listExpr elementType
+
+                    else
+                        cannotFuzz "Only lists with non-parametric element types are supported."
+
+                Type.Function Type.Int Type.Int ->
+                    intToIntFunctionExpr
+
+                Type.Function _ _ ->
+                    cannotFuzz "Only `Int -> Int` functions are supported."
+
+                _ ->
+                    cannotFuzz ""
     in
-    case targetType of
-        Type.Int ->
-            intExpr
-
-        Type.Float ->
-            floatExpr
-
-        Type.Bool ->
-            boolExpr
-
-        Type.Char ->
-            charExpr
-
-        Type.String ->
-            stringExpr
-
-        Type.Unit ->
-            unitExpr
-
-        Type.List elementType ->
-            if elementType |> Type.isNotParametric then
-                listExpr elementType
-
-            else
-                cannotFuzz "Only lists with non-parametric element types are supported."
-
-        Type.Function Type.Int Type.Int ->
-            intToIntFunctionExpr
-
-        Type.Function _ _ ->
-            cannotFuzz "Only `Int -> Int` functions are supported."
-
-        _ ->
-            cannotFuzz ""
+    baseCase |> addCombiners depth targetType
 
 
 intExpr : Fuzzer Canonical.Expr
@@ -158,6 +167,43 @@ randomVarName =
     Fuzz.map2 (::) firstChar rest
         |> Fuzz.map String.fromList
         |> Fuzz.map VarName
+
+
+addCombiners maxDepth targetType baseExpr =
+    [ [ baseExpr ]
+    , if maxDepth >= 1 then
+        [ targetType |> ifExpr maxDepth ]
+
+      else
+        []
+    ]
+        |> List.concat
+        |> Fuzz.oneOf
+
+
+ifExpr : Int -> Type -> Fuzzer Canonical.Expr
+ifExpr maxDepth targetType =
+    let
+        combine test then_ else_ =
+            Canonical.If
+                { test = test
+                , then_ = then_
+                , else_ = else_
+                }
+
+        recurse =
+            exprTypedWith { depth = maxDepth - 1 }
+
+        testExpr =
+            Type.Bool |> recurse
+
+        branchExpr =
+            targetType |> recurse
+    in
+    Fuzz.map3 combine
+        testExpr
+        branchExpr
+        branchExpr
 
 
 dumpType : Type -> String
