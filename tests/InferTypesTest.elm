@@ -1,21 +1,59 @@
-module InferTypesTest exposing (typeInference)
+module InferTypesTest exposing (typeInference, typeToString)
 
 import AST.Canonical as Canonical
 import AST.Common.Literal exposing (Literal(..))
 import AST.Common.Type as Type exposing (Type)
 import AST.Typed as Typed
 import Common
-import Common.Types exposing (VarName(..))
+import Common.Types as Types exposing (VarName(..))
 import Dict.Any
 import Error exposing (TypeError)
 import Expect exposing (Expectation)
 import Fuzz exposing (Fuzzer)
+import InferTypesFuzz exposing (randomExprFromType)
 import Stage.InferTypes
 import Test exposing (Test, describe, fuzz, test)
 
 
 typeInference : Test
 typeInference =
+    let
+        runTest : ( String, Canonical.Expr, Result Error.TypeError Typed.Expr ) -> Test
+        runTest ( description, input, output ) =
+            test description <|
+                \() ->
+                    Stage.InferTypes.inferExpr input
+                        |> Expect.equal output
+
+        runSection : String -> List ( String, Canonical.Expr, Result Error.TypeError Typed.Expr ) -> Test
+        runSection description tests =
+            describe description
+                (List.map runTest tests)
+
+        dumpType : Type -> String
+        dumpType type_ =
+            type_
+                |> Type.toString Type.emptyState
+                |> Tuple.first
+
+        fuzzExpr : Type -> Test
+        fuzzExpr typeWanted =
+            let
+                description =
+                    typeWanted |> dumpType
+            in
+            fuzz (randomExprFromType typeWanted) description <|
+                \input ->
+                    Stage.InferTypes.inferExpr input
+                        |> Result.map Tuple.second
+                        |> Expect.equal (Ok typeWanted)
+
+        fuzzExpressions : String -> List Type -> Test
+        fuzzExpressions description types =
+            types
+                |> List.map fuzzExpr
+                |> describe description
+    in
     describe "Stage.InferType"
         [ runSection "list"
             [ ( "empty list"
@@ -40,195 +78,134 @@ typeInference =
               )
             ]
         , describe "fuzz exprInfer"
-            [ fuzzExpr Type.Int
-            , fuzzExpr Type.Float
-            , fuzzExpr Type.Bool
-            , fuzzExpr Type.Char
-            , fuzzExpr Type.String
-            , fuzzExpr Type.Unit
-            , fuzzExpr <| Type.List Type.Unit
-            , fuzzExpr <| Type.List Type.Int
-            , fuzzExpr <| Type.List (Type.List Type.String)
-            , fuzzExpr <| Type.Function Type.Int Type.Int
+            [ fuzzExpressions "literals"
+                [ Type.Int
+                , Type.Float
+                , Type.Bool
+                , Type.Char
+                , Type.String
+                , Type.Unit
+                ]
+            , fuzzExpressions "lists"
+                [ Type.List Type.Unit
+                , Type.List Type.Int
+                , Type.List (Type.List Type.String)
+                ]
+            , fuzzExpressions "functions"
+                [ Type.Function Type.Int Type.Int
+                ]
             ]
         ]
 
 
-runSection : String -> List ( String, Canonical.Expr, Result Error.TypeError Typed.Expr ) -> Test
-runSection description tests =
-    describe description
-        (List.map runTest tests)
-
-
-runTest : ( String, Canonical.Expr, Result Error.TypeError Typed.Expr ) -> Test
-runTest ( description, input, output ) =
-    test description <|
-        \() ->
-            Stage.InferTypes.inferExpr input
-                |> Expect.equal output
-
-
-fuzzExpr : Type -> Test
-fuzzExpr typeWanted =
+typeToString : Test
+typeToString =
     let
-        description =
-            Type.toString typeWanted
+        toStringOnce : Type -> String
+        toStringOnce type_ =
+            type_
+                |> Type.toString Type.emptyState
+                |> Tuple.first
+
+        runTest ( description, input, output ) =
+            test description <|
+                \() ->
+                    toStringOnce input
+                        |> Expect.equal output
+
+        runEqual ( description, input, output ) =
+            test description <|
+                \() ->
+                    Expect.equal input output
     in
-    fuzz (randomExprFromType typeWanted) description <|
-        \input ->
-            Stage.InferTypes.inferExpr input
-                |> Result.map Tuple.second
-                |> Expect.equal (Ok typeWanted)
+    describe "Type.toString"
+        [ describe "list"
+            [ runTest
+                ( "empty list"
+                , Type.List (Type.Var 0)
+                , "List a"
+                )
+            , runTest
+                ( "one item in list"
+                , Type.List Type.Bool
+                , "List Bool"
+                )
+            , runTest
+                ( "list of list of String"
+                , Type.List (Type.List Type.String)
+                , "List (List String)"
+                )
+            ]
+        , describe "lambda"
+            [ runTest
+                ( "function with one param"
+                , Type.Function (Type.Var 99) Type.Int
+                , "a -> Int"
+                )
+            , runTest
+                ( "function with two params"
+                , Type.Function (Type.Var 0) (Type.Function (Type.Var 1) (Type.Var 1))
+                , "a -> b -> b"
+                )
+            , runTest
+                ( "function as param"
+                , Type.Function (Type.Function (Type.Var 9) (Type.Var 9)) (Type.Var 0)
+                , "(a -> a) -> b"
+                )
+            , runTest
+                ( "list of functions"
+                , Type.List (Type.Function (Type.Var 0) (Type.Var 0))
+                , "List (a -> a)"
+                )
+            ]
+        , describe "edges"
+            [ runEqual
+                ( "Var number doesn't count"
+                , toStringOnce <| Type.List (Type.Var 0)
+                , toStringOnce <| Type.List (Type.Var 1)
+                )
+            , runEqual
+                ( "TypeMismatch types share vars index"
+                , Error.toString
+                    (Error.TypeError
+                        (Error.TypeMismatch
+                            (Type.Function (Type.List (Type.Var 0)) (Type.Var 1))
+                            (Type.Function (Type.List (Type.Var 1)) (Type.Var 0))
+                        )
+                    )
+                , "The types `(List a) -> b` and `(List b) -> a` don't match."
+                )
+            ]
+        ]
 
 
-randomExprFromType : Type -> Fuzzer Canonical.Expr
-randomExprFromType targetType =
+niceVarName : Test
+niceVarName =
     let
-        cannotFuzz details =
-            let
-                prefix =
-                    "Cannot fuzz `" ++ Type.toString targetType ++ "` expressions."
-
-                message =
-                    if details |> String.isEmpty then
-                        prefix
-
-                    else
-                        prefix ++ " " ++ details
-            in
-            message |> Debug.todo
+        runTest ( input, output ) =
+            test output <|
+                \() ->
+                    Type.niceVarName input
+                        |> Expect.equal output
     in
-    case targetType of
-        Type.Int ->
-            intExpr
+    describe "Type.niceVarName" <|
+        List.map runTest
+            [ ( 0, "a" )
+            , ( 1, "b" )
+            , ( 2, "c" )
+            , ( 25, "z" )
 
-        Type.Float ->
-            floatExpr
+            --
+            , ( 26, "a1" )
+            , ( 49, "x1" )
+            , ( 50, "y1" )
+            , ( 51, "z1" )
 
-        Type.Bool ->
-            boolExpr
+            --
+            , ( 52, "a2" )
+            , ( 77, "z2" )
 
-        Type.Char ->
-            charExpr
-
-        Type.String ->
-            stringExpr
-
-        Type.Unit ->
-            unitExpr
-
-        Type.List elementType ->
-            if elementType |> Type.isNotParametric then
-                listExpr elementType
-
-            else
-                cannotFuzz "Only lists with non-parametric element types are supported."
-
-        Type.Function Type.Int Type.Int ->
-            intToIntFunctionExpr
-
-        Type.Function _ _ ->
-            cannotFuzz "Only `Int -> Int` functions are supported."
-
-        _ ->
-            cannotFuzz ""
-
-
-intExpr : Fuzzer Canonical.Expr
-intExpr =
-    Fuzz.int
-        |> Fuzz.map Int
-        |> Fuzz.map Canonical.Literal
-
-
-floatExpr : Fuzzer Canonical.Expr
-floatExpr =
-    Fuzz.float
-        |> Fuzz.map Float
-        |> Fuzz.map Canonical.Literal
-
-
-boolExpr : Fuzzer Canonical.Expr
-boolExpr =
-    Fuzz.bool
-        |> Fuzz.map Bool
-        |> Fuzz.map Canonical.Literal
-
-
-charExpr : Fuzzer Canonical.Expr
-charExpr =
-    Fuzz.intRange 0 0x0010FFFF
-        |> Fuzz.map Char.fromCode
-        |> Fuzz.map Char
-        |> Fuzz.map Canonical.Literal
-
-
-stringExpr : Fuzzer Canonical.Expr
-stringExpr =
-    Fuzz.intRange 0 0x0010FFFF
-        |> Fuzz.list
-        |> Fuzz.map (List.map Char.fromCode)
-        |> Fuzz.map String.fromList
-        |> Fuzz.map String
-        |> Fuzz.map Canonical.Literal
-
-
-unitExpr : Fuzzer Canonical.Expr
-unitExpr =
-    Canonical.Unit |> Fuzz.constant
-
-
-listExpr : Type -> Fuzzer Canonical.Expr
-listExpr elementType =
-    let
-        elementExpr =
-            elementType |> randomExprFromType
-    in
-    elementExpr
-        |> Fuzz.list
-        |> Fuzz.map2 (::) elementExpr
-        |> Fuzz.map Canonical.List
-
-
-intToIntFunctionExpr : Fuzzer Canonical.Expr
-intToIntFunctionExpr =
-    let
-        wrapBody argumentName expr =
-            Canonical.Lambda
-                { argument = argumentName
-                , body = Canonical.Plus expr (Canonical.Argument argumentName)
-                }
-    in
-    Fuzz.map2 wrapBody
-        -- TODO: Later we will need something better to avoid shadowing.
-        randomVarName
-        (Type.Int |> randomExprFromType)
-
-
-randomVarName : Fuzzer VarName
-randomVarName =
-    let
-        starters =
-            "abcdefghijklnmoqprstuvwxyz"
-
-        others =
-            "ABCDEFGHIJKLMNOQPRSTUVQXYZ_0123456789"
-
-        all =
-            starters ++ others
-
-        charFrom string =
-            string
-                |> String.toList
-                |> List.map Fuzz.constant
-                |> Fuzz.oneOf
-
-        firstChar =
-            charFrom starters
-
-        rest =
-            Fuzz.list <| charFrom all
-    in
-    Fuzz.map2 (::) firstChar rest
-        |> Fuzz.map String.fromList
-        |> Fuzz.map VarName
+            --
+            , ( 259, "z9" )
+            , ( 260, "a10" )
+            ]
