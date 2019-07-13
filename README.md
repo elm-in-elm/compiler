@@ -73,7 +73,7 @@ Oh God please yes! :heart: Feel free to look around the [<kbd>help wanted</kbd>]
 | integers          | :heavy_check_mark:   | :warning: [[2]](#f2) | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark: | :heavy_check_mark: | :warning: [[2]](#f2) | :heavy_check_mark:   |
 | floats            | :heavy_check_mark:   | :x: [[5]](#f5)       | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark: | :heavy_check_mark: | :x: [[5]](#f5)       | :heavy_check_mark:   |
 | characters        | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark:   | :heavy_check_mark:   |
-| strings           | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark:   | :warning: [[7]](#f7) | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark:   | :heavy_check_mark:   |
+| strings           | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark:   | :heavy_check_mark:   |
 | booleans          | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark:   | :heavy_check_mark:   |
 | variables         | :warning:            | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark:   | :heavy_check_mark:   |
 | lists             | :warning: [[3]](#3)  | :x: [[8]](#f8)       | :warning: [[1]](#f1) | :warning: [[3]](#3)  | :heavy_check_mark: | :heavy_check_mark: | :x: [[8]](#f8)       | :warning: [[1]](#f1) |
@@ -100,7 +100,7 @@ Oh God please yes! :heart: Feel free to look around the [<kbd>help wanted</kbd>]
 4. <span id="f4"></span> ... this space left intentionally blank :smile: ...
 5. <span id="f5"></span> To be optimized the same way Ints are; not tracked yet
 6. <span id="f6"></span> ... this space left intentionally blank :smile: ...
-7. <span id="f7"></span> Multiline strings (and maybe more) missing; tracked in [#33](https://github.com/elm-in-elm/compiler/issues/33)
+7. <span id="f7"></span> ... this space left intentionally blank :smile: ...
 8. <span id="f8"></span> Not implemented; partially tracked in [#29](https://github.com/elm-in-elm/compiler/issues/29)
 9. <span id="f9"></span> ... this space left intentionally blank :smile: ...
 10. <span id="f10"></span> Not implemented; tracked in [#34](https://github.com/elm-in-elm/compiler/issues/34)
