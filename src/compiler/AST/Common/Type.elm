@@ -174,12 +174,10 @@ letter int =
 
     maybeWrapParens (List Int) ( "List Int", state )
 
-
     -->
     ( "(List Int)", state )
 
     maybeWrapParens Int ( "Int", state )
-
 
     -->
     ( "Int", state )
