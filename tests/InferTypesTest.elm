@@ -86,21 +86,20 @@ typeInference =
               )
             ]
         , describe "fuzz exprInfer"
-            [ --     fuzzExpressions "literals"
-              --     [ Type.Int
-              --     , Type.Float
-              --     , Type.Bool
-              --     , Type.Char
-              --     , Type.String
-              --     , Type.Unit
-              --     ]
-              -- , fuzzExpressions "lists"
-              --     [ Type.List Type.Unit
-              --     , Type.List Type.Int
-              --     , Type.List (Type.List Type.String)
-              --     ]
-              -- ,
-              fuzzExpressions "functions"
+            [ fuzzExpressions "literals"
+                [ Type.Int
+                , Type.Float
+                , Type.Bool
+                , Type.Char
+                , Type.String
+                , Type.Unit
+                ]
+            , fuzzExpressions "lists"
+                [ Type.List Type.Unit
+                , Type.List Type.Int
+                , Type.List (Type.List Type.String)
+                ]
+            , fuzzExpressions "functions"
                 [ Type.Function Type.Int Type.Int
                 ]
             ]

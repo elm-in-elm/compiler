@@ -13,7 +13,7 @@ import Shrink exposing (Shrinker)
 exprTyped : Type -> Fuzzer Canonical.Expr
 exprTyped targetType =
     Fuzz.custom
-        (Random.map (Debug.log "generating...") <| exprGenerator targetType)
+        (exprGenerator targetType)
         exprShrinker
 
 
@@ -181,7 +181,7 @@ dumpType type_ =
 
 exprShrinker : Shrinker Canonical.Expr
 exprShrinker expr =
-    case expr |> Debug.log "\n\nshrinking..." of
+    case expr of
         Canonical.Literal lit ->
             lit
                 |> shrinkLiteral

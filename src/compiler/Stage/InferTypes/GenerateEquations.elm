@@ -121,16 +121,11 @@ generateEquations idSource ( expr, type_ ) =
                 usageEquations =
                     generateArgumentUsageEquations argumentId usages
             in
-            {-
-               ( -- type of `\arg -> body` is (arg -> body)
-                 equals type_ (Type.Function (Type.Var argumentId) bodyType)
-                   -- type of the argument is the same as the type of all the children usages of that argument
-                   :: usageEquations
-                   ++ bodyEquations
-               , idSource2
-               )
-            -}
-            ( [ equals type_ (Type.Function (Type.Var argumentId) bodyType) ]
+            ( -- type of `\arg -> body` is (arg -> body)
+              equals type_ (Type.Function (Type.Var argumentId) bodyType)
+                -- type of the argument is the same as the type of all the children usages of that argument
+                :: usageEquations
+                ++ bodyEquations
             , idSource2
             )
 
