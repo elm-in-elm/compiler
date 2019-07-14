@@ -126,7 +126,7 @@ toString state type_ =
                 ( t3String, state3 ) =
                     toString state2 t3
             in
-            ( "(" ++ t1String ++ "," ++ t2String ++ ", " ++ t3String ++ ")", state2 )
+            ( "(" ++ t1String ++ "," ++ t2String ++ "," ++ t3String ++ ")", state2 )
 
 
 getName : State -> Int -> ( String, State )
@@ -232,4 +232,10 @@ shouldWrapParens type_ =
             True
 
         Unit ->
+            False
+
+        Tuple _ _ ->
+            False
+
+        Tuple3 _ _ _ ->
             False

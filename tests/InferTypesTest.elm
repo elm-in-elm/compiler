@@ -133,6 +133,23 @@ typeToString =
                 , "The types `(List a) -> b` and `(List b) -> a` don't match."
                 )
             ]
+        , describe "tuples"
+            [ runTest
+                ( "tuple with two literals"
+                , Type.Tuple Type.Int Type.String
+                , "(Int,String)"
+                )
+            , runTest
+                ( "tuple with two params"
+                , Type.Tuple (Type.Var 0) (Type.Var 1)
+                , "(a,b)"
+                )
+            , runTest
+                ( "tuple with tree params"
+                , Type.Tuple3 (Type.Var 0) (Type.Var 1) (Type.Var 2)
+                , "(a,b,c)"
+                )
+            ]
         ]
 
 
