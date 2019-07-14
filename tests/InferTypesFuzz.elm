@@ -5,10 +5,20 @@ import AST.Common.Literal exposing (Literal(..))
 import AST.Common.Type as Type exposing (Type)
 import Common.Types exposing (VarName(..))
 import Fuzz exposing (Fuzzer)
+import Random exposing (Generator)
+import Random.Extra as Random
+import Shrink exposing (Shrinker)
 
 
 exprTyped : Type -> Fuzzer Canonical.Expr
 exprTyped targetType =
+    Fuzz.custom
+        (Random.map (Debug.log "generating...") <| exprGenerator targetType)
+        exprShrinker
+
+
+exprGenerator : Type -> Generator Canonical.Expr
+exprGenerator targetType =
     let
         cannotFuzz details =
             let
@@ -60,63 +70,62 @@ exprTyped targetType =
             cannotFuzz ""
 
 
-intExpr : Fuzzer Canonical.Expr
+intExpr : Generator Canonical.Expr
 intExpr =
-    Fuzz.int
-        |> Fuzz.map Int
-        |> Fuzz.map Canonical.Literal
+    Random.int Random.minInt Random.maxInt
+        |> Random.map (literal Int)
 
 
-floatExpr : Fuzzer Canonical.Expr
+floatExpr : Generator Canonical.Expr
 floatExpr =
-    Fuzz.float
-        |> Fuzz.map Float
-        |> Fuzz.map Canonical.Literal
+    -- Does not produve NaNs, but that should not be an issue for us.
+    Random.float (-1.0 / 0.0) (1.0 / 0.0)
+        |> Random.map (literal Float)
 
 
-boolExpr : Fuzzer Canonical.Expr
+boolExpr : Generator Canonical.Expr
 boolExpr =
-    Fuzz.bool
-        |> Fuzz.map Bool
-        |> Fuzz.map Canonical.Literal
+    Random.bool
+        |> Random.map (literal Bool)
 
 
-charExpr : Fuzzer Canonical.Expr
+charExpr : Generator Canonical.Expr
 charExpr =
-    Fuzz.intRange 0 0x0010FFFF
-        |> Fuzz.map Char.fromCode
-        |> Fuzz.map Char
-        |> Fuzz.map Canonical.Literal
+    Random.int 0 0x0010FFFF
+        |> Random.map Char.fromCode
+        |> Random.map (literal Char)
 
 
-stringExpr : Fuzzer Canonical.Expr
+stringExpr : Generator Canonical.Expr
 stringExpr =
-    Fuzz.intRange 0 0x0010FFFF
-        |> Fuzz.list
-        |> Fuzz.map (List.map Char.fromCode)
-        |> Fuzz.map String.fromList
-        |> Fuzz.map String
-        |> Fuzz.map Canonical.Literal
+    Random.int 0 0x0010FFFF
+        |> Random.list 10
+        |> Random.map (List.map Char.fromCode)
+        |> Random.map String.fromList
+        |> Random.map (literal String)
 
 
-unitExpr : Fuzzer Canonical.Expr
+unitExpr : Generator Canonical.Expr
 unitExpr =
-    Canonical.Unit |> Fuzz.constant
+    Canonical.Unit |> Random.constant
 
 
-listExpr : Type -> Fuzzer Canonical.Expr
+literal : (a -> Literal) -> a -> Canonical.Expr
+literal wrap value =
+    value
+        |> wrap
+        |> Canonical.Literal
+
+
+listExpr : Type -> Generator Canonical.Expr
 listExpr elementType =
-    let
-        elementExpr =
-            elementType |> exprTyped
-    in
-    elementExpr
-        |> Fuzz.list
-        |> Fuzz.map2 (::) elementExpr
-        |> Fuzz.map Canonical.List
+    elementType
+        |> exprGenerator
+        |> Random.list 10
+        |> Random.map Canonical.List
 
 
-intToIntFunctionExpr : Fuzzer Canonical.Expr
+intToIntFunctionExpr : Generator Canonical.Expr
 intToIntFunctionExpr =
     let
         wrapBody argumentName expr =
@@ -124,14 +133,17 @@ intToIntFunctionExpr =
                 { argument = argumentName
                 , body = Canonical.Plus expr (Canonical.Argument argumentName)
                 }
+
+        bodyExpr =
+            Type.Int |> exprGenerator
     in
-    Fuzz.map2 wrapBody
+    Random.map2 wrapBody
         -- TODO: Later we will need something better to avoid shadowing.
         randomVarName
-        (Type.Int |> exprTyped)
+        bodyExpr
 
 
-randomVarName : Fuzzer VarName
+randomVarName : Generator VarName
 randomVarName =
     let
         starters =
@@ -146,18 +158,18 @@ randomVarName =
         charFrom string =
             string
                 |> String.toList
-                |> List.map Fuzz.constant
-                |> Fuzz.oneOf
+                |> List.map Random.constant
+                |> Random.choices (Random.constant 'a')
 
         firstChar =
             charFrom starters
 
         rest =
-            Fuzz.list <| charFrom all
+            Random.list 5 <| charFrom all
     in
-    Fuzz.map2 (::) firstChar rest
-        |> Fuzz.map String.fromList
-        |> Fuzz.map VarName
+    Random.map2 (::) firstChar rest
+        |> Random.map String.fromList
+        |> Random.map VarName
 
 
 dumpType : Type -> String
@@ -165,3 +177,109 @@ dumpType type_ =
     type_
         |> Type.toString Type.emptyState
         |> Tuple.first
+
+
+exprShrinker : Shrinker Canonical.Expr
+exprShrinker expr =
+    case expr |> Debug.log "\n\nshrinking..." of
+        Canonical.Literal lit ->
+            lit
+                |> shrinkLiteral
+                |> Shrink.map Canonical.Literal
+
+        Canonical.Plus left right ->
+            expr
+                |> shrinkPlus left right
+
+        Canonical.List elements ->
+            elements
+                |> shrinkNonEmptyList exprShrinker
+                |> Shrink.map Canonical.List
+
+        Canonical.If { then_, else_ } ->
+            [ then_, else_ ]
+                |> List.map shrinkTo
+                |> concatShrink
+                -- Lesser hack.
+                |> shrink expr
+
+        Canonical.Lambda { argument, body } ->
+            expr
+                |> shrinkLambda argument body
+
+        _ ->
+            expr |> Shrink.noShrink
+
+
+shrinkLiteral : Shrinker Literal
+shrinkLiteral lit =
+    case lit of
+        Int i ->
+            i |> Shrink.int |> Shrink.map Int
+
+        Float f ->
+            f |> Shrink.float |> Shrink.map Float
+
+        Char c ->
+            c |> Shrink.char |> Shrink.map Char
+
+        Bool b ->
+            b |> Shrink.bool |> Shrink.map Bool
+
+        String s ->
+            s |> Shrink.string |> Shrink.map String
+
+
+shrinkPlus : Canonical.Expr -> Canonical.Expr -> Shrinker Canonical.Expr
+shrinkPlus left right _ =
+    -- TODO: The Shrink docs were misleading here. Consider reporting an issue.
+    exprShrinker left
+        |> Shrink.map Canonical.Plus
+        |> Shrink.andMap (exprShrinker left)
+
+
+shrinkLambda : VarName -> Canonical.Expr -> Shrinker Canonical.Expr
+shrinkLambda argument body _ =
+    let
+        combine shrunkBody =
+            Canonical.Lambda
+                { argument = argument
+                , body = shrunkBody
+                }
+    in
+    body
+        |> exprShrinker
+        |> Shrink.map combine
+
+
+shrinkNonEmptyList : Shrinker a -> Shrinker (List a)
+shrinkNonEmptyList shrinkElement list =
+    case list of
+        [] ->
+            list |> Shrink.noShrink
+
+        first :: rest ->
+            -- TODO: The Shrink docs were misleading here. Consider reporting an issue.
+            shrinkElement first
+                |> Shrink.map (::)
+                |> Shrink.andMap (Shrink.list shrinkElement rest)
+
+
+shrinkTo : a -> Shrinker a
+shrinkTo shrunk _ =
+    True
+        |> Shrink.bool
+        |> Shrink.map (always shrunk)
+
+
+{-| We cannot write a type annotation here.
+The `LazyList a` type used by shrinkers is not exposed anywhere.
+-}
+shrink expr shrinker =
+    shrinker expr
+
+
+concatShrink : List (Shrinker a) -> Shrinker a
+concatShrink shrinkers =
+    shrinkers
+        |> List.foldl Shrink.merge Shrink.noShrink
