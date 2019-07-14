@@ -5,10 +5,101 @@ import AST.Common.Literal exposing (Literal(..))
 import AST.Common.Type as Type exposing (Type)
 import Common.Types exposing (VarName(..))
 import Fuzz exposing (Fuzzer)
+import Random exposing (Generator)
+import Shrink exposing (Shrinker)
+import Test.Runner as Runner
 
 
 exprTyped : Type -> Fuzzer Canonical.Expr
 exprTyped targetType =
+    targetType
+        |> exprTypedWithDepth 1
+
+
+exprTypedWithDepth : Int -> Type -> Fuzzer Canonical.Expr
+exprTypedWithDepth depth targetType =
+    if depth <= 0 then
+        basicExpr targetType
+
+    else
+        let
+            recurse with =
+                with (depth - 1) targetType
+        in
+        [ always basicExpr
+        , ifExpr
+        ]
+            |> List.map recurse
+            |> Fuzz.oneOf
+
+
+ifExpr : Int -> Type -> Fuzzer Canonical.Expr
+ifExpr depth targetType =
+    Fuzz.custom (ifGenerator depth targetType) ifShrinker
+
+
+ifGenerator : Int -> Type -> Generator Canonical.Expr
+ifGenerator depth targetType =
+    let
+        if_ test then_ else_ =
+            Canonical.If
+                { test = test
+                , then_ = then_
+                , else_ = else_
+                }
+
+        -- |> Debug.log "if"
+        recurse =
+            exprTypedWithDepth (depth - 1) >> generator
+
+        testGenerator =
+            Type.Bool |> recurse
+
+        branchGenerator =
+            targetType |> recurse
+    in
+    Random.map3 if_
+        testGenerator
+        branchGenerator
+        branchGenerator
+
+
+generator : Fuzzer a -> Generator a
+generator fuzzer =
+    case fuzzer |> Runner.fuzz of
+        Err msg ->
+            Debug.todo <| "Cannot extract generator. " ++ msg
+
+        Ok pairGen ->
+            pairGen
+                |> Random.map Tuple.first
+
+
+ifShrinker : Shrinker Canonical.Expr
+ifShrinker expr =
+    case expr of
+        Canonical.If { then_, else_ } ->
+            expr |> shrinkToOneOf [ then_, else_ ]
+
+        _ ->
+            expr |> Shrink.noShrink
+
+
+shrinkToOneOf shrunk unshrunk =
+    shrunk
+        |> List.map constShrinker
+        |> List.foldl Shrink.merge Shrink.noShrink
+        |> (|>) unshrunk
+
+
+constShrinker : a -> Shrinker a
+constShrinker x _ =
+    Shrink.bool False
+        |> Shrink.map (always x)
+
+
+basicExpr : Type -> Fuzzer Canonical.Expr
+basicExpr targetType =
     let
         cannotFuzz details =
             let
