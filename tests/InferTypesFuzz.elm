@@ -235,7 +235,7 @@ shrinkPlus left right _ =
     -- TODO: The Shrink docs were misleading here. Consider reporting an issue.
     exprShrinker left
         |> Shrink.map Canonical.Plus
-        |> Shrink.andMap (exprShrinker left)
+        |> Shrink.andMap (exprShrinker right)
 
 
 shrinkLambda : VarName -> Canonical.Expr -> Shrinker Canonical.Expr
