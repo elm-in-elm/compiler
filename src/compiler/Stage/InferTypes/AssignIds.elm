@@ -189,23 +189,23 @@ assignIdsWith idSource expr =
 
         Canonical.Tuple e1 e2 ->
             let
-                (e1_, idSource1) =
+                ( e1_, idSource1 ) =
                     assignIdsWith idSource e1
 
-                (e2_, idSource2) =
+                ( e2_, idSource2 ) =
                     assignIdsWith idSource1 e2
             in
-                wrap idSource2 (Typed.Tuple e1_ e2_)
+            wrap idSource2 (Typed.Tuple e1_ e2_)
 
         Canonical.Tuple3 e1 e2 e3 ->
             let
-                (e1_, idSource1) =
+                ( e1_, idSource1 ) =
                     assignIdsWith idSource e1
 
-                (e2_, idSource2) =
+                ( e2_, idSource2 ) =
                     assignIdsWith idSource1 e2
 
-                (e3_, idSource3) =
+                ( e3_, idSource3 ) =
                     assignIdsWith idSource1 e2
             in
-                wrap idSource3 (Typed.Tuple3 e1_ e2_ e3_)
+            wrap idSource3 (Typed.Tuple3 e1_ e2_ e3_)
