@@ -39,8 +39,9 @@ unify t1 t2 substitutionMap =
                 unify result1 result2 substitutionMap
                     |> Result.andThen (unify arg1 arg2)
 
-            -- ( Type.List list1, Type.List list2 ) ->
-            --     unify list1 list2 substitutionMap
+            ( Type.List list1, Type.List list2 ) ->
+                unify list1 list2 substitutionMap
+
             _ ->
                 Err (TypeMismatch t1 t2)
 
