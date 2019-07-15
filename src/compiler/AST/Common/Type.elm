@@ -113,7 +113,7 @@ toString state type_ =
                 ( t2String, state2 ) =
                     toString state1 t2
             in
-            ( "(" ++ t1String ++ "," ++ t2String ++ ")", state2 )
+            ( "( " ++ t1String ++ ", " ++ t2String ++ " )", state2 )
 
         Tuple3 t1 t2 t3 ->
             let
@@ -126,7 +126,7 @@ toString state type_ =
                 ( t3String, state3 ) =
                     toString state2 t3
             in
-            ( "(" ++ t1String ++ "," ++ t2String ++ "," ++ t3String ++ ")", state2 )
+            ( "( " ++ t1String ++ ", " ++ t2String ++ ", " ++ t3String ++ " )", state3 )
 
 
 getName : State -> Int -> ( String, State )
