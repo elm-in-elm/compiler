@@ -285,7 +285,7 @@ generateEquations idSource ( expr, type_ ) =
 
                 ( sndEquations, idSource2 ) =
                     generateEquations idSource1 snd
-                
+
                 ( trdEquations, idSource3 ) =
                     generateEquations idSource2 trd
             in

@@ -234,12 +234,17 @@ javascript =
                 (List.map runTest
                     [ ( "simple tuple", Tuple (typedInt 1) (typedInt 2), "[1,2]" )
                     , ( "mixed tuple", Tuple (typedInt 1) (typedString "hello"), "[1,\"hello\"]" )
+                    , ( "nested tuple", Tuple (typedInt 1) (typed (Tuple (typedInt 2) (typedInt 3))), "[1,[2,3]]" )
                     ]
                 )
             , describe "Tuple3"
                 (List.map runTest
                     [ ( "simple tuple3", Tuple3 (typedInt 1) (typedInt 2) (typedInt 3), "[1,2,3]" )
                     , ( "mixed tuple3", Tuple3 (typedInt 1) (typedString "hello") (typedBool True), "[1,\"hello\",true]" )
+                    , ( "nested tuple3"
+                      , Tuple3 (typedInt 1) (typedInt 2) (typed (Tuple3 (typedInt 3) (typedInt 4) (typedInt 5)))
+                      , "[1,2,[3,4,5]]"
+                      )
                     ]
                 )
             ]
