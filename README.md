@@ -103,8 +103,7 @@ Oh God please yes! :heart: Feel free to look around the [<kbd>help wanted</kbd>]
 7. <span id="f7"></span> Multiline strings (and maybe more) missing; tracked in [#33](https://github.com/elm-in-elm/compiler/issues/33)
 8. <span id="f8"></span> Not implemented; partially tracked in [#29](https://github.com/elm-in-elm/compiler/issues/29)
 9. <span id="f9"></span> ... this space left intentionally blank :smile: ...
-10. <span id="f10"></span> Not implemented; tracked in [#34](https://github.com/elm-in-elm/compiler/issues/34)
-11. <span id="f11"></span> Not implemented; tracked in [#35](https://github.com/elm-in-elm/compiler/issues/35)
+10. <span id="f11"></span> Not implemented; tracked in [#35](https://github.com/elm-in-elm/compiler/issues/35)
 
 
 ## FAQ
