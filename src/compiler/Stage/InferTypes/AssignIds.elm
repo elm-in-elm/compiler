@@ -206,6 +206,6 @@ assignIdsWith idSource expr =
                     assignIdsWith idSource1 e2
 
                 ( e3_, idSource3 ) =
-                    assignIdsWith idSource1 e2
+                    assignIdsWith idSource2 e3
             in
             wrap idSource3 (Typed.Tuple3 e1_ e2_ e3_)
