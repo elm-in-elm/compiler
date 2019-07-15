@@ -51,6 +51,13 @@ typeInference =
                   )
                 ]
               )
+            , ( "tuple"
+              , [ ( "two items"
+                  , Canonical.Tuple (Canonical.Literal (Bool True)) (Canonical.Literal (Int 1))
+                  , Ok ( Typed.Tuple ( Typed.Literal (Bool True), Type.Bool ) ( Typed.Literal (Int 1), Type.Int ), Type.Tuple Type.Bool Type.Int )
+                  )
+                ]
+              )
             ]
         )
 
@@ -137,17 +144,17 @@ typeToString =
             [ runTest
                 ( "tuple with two literals"
                 , Type.Tuple Type.Int Type.String
-                , "(Int,String)"
+                , "( Int, String )"
                 )
             , runTest
                 ( "tuple with two params"
                 , Type.Tuple (Type.Var 0) (Type.Var 1)
-                , "(a,b)"
+                , "( a, b )"
                 )
             , runTest
                 ( "tuple with tree params"
                 , Type.Tuple3 (Type.Var 0) (Type.Var 1) (Type.Var 2)
-                , "(a,b,c)"
+                , "( a, b, c )"
                 )
             ]
         ]
