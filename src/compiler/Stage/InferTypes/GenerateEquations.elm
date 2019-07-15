@@ -249,6 +249,12 @@ generateEquations idSource ( expr, type_ ) =
             , idSource2
             )
 
+        Typed.Tuple _ _ ->
+            ( [], idSource )
+
+        Typed.Tuple3 _ _ _ ->
+            ( [], idSource )
+
 
 findArgumentUsages : VarName -> Typed.Expr -> List Typed.Expr
 findArgumentUsages argument bodyExpr =
