@@ -87,7 +87,7 @@ Oh God please yes! :heart: Feel free to look around the [<kbd>help wanted</kbd>]
 | record accessors  | :x:                  | :x:                  | :x:                  | :x:                  | :x:                | :x:                | :x:                  | :x:                  |
 | record updates    | :x:                  | :x:                  | :x:                  | :x:                  | :x:                | :x:                | :x:                  | :x:                  |
 | unit type         | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark:   | :heavy_check_mark:   |
-| tuples, 3-tuples  | :heavy_check_mark:    | :heavy_check_mark:   | heavy_check_mark    | :x: [[10]](#f10)     | :heavy_check_mark: | heavy_check_mark   | :heavy_check_mark:   | :heavy_check_mark:  |
+| tuples, 3-tuples  | :heavy_check_mark:    | :heavy_check_mark:   | :heavy_check_mark:  | :x: [[10]](#f10)     | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark:   | :heavy_check_mark:  |
 | type annotations  | :x:                  | :x:                  | :x:                  | :x:                  | :x:                | :x:                | :x:                  | :x:                  |
 | type aliases      | :x:                  | :x:                  | :x:                  | :x:                  | :x:                | :x:                | :x:                  | :x:                  |
 | custom types      | :x:                  | :x:                  | :x:                  | :x:                  | :x:                | :x:                | :x:                  | :x:                  |
