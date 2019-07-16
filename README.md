@@ -73,7 +73,7 @@ Oh God please yes! :heart: Feel free to look around the [<kbd>help wanted</kbd>]
 | integers          | :heavy_check_mark:   | :warning: [[2]](#f2) | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark: | :heavy_check_mark: | :warning: [[2]](#f2) | :heavy_check_mark:   |
 | floats            | :heavy_check_mark:   | :x: [[5]](#f5)       | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark: | :heavy_check_mark: | :x: [[5]](#f5)       | :heavy_check_mark:   |
 | characters        | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark:   | :heavy_check_mark:   |
-| strings           | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark:   | :warning: [[7]](#f7) | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark:   | :heavy_check_mark:   |
+| strings           | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark:   | :heavy_check_mark:   |
 | booleans          | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark:   | :heavy_check_mark:   |
 | variables         | :warning:            | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark:   | :heavy_check_mark:   |
 | lists             | :warning: [[3]](#3)  | :x: [[8]](#f8)       | :warning: [[1]](#f1) | :warning: [[3]](#3)  | :heavy_check_mark: | :heavy_check_mark: | :x: [[8]](#f8)       | :warning: [[1]](#f1) |
@@ -100,7 +100,7 @@ Oh God please yes! :heart: Feel free to look around the [<kbd>help wanted</kbd>]
 4. <span id="f4"></span> ... this space left intentionally blank :smile: ...
 5. <span id="f5"></span> To be optimized the same way Ints are; not tracked yet
 6. <span id="f6"></span> ... this space left intentionally blank :smile: ...
-7. <span id="f7"></span> Multiline strings (and maybe more) missing; tracked in [#33](https://github.com/elm-in-elm/compiler/issues/33)
+7. <span id="f7"></span> ... this space left intentionally blank :smile: ...
 8. <span id="f8"></span> Not implemented; partially tracked in [#29](https://github.com/elm-in-elm/compiler/issues/29)
 9. <span id="f9"></span> ... this space left intentionally blank :smile: ...
 10. <span id="f10"></span> Not implemented; tracked in [#35](https://github.com/elm-in-elm/compiler/issues/35)
@@ -119,21 +119,29 @@ Oh God please yes! :heart: Feel free to look around the [<kbd>help wanted</kbd>]
 
 ## Prerequisites
 
-The tooling around this project requires:
+**The easy way:** if you have Nix installed, run
+```
+$ nix-shell
+```
+and you'll drop into a shell that has all the dev dependencies set up and ready!
+
+Alternatively, this is what the project needs.
 
 * **`make`** for the [Makefile](Makefile)
 * **NodeJS 10+** for the [CLI tool](src/index.js)
 * **`elm`**, **`elm-test`** and **`elm-format`**
-
-
-or alternatively a good amount of ingenuity to do stuff in a different-than-planned way.
 
 ## Running the compiler
 
 ```
 $ make
 ```
+
 Essentially compiles the compiler (using the official Elm compiler :wink: ) to a `build/elm.js` file and runs it using `node`.
+
+**Very handy** for running the whole compiler pipeline on an example project living in `example-project/`, which the CLI is currently hardcoded to try and compile! In some cases this might be more convenient than writing tests - just add an interesting snippet to `example-project/src/Main.elm`, `Debug.log` what you need in the compiler itself, and `make`!
+
+So absolutely feel free to go bonkers on that `example-project/` - it's there for developer convenience!
 
 ## Running the tests
 
@@ -175,14 +183,10 @@ Make sure to format code before submitting a pull request!
 - [ ] Deal with pattern matching
 - [ ] Deal with custom binary operators
 
-#### Parsing
-
-- [ ] Consider adding contexts to various parsers (for debuggability? for better error messages?)
-
 #### Type inference
 
 - [ ] Try the [Complete and Easy Bidirectional Typechecking for Higher-Rank Polymorphism](https://arxiv.org/abs/1306.6032) and see where that leads
-- [ ] Let polymorphism :no_mouth:: `Stage.InferTypes.generateEquations`, the `Typed.Let` case. [This paper](http://gallium.inria.fr/~fpottier/publis/fpottier-elaboration.pdf) might have a parable written well enough that we might actually understand type schemes from this. Otherwise, ["Write you a Haskell"](http://dev.stephendiehl.com/fun/006_hindley_milner.html) for the rescue!
+- [ ] Let polymorphism :no_mouth:: `Stage.InferTypes.generateEquations`, the `Typed.Let` case. [This paper](http://gallium.inria.fr/~fpottier/publis/fpottier-elaboration.pdf) might have a parable written well enough that we might actually understand type schemes from this. Otherwise, ["Write you a Haskell"](http://dev.stephendiehl.com/fun/006_hindley_milner.html) for the rescue! There is also the [Damas and Milner paper](https://web.cs.wpi.edu/~cs4536/c12/milner-damas_principal_types.pdf) proving the inferred type is the most general one.
 - [ ] Extensible records: `D. Leijen, “Extensible records with scoped labels,” in Revised Selected Papersfrom the Sixth Symposium on Trends in Functional Programming, TFP 2005,Tallinn, Estonia, 23-24 September 2005.(M. C. J. D. van Eekelen, ed.), vol. 6 of Trends in Functional Programming, pp. 179–194, Intellect, 2005.`
 - [ ] Typecheck across modules, not each module separately. This will probably be clearer after we try and implement the library.
 - [ ] Annotate type errors with position in source code (for better error messages)
