@@ -249,6 +249,53 @@ generateEquations idSource ( expr, type_ ) =
             , idSource2
             )
 
+        Typed.Tuple fst snd ->
+            let
+                ( _, fstType ) =
+                    fst
+
+                ( _, sndType ) =
+                    snd
+
+                ( fstEquations, idSource1 ) =
+                    generateEquations idSource fst
+
+                ( sndEquations, idSource2 ) =
+                    generateEquations idSource1 snd
+            in
+            ( equals type_ (Type.Tuple fstType sndType)
+                :: fstEquations
+                ++ sndEquations
+            , idSource2
+            )
+
+        Typed.Tuple3 fst snd trd ->
+            let
+                ( _, fstType ) =
+                    fst
+
+                ( _, sndType ) =
+                    snd
+
+                ( _, trdType ) =
+                    trd
+
+                ( fstEquations, idSource1 ) =
+                    generateEquations idSource fst
+
+                ( sndEquations, idSource2 ) =
+                    generateEquations idSource1 snd
+
+                ( trdEquations, idSource3 ) =
+                    generateEquations idSource2 trd
+            in
+            ( equals type_ (Type.Tuple3 fstType sndType trdType)
+                :: fstEquations
+                ++ sndEquations
+                ++ trdEquations
+            , idSource3
+            )
+
 
 findArgumentUsages : VarName -> Typed.Expr -> List Typed.Expr
 findArgumentUsages argument bodyExpr =

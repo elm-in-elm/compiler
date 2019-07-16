@@ -191,3 +191,9 @@ findDependencies modules ( expr, _ ) =
 
         Unit ->
             []
+
+        Tuple e1 e2 ->
+            findDependencies_ e1 ++ findDependencies_ e2
+
+        Tuple3 e1 e2 e3 ->
+            findDependencies_ e1 ++ findDependencies_ e2 ++ findDependencies_ e3

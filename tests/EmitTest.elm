@@ -37,6 +37,14 @@ javascript =
             typedInt : Int -> Typed.Expr
             typedInt int =
                 typed (Literal (Int int))
+
+            typedString : String -> Typed.Expr
+            typedString str =
+                typed (Literal (String str))
+
+            typedBool : Bool -> Typed.Expr
+            typedBool bool =
+                typed (Literal (Bool bool))
           in
           describe "emitExpr_"
             [ describe "Int"
@@ -219,6 +227,23 @@ javascript =
                             , body = typedInt 1
                             }
                       , "((() => {const x = 2; const y = 3; return 1;})())"
+                      )
+                    ]
+                )
+            , describe "Tuple"
+                (List.map runTest
+                    [ ( "simple tuple", Tuple (typedInt 1) (typedInt 2), "[1,2]" )
+                    , ( "mixed tuple", Tuple (typedInt 1) (typedString "hello"), "[1,\"hello\"]" )
+                    , ( "nested tuple", Tuple (typedInt 1) (typed (Tuple (typedInt 2) (typedInt 3))), "[1,[2,3]]" )
+                    ]
+                )
+            , describe "Tuple3"
+                (List.map runTest
+                    [ ( "simple tuple3", Tuple3 (typedInt 1) (typedInt 2) (typedInt 3), "[1,2,3]" )
+                    , ( "mixed tuple3", Tuple3 (typedInt 1) (typedString "hello") (typedBool True), "[1,\"hello\",true]" )
+                    , ( "nested tuple3"
+                      , Tuple3 (typedInt 1) (typedInt 2) (typed (Tuple3 (typedInt 3) (typedInt 4) (typedInt 5)))
+                      , "[1,2,[3,4,5]]"
                       )
                     ]
                 )

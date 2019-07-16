@@ -132,3 +132,14 @@ getBetterType substitutionMap type_ =
 
             Type.Unit ->
                 type_
+
+            Type.Tuple e1 e2 ->
+                Type.Tuple
+                    (getBetterType substitutionMap e1)
+                    (getBetterType substitutionMap e2)
+
+            Type.Tuple3 e1 e2 e3 ->
+                Type.Tuple3
+                    (getBetterType substitutionMap e1)
+                    (getBetterType substitutionMap e2)
+                    (getBetterType substitutionMap e3)

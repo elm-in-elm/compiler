@@ -59,6 +59,60 @@ typeInference =
                   )
                 ]
               )
+            , ( "tuple"
+              , [ ( "items with the same types"
+                  , Canonical.Tuple
+                        (Canonical.Literal (String "Hello"))
+                        (Canonical.Literal (String "Elm"))
+                  , Ok
+                        ( Typed.Tuple
+                            ( Typed.Literal (String "Hello"), Type.String )
+                            ( Typed.Literal (String "Elm"), Type.String )
+                        , Type.Tuple Type.String Type.String
+                        )
+                  )
+                , ( "items of different types"
+                  , Canonical.Tuple
+                        (Canonical.Literal (Bool True))
+                        (Canonical.Literal (Int 1))
+                  , Ok
+                        ( Typed.Tuple
+                            ( Typed.Literal (Bool True), Type.Bool )
+                            ( Typed.Literal (Int 1), Type.Int )
+                        , Type.Tuple Type.Bool Type.Int
+                        )
+                  )
+                ]
+              )
+            , ( "tuple3"
+              , [ ( "same types"
+                  , Canonical.Tuple3
+                        (Canonical.Literal (String "FP"))
+                        (Canonical.Literal (String "is"))
+                        (Canonical.Literal (String "good"))
+                  , Ok
+                        ( Typed.Tuple3
+                            ( Typed.Literal (String "FP"), Type.String )
+                            ( Typed.Literal (String "is"), Type.String )
+                            ( Typed.Literal (String "good"), Type.String )
+                        , Type.Tuple3 Type.String Type.String Type.String
+                        )
+                  )
+                , ( "different types"
+                  , Canonical.Tuple3
+                        (Canonical.Literal (Bool True))
+                        (Canonical.Literal (Int 1))
+                        (Canonical.Literal (Char 'h'))
+                  , Ok
+                        ( Typed.Tuple3
+                            ( Typed.Literal (Bool True), Type.Bool )
+                            ( Typed.Literal (Int 1), Type.Int )
+                            ( Typed.Literal (Char 'h'), Type.Char )
+                        , Type.Tuple3 Type.Bool Type.Int Type.Char
+                        )
+                  )
+                ]
+              )
             ]
         )
 
@@ -139,6 +193,23 @@ typeToString =
                         )
                     )
                 , "The types `(List a) -> b` and `(List b) -> a` don't match."
+                )
+            ]
+        , describe "tuples"
+            [ runTest
+                ( "tuple with two literals"
+                , Type.Tuple Type.Int Type.String
+                , "( Int, String )"
+                )
+            , runTest
+                ( "tuple with two params"
+                , Type.Tuple (Type.Var 0) (Type.Var 1)
+                , "( a, b )"
+                )
+            , runTest
+                ( "tuple with tree params"
+                , Type.Tuple3 (Type.Var 0) (Type.Var 1) (Type.Var 2)
+                , "( a, b, c )"
                 )
             ]
         ]

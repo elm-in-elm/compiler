@@ -53,6 +53,8 @@ type Expr_
     | Let { bindings : AnyDict String VarName (Binding Expr), body : Expr }
     | List (List Expr)
     | Unit
+    | Tuple Expr Expr
+    | Tuple3 Expr Expr Expr
 
 
 lambda : VarName -> Expr -> Expr_
@@ -115,6 +117,12 @@ recurse f ( expr, type_ ) =
 
         Unit ->
             expr
+
+        Tuple e1 e2 ->
+            Tuple (f e1) (f e2)
+
+        Tuple3 e1 e2 e3 ->
+            Tuple3 (f e1) (f e2) (f e3)
     , type_
     )
 
@@ -182,3 +190,9 @@ recursiveChildren fn ( expr, _ ) =
 
         List items ->
             List.concatMap fn items
+
+        Tuple e1 e2 ->
+            fn e1 ++ fn e2
+
+        Tuple3 e1 e2 e3 ->
+            fn e1 ++ fn e2 ++ fn e3

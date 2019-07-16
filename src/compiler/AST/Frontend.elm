@@ -33,6 +33,8 @@ type Expr
     | Let { bindings : List (Binding Expr), body : Expr }
     | List (List Expr)
     | Unit
+    | Tuple Expr Expr
+    | Tuple3 Expr Expr Expr
 
 
 var : Maybe ModuleName -> VarName -> Expr
@@ -112,6 +114,12 @@ recurse f expr =
 
         Unit ->
             expr
+
+        Tuple e1 e2 ->
+            Tuple (f e1) (f e2)
+
+        Tuple3 e1 e2 e3 ->
+            Tuple3 (f e1) (f e2) (f e3)
 
 
 transform : (Expr -> Expr) -> Expr -> Expr

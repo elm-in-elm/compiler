@@ -822,6 +822,28 @@ expr =
                   )
                 ]
               )
+            , ( "tuple"
+              , [ ( "without spaces"
+                  , "(1,1)"
+                  , Just (Tuple (Literal (Int 1)) (Literal (Int 1)))
+                  )
+                , ( "with inner spaces"
+                  , "( 1 , 1 )"
+                  , Just (Tuple (Literal (Int 1)) (Literal (Int 1)))
+                  )
+                ]
+              )
+            , ( "tuple3"
+              , [ ( "without spaces"
+                  , "(1,2,3)"
+                  , Just (Tuple3 (Literal (Int 1)) (Literal (Int 2)) (Literal (Int 2)))
+                  )
+                , ( "with inner spaces"
+                  , "( 1 , 2 , 3 )"
+                  , Just (Tuple3 (Literal (Int 1)) (Literal (Int 2)) (Literal (Int 2)))
+                  )
+                ]
+              )
             ]
         )
 
