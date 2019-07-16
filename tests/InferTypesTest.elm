@@ -57,6 +57,20 @@ typeInference =
                   , Canonical.List [ Canonical.List [ Canonical.Literal (Int 1) ], Canonical.List [ Canonical.Literal (Bool False) ] ]
                   , Err (Error.TypeMismatch Type.Int Type.Bool)
                   )
+                , ( "List Concat"
+                  , Canonical.ListConcat (Canonical.List []) (Canonical.List [ Canonical.Literal (Bool True) ])
+                  , Ok ( Typed.ListConcat ( Typed.List [], Type.List <| Type.Bool ) ( Typed.List [ ( Typed.Literal (Bool True), Type.Bool ) ], Type.List <| Type.Bool ), Type.List <| Type.Bool )
+                  )
+                , ( "List Concat for list of int and int"
+                  , Canonical.ListConcat (Canonical.List [ Canonical.Literal (Int 1) ]) (Canonical.Literal (Int 2))
+                  , Err (Error.TypeMismatch (Type.List <| Type.Var 4) Type.Int)
+                  )
+
+                -- Probably we want a better way of testing polymorphic types (instead of specifying an Int like Var 4)
+                , ( "List Concat for lists with different types"
+                  , Canonical.ListConcat (Canonical.List [ Canonical.Literal (Int 1) ]) (Canonical.List [ Canonical.Literal (Bool False) ])
+                  , Err (Error.TypeMismatch Type.Int Type.Bool)
+                  )
                 ]
               )
             , ( "tuple"

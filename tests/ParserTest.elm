@@ -813,6 +813,14 @@ expr =
                   , "[ 1,  2  , 3 ]"
                   , Just (List [ Literal (Int 1), Literal (Int 2), Literal (Int 3) ])
                   )
+                , ( "list concat"
+                  , "[] ++ []"
+                  , Just (ListConcat (List []) (List []))
+                  )
+                , ( "list concat did not mess up the simple addition"
+                  , "1 + 2"
+                  , Just (Plus (Literal <| Int 1) (Literal <| Int 2))
+                  )
                 ]
               )
             , ( "unit"

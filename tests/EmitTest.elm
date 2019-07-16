@@ -104,6 +104,11 @@ javascript =
                     , ( "nested", Plus (typedInt 1) (typed (Plus (typedInt 2) (typedInt 3))), "(1 + (2 + 3))" )
                     ]
                 )
+            , describe "ListConcat"
+                (List.map runTest
+                    [ ( "simple", ListConcat ( List [], Type.List Type.Int ) ( List [], Type.List Type.Int ), "([] ++ [])" )
+                    ]
+                )
             , describe "Lambda"
                 (List.map runTest
                     [ ( "simple"

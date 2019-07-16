@@ -347,6 +347,7 @@ expr =
                         , argument = argument
                         }
                 )
+            , PP.infixLeft 1 (P.symbol (P.Token "++" ExpectingConcatOperator)) ListConcat
             , PP.infixLeft 1 (P.symbol (P.Token "+" ExpectingPlusOperator)) Plus
             ]
         , spaces = P.spaces

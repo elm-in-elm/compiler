@@ -27,6 +27,7 @@ type Expr
     | Var { qualifier : Maybe ModuleName, name : VarName }
     | Argument VarName
     | Plus Expr Expr
+    | ListConcat Expr Expr
     | Lambda { arguments : List VarName, body : Expr }
     | Call { fn : Expr, argument : Expr }
     | If { test : Expr, then_ : Expr, else_ : Expr }
@@ -86,6 +87,9 @@ recurse f expr =
 
         Plus e1 e2 ->
             Plus (f e1) (f e2)
+
+        ListConcat e1 e2 ->
+            ListConcat (f e1) (f e2)
 
         Lambda ({ body } as lambda_) ->
             Lambda { lambda_ | body = f body }

@@ -104,6 +104,36 @@ generateEquations idSource ( expr, type_ ) =
             , idSource2
             )
 
+        Typed.ListConcat left right ->
+            let
+                ( _, leftType ) =
+                    left
+
+                ( _, rightType ) =
+                    right
+
+                ( listParamId, idSource1 ) =
+                    IdSource.increment idSource
+
+                listParamType =
+                    Type.Var listParamId
+
+                ( leftEquations, idSource2 ) =
+                    generateEquations idSource1 left
+
+                ( rightEquations, idSource3 ) =
+                    generateEquations idSource2 right
+            in
+            ( -- for expression `a ++ b`
+              [ equals leftType (Type.List listParamType) -- type of `a` is List x
+              , equals rightType (Type.List listParamType) -- type of `b` is List x
+              , equals type_ (Type.List listParamType) -- type of `a ++ b` is List x
+              ]
+                ++ leftEquations
+                ++ rightEquations
+            , idSource3
+            )
+
         Typed.Lambda { body, argument } ->
             let
                 ( _, bodyType ) =
