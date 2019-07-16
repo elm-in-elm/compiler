@@ -52,7 +52,7 @@ javascript =
                     [ ( "positive int", Literal (Int 42), "42" )
                     , ( "negative int", Literal (Int -998), "-998" )
                     , -- Elm wat
-                      ( "negative zero int", Literal (Int 0), "0" )
+                      ( "negative zero int", Literal (Int (negate 0)), "0" )
                     ]
                 )
 
