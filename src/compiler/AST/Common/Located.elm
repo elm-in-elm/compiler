@@ -6,6 +6,7 @@ module AST.Common.Located exposing
     , map
     , merge
     , parsed
+    , replaceWith
     , unwrap
     )
 
@@ -50,6 +51,11 @@ unwrap (Located _ expr) =
 map : (a -> b) -> Located a -> Located b
 map fn (Located region expr) =
     Located region (fn expr)
+
+
+replaceWith : b -> Located a -> Located b
+replaceWith expr (Located region _) =
+    Located region expr
 
 
 merge : (Located a -> Located a -> b) -> Located a -> Located a -> Located b

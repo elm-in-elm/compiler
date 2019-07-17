@@ -160,12 +160,11 @@ curryLambda : Canonical.LocatedExpr -> List VarName -> Canonical.LocatedExpr -> 
 curryLambda located arguments body =
     List.foldr
         (\argument body_ ->
-            Located.map
-                (\_ ->
-                    Canonical.Lambda
-                        { argument = argument
-                        , body = body_
-                        }
+            Located.replaceWith
+                (Canonical.Lambda
+                    { argument = argument
+                    , body = body_
+                    }
                 )
                 located
         )
@@ -248,10 +247,8 @@ qualifiedVarInAliasedModule modules thisModule maybeModuleName varName =
 locatedResultReturn : Frontend.LocatedExpr -> Canonical.Expr -> Result DesugarError Canonical.LocatedExpr
 locatedResultReturn located expr =
     Ok
-        (Located.map
-            (\_ ->
-                expr
-            )
+        (Located.replaceWith
+            expr
             located
         )
 
@@ -260,10 +257,8 @@ locatedResultMap : Frontend.LocatedExpr -> (a -> Canonical.Expr) -> Result Desug
 locatedResultMap located fn =
     Result.map
         (\expr ->
-            Located.map
-                (\_ ->
-                    fn expr
-                )
+            Located.replaceWith
+                (fn expr)
                 located
         )
 
@@ -272,10 +267,8 @@ locatedResultMap2 : Frontend.LocatedExpr -> (a -> b -> Canonical.Expr) -> Result
 locatedResultMap2 located fn =
     Result.map2
         (\expr1 expr2 ->
-            Located.map
-                (\_ ->
-                    fn expr1 expr2
-                )
+            Located.replaceWith
+                (fn expr1 expr2)
                 located
         )
 
@@ -284,9 +277,7 @@ locatedResultMap3 : Frontend.LocatedExpr -> (a -> b -> c -> Canonical.Expr) -> R
 locatedResultMap3 located fn =
     Result.map3
         (\expr1 expr2 expr3 ->
-            Located.map
-                (\_ ->
-                    fn expr1 expr2 expr3
-                )
+            Located.replaceWith
+                (fn expr1 expr2 expr3)
                 located
         )
