@@ -59,23 +59,6 @@ lambda arguments body =
         }
 
 
-
-{- Let's not get ahead of ourselves
-
-   | Let
-       { varName : VarName
-       , varBody : LocatedExpr
-       , body : LocatedExpr
-       }
-   | Fixpoint LocatedExpr
-   | Operator
-       { opName : VarName
-       , left : LocatedExpr
-       , right : LocatedExpr
-       }
--}
-
-
 {-| A helper for the Transform library.
 -}
 recurse : (Expr -> Expr) -> Expr -> Expr

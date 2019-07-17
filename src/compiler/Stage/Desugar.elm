@@ -158,7 +158,19 @@ desugarExpr modules thisModule located =
 -}
 curryLambda : List VarName -> Canonical.LocatedExpr -> Canonical.LocatedExpr
 curryLambda arguments body =
-    List.foldr Canonical.lambda body arguments
+    List.foldr
+        (\argument body_ ->
+            Located.map
+                (\_ ->
+                    Canonical.Lambda
+                        { argument = argument
+                        , body = body_
+                        }
+                )
+                body
+        )
+        body
+        arguments
 
 
 {-| We have roughly these options:

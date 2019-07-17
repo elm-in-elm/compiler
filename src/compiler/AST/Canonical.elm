@@ -2,7 +2,6 @@ module AST.Canonical exposing
     ( Expr(..)
     , LocatedExpr
     , ProjectFields
-    , lambda
     , var
     )
 
@@ -53,16 +52,3 @@ var qualifier name =
         { qualifier = qualifier
         , name = name
         }
-
-
-lambda : VarName -> LocatedExpr -> LocatedExpr
-lambda argument body =
-    -- we use body's location
-    Located.map
-        (\_ ->
-            Lambda
-                { argument = argument
-                , body = body
-                }
-        )
-        body

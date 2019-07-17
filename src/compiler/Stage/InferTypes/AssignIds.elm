@@ -49,30 +49,30 @@ import Stage.InferTypes.IdSource as IdSource exposing (IdSource)
 
 
 assignIds : Canonical.LocatedExpr -> ( Typed.LocatedExpr, IdSource )
-assignIds expr =
-    assignIdsWith IdSource.empty expr
+assignIds located =
+    assignIdsWith IdSource.empty located
 
 
 assignIdsWith : IdSource -> Canonical.LocatedExpr -> ( Typed.LocatedExpr, IdSource )
-assignIdsWith idSource expr =
+assignIdsWith idSource located =
     let
-        ( expr_, idSource_ ) =
-            assignIdsWithHelp idSource (Located.unwrap expr)
+        ( located_, idSource_ ) =
+            assignIdsWithHelp idSource (Located.unwrap located)
     in
     {- Keep location, for error context -}
-    ( Located.map (\_ -> expr_) expr
+    ( Located.map (\_ -> located_) located
     , idSource_
     )
 
 
 assignId : IdSource -> Typed.Expr_ -> ( Typed.Expr, IdSource )
-assignId idSource expr =
-    IdSource.one idSource (\id -> ( expr, Type.Var id ))
+assignId idSource located =
+    IdSource.one idSource (\id -> ( located, Type.Var id ))
 
 
 assignIdsWithHelp : IdSource -> Canonical.Expr -> ( Typed.Expr, IdSource )
-assignIdsWithHelp idSource expr =
-    case expr of
+assignIdsWithHelp idSource located =
+    case located of
         {- With literals, we could plug their final type in right here
            (no solving needed!) but let's be uniform and do everything through
            the constraint solver in stages 2 and 3.

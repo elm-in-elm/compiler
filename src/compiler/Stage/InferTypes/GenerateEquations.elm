@@ -41,10 +41,10 @@ import Transform
 
 
 generateEquations : IdSource -> Typed.LocatedExpr -> ( List TypeEquation, IdSource )
-generateEquations idSource located_ =
+generateEquations idSource located =
     let
         ( expr, type_ ) =
-            Located.unwrap located_
+            Located.unwrap located
     in
     case expr of
         Typed.Literal (Literal.Int _) ->

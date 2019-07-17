@@ -4,7 +4,7 @@ module Stage.Emit.JavaScript exposing (emitExpr, emitTopLevelDeclaration)
 
 import AST.Backend as Backend
 import AST.Common.Literal exposing (Literal(..))
-import AST.Typed exposing (Expr_(..), getExpr)
+import AST.Typed as Typed exposing (Expr_(..))
 import Common.Types
     exposing
         ( ModuleName(..)
@@ -16,7 +16,7 @@ import Dict.Any
 
 emitExpr : Backend.LocatedExpr -> String
 emitExpr located =
-    case getExpr located of
+    case Typed.getExpr located of
         Literal (Int int) ->
             String.fromInt int
 

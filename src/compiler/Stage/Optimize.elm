@@ -22,8 +22,8 @@ optimizeExpr =
 
 
 optimizePlus : Typed.LocatedExpr -> Maybe Typed.LocatedExpr
-optimizePlus expr =
-    case Typed.getExpr expr of
+optimizePlus located =
+    case Typed.getExpr located of
         Typed.Plus l r ->
             case ( Typed.getExpr l, Typed.getExpr r ) of
                 ( Typed.Literal (Literal.Int left), Typed.Literal (Literal.Int right) ) ->
@@ -34,7 +34,7 @@ optimizePlus expr =
                                 , Type.Int
                                 )
                             )
-                            expr
+                            located
                         )
 
                 _ ->
@@ -45,8 +45,8 @@ optimizePlus expr =
 
 
 optimizeIfLiteralBool : Typed.LocatedExpr -> Maybe Typed.LocatedExpr
-optimizeIfLiteralBool expr =
-    case Typed.getExpr expr of
+optimizeIfLiteralBool located =
+    case Typed.getExpr located of
         Typed.If { test, then_, else_ } ->
             case Typed.getExpr test of
                 Typed.Literal (Literal.Bool bool) ->

@@ -35,10 +35,10 @@ inferTypes project =
 
 
 inferExpr : Canonical.LocatedExpr -> Result TypeError Typed.LocatedExpr
-inferExpr expr =
+inferExpr located =
     let
         ( exprWithIds, idSource ) =
-            AssignIds.assignIds expr
+            AssignIds.assignIds located
 
         typeEquations =
             GenerateEquations.generateEquations idSource exprWithIds

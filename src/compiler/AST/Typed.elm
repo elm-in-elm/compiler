@@ -8,7 +8,6 @@ module AST.Typed exposing
     , isArgument
     , lambda
     , let_
-    , mapExpr
     , recursiveChildren
     , transformAll
     , transformOnce
@@ -35,7 +34,7 @@ type alias ProjectFields =
 
 {-| Differs from Canonical.LocatedExpr by:
 
-  - being a tuple of the underlying LocatedExpr\_ type and its type
+  - being a tuple of the underlying Expr\_ type and its type
 
 TODO make this opaque, add accessors etc.
 
@@ -82,25 +81,21 @@ let_ bindings body =
         }
 
 
-
---TODO: Refactor the rest using Transform
-
-
 {-| A helper for the Transform library.
 -}
 recurse : (LocatedExpr -> LocatedExpr) -> LocatedExpr -> LocatedExpr
-recurse f expr =
+recurse f located =
     mapExpr
-        (\expr_ ->
-            case expr_ of
+        (\expr ->
+            case expr of
                 Literal _ ->
-                    expr_
+                    expr
 
                 Var _ ->
-                    expr_
+                    expr
 
                 Argument _ ->
-                    expr_
+                    expr
 
                 Plus e1 e2 ->
                     Plus
@@ -139,30 +134,30 @@ recurse f expr =
                     Tuple3 (f e1) (f e2) (f e3)
 
                 Unit ->
-                    expr_
+                    expr
         )
-        expr
+        located
 
 
 transformOnce : (LocatedExpr -> LocatedExpr) -> LocatedExpr -> LocatedExpr
-transformOnce pass expr_ =
+transformOnce pass located =
     Transform.transformOnce
         recurse
         pass
-        expr_
+        located
 
 
 transformAll : List (LocatedExpr -> Maybe LocatedExpr) -> LocatedExpr -> LocatedExpr
-transformAll passes expr_ =
+transformAll passes located =
     Transform.transformAll
         recurse
         (Transform.orList passes)
-        expr_
+        located
 
 
 isArgument : VarName -> LocatedExpr -> Bool
-isArgument name expr =
-    case getExpr expr of
+isArgument name located =
+    case getExpr located of
         Argument argName ->
             argName == name
 
@@ -171,8 +166,8 @@ isArgument name expr =
 
 
 recursiveChildren : (LocatedExpr -> List LocatedExpr) -> LocatedExpr -> List LocatedExpr
-recursiveChildren fn expr =
-    case getExpr expr of
+recursiveChildren fn located =
+    case getExpr located of
         Literal _ ->
             []
 
@@ -215,16 +210,16 @@ recursiveChildren fn expr =
             fn e1 ++ fn e2 ++ fn e3
 
 
-mapExpr : (a -> b) -> Located ( a, c ) -> Located ( b, c )
+mapExpr : (Expr_ -> Expr_) -> LocatedExpr -> LocatedExpr
 mapExpr =
     Located.map << Tuple.mapFirst
 
 
-getExpr : Located ( a, b ) -> a
+getExpr : LocatedExpr -> Expr_
 getExpr =
     Tuple.first << Located.unwrap
 
 
-getType : Located ( a, b ) -> b
+getType : LocatedExpr -> Type
 getType =
     Tuple.second << Located.unwrap
