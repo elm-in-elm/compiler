@@ -32,7 +32,7 @@ type alias ProjectFields =
     { modules : Modules LocatedExpr }
 
 
-{-| Differs from Canonical.LocatedExpr by:
+{-| Differs from Canonical.Expr by:
 
   - being a tuple of the underlying Expr\_ type and its type
 

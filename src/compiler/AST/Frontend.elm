@@ -63,6 +63,10 @@ lambda arguments body =
 -}
 recurse : (Expr -> Expr) -> Expr -> Expr
 recurse f expr =
+    let
+        f_ =
+            Located.map f
+    in
     case expr of
         Literal _ ->
             expr
@@ -75,42 +79,42 @@ recurse f expr =
 
         Plus e1 e2 ->
             Plus
-                (Located.map f e1)
-                (Located.map f e2)
+                (f_ e1)
+                (f_ e2)
 
         Lambda ({ body } as lambda_) ->
-            Lambda { lambda_ | body = Located.map f body }
+            Lambda { lambda_ | body = f_ body }
 
         Call { fn, argument } ->
             Call
-                { fn = Located.map f fn
-                , argument = Located.map f argument
+                { fn = f_ fn
+                , argument = f_ argument
                 }
 
         If { test, then_, else_ } ->
             If
-                { test = Located.map f test
-                , then_ = Located.map f then_
-                , else_ = Located.map f else_
+                { test = f_ test
+                , then_ = f_ then_
+                , else_ = f_ else_
                 }
 
         Let { bindings, body } ->
             Let
-                { bindings = List.map (Common.mapBinding (Located.map f)) bindings
-                , body = Located.map f body
+                { bindings = List.map (Common.mapBinding f_) bindings
+                , body = f_ body
                 }
 
         List items ->
-            List (List.map (Located.map f) items)
+            List (List.map f_ items)
 
         Unit ->
             expr
 
         Tuple e1 e2 ->
-            Tuple (Located.map f e1) (Located.map f e2)
+            Tuple (f_ e1) (f_ e2)
 
         Tuple3 e1 e2 e3 ->
-            Tuple3 (Located.map f e1) (Located.map f e2) (Located.map f e3)
+            Tuple3 (f_ e1) (f_ e2) (f_ e3)
 
 
 transform : (Expr -> Expr) -> Expr -> Expr
