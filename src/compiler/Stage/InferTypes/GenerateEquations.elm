@@ -306,18 +306,18 @@ generateEquations idSource located =
 
 
 findArgumentUsages : VarName -> Typed.LocatedExpr -> List Typed.LocatedExpr
-findArgumentUsages argument located =
-    located
+findArgumentUsages argument bodyExpr =
+    bodyExpr
         |> Transform.children Typed.recursiveChildren
         |> List.filter (Typed.isArgument argument)
 
 
 generateArgumentUsageEquations : Int -> List Typed.LocatedExpr -> List TypeEquation
-generateArgumentUsageEquations argumentId exprs =
+generateArgumentUsageEquations argumentId usages =
     let
         argumentType =
             Type.Var argumentId
     in
     List.map
-        (\l -> equals (Typed.getType l) argumentType)
-        exprs
+        (Typed.getType >> equals argumentType)
+        usages

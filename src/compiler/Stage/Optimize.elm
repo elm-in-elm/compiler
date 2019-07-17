@@ -14,11 +14,12 @@ optimize project =
 
 
 optimizeExpr : Typed.LocatedExpr -> Typed.LocatedExpr
-optimizeExpr =
+optimizeExpr located =
     Typed.transformAll
         [ optimizePlus
         , optimizeIfLiteralBool
         ]
+        located
 
 
 optimizePlus : Typed.LocatedExpr -> Maybe Typed.LocatedExpr

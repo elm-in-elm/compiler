@@ -17,19 +17,22 @@ import Stage.Emit.JavaScript as JS
 import Test exposing (Test, describe, test, todo)
 
 
+dummyPosition : Located.Region
+dummyPosition =
+    { start = { row = 0, col = 0 }, end = { row = 0, col = 0 } }
+
+
 typedHelp : Typed.Expr -> Typed.LocatedExpr
 typedHelp expr =
     Located.located
-        -- position do not matters in emit
-        { start = { row = 0, col = 0 }, end = { row = 0, col = 0 } }
+        dummyPosition
         expr
 
 
 typed : Typed.Expr_ -> Typed.LocatedExpr
 typed expr =
     Located.located
-        -- position do not matters in emit
-        { start = { row = 0, col = 0 }, end = { row = 0, col = 0 } }
+        dummyPosition
         ( expr, Type.Int )
 
 
@@ -62,11 +65,13 @@ javascript =
                             |> JS.emitExpr
                             |> Expect.equal output
           in
-          describe "emitExpr_"
+          describe "emitExpr"
             [ describe "Int"
                 (List.map runTest
                     [ ( "positive int", Literal (Int 42), "42" )
                     , ( "negative int", Literal (Int -998), "-998" )
+                    , -- Elm wat
+                      ( "negative zero int", Literal (Int (negate 0)), "0" )
                     ]
                 )
 

@@ -54,13 +54,13 @@ assignIds located =
 
 
 assignIdsWith : IdSource -> Canonical.LocatedExpr -> ( Typed.LocatedExpr, IdSource )
-assignIdsWith idSource located =
+assignIdsWith idSource locatedCanonicalExpr =
     let
-        ( located_, idSource_ ) =
-            assignIdsWithHelp idSource (Located.unwrap located)
+        ( typedExpr, idSource_ ) =
+            assignIdsWithHelp idSource (Located.unwrap locatedCanonicalExpr)
     in
     {- Keep location, for error context -}
-    ( Located.map (\_ -> located_) located
+    ( Located.replaceWith typedExpr locatedCanonicalExpr
     , idSource_
     )
 
