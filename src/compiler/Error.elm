@@ -12,7 +12,6 @@ module Error exposing
     , toString
     )
 
-import AST.Common.Located exposing (Region)
 import AST.Common.Type as Type exposing (Type)
 import Common.Types
     exposing
