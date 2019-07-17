@@ -81,7 +81,7 @@ desugarExpr modules thisModule located =
 
         Frontend.Lambda { arguments, body } ->
             recurse body
-                |> Result.map (curryLambda arguments)
+                |> Result.map (curryLambda located arguments)
 
         Frontend.Call { fn, argument } ->
             recurseMap2
@@ -156,8 +156,8 @@ desugarExpr modules thisModule located =
     Canonical.Lambda arg1 (Canonical.Lambda arg2 body)
 
 -}
-curryLambda : List VarName -> Canonical.LocatedExpr -> Canonical.LocatedExpr
-curryLambda arguments body =
+curryLambda : Canonical.LocatedExpr -> List VarName -> Canonical.LocatedExpr -> Canonical.LocatedExpr
+curryLambda located arguments body =
     List.foldr
         (\argument body_ ->
             Located.map
@@ -167,7 +167,7 @@ curryLambda arguments body =
                         , body = body_
                         }
                 )
-                body
+                located
         )
         body
         arguments
