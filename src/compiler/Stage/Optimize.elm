@@ -1,6 +1,7 @@
 module Stage.Optimize exposing (optimize, optimizeExpr)
 
 import AST.Common.Literal as Literal
+import AST.Common.Located as Located
 import AST.Common.Type as Type
 import AST.Typed as Typed
 import Common.Types exposing (Project)
@@ -12,34 +13,42 @@ optimize project =
     Boilerplate.optimizeProject optimizeExpr project
 
 
-optimizeExpr : Typed.Expr -> Typed.Expr
-optimizeExpr expr =
+optimizeExpr : Typed.LocatedExpr -> Typed.LocatedExpr
+optimizeExpr located =
     Typed.transformAll
         [ optimizePlus
         , optimizeIfLiteralBool
         ]
-        expr
+        located
 
 
-optimizePlus : Typed.Expr -> Maybe Typed.Expr
-optimizePlus ( expr, _ ) =
-    case expr of
-        Typed.Plus ( Typed.Literal (Literal.Int left), _ ) ( Typed.Literal (Literal.Int right), _ ) ->
-            Just
-                ( Typed.Literal (Literal.Int (left + right))
-                , Type.Int
-                )
+optimizePlus : Typed.LocatedExpr -> Maybe Typed.LocatedExpr
+optimizePlus located =
+    case Typed.getExpr located of
+        Typed.Plus l r ->
+            case ( Typed.getExpr l, Typed.getExpr r ) of
+                ( Typed.Literal (Literal.Int left), Typed.Literal (Literal.Int right) ) ->
+                    Just
+                        (Located.replaceWith
+                            ( Typed.Literal (Literal.Int (left + right))
+                            , Type.Int
+                            )
+                            located
+                        )
+
+                _ ->
+                    Nothing
 
         _ ->
             Nothing
 
 
-optimizeIfLiteralBool : Typed.Expr -> Maybe Typed.Expr
-optimizeIfLiteralBool ( expr, _ ) =
-    case expr of
+optimizeIfLiteralBool : Typed.LocatedExpr -> Maybe Typed.LocatedExpr
+optimizeIfLiteralBool located =
+    case Typed.getExpr located of
         Typed.If { test, then_, else_ } ->
-            case test of
-                ( Typed.Literal (Literal.Bool bool), _ ) ->
+            case Typed.getExpr test of
+                Typed.Literal (Literal.Bool bool) ->
                     Just
                         (if bool then
                             then_

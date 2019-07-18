@@ -17,7 +17,7 @@ import Error exposing (DesugarError)
 import Extra.Dict.Any
 
 
-desugarProject : (Module Frontend.Expr -> Frontend.Expr -> Result DesugarError Canonical.Expr) -> Project Frontend.ProjectFields -> Result DesugarError (Project Canonical.ProjectFields)
+desugarProject : (Module Frontend.LocatedExpr -> Frontend.LocatedExpr -> Result DesugarError Canonical.LocatedExpr) -> Project Frontend.ProjectFields -> Result DesugarError (Project Canonical.ProjectFields)
 desugarProject desugarExpr project =
     project.modules
         |> Dict.Any.map (always (desugarModule desugarExpr))
@@ -25,7 +25,7 @@ desugarProject desugarExpr project =
         |> Result.map (projectOfNewType project)
 
 
-projectOfNewType : Project Frontend.ProjectFields -> Modules Canonical.Expr -> Project Canonical.ProjectFields
+projectOfNewType : Project Frontend.ProjectFields -> Modules Canonical.LocatedExpr -> Project Canonical.ProjectFields
 projectOfNewType old modules =
     { elmJson = old.elmJson
     , mainFilePath = old.mainFilePath
@@ -37,7 +37,7 @@ projectOfNewType old modules =
     }
 
 
-desugarModule : (Module Frontend.Expr -> Frontend.Expr -> Result DesugarError Canonical.Expr) -> Module Frontend.Expr -> Result DesugarError (Module Canonical.Expr)
+desugarModule : (Module Frontend.LocatedExpr -> Frontend.LocatedExpr -> Result DesugarError Canonical.LocatedExpr) -> Module Frontend.LocatedExpr -> Result DesugarError (Module Canonical.LocatedExpr)
 desugarModule desugarExpr module_ =
     module_.topLevelDeclarations
         |> Dict.Any.map (always (desugarTopLevelDeclaration (desugarExpr module_)))
@@ -45,7 +45,7 @@ desugarModule desugarExpr module_ =
         |> Result.map (moduleOfNewType module_)
 
 
-moduleOfNewType : Module Frontend.Expr -> Dict_ VarName (TopLevelDeclaration Canonical.Expr) -> Module Canonical.Expr
+moduleOfNewType : Module Frontend.LocatedExpr -> Dict_ VarName (TopLevelDeclaration Canonical.LocatedExpr) -> Module Canonical.LocatedExpr
 moduleOfNewType old newDecls =
     { dependencies = old.dependencies
     , name = old.name
@@ -58,13 +58,13 @@ moduleOfNewType old newDecls =
     }
 
 
-desugarTopLevelDeclaration : (Frontend.Expr -> Result DesugarError Canonical.Expr) -> TopLevelDeclaration Frontend.Expr -> Result DesugarError (TopLevelDeclaration Canonical.Expr)
+desugarTopLevelDeclaration : (Frontend.LocatedExpr -> Result DesugarError Canonical.LocatedExpr) -> TopLevelDeclaration Frontend.LocatedExpr -> Result DesugarError (TopLevelDeclaration Canonical.LocatedExpr)
 desugarTopLevelDeclaration desugarExpr decl =
     desugarExpr decl.body
         |> Result.map (topLevelDeclarationOfNewType decl)
 
 
-topLevelDeclarationOfNewType : TopLevelDeclaration Frontend.Expr -> Canonical.Expr -> TopLevelDeclaration Canonical.Expr
+topLevelDeclarationOfNewType : TopLevelDeclaration Frontend.LocatedExpr -> Canonical.LocatedExpr -> TopLevelDeclaration Canonical.LocatedExpr
 topLevelDeclarationOfNewType old newBody =
     { name = old.name
     , module_ = old.module_

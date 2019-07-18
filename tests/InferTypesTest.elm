@@ -1,8 +1,9 @@
 module InferTypesTest exposing (typeInference, typeToString)
 
 import AST.Canonical as Canonical
-import AST.Common.Literal exposing (Literal(..))
-import AST.Common.Type as Type exposing (Type)
+import AST.Common.Literal as Literal
+import AST.Common.Located as Located
+import AST.Common.Type as Type exposing (Type(..))
 import AST.Typed as Typed
 import Common
 import Common.Types as Types
@@ -23,93 +24,58 @@ typeInference =
         runTest ( description, input, output ) =
             test description <|
                 \() ->
-                    Stage.InferTypes.inferExpr input
+                    located input
+                        |> Stage.InferTypes.inferExpr
+                        |> Result.map Typed.getType
                         |> Expect.equal output
+
+        located =
+            Located.located { start = { row = 0, col = 0 }, end = { row = 0, col = 0 } }
     in
     describe "Stage.InferType"
         (List.map runSection
             [ ( "list"
               , [ ( "empty list"
                   , Canonical.List []
-                  , Ok ( Typed.List [], Type.List (Type.Var 1) )
+                  , Ok (List (Var 1))
                   )
                 , ( "one item"
-                  , Canonical.List [ Canonical.Literal (Bool True) ]
-                  , Ok ( Typed.List [ ( Typed.Literal (Bool True), Type.Bool ) ], Type.List Type.Bool )
+                  , Canonical.List [ located (Canonical.Literal (Literal.Int 1)) ]
+                  , Ok (List Int)
                   )
                 , ( "more items"
-                  , Canonical.List [ Canonical.Literal (Int 1), Canonical.Literal (Int 2), Canonical.Literal (Int 3) ]
-                  , Ok ( Typed.List [ ( Typed.Literal (Int 1), Type.Int ), ( Typed.Literal (Int 2), Type.Int ), ( Typed.Literal (Int 3), Type.Int ) ], Type.List Type.Int )
+                  , Canonical.List [ located (Canonical.Literal (Literal.Int 1)), located (Canonical.Literal (Literal.Int 2)), located (Canonical.Literal (Literal.Int 3)) ]
+                  , Ok (List Int)
                   )
                 , ( "different types"
-                  , Canonical.List [ Canonical.Literal (Int 1), Canonical.Literal (String "two") ]
+                  , Canonical.List [ located (Canonical.Literal (Literal.Int 1)), located (Canonical.Literal (Literal.String "2")) ]
                   , Err (Error.TypeMismatch Type.Int Type.String)
                   )
                 , ( "more items with different types"
-                  , Canonical.List [ Canonical.Literal (Bool True), Canonical.Literal (String "two"), Canonical.Literal (Int 3) ]
+                  , Canonical.List [ located (Canonical.Literal (Literal.Bool True)), located (Canonical.Literal (Literal.String "two")), located (Canonical.Literal (Literal.Int 3)) ]
                   , Err (Error.TypeMismatch Type.Bool Type.String)
-                  )
-                , ( "List of List of Int"
-                  , Canonical.List [ Canonical.List [ Canonical.Literal (Int 1) ], Canonical.List [ Canonical.Literal (Int 2) ] ]
-                  , Ok ( Typed.List [ ( Typed.List [ ( Typed.Literal (Int 1), Type.Int ) ], Type.List Type.Int ), ( Typed.List [ ( Typed.Literal (Int 2), Type.Int ) ], Type.List Type.Int ) ], Type.List (Type.List Type.Int) )
-                  )
-                , ( "List of List of different types"
-                  , Canonical.List [ Canonical.List [ Canonical.Literal (Int 1) ], Canonical.List [ Canonical.Literal (Bool False) ] ]
-                  , Err (Error.TypeMismatch Type.Int Type.Bool)
                   )
                 ]
               )
             , ( "tuple"
               , [ ( "items with the same types"
-                  , Canonical.Tuple
-                        (Canonical.Literal (String "Hello"))
-                        (Canonical.Literal (String "Elm"))
-                  , Ok
-                        ( Typed.Tuple
-                            ( Typed.Literal (String "Hello"), Type.String )
-                            ( Typed.Literal (String "Elm"), Type.String )
-                        , Type.Tuple Type.String Type.String
-                        )
+                  , Canonical.Tuple (located (Canonical.Literal (Literal.String "Hello"))) (located (Canonical.Literal (Literal.String "Elm")))
+                  , Ok (Tuple String String)
                   )
                 , ( "items of different types"
-                  , Canonical.Tuple
-                        (Canonical.Literal (Bool True))
-                        (Canonical.Literal (Int 1))
-                  , Ok
-                        ( Typed.Tuple
-                            ( Typed.Literal (Bool True), Type.Bool )
-                            ( Typed.Literal (Int 1), Type.Int )
-                        , Type.Tuple Type.Bool Type.Int
-                        )
+                  , Canonical.Tuple (located (Canonical.Literal (Literal.Bool True))) (located (Canonical.Literal (Literal.Int 1)))
+                  , Ok (Tuple Bool Int)
                   )
                 ]
               )
             , ( "tuple3"
               , [ ( "same types"
-                  , Canonical.Tuple3
-                        (Canonical.Literal (String "FP"))
-                        (Canonical.Literal (String "is"))
-                        (Canonical.Literal (String "good"))
-                  , Ok
-                        ( Typed.Tuple3
-                            ( Typed.Literal (String "FP"), Type.String )
-                            ( Typed.Literal (String "is"), Type.String )
-                            ( Typed.Literal (String "good"), Type.String )
-                        , Type.Tuple3 Type.String Type.String Type.String
-                        )
+                  , Canonical.Tuple3 (located (Canonical.Literal (Literal.String "FP"))) (located (Canonical.Literal (Literal.String "is"))) (located (Canonical.Literal (Literal.String "good")))
+                  , Ok (Tuple3 String String String)
                   )
                 , ( "different types"
-                  , Canonical.Tuple3
-                        (Canonical.Literal (Bool True))
-                        (Canonical.Literal (Int 1))
-                        (Canonical.Literal (Char 'h'))
-                  , Ok
-                        ( Typed.Tuple3
-                            ( Typed.Literal (Bool True), Type.Bool )
-                            ( Typed.Literal (Int 1), Type.Int )
-                            ( Typed.Literal (Char 'h'), Type.Char )
-                        , Type.Tuple3 Type.Bool Type.Int Type.Char
-                        )
+                  , Canonical.Tuple3 (located (Canonical.Literal (Literal.Bool True))) (located (Canonical.Literal (Literal.Int 1))) (located (Canonical.Literal (Literal.Char 'h')))
+                  , Ok (Tuple3 Bool Int Char)
                   )
                 ]
               )

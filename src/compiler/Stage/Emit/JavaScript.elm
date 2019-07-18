@@ -4,7 +4,7 @@ module Stage.Emit.JavaScript exposing (emitExpr, emitTopLevelDeclaration)
 
 import AST.Backend as Backend
 import AST.Common.Literal exposing (Literal(..))
-import AST.Typed exposing (Expr_(..))
+import AST.Typed as Typed exposing (Expr_(..))
 import Common.Types
     exposing
         ( ModuleName(..)
@@ -14,9 +14,9 @@ import Common.Types
 import Dict.Any
 
 
-emitExpr : Backend.Expr -> String
-emitExpr ( expr, _ ) =
-    case expr of
+emitExpr : Backend.LocatedExpr -> String
+emitExpr located =
+    case Typed.getExpr located of
         Literal (Int int) ->
             String.fromInt int
 
@@ -81,7 +81,7 @@ emitExpr ( expr, _ ) =
             "[" ++ emitExpr e1 ++ "," ++ emitExpr e2 ++ "," ++ emitExpr e3 ++ "]"
 
 
-emitTopLevelDeclaration : TopLevelDeclaration Backend.Expr -> String
+emitTopLevelDeclaration : TopLevelDeclaration Backend.LocatedExpr -> String
 emitTopLevelDeclaration { module_, name, body } =
     "const "
         ++ mangleQualifiedVar module_ name

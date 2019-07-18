@@ -1,11 +1,12 @@
 module AST.Canonical exposing
     ( Expr(..)
+    , LocatedExpr
     , ProjectFields
-    , lambda
     , var
     )
 
 import AST.Common.Literal exposing (Literal)
+import AST.Common.Located as Located exposing (Located)
 import Common.Types
     exposing
         ( Binding
@@ -17,7 +18,11 @@ import Dict.Any exposing (AnyDict)
 
 
 type alias ProjectFields =
-    { modules : Modules Expr }
+    { modules : Modules LocatedExpr }
+
+
+type alias LocatedExpr =
+    Located Expr
 
 
 {-| Differs from Frontend.Expr by:
@@ -30,15 +35,15 @@ type Expr
     = Literal Literal
     | Var { qualifier : ModuleName, name : VarName }
     | Argument VarName
-    | Plus Expr Expr
-    | Lambda { argument : VarName, body : Expr }
-    | Call { fn : Expr, argument : Expr }
-    | If { test : Expr, then_ : Expr, else_ : Expr }
-    | Let { bindings : AnyDict String VarName (Binding Expr), body : Expr }
-    | List (List Expr)
+    | Plus LocatedExpr LocatedExpr
+    | Lambda { argument : VarName, body : LocatedExpr }
+    | Call { fn : LocatedExpr, argument : LocatedExpr }
+    | If { test : LocatedExpr, then_ : LocatedExpr, else_ : LocatedExpr }
+    | Let { bindings : AnyDict String VarName (Binding LocatedExpr), body : LocatedExpr }
+    | List (List LocatedExpr)
     | Unit
-    | Tuple Expr Expr
-    | Tuple3 Expr Expr Expr
+    | Tuple LocatedExpr LocatedExpr
+    | Tuple3 LocatedExpr LocatedExpr LocatedExpr
 
 
 var : ModuleName -> VarName -> Expr
@@ -46,12 +51,4 @@ var qualifier name =
     Var
         { qualifier = qualifier
         , name = name
-        }
-
-
-lambda : VarName -> Expr -> Expr
-lambda argument body =
-    Lambda
-        { argument = argument
-        , body = body
         }

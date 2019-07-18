@@ -17,7 +17,7 @@ import Error exposing (TypeError)
 import Extra.Dict.Any
 
 
-inferProject : (Canonical.Expr -> Result TypeError Typed.Expr) -> Project Canonical.ProjectFields -> Result TypeError (Project Typed.ProjectFields)
+inferProject : (Canonical.LocatedExpr -> Result TypeError Typed.LocatedExpr) -> Project Canonical.ProjectFields -> Result TypeError (Project Typed.ProjectFields)
 inferProject inferExpr project =
     project.modules
         |> Dict.Any.map (always (inferModule inferExpr))
@@ -25,7 +25,7 @@ inferProject inferExpr project =
         |> Result.map (projectOfNewType project)
 
 
-projectOfNewType : Project Canonical.ProjectFields -> Modules Typed.Expr -> Project Typed.ProjectFields
+projectOfNewType : Project Canonical.ProjectFields -> Modules Typed.LocatedExpr -> Project Typed.ProjectFields
 projectOfNewType old modules =
     { elmJson = old.elmJson
     , mainFilePath = old.mainFilePath
@@ -37,7 +37,7 @@ projectOfNewType old modules =
     }
 
 
-inferModule : (Canonical.Expr -> Result TypeError Typed.Expr) -> Module Canonical.Expr -> Result TypeError (Module Typed.Expr)
+inferModule : (Canonical.LocatedExpr -> Result TypeError Typed.LocatedExpr) -> Module Canonical.LocatedExpr -> Result TypeError (Module Typed.LocatedExpr)
 inferModule inferExpr module_ =
     module_.topLevelDeclarations
         |> Dict.Any.map (always (inferTopLevelDeclaration inferExpr))
@@ -45,7 +45,7 @@ inferModule inferExpr module_ =
         |> Result.map (moduleOfNewType module_)
 
 
-moduleOfNewType : Module Canonical.Expr -> Dict_ VarName (TopLevelDeclaration Typed.Expr) -> Module Typed.Expr
+moduleOfNewType : Module Canonical.LocatedExpr -> Dict_ VarName (TopLevelDeclaration Typed.LocatedExpr) -> Module Typed.LocatedExpr
 moduleOfNewType old newDecls =
     { dependencies = old.dependencies
     , name = old.name
@@ -58,13 +58,13 @@ moduleOfNewType old newDecls =
     }
 
 
-inferTopLevelDeclaration : (Canonical.Expr -> Result TypeError Typed.Expr) -> TopLevelDeclaration Canonical.Expr -> Result TypeError (TopLevelDeclaration Typed.Expr)
+inferTopLevelDeclaration : (Canonical.LocatedExpr -> Result TypeError Typed.LocatedExpr) -> TopLevelDeclaration Canonical.LocatedExpr -> Result TypeError (TopLevelDeclaration Typed.LocatedExpr)
 inferTopLevelDeclaration inferExpr decl =
     inferExpr decl.body
         |> Result.map (topLevelDeclarationOfNewType decl)
 
 
-topLevelDeclarationOfNewType : TopLevelDeclaration Canonical.Expr -> Typed.Expr -> TopLevelDeclaration Typed.Expr
+topLevelDeclarationOfNewType : TopLevelDeclaration Canonical.LocatedExpr -> Typed.LocatedExpr -> TopLevelDeclaration Typed.LocatedExpr
 topLevelDeclarationOfNewType old newBody =
     { name = old.name
     , module_ = old.module_

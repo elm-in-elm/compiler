@@ -274,7 +274,7 @@ handleReadFileSuccess filePath fileContents ({ project } as model) =
                         |> List.map (Common.expectedFilePath project.sourceDirectory)
                         |> Set.Any.fromList Common.filePathToString
 
-                newModules : Modules Frontend.Expr
+                newModules : Modules Frontend.LocatedExpr
                 newModules =
                     Dict.Any.update name
                         (always (Just parsedModule))
