@@ -109,7 +109,7 @@ desugarPlus recurse e1 e2 =
 desugarListConcat : Modules Frontend.Expr -> Module Frontend.Expr -> Frontend.Expr -> Frontend.Expr -> Result DesugarError Canonical.Expr
 desugarListConcat modules thisModule e1 e2 = 
     let
-        listConcatVar = Frontend.Var { qualifier = Just (Common.Types.ModuleName "List"), name = Common.Types.VarName "concat"}
+        listConcatVar = Frontend.Var { qualifier = Just (Common.Types.ModuleName "List"), name = Common.Types.VarName "append"}
         firstCall = Frontend.Call { fn = listConcatVar, argument = e1 }
         expr = Frontend.Call { fn = firstCall, argument = e2}
     in
