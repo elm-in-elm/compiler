@@ -187,6 +187,8 @@ dumpType type_ =
         |> Tuple.first
 
 
+{-| An expression shrinker that preserves the inferred type.
+-}
 exprShrinker : Shrinker Canonical.LocatedExpr
 exprShrinker expr =
     case Located.unwrap expr of
