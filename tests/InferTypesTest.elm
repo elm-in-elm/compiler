@@ -1,7 +1,6 @@
 module InferTypesTest exposing (typeInference, typeToString)
 
 import AST.Canonical as Canonical
-import AST.Typed as Typed
 import AST.Common.Literal as Literal
 import AST.Common.Located as Located
 import AST.Common.Type as Type exposing (Type(..))
@@ -26,28 +25,27 @@ typeInference =
             test description <|
                 \() ->
                     located input
-                      |> Stage.InferTypes.inferExpr
-                      |> Result.map Typed.getType
-                      |> Expect.equal output
+                        |> Stage.InferTypes.inferExpr
+                        |> Result.map Typed.getType
+                        |> Expect.equal output
 
         located =
             Located.located { start = { row = 0, col = 0 }, end = { row = 0, col = 0 } }
-
     in
     describe "Stage.InferType"
         (List.map runSection
             [ ( "list"
               , [ ( "empty list"
                   , Canonical.List []
-                  , Ok ( List (Var 1) )
+                  , Ok (List (Var 1))
                   )
                 , ( "one item"
                   , Canonical.List [ located (Canonical.Literal (Literal.Int 1)) ]
-                  , Ok ( List Int )
+                  , Ok (List Int)
                   )
                 , ( "more items"
                   , Canonical.List [ located (Canonical.Literal (Literal.Int 1)), located (Canonical.Literal (Literal.Int 2)), located (Canonical.Literal (Literal.Int 3)) ]
-                  , Ok ( List Int )
+                  , Ok (List Int)
                   )
                 , ( "different types"
                   , Canonical.List [ located (Canonical.Literal (Literal.Int 1)), located (Canonical.Literal (Literal.String "2")) ]
@@ -62,22 +60,22 @@ typeInference =
             , ( "tuple"
               , [ ( "items with the same types"
                   , Canonical.Tuple (located (Canonical.Literal (Literal.String "Hello"))) (located (Canonical.Literal (Literal.String "Elm")))
-                  , Ok ( Tuple String String )
+                  , Ok (Tuple String String)
                   )
                 , ( "items of different types"
                   , Canonical.Tuple (located (Canonical.Literal (Literal.Bool True))) (located (Canonical.Literal (Literal.Int 1)))
-                  , Ok ( Tuple Bool Int )
+                  , Ok (Tuple Bool Int)
                   )
                 ]
               )
             , ( "tuple3"
               , [ ( "same types"
                   , Canonical.Tuple3 (located (Canonical.Literal (Literal.String "FP"))) (located (Canonical.Literal (Literal.String "is"))) (located (Canonical.Literal (Literal.String "good")))
-                  , Ok ( Tuple3 String String String )
+                  , Ok (Tuple3 String String String)
                   )
                 , ( "different types"
                   , Canonical.Tuple3 (located (Canonical.Literal (Literal.Bool True))) (located (Canonical.Literal (Literal.Int 1))) (located (Canonical.Literal (Literal.Char 'h')))
-                  , Ok ( Tuple3 Bool Int Char )
+                  , Ok (Tuple3 Bool Int Char)
                   )
                 ]
               )
