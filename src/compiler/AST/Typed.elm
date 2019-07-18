@@ -32,6 +32,10 @@ type alias ProjectFields =
     { modules : Modules LocatedExpr }
 
 
+type alias LocatedExpr =
+    Located Expr
+
+
 {-| Differs from Canonical.Expr by:
 
   - being a tuple of the underlying Expr\_ type and its type
@@ -39,10 +43,6 @@ type alias ProjectFields =
 TODO make this opaque, add accessors etc.
 
 -}
-type alias LocatedExpr =
-    Located Expr
-
-
 type alias Expr =
     ( Expr_, Type )
 
