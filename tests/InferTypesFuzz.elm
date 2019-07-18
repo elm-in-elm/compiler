@@ -78,7 +78,7 @@ intExpr =
 
 floatExpr : Generator Canonical.Expr
 floatExpr =
-    -- Does not produve NaNs, but that should not be an issue for us.
+    -- Does not produce NaNs, but that should not be an issue for us.
     Random.float (-1.0 / 0.0) (1.0 / 0.0)
         |> Random.map (literal Float)
 
