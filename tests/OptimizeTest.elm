@@ -15,24 +15,12 @@ import Dict.Any
 import Expect exposing (Expectation)
 import Stage.Optimize
 import Test exposing (Test, describe, test, todo)
-
-
-typed : Typed.Expr -> Typed.LocatedExpr
-typed expr =
-    Located.located
-        -- position do not matters in optimize
-        { start = { row = 0, col = 0 }, end = { row = 0, col = 0 } }
-        expr
-
-
-typedInt : Int -> Typed.LocatedExpr
-typedInt int =
-    typed ( Literal (Int int), Type.Int )
-
-
-typedBool : Bool -> Typed.LocatedExpr
-typedBool bool =
-    typed ( Literal (Bool bool), Type.Bool )
+import TestHelpers
+    exposing
+        ( located
+        , typedBool
+        , typedInt
+        )
 
 
 optimize : Test
@@ -51,7 +39,7 @@ optimize =
             [ describe "optimizePlus"
                 (List.map runTest
                     [ ( "works with two literal ints"
-                      , typed
+                      , located
                             ( Plus
                                 (typedInt 2)
                                 (typedInt 5)
@@ -60,30 +48,30 @@ optimize =
                       , typedInt 7
                       )
                     , ( "doesn't work if left is not int"
-                      , typed
+                      , located
                             ( Plus
-                                (typed ( Argument (VarName "x"), Type.Int ))
+                                (located ( Argument (VarName "x"), Type.Int ))
                                 (typedInt 5)
                             , Type.Int
                             )
-                      , typed
+                      , located
                             ( Plus
-                                (typed ( Argument (VarName "x"), Type.Int ))
+                                (located ( Argument (VarName "x"), Type.Int ))
                                 (typedInt 5)
                             , Type.Int
                             )
                       )
                     , ( "doesn't work if right is not int"
-                      , typed
+                      , located
                             ( Plus
                                 (typedInt 5)
-                                (typed ( Argument (VarName "x"), Type.Int ))
+                                (located ( Argument (VarName "x"), Type.Int ))
                             , Type.Int
                             )
-                      , typed
+                      , located
                             ( Plus
                                 (typedInt 5)
-                                (typed ( Argument (VarName "x"), Type.Int ))
+                                (located ( Argument (VarName "x"), Type.Int ))
                             , Type.Int
                             )
                       )
@@ -92,7 +80,7 @@ optimize =
             , describe "optimizeIfLiteralBool"
                 (List.map runTest
                     [ ( "folds to then if true"
-                      , typed
+                      , located
                             ( If
                                 { test = typedBool True
                                 , then_ = typedInt 42
@@ -103,7 +91,7 @@ optimize =
                       , typedInt 42
                       )
                     , ( "folds to else if false"
-                      , typed
+                      , located
                             ( If
                                 { test = typedBool False
                                 , then_ = typedInt 0
@@ -114,17 +102,17 @@ optimize =
                       , typedInt 42
                       )
                     , ( "doesn't work if the bool is not literal"
-                      , typed
+                      , located
                             ( If
-                                { test = typed ( Argument (VarName "x"), Type.Bool )
+                                { test = located ( Argument (VarName "x"), Type.Bool )
                                 , then_ = typedInt 0
                                 , else_ = typedInt 42
                                 }
                             , Type.Int
                             )
-                      , typed
+                      , located
                             ( If
-                                { test = typed ( Argument (VarName "x"), Type.Bool )
+                                { test = located ( Argument (VarName "x"), Type.Bool )
                                 , then_ = typedInt 0
                                 , else_ = typedInt 42
                                 }

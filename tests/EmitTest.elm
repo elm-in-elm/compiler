@@ -15,40 +15,13 @@ import Dict.Any
 import Expect exposing (Expectation)
 import Stage.Emit.JavaScript as JS
 import Test exposing (Test, describe, test, todo)
-
-
-dummyPosition : Located.Region
-dummyPosition =
-    { start = { row = 0, col = 0 }, end = { row = 0, col = 0 } }
-
-
-typedHelp : Typed.Expr -> Typed.LocatedExpr
-typedHelp expr =
-    Located.located
-        dummyPosition
-        expr
-
-
-typed : Typed.Expr_ -> Typed.LocatedExpr
-typed expr =
-    Located.located
-        dummyPosition
-        ( expr, Type.Int )
-
-
-typedInt : Int -> Typed.LocatedExpr
-typedInt int =
-    typedHelp ( Literal (Int int), Type.Int )
-
-
-typedBool : Bool -> Typed.LocatedExpr
-typedBool bool =
-    typedHelp ( Literal (Bool bool), Type.Bool )
-
-
-typedString : String -> Typed.LocatedExpr
-typedString str =
-    typedHelp ( Literal (String str), Type.String )
+import TestHelpers
+    exposing
+        ( typed
+        , typedBool
+        , typedInt
+        , typedString
+        )
 
 
 javascript : Test
