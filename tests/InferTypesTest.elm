@@ -1,4 +1,4 @@
-module InferTypesTest exposing (typeInference, typeToString)
+module InferTypesTest exposing (isParametric, niceVarName, typeInference, typeToString)
 
 import AST.Canonical as Canonical
 import AST.Common.Literal as Literal
@@ -34,19 +34,9 @@ typeInference =
                         |> Result.map Typed.getType
                         |> Expect.equal output
 
-        dumpType : Type -> String
-        dumpType type_ =
-            type_
-                |> Type.toString Type.emptyState
-                |> Tuple.first
-
         fuzzExpr : Type -> Test
         fuzzExpr typeWanted =
-            let
-                description =
-                    typeWanted |> dumpType
-            in
-            fuzz (Fuzz.exprTyped typeWanted) description <|
+            fuzz (Fuzz.exprTyped typeWanted) (dumpType typeWanted) <|
                 \input ->
                     Stage.InferTypes.inferExpr input
                         |> Result.map Located.unwrap
@@ -286,3 +276,52 @@ niceVarName =
             , ( 259, "z9" )
             , ( 260, "a10" )
             ]
+
+
+isParametric : Test
+isParametric =
+    let
+        runTest : ( Type, Bool ) -> Test
+        runTest ( input, output ) =
+            test (dumpType input) <|
+                \() ->
+                    input
+                        |> Type.isParametric
+                        |> Expect.equal output
+    in
+    describe "Type.isParametric" <|
+        List.map runTest
+            [ ( Unit, False )
+            , ( Bool, False )
+            , ( Char, False )
+            , ( Int, False )
+            , ( String, False )
+            , ( Var 0, True )
+            , ( Function Int String, False )
+            , ( Function (Var 0) Int, True )
+            , ( Function String (Var 0), True )
+            , ( Function Int (Function (Var 0) (Var 0)), True )
+            , ( List Int, False )
+            , ( List (Var 0), True )
+            , ( List (List Int), False )
+            , ( List (List (Var 0)), True )
+            , ( Tuple Int String, False )
+            , ( Tuple (Var 0) Int, True )
+            , ( Tuple String (Var 0), True )
+            , ( Tuple (List (Var 0)) Int, True )
+            , ( Tuple Char (Tuple Int (Var 0)), True )
+            , ( Tuple3 Int String Bool, False )
+            , ( Tuple3 (Var 0) Int Char, True )
+            , ( Tuple3 String (Var 0) Unit, True )
+            , ( Tuple3 Bool Unit (Var 0), True )
+            , ( Tuple3 (List (Var 0)) Int Char, True )
+            , ( Tuple3 String (Function (Var 0) Int) Unit, True )
+            , ( Tuple3 Bool Unit (Tuple (Var 0) Int), True )
+            ]
+
+
+dumpType : Type -> String
+dumpType type_ =
+    type_
+        |> Type.toString Type.emptyState
+        |> Tuple.first

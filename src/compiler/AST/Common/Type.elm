@@ -51,6 +51,14 @@ isParametric type_ =
         List element ->
             isParametric element
 
+        Tuple left right ->
+            [ left, right ]
+                |> List.any isParametric
+
+        Tuple3 left middle right ->
+            [ left, middle, right ]
+                |> List.any isParametric
+
         _ ->
             False
 
