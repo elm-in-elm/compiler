@@ -52,7 +52,7 @@ desugarExpr modules thisModule expr =
             desugarPlus recurse e1 e2
 
         Frontend.ListConcat e1 e2 ->
-            desugarListConcat recurse e1 e2
+            desugarListConcat modules thisModule e1 e2  
 
         Frontend.Lambda { arguments, body } ->
             desugarLambda recurse arguments body
@@ -106,13 +106,14 @@ desugarPlus recurse e1 e2 =
         (recurse e1)
         (recurse e2)
 
-
-desugarListConcat : (Frontend.Expr -> Result DesugarError Canonical.Expr) -> Frontend.Expr -> Frontend.Expr -> Result DesugarError Canonical.Expr
-desugarListConcat recurse e1 e2 =
-    Result.map2 Canonical.ListConcat
-        (recurse e1)
-        (recurse e2)
-
+desugarListConcat : Modules Frontend.Expr -> Module Frontend.Expr -> Frontend.Expr -> Frontend.Expr -> Result DesugarError Canonical.Expr
+desugarListConcat modules thisModule e1 e2 = 
+    let
+        listConcatVar = Frontend.Var { qualifier = Just (Common.Types.ModuleName "List"), name = Common.Types.VarName "concat"}
+        firstCall = Frontend.Call { fn = listConcatVar, argument = e1 }
+        expr = Frontend.Call { fn = firstCall, argument = e2}
+    in
+    desugarExpr modules thisModule expr 
 
 desugarLambda : (Frontend.Expr -> Result DesugarError Canonical.Expr) -> List VarName -> Frontend.Expr -> Result DesugarError Canonical.Expr
 desugarLambda recurse arguments body =
