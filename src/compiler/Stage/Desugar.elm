@@ -156,16 +156,12 @@ desugarExpr modules thisModule located =
     Canonical.Lambda arg1 (Canonical.Lambda arg2 body)
 
 -}
-curryLambda : Canonical.LocatedExpr -> List VarName -> Canonical.LocatedExpr -> Canonical.LocatedExpr
+curryLambda : Frontend.LocatedExpr -> List VarName -> Canonical.LocatedExpr -> Canonical.LocatedExpr
 curryLambda located arguments body =
     List.foldr
         (\argument body_ ->
             Located.replaceWith
-                (Canonical.Lambda
-                    { argument = argument
-                    , body = body_
-                    }
-                )
+                (Canonical.lambda argument body_)
                 located
         )
         body
