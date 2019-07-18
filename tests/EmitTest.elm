@@ -83,7 +83,8 @@ javascript =
                     , ( "positive zero float", Literal (Float 0.0), "0" )
                     , ( "negative zero float", Literal (Float -0.0), "0" )
                     , ( "positive infitiny", Literal (Float (1 / 0.0)), "Infinity" )
-                    , ( "negative infitiny", Literal (Float (1 / -0.0)), "-Infinity" )
+                    , -- Elm wat
+                      ( "negative infitiny", Literal (Float (1 / -0.0)), "-Infinity" )
                     ]
                 )
             , describe "Char"
