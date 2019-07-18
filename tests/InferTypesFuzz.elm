@@ -56,11 +56,11 @@ exprGenerator targetType =
             unitExpr
 
         Type.List elementType ->
-            if Type.isNotParametric elementType then
-                listExpr elementType
+            if Type.isParametric elementType then
+                cannotFuzz "Only lists with non-parametric element types are supported."
 
             else
-                cannotFuzz "Only lists with non-parametric element types are supported."
+                listExpr elementType
 
         Type.Function Type.Int Type.Int ->
             intToIntFunctionExpr
