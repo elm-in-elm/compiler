@@ -2,6 +2,7 @@ module Stage.Desugar exposing (desugar)
 
 import AST.Canonical as Canonical
 import AST.Common.Literal exposing (Literal)
+import AST.Common.Located as Located
 import AST.Frontend as Frontend
 import Basics.Extra exposing (flip)
 import Common
@@ -32,133 +33,126 @@ desugar project =
 of them. Thus, we get some separation of concerns - each pass only cares about
 a small subset of the whole process!
 -}
-desugarExpr : Modules Frontend.Expr -> Module Frontend.Expr -> Frontend.Expr -> Result DesugarError Canonical.Expr
-desugarExpr modules thisModule expr =
+desugarExpr :
+    Modules Frontend.LocatedExpr
+    -> Module Frontend.LocatedExpr
+    -> Frontend.LocatedExpr
+    -> Result DesugarError Canonical.LocatedExpr
+desugarExpr modules thisModule located =
     let
-        recurse expr_ =
-            desugarExpr modules thisModule expr_
+        recurse =
+            desugarExpr modules thisModule
+
+        return expr =
+            Ok (Located.replaceWith expr located)
+
+        map fn =
+            Result.map
+                (\expr ->
+                    Located.replaceWith
+                        (fn expr)
+                        located
+                )
+
+        map2 fn =
+            Result.map2
+                (\expr1 expr2 ->
+                    Located.replaceWith
+                        (fn expr1 expr2)
+                        located
+                )
+
+        map3 fn =
+            Result.map3
+                (\expr1 expr2 expr3 ->
+                    Located.replaceWith
+                        (fn expr1 expr2 expr3)
+                        located
+                )
     in
-    case expr of
+    case Located.unwrap located of
         Frontend.Literal literal ->
-            desugarLiteral literal
+            return <| Canonical.Literal literal
 
         Frontend.Var { qualifier, name } ->
-            desugarVar modules thisModule qualifier name
+            findModuleOfVar modules thisModule qualifier name
+                |> Result.fromMaybe
+                    (VarNotInEnvOfModule
+                        { var = ( qualifier, name )
+                        , module_ = thisModule.name
+                        }
+                    )
+                |> map (\moduleName -> Canonical.var moduleName name)
 
         Frontend.Argument varName ->
-            desugarArgument varName
+            return <| Canonical.Argument varName
 
         Frontend.Plus e1 e2 ->
-            desugarPlus recurse e1 e2
+            map2 Canonical.Plus
+                (recurse e1)
+                (recurse e2)
 
         Frontend.Lambda { arguments, body } ->
-            desugarLambda recurse arguments body
+            recurse body
+                |> Result.map (curryLambda located arguments)
 
         Frontend.Call { fn, argument } ->
-            desugarCall recurse fn argument
+            map2
+                (\fn_ argument_ ->
+                    Canonical.Call
+                        { fn = fn_
+                        , argument = argument_
+                        }
+                )
+                (recurse fn)
+                (recurse argument)
 
         Frontend.If { test, then_, else_ } ->
-            desugarIf recurse test then_ else_
+            map3
+                (\test_ then__ else__ ->
+                    Canonical.If
+                        { test = test_
+                        , then_ = then__
+                        , else_ = else__
+                        }
+                )
+                (recurse test)
+                (recurse then_)
+                (recurse else_)
 
         Frontend.Let { bindings, body } ->
-            desugarLet recurse bindings body
+            map2
+                (\bindings_ body_ ->
+                    Canonical.Let
+                        { bindings =
+                            bindings_
+                                |> List.map (\binding -> ( binding.name, binding ))
+                                |> Dict.Any.fromList Common.varNameToString
+                        , body = body_
+                        }
+                )
+                -- TODO a bit mouthful:
+                (Result.Extra.combine (List.map (Common.mapBinding recurse >> Common.combineBinding) bindings))
+                (recurse body)
 
         Frontend.List items ->
-            desugarList recurse items
+            List.map recurse items
+                |> List.foldr (Result.map2 (::)) (Ok [])
+                |> map Canonical.List
+
+        Frontend.Tuple e1 e2 ->
+            map2 Canonical.Tuple
+                (recurse e1)
+                (recurse e2)
+
+        Frontend.Tuple3 e1 e2 e3 ->
+            map3 Canonical.Tuple3
+                (recurse e1)
+                (recurse e2)
+                (recurse e3)
 
         Frontend.Unit ->
-            desugarUnit
-
-
-
--- DESUGAR PASSES
-
-
-desugarLiteral : Literal -> Result DesugarError Canonical.Expr
-desugarLiteral literal =
-    Ok (Canonical.Literal literal)
-
-
-desugarVar : Modules Frontend.Expr -> Module Frontend.Expr -> Maybe ModuleName -> VarName -> Result DesugarError Canonical.Expr
-desugarVar modules thisModule maybeModuleName varName =
-    findModuleOfVar modules thisModule maybeModuleName varName
-        |> Result.fromMaybe (VarNotInEnvOfModule { var = ( maybeModuleName, varName ), module_ = thisModule.name })
-        |> Result.map (\moduleName -> Canonical.var moduleName varName)
-
-
-desugarArgument : VarName -> Result DesugarError Canonical.Expr
-desugarArgument varName =
-    Ok (Canonical.Argument varName)
-
-
-desugarPlus : (Frontend.Expr -> Result DesugarError Canonical.Expr) -> Frontend.Expr -> Frontend.Expr -> Result DesugarError Canonical.Expr
-desugarPlus recurse e1 e2 =
-    Result.map2 Canonical.Plus
-        (recurse e1)
-        (recurse e2)
-
-
-desugarLambda : (Frontend.Expr -> Result DesugarError Canonical.Expr) -> List VarName -> Frontend.Expr -> Result DesugarError Canonical.Expr
-desugarLambda recurse arguments body =
-    recurse body
-        |> Result.map (curryLambda arguments)
-
-
-desugarCall : (Frontend.Expr -> Result DesugarError Canonical.Expr) -> Frontend.Expr -> Frontend.Expr -> Result DesugarError Canonical.Expr
-desugarCall recurse fn argument =
-    Result.map2
-        (\fn_ argument_ ->
-            Canonical.Call
-                { fn = fn_
-                , argument = argument_
-                }
-        )
-        (recurse fn)
-        (recurse argument)
-
-
-desugarIf : (Frontend.Expr -> Result DesugarError Canonical.Expr) -> Frontend.Expr -> Frontend.Expr -> Frontend.Expr -> Result DesugarError Canonical.Expr
-desugarIf recurse test then_ else_ =
-    Result.map3
-        (\test_ then__ else__ ->
-            Canonical.If
-                { test = test_
-                , then_ = then__
-                , else_ = else__
-                }
-        )
-        (recurse test)
-        (recurse then_)
-        (recurse else_)
-
-
-desugarLet : (Frontend.Expr -> Result DesugarError Canonical.Expr) -> List (Binding Frontend.Expr) -> Frontend.Expr -> Result DesugarError Canonical.Expr
-desugarLet recurse bindings body =
-    Result.map2
-        (\bindings_ body_ ->
-            Canonical.Let
-                { bindings =
-                    bindings_
-                        |> List.map (\binding -> ( binding.name, binding ))
-                        |> Dict.Any.fromList Common.varNameToString
-                , body = body_
-                }
-        )
-        -- TODO a bit mouthful:
-        (Result.Extra.combine (List.map (Common.mapBinding recurse >> Common.combineBinding) bindings))
-        (recurse body)
-
-
-desugarList : (Frontend.Expr -> Result DesugarError Canonical.Expr) -> List Frontend.Expr -> Result DesugarError Canonical.Expr
-desugarList recurse items =
-    List.map recurse items
-        |> List.foldr (Result.map2 (::)) (Ok [])
-        |> Result.map Canonical.List
-
-
-desugarUnit : Result DesugarError Canonical.Expr
-desugarUnit =
-    Ok Canonical.Unit
+            return Canonical.Unit
 
 
 
@@ -174,9 +168,16 @@ desugarUnit =
     Canonical.Lambda arg1 (Canonical.Lambda arg2 body)
 
 -}
-curryLambda : List VarName -> Canonical.Expr -> Canonical.Expr
-curryLambda arguments body =
-    List.foldr Canonical.lambda body arguments
+curryLambda : Frontend.LocatedExpr -> List VarName -> Canonical.LocatedExpr -> Canonical.LocatedExpr
+curryLambda located arguments body =
+    List.foldr
+        (\argument body_ ->
+            Located.replaceWith
+                (Canonical.lambda argument body_)
+                located
+        )
+        body
+        arguments
 
 
 {-| We have roughly these options:
@@ -189,7 +190,7 @@ curryLambda arguments body =
 In all these cases we need to find the full unaliased module name of the var.
 
 -}
-findModuleOfVar : Modules Frontend.Expr -> Module Frontend.Expr -> Maybe ModuleName -> VarName -> Maybe ModuleName
+findModuleOfVar : Modules Frontend.LocatedExpr -> Module Frontend.LocatedExpr -> Maybe ModuleName -> VarName -> Maybe ModuleName
 findModuleOfVar modules thisModule maybeModuleName varName =
     {- TODO does this allow for some collisions by "returning early"?
        Should we check that exactly one is Just and the others are Nothing?
@@ -200,7 +201,7 @@ findModuleOfVar modules thisModule maybeModuleName varName =
         |> Maybe.Extra.orElseLazy (\() -> qualifiedVarInAliasedModule modules thisModule maybeModuleName varName)
 
 
-unqualifiedVarInThisModule : Module Frontend.Expr -> Maybe ModuleName -> VarName -> Maybe ModuleName
+unqualifiedVarInThisModule : Module Frontend.LocatedExpr -> Maybe ModuleName -> VarName -> Maybe ModuleName
 unqualifiedVarInThisModule thisModule maybeModuleName varName =
     if maybeModuleName == Nothing && Dict.Any.member varName thisModule.topLevelDeclarations then
         Just thisModule.name
@@ -209,7 +210,7 @@ unqualifiedVarInThisModule thisModule maybeModuleName varName =
         Nothing
 
 
-unqualifiedVarInImportedModule : Modules Frontend.Expr -> Module Frontend.Expr -> Maybe ModuleName -> VarName -> Maybe ModuleName
+unqualifiedVarInImportedModule : Modules Frontend.LocatedExpr -> Module Frontend.LocatedExpr -> Maybe ModuleName -> VarName -> Maybe ModuleName
 unqualifiedVarInImportedModule modules thisModule maybeModuleName varName =
     if maybeModuleName == Nothing then
         -- find a module which exposes that var
@@ -226,7 +227,7 @@ unqualifiedVarInImportedModule modules thisModule maybeModuleName varName =
         Nothing
 
 
-qualifiedVarInImportedModule : Modules Frontend.Expr -> Maybe ModuleName -> VarName -> Maybe ModuleName
+qualifiedVarInImportedModule : Modules Frontend.LocatedExpr -> Maybe ModuleName -> VarName -> Maybe ModuleName
 qualifiedVarInImportedModule modules maybeModuleName varName =
     maybeModuleName
         |> Maybe.andThen (flip Dict.Any.get modules)
@@ -241,7 +242,7 @@ qualifiedVarInImportedModule modules maybeModuleName varName =
         |> Maybe.withDefault Nothing
 
 
-qualifiedVarInAliasedModule : Modules Frontend.Expr -> Module Frontend.Expr -> Maybe ModuleName -> VarName -> Maybe ModuleName
+qualifiedVarInAliasedModule : Modules Frontend.LocatedExpr -> Module Frontend.LocatedExpr -> Maybe ModuleName -> VarName -> Maybe ModuleName
 qualifiedVarInAliasedModule modules thisModule maybeModuleName varName =
     let
         unaliasedModuleName =

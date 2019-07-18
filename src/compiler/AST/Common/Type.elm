@@ -24,6 +24,8 @@ type Type
     | Bool
     | List Type
     | Unit
+    | Tuple Type Type
+    | Tuple3 Type Type Type
 
 
 getVarId : Type -> Maybe Int
@@ -120,6 +122,29 @@ toString state type_ =
 
         Unit ->
             ( "Unit", state )
+
+        Tuple t1 t2 ->
+            let
+                ( t1String, state1 ) =
+                    toString state t1
+
+                ( t2String, state2 ) =
+                    toString state1 t2
+            in
+            ( "( " ++ t1String ++ ", " ++ t2String ++ " )", state2 )
+
+        Tuple3 t1 t2 t3 ->
+            let
+                ( t1String, state1 ) =
+                    toString state t1
+
+                ( t2String, state2 ) =
+                    toString state1 t2
+
+                ( t3String, state3 ) =
+                    toString state2 t3
+            in
+            ( "( " ++ t1String ++ ", " ++ t2String ++ ", " ++ t3String ++ " )", state3 )
 
 
 getName : State -> Int -> ( String, State )
@@ -225,4 +250,10 @@ shouldWrapParens type_ =
             True
 
         Unit ->
+            False
+
+        Tuple _ _ ->
+            False
+
+        Tuple3 _ _ _ ->
             False

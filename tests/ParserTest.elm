@@ -7,7 +7,8 @@ module ParserTest exposing
     )
 
 import AST.Common.Literal exposing (Literal(..))
-import AST.Frontend exposing (Expr(..))
+import AST.Common.Located as Located exposing (Located, located)
+import AST.Frontend exposing (Expr(..), LocatedExpr)
 import Common
 import Common.Types
     exposing
@@ -420,6 +421,31 @@ tripleQuote txt =
     "\"\"\"" ++ txt ++ "\"\"\""
 
 
+{-| TODO some abstraction to make the test cases not care about (and not have to write out) the locations?
+The ideal result would be:
+
+    ( "works with single argument"
+    , "\\x -> x + 1"
+    , Just
+        (Lambda
+            { arguments = [VarName "x"]
+            , body =
+                Plus
+                    (Argument (VarName "x"))
+                    (Literal (Int 1))
+        )
+    )
+
+as if the Expr didn't have LocatedExpr children but Exprs too.
+
+---
+
+This probably only has one solution: having an AST.Unwrapped.Frontend module
+which has the Expr type with Expr children (instead of LocatedExpr ones).
+
+The downside of this is some boilerplate. But we already have that :sweat\_smile:
+
+-}
 expr : Test
 expr =
     let
@@ -439,160 +465,110 @@ expr =
             [ ( "lambda"
               , [ ( "works with single argument"
                   , "\\x -> x + 1"
-                  , Just
-                        (AST.Frontend.lambda
-                            [ VarName "x" ]
-                            (Plus
-                                (Argument (VarName "x"))
-                                (Literal (Int 1))
-                            )
-                        )
+                  , Just (located { end = { col = 12, row = 1 }, start = { col = 1, row = 1 } } (Lambda { arguments = [ VarName "x" ], body = located { end = { col = 12, row = 1 }, start = { col = 7, row = 1 } } (Plus (located { end = { col = 8, row = 1 }, start = { col = 7, row = 1 } } (Argument (VarName "x"))) (located { end = { col = 12, row = 1 }, start = { col = 11, row = 1 } } (Literal (Int 1)))) }))
                   )
                 , ( "works with multiple arguments"
                   , "\\x y -> x + y"
-                  , Just
-                        (AST.Frontend.lambda
-                            [ VarName "x", VarName "y" ]
-                            (Plus
-                                (Argument (VarName "x"))
-                                (Argument (VarName "y"))
-                            )
-                        )
+                  , Just (located { end = { col = 14, row = 1 }, start = { col = 1, row = 1 } } (Lambda { arguments = [ VarName "x", VarName "y" ], body = located { end = { col = 14, row = 1 }, start = { col = 9, row = 1 } } (Plus (located { end = { col = 10, row = 1 }, start = { col = 9, row = 1 } } (Argument (VarName "x"))) (located { end = { col = 14, row = 1 }, start = { col = 13, row = 1 } } (Argument (VarName "y")))) }))
                   )
                 ]
               )
             , ( "call"
               , [ ( "simple"
                   , "fn 1"
-                  , Just
-                        (Call
-                            { fn = AST.Frontend.var Nothing (VarName "fn")
-                            , argument = Literal (Int 1)
-                            }
-                        )
+                  , Just (located { end = { col = 5, row = 1 }, start = { col = 1, row = 1 } } (Call { argument = located { end = { col = 5, row = 1 }, start = { col = 4, row = 1 } } (Literal (Int 1)), fn = located { end = { col = 3, row = 1 }, start = { col = 1, row = 1 } } (Var { name = VarName "fn", qualifier = Nothing }) }))
                   )
                 , ( "with var"
                   , "fn arg"
-                  , Just
-                        (Call
-                            { fn = AST.Frontend.var Nothing (VarName "fn")
-                            , argument = AST.Frontend.var Nothing (VarName "arg")
-                            }
-                        )
+                  , Just (located { end = { col = 7, row = 1 }, start = { col = 1, row = 1 } } (Call { argument = located { end = { col = 7, row = 1 }, start = { col = 4, row = 1 } } (Var { name = VarName "arg", qualifier = Nothing }), fn = located { end = { col = 3, row = 1 }, start = { col = 1, row = 1 } } (Var { name = VarName "fn", qualifier = Nothing }) }))
                   )
                 , ( "multiple"
                   , "fn arg1 arg2"
-                  , Just
-                        (Call
-                            { fn =
-                                Call
-                                    { fn = AST.Frontend.var Nothing (VarName "fn")
-                                    , argument = AST.Frontend.var Nothing (VarName "arg1")
-                                    }
-                            , argument = AST.Frontend.var Nothing (VarName "arg2")
-                            }
-                        )
+                  , Just (located { end = { col = 13, row = 1 }, start = { col = 1, row = 1 } } (Call { argument = located { end = { col = 13, row = 1 }, start = { col = 9, row = 1 } } (Var { name = VarName "arg2", qualifier = Nothing }), fn = located { end = { col = 8, row = 1 }, start = { col = 1, row = 1 } } (Call { argument = located { end = { col = 8, row = 1 }, start = { col = 4, row = 1 } } (Var { name = VarName "arg1", qualifier = Nothing }), fn = located { end = { col = 3, row = 1 }, start = { col = 1, row = 1 } } (Var { name = VarName "fn", qualifier = Nothing }) }) }))
                   )
                 , ( "space not needed if parenthesized arg"
                   , "fn(arg1)"
-                  , Just
-                        (Call
-                            { fn = AST.Frontend.var Nothing (VarName "fn")
-                            , argument = AST.Frontend.var Nothing (VarName "arg1")
-                            }
-                        )
+                  , Just (located { end = { col = 8, row = 1 }, start = { col = 1, row = 1 } } (Call { argument = located { end = { col = 8, row = 1 }, start = { col = 4, row = 1 } } (Var { name = VarName "arg1", qualifier = Nothing }), fn = located { end = { col = 3, row = 1 }, start = { col = 1, row = 1 } } (Var { name = VarName "fn", qualifier = Nothing }) }))
                   )
                 ]
               )
             , ( "if"
               , [ ( "with one space"
                   , "if 1 then 2 else 3"
-                  , Just
-                        (AST.Frontend.If
-                            { test = Literal (Int 1)
-                            , then_ = Literal (Int 2)
-                            , else_ = Literal (Int 3)
-                            }
-                        )
+                  , Just (located { end = { col = 19, row = 1 }, start = { col = 1, row = 1 } } (If { else_ = located { end = { col = 19, row = 1 }, start = { col = 18, row = 1 } } (Literal (Int 3)), test = located { end = { col = 5, row = 1 }, start = { col = 4, row = 1 } } (Literal (Int 1)), then_ = located { end = { col = 12, row = 1 }, start = { col = 11, row = 1 } } (Literal (Int 2)) }))
                   )
                 , ( "with multiple spaces"
                   , "if   1   then   2   else   3"
-                  , Just
-                        (AST.Frontend.If
-                            { test = Literal (Int 1)
-                            , then_ = Literal (Int 2)
-                            , else_ = Literal (Int 3)
-                            }
-                        )
+                  , Just (located { end = { col = 29, row = 1 }, start = { col = 1, row = 1 } } (If { else_ = located { end = { col = 29, row = 1 }, start = { col = 28, row = 1 } } (Literal (Int 3)), test = located { end = { col = 7, row = 1 }, start = { col = 6, row = 1 } } (Literal (Int 1)), then_ = located { end = { col = 18, row = 1 }, start = { col = 17, row = 1 } } (Literal (Int 2)) }))
                   )
                 ]
               )
             , ( "literal int"
               , [ ( "positive"
                   , "123"
-                  , Just (Literal (Int 123))
+                  , Just (located { end = { col = 4, row = 1 }, start = { col = 1, row = 1 } } (Literal (Int 123)))
                   )
                 , ( "zero"
                   , "0"
-                  , Just (Literal (Int 0))
+                  , Just (located { end = { col = 2, row = 1 }, start = { col = 1, row = 1 } } (Literal (Int 0)))
                   )
                 , ( "hexadecimal int"
                   , "0x123abc"
-                  , Just (Literal (Int 1194684))
+                  , Just (located { end = { col = 9, row = 1 }, start = { col = 1, row = 1 } } (Literal (Int 1194684)))
                   )
                 , ( "hexadecimal int - uppercase"
                   , "0x789DEF"
-                  , Just (Literal (Int 7904751))
+                  , Just (located { end = { col = 9, row = 1 }, start = { col = 1, row = 1 } } (Literal (Int 7904751)))
                   )
                 , ( "negative int"
                   , "-42"
-                  , Just (Literal (Int -42))
+                  , Just (located { end = { col = 4, row = 1 }, start = { col = 1, row = 1 } } (Literal (Int -42)))
                   )
                 , ( "negative hexadecimal"
                   , "-0x123abc"
-                  , Just (Literal (Int -1194684))
+                  , Just (located { end = { col = 10, row = 1 }, start = { col = 1, row = 1 } } (Literal (Int -1194684)))
                   )
                 ]
               )
             , ( "literal float"
               , [ ( "positive"
                   , "12.3"
-                  , Just (Literal (Float 12.3))
+                  , Just (located { end = { col = 5, row = 1 }, start = { col = 1, row = 1 } } (Literal (Float 12.3)))
                   )
                 , ( "zero"
                   , "0.0"
-                  , Just (Literal (Float 0.0))
+                  , Just (located { end = { col = 4, row = 1 }, start = { col = 1, row = 1 } } (Literal (Float 0)))
                   )
                 , ( "negative float"
                   , "-4.2"
-                  , Just (Literal (Float -4.2))
+                  , Just (located { end = { col = 5, row = 1 }, start = { col = 1, row = 1 } } (Literal (Float -4.2)))
                   )
                 , ( "Scientific notation"
                   , "5.12e2"
-                  , Just (Literal (Float 512))
+                  , Just (located { end = { col = 7, row = 1 }, start = { col = 1, row = 1 } } (Literal (Float 512)))
                   )
                 , ( "Uppercase scientific notation"
                   , "5.12E2"
-                  , Just (Literal (Float 512))
+                  , Just (located { end = { col = 7, row = 1 }, start = { col = 1, row = 1 } } (Literal (Float 512)))
                   )
                 , ( "Negative scientific notation"
                   , "-5.12e2"
-                  , Just (Literal (Float -512))
+                  , Just (located { end = { col = 8, row = 1 }, start = { col = 1, row = 1 } } (Literal (Float -512)))
                   )
                 , ( "Negative exponent"
                   , "5e-2"
-                  , Just (Literal (Float 0.05))
+                  , Just (located { end = { col = 5, row = 1 }, start = { col = 1, row = 1 } } (Literal (Float 0.05)))
                   )
                 ]
               )
             , ( "literal char"
               , [ ( "number"
                   , "'1'"
-                  , Just (Literal (Char '1'))
+                  , Just (located { end = { col = 4, row = 1 }, start = { col = 1, row = 1 } } (Literal (Char '1')))
                   )
                 , ( "space"
                   , "' '"
-                  , Just (Literal (Char ' '))
+                  , Just (located { end = { col = 4, row = 1 }, start = { col = 1, row = 1 } } (Literal (Char ' ')))
                   )
                 , ( "newline shouldn't work"
                   , "'\n'"
@@ -600,57 +576,57 @@ expr =
                   )
                 , ( "letter lowercase"
                   , "'a'"
-                  , Just (Literal (Char 'a'))
+                  , Just (located { end = { col = 4, row = 1 }, start = { col = 1, row = 1 } } (Literal (Char 'a')))
                   )
                 , ( "letter uppercase"
                   , "'A'"
-                  , Just (Literal (Char 'A'))
+                  , Just (located { end = { col = 4, row = 1 }, start = { col = 1, row = 1 } } (Literal (Char 'A')))
                   )
 
                 -- https://github.com/elm/compiler/blob/dcbe51fa22879f83b5d94642e117440cb5249bb1/compiler/src/Parse/String.hs#L279-L285
                 , ( "escape backslash"
                   , singleQuote "\\\\"
-                  , Just (Literal (Char '\\'))
+                  , Just (located { end = { col = 5, row = 1 }, start = { col = 1, row = 1 } } (Literal (Char '\\')))
                   )
                 , ( "escape n"
                   , singleQuote "\\n"
-                  , Just (Literal (Char '\n'))
+                  , Just (located { end = { col = 5, row = 1 }, start = { col = 1, row = 1 } } (Literal (Char '\n')))
                   )
                 , ( "escape r"
                   , singleQuote "\\r"
-                  , Just (Literal (Char '\u{000D}'))
+                  , Just (located { end = { col = 5, row = 1 }, start = { col = 1, row = 1 } } (Literal (Char '\u{000D}')))
                   )
                 , ( "escape t"
                   , singleQuote "\\t"
-                  , Just (Literal (Char '\t'))
+                  , Just (located { end = { col = 5, row = 1 }, start = { col = 1, row = 1 } } (Literal (Char '\t')))
                   )
                 , ( "double quote"
                   , singleQuote "\""
-                  , Just (Literal (Char '"'))
+                  , Just (located { end = { col = 4, row = 1 }, start = { col = 1, row = 1 } } (Literal (Char '"')))
                     -- " (for vscode-elm bug)
                   )
                 , ( "single quote"
                   , singleQuote "\\'"
-                  , Just (Literal (Char '\''))
+                  , Just (located { end = { col = 5, row = 1 }, start = { col = 1, row = 1 } } (Literal (Char '\'')))
                   )
                 , ( "emoji"
                   , singleQuote "😃"
-                  , Just (Literal (Char '😃'))
+                  , Just (located { end = { col = 4, row = 1 }, start = { col = 1, row = 1 } } (Literal (Char '😃')))
                   )
                 , ( "escaped unicode code point"
                   , singleQuote "\\u{1F648}"
-                  , Just (Literal (Char '🙈'))
+                  , Just (located { end = { col = 12, row = 1 }, start = { col = 1, row = 1 } } (Literal (Char '🙈')))
                   )
                 ]
               )
             , ( "literal string"
               , [ ( "empty"
                   , doubleQuote ""
-                  , Just (Literal (String ""))
+                  , Just (located { end = { col = 3, row = 1 }, start = { col = 1, row = 1 } } (Literal (String "")))
                   )
                 , ( "one space"
                   , doubleQuote " "
-                  , Just (Literal (String " "))
+                  , Just (located { end = { col = 4, row = 1 }, start = { col = 1, row = 1 } } (Literal (String " ")))
                   )
                 , ( "newline shouldn't work"
                   , doubleQuote "\n"
@@ -658,167 +634,178 @@ expr =
                   )
                 , ( "two numbers"
                   , doubleQuote "42"
-                  , Just (Literal (String "42"))
+                  , Just (located { end = { col = 5, row = 1 }, start = { col = 1, row = 1 } } (Literal (String "42")))
                   )
                 , ( "single quote"
                   , doubleQuote "'"
-                  , Just (Literal (String "'"))
+                  , Just (located { end = { col = 4, row = 1 }, start = { col = 1, row = 1 } } (Literal (String "'")))
                   )
                 , ( "double quote"
                   , doubleQuote "\\\""
-                  , Just (Literal (String "\""))
+                  , Just (located { end = { col = 5, row = 1 }, start = { col = 1, row = 1 } } (Literal (String "\"")))
                   )
                 , ( "escape backslash"
                   , doubleQuote "\\\\"
-                  , Just (Literal (String "\\"))
+                  , Just (located { end = { col = 5, row = 1 }, start = { col = 1, row = 1 } } (Literal (String "\\")))
                   )
                 , ( "escape n"
                   , doubleQuote "\\n"
-                  , Just (Literal (String "\n"))
+                  , Just (located { end = { col = 5, row = 1 }, start = { col = 1, row = 1 } } (Literal (String "\n")))
                   )
                 , ( "escape r"
                   , doubleQuote "\\r"
-                  , Just (Literal (String "\u{000D}"))
+                  , Just (located { end = { col = 5, row = 1 }, start = { col = 1, row = 1 } } (Literal (String "\u{000D}")))
                   )
                 , ( "escape t"
                   , doubleQuote "\\t"
-                  , Just (Literal (String "\t"))
+                  , Just (located { end = { col = 5, row = 1 }, start = { col = 1, row = 1 } } (Literal (String "\t")))
                   )
                 , ( "emoji"
                   , doubleQuote "😃"
-                  , Just (Literal (String "😃"))
+                  , Just (located { end = { col = 4, row = 1 }, start = { col = 1, row = 1 } } (Literal (String "😃")))
                   )
                 , ( "escaped unicode code point"
                   , doubleQuote "\\u{1F648}"
-                  , Just (Literal (String "🙈"))
+                  , Just (located { end = { col = 12, row = 1 }, start = { col = 1, row = 1 } } (Literal (String "🙈")))
                   )
                 , ( "combo of escapes and chars"
                   , doubleQuote "\\u{1F648}\\n\\r\\t\\\\abc123"
-                  , Just (Literal (String "🙈\n\u{000D}\t\\abc123"))
+                  , Just (located { end = { col = 26, row = 1 }, start = { col = 1, row = 1 } } (Literal (String "🙈\n\u{000D}\t\\abc123")))
                   )
                 ]
               )
             , ( "literal multiline string"
               , [ ( "empty"
                   , tripleQuote ""
-                  , Just (Literal (String ""))
+                  , Just (located { end = { col = 7, row = 1 }, start = { col = 1, row = 1 } } (Literal (String "")))
                   )
                 , ( "one space"
                   , tripleQuote " "
-                  , Just (Literal (String " "))
+                  , Just (located { end = { col = 8, row = 1 }, start = { col = 1, row = 1 } } (Literal (String " ")))
                   )
                 , ( "newline"
                   , tripleQuote "\n"
-                  , Just (Literal (String "\n"))
+                  , Just (located { end = { col = 4, row = 2 }, start = { col = 1, row = 1 } } (Literal (String "\n")))
                   )
                 , ( "two numbers"
                   , tripleQuote "42"
-                  , Just (Literal (String "42"))
+                  , Just (located { end = { col = 9, row = 1 }, start = { col = 1, row = 1 } } (Literal (String "42")))
                   )
                 , ( "single quote"
                   , tripleQuote "'"
-                  , Just (Literal (String "'"))
+                  , Just (located { end = { col = 8, row = 1 }, start = { col = 1, row = 1 } } (Literal (String "'")))
                   )
                 , ( "double quote"
                   , tripleQuote " \" "
-                  , Just (Literal (String " \" "))
+                  , Just (located { end = { col = 10, row = 1 }, start = { col = 1, row = 1 } } (Literal (String " \" ")))
                   )
                 , ( "escape backslash"
                   , tripleQuote "\\\\"
-                  , Just (Literal (String "\\"))
+                  , Just (located { end = { col = 9, row = 1 }, start = { col = 1, row = 1 } } (Literal (String "\\")))
                   )
                 , ( "escape n"
                   , tripleQuote "\\n"
-                  , Just (Literal (String "\n"))
+                  , Just (located { end = { col = 9, row = 1 }, start = { col = 1, row = 1 } } (Literal (String "\n")))
                   )
                 , ( "escape r"
                   , tripleQuote "\\r"
-                  , Just (Literal (String "\u{000D}"))
+                  , Just (located { end = { col = 9, row = 1 }, start = { col = 1, row = 1 } } (Literal (String "\u{000D}")))
                   )
                 , ( "escape t"
                   , tripleQuote "\\t"
-                  , Just (Literal (String "\t"))
+                  , Just (located { end = { col = 9, row = 1 }, start = { col = 1, row = 1 } } (Literal (String "\t")))
                   )
                 , ( "emoji"
                   , tripleQuote "😃"
-                  , Just (Literal (String "😃"))
+                  , Just (located { end = { col = 8, row = 1 }, start = { col = 1, row = 1 } } (Literal (String "😃")))
                   )
                 , ( "escaped unicode code point"
                   , tripleQuote "\\u{1F648}"
-                  , Just (Literal (String "🙈"))
+                  , Just (located { end = { col = 16, row = 1 }, start = { col = 1, row = 1 } } (Literal (String "🙈")))
                   )
                 , ( "combo of escapes, newlines, and chars"
                   , tripleQuote "\\u{1F648}\\n\n\n\\r\\t\\\\abc123"
-                  , Just (Literal (String """🙈
-
-
-\u{000D}\t\\abc123"""))
+                  , Just (located { end = { col = 16, row = 3 }, start = { col = 1, row = 1 } } (Literal (String "🙈\n\n\n\u{000D}\t\\abc123")))
                   )
                 ]
               )
             , ( "literal bool"
               , [ ( "True"
                   , "True"
-                  , Just (Literal (Bool True))
+                  , Just (located { end = { col = 5, row = 1 }, start = { col = 1, row = 1 } } (Literal (Bool True)))
                   )
                 , ( "False"
                   , "False"
-                  , Just (Literal (Bool False))
+                  , Just (located { end = { col = 6, row = 1 }, start = { col = 1, row = 1 } } (Literal (Bool False)))
                   )
                 ]
               )
             , ( "let"
               , [ ( "one liner"
                   , "let x = 1 in 2"
-                  , Just
-                        (Let
-                            { bindings = [ { name = VarName "x", body = Literal (Int 1) } ]
-                            , body = Literal (Int 2)
-                            }
-                        )
+                  , Just (located { end = { col = 15, row = 1 }, start = { col = 1, row = 1 } } (Let { bindings = [ { body = located { end = { col = 10, row = 1 }, start = { col = 9, row = 1 } } (Literal (Int 1)), name = VarName "x" } ], body = located { end = { col = 15, row = 1 }, start = { col = 14, row = 1 } } (Literal (Int 2)) }))
                   )
                 , ( "one binding, generous whitespace"
                   , "let\n  x =\n      1\nin\n  2"
-                  , Just
-                        (Let
-                            { bindings = [ { name = VarName "x", body = Literal (Int 1) } ]
-                            , body = Literal (Int 2)
-                            }
-                        )
+                  , Just (located { end = { col = 4, row = 5 }, start = { col = 1, row = 1 } } (Let { bindings = [ { body = located { end = { col = 8, row = 3 }, start = { col = 7, row = 3 } } (Literal (Int 1)), name = VarName "x" } ], body = located { end = { col = 4, row = 5 }, start = { col = 3, row = 5 } } (Literal (Int 2)) }))
                   )
                 ]
               )
             , ( "list"
               , [ ( "empty list"
                   , "[]"
-                  , Just (List [])
+                  , Just (located { end = { col = 3, row = 1 }, start = { col = 1, row = 1 } } (List []))
                   )
                 , ( "empty list with inner spaces"
                   , "[  ]"
-                  , Just (List [])
+                  , Just (located { end = { col = 5, row = 1 }, start = { col = 1, row = 1 } } (List []))
                   )
                 , ( "single item in list"
                   , "[1]"
-                  , Just (List [ Literal (Int 1) ])
+                  , Just (located { end = { col = 4, row = 1 }, start = { col = 1, row = 1 } } (List [ located { end = { col = 3, row = 1 }, start = { col = 2, row = 1 } } (Literal (Int 1)) ]))
                   )
                 , ( "single item in list with inner spaces"
                   , "[ 1 ]"
-                  , Just (List [ Literal (Int 1) ])
+                  , Just (located { end = { col = 6, row = 1 }, start = { col = 1, row = 1 } } (List [ located { end = { col = 4, row = 1 }, start = { col = 3, row = 1 } } (Literal (Int 1)) ]))
                   )
                 , ( "simple list"
                   , "[1,2,3]"
-                  , Just (List [ Literal (Int 1), Literal (Int 2), Literal (Int 3) ])
+                  , Just (located { end = { col = 8, row = 1 }, start = { col = 1, row = 1 } } (List [ located { end = { col = 3, row = 1 }, start = { col = 2, row = 1 } } (Literal (Int 1)), located { end = { col = 5, row = 1 }, start = { col = 4, row = 1 } } (Literal (Int 2)), located { end = { col = 7, row = 1 }, start = { col = 6, row = 1 } } (Literal (Int 3)) ]))
                   )
                 , ( "simple list with inner spaces"
                   , "[ 1,  2  , 3 ]"
-                  , Just (List [ Literal (Int 1), Literal (Int 2), Literal (Int 3) ])
+                  , Just (located { end = { col = 15, row = 1 }, start = { col = 1, row = 1 } } (List [ located { end = { col = 4, row = 1 }, start = { col = 3, row = 1 } } (Literal (Int 1)), located { end = { col = 8, row = 1 }, start = { col = 7, row = 1 } } (Literal (Int 2)), located { end = { col = 13, row = 1 }, start = { col = 12, row = 1 } } (Literal (Int 3)) ]))
                   )
                 ]
               )
             , ( "unit"
               , [ ( "simple case"
                   , "()"
-                  , Just Unit
+                  , Just (located { end = { col = 3, row = 1 }, start = { col = 1, row = 1 } } Unit)
+                  )
+                ]
+              )
+            , ( "tuple"
+              , [ ( "without spaces"
+                  , "(1,1)"
+                  , Just (located { end = { col = 5, row = 1 }, start = { col = 1, row = 1 } } (Tuple (located { end = { col = 3, row = 1 }, start = { col = 1, row = 1 } } (Literal (Int 1))) (located { end = { col = 3, row = 1 }, start = { col = 1, row = 1 } } (Literal (Int 1)))))
+                  )
+                , ( "with inner spaces"
+                  , "( 1 , 1 )"
+                  , Just (located { end = { col = 5, row = 1 }, start = { col = 1, row = 1 } } (Tuple (located { end = { col = 3, row = 1 }, start = { col = 1, row = 1 } } (Literal (Int 1))) (located { end = { col = 3, row = 1 }, start = { col = 1, row = 1 } } (Literal (Int 1)))))
+                  )
+                ]
+              )
+            , ( "tuple3"
+              , [ ( "without spaces"
+                  , "(1,2,3)"
+                    -- Todo: await parser to ensure located is correct
+                  , Just (located { end = { col = 7, row = 1 }, start = { col = 1, row = 1 } } (Tuple3 (located { end = { col = 3, row = 1 }, start = { col = 1, row = 1 } } (Literal (Int 1))) (located { end = { col = 3, row = 1 }, start = { col = 1, row = 1 } } (Literal (Int 2))) (located { end = { col = 3, row = 1 }, start = { col = 1, row = 1 } } (Literal (Int 2)))))
+                  )
+                , ( "with inner spaces"
+                  , "( 1 , 2 , 3 )"
+                    -- Todo: await parser to ensure located is correct
+                  , Just (located { end = { col = 7, row = 1 }, start = { col = 1, row = 1 } } (Tuple3 (located { end = { col = 3, row = 1 }, start = { col = 1, row = 1 } } (Literal (Int 1))) (located { end = { col = 3, row = 1 }, start = { col = 1, row = 1 } } (Literal (Int 2))) (located { end = { col = 3, row = 1 }, start = { col = 1, row = 1 } } (Literal (Int 2)))))
                   )
                 ]
               )

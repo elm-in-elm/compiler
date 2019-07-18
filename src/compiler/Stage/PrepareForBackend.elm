@@ -2,6 +2,7 @@ module Stage.PrepareForBackend exposing (prepareForBackend)
 
 import AST.Backend as Backend
 import AST.Common.Literal exposing (Literal(..))
+import AST.Common.Located as Located
 import AST.Typed as Typed exposing (Expr_(..))
 import Common
 import Common.Types
@@ -38,17 +39,17 @@ prepareForBackend p =
 
 
 type alias Dependency =
-    { from : TopLevelDeclaration Typed.Expr
-    , to : TopLevelDeclaration Typed.Expr
+    { from : TopLevelDeclaration Typed.LocatedExpr
+    , to : TopLevelDeclaration Typed.LocatedExpr
     }
 
 
-modulesToGraph : ModuleName -> Modules Typed.Expr -> Result PrepareForBackendError Backend.Graph
+modulesToGraph : ModuleName -> Modules Typed.LocatedExpr -> Result PrepareForBackendError Backend.Graph
 modulesToGraph mainModuleName modules =
     -- TODO this is probably a bit far off, but... how to allow for cyclic
     -- dependencies in lambdas but not in exposed expressions?
     let
-        maybeMainDeclaration : Maybe (TopLevelDeclaration Typed.Expr)
+        maybeMainDeclaration : Maybe (TopLevelDeclaration Typed.LocatedExpr)
         maybeMainDeclaration =
             Dict.Any.get mainModuleName modules
                 |> Maybe.andThen (.topLevelDeclarations >> Dict.Any.get (VarName "main"))
@@ -65,12 +66,12 @@ modulesToGraph mainModuleName modules =
                             (Set.Any.empty Common.topLevelDeclarationToString)
                             []
 
-                    declarationList : List (TopLevelDeclaration Typed.Expr)
+                    declarationList : List (TopLevelDeclaration Typed.LocatedExpr)
                     declarationList =
                         declarations
                             |> Set.Any.toList
 
-                    declarationIndexes : AnyDict String (TopLevelDeclaration Typed.Expr) Int
+                    declarationIndexes : AnyDict String (TopLevelDeclaration Typed.LocatedExpr) Int
                     declarationIndexes =
                         declarationList
                             |> List.indexedMap (\i declaration -> ( declaration, i ))
@@ -96,11 +97,11 @@ modulesToGraph mainModuleName modules =
 
 
 collectTopLevelDependencies :
-    Modules Typed.Expr
-    -> List (TopLevelDeclaration Typed.Expr)
-    -> AnySet String (TopLevelDeclaration Typed.Expr)
+    Modules Typed.LocatedExpr
+    -> List (TopLevelDeclaration Typed.LocatedExpr)
+    -> AnySet String (TopLevelDeclaration Typed.LocatedExpr)
     -> List Dependency
-    -> ( AnySet String (TopLevelDeclaration Typed.Expr), List Dependency )
+    -> ( AnySet String (TopLevelDeclaration Typed.LocatedExpr), List Dependency )
 collectTopLevelDependencies modules remainingDeclarations doneDeclarations doneDependencies =
     -- TODO maybe keep a dict around so that we don't do the same work twice if
     -- two declarations depend on the same declaration
@@ -139,13 +140,13 @@ collectTopLevelDependencies modules remainingDeclarations doneDeclarations doneD
                     (doneDependencies ++ newDependencies)
 
 
-findDependencies : Modules Typed.Expr -> Typed.Expr -> List (TopLevelDeclaration Typed.Expr)
-findDependencies modules ( expr, _ ) =
+findDependencies : Modules Typed.LocatedExpr -> Typed.LocatedExpr -> List (TopLevelDeclaration Typed.LocatedExpr)
+findDependencies modules located =
     let
         findDependencies_ =
             findDependencies modules
     in
-    case expr of
+    case Typed.getExpr located of
         Literal _ ->
             []
 
@@ -191,3 +192,9 @@ findDependencies modules ( expr, _ ) =
 
         Unit ->
             []
+
+        Tuple e1 e2 ->
+            findDependencies_ e1 ++ findDependencies_ e2
+
+        Tuple3 e1 e2 e3 ->
+            findDependencies_ e1 ++ findDependencies_ e2 ++ findDependencies_ e3

@@ -1,7 +1,10 @@
 module AST.Typed exposing
     ( Expr
     , Expr_(..)
+    , LocatedExpr
     , ProjectFields
+    , getExpr
+    , getType
     , isArgument
     , lambda
     , let_
@@ -11,6 +14,7 @@ module AST.Typed exposing
     )
 
 import AST.Common.Literal exposing (Literal)
+import AST.Common.Located as Located exposing (Located)
 import AST.Common.Type exposing (Type)
 import Common
 import Common.Types
@@ -25,7 +29,11 @@ import Transform
 
 
 type alias ProjectFields =
-    { modules : Modules Expr }
+    { modules : Modules LocatedExpr }
+
+
+type alias LocatedExpr =
+    Located Expr
 
 
 {-| Differs from Canonical.Expr by:
@@ -43,19 +51,21 @@ type Expr_
     = Literal Literal
     | Var { qualifier : ModuleName, name : VarName }
     | Argument VarName
-    | Plus Expr Expr
+    | Plus LocatedExpr LocatedExpr
     | Lambda
         { argument : VarName
-        , body : Expr
+        , body : LocatedExpr
         }
-    | Call { fn : Expr, argument : Expr }
-    | If { test : Expr, then_ : Expr, else_ : Expr }
-    | Let { bindings : AnyDict String VarName (Binding Expr), body : Expr }
-    | List (List Expr)
+    | Call { fn : LocatedExpr, argument : LocatedExpr }
+    | If { test : LocatedExpr, then_ : LocatedExpr, else_ : LocatedExpr }
+    | Let { bindings : AnyDict String VarName (Binding LocatedExpr), body : LocatedExpr }
+    | List (List LocatedExpr)
     | Unit
+    | Tuple LocatedExpr LocatedExpr
+    | Tuple3 LocatedExpr LocatedExpr LocatedExpr
 
 
-lambda : VarName -> Expr -> Expr_
+lambda : VarName -> LocatedExpr -> Expr_
 lambda argument body =
     Lambda
         { argument = argument
@@ -63,7 +73,7 @@ lambda argument body =
         }
 
 
-let_ : AnyDict String VarName (Binding Expr) -> Expr -> Expr_
+let_ : AnyDict String VarName (Binding LocatedExpr) -> LocatedExpr -> Expr_
 let_ bindings body =
     Let
         { bindings = bindings
@@ -73,71 +83,81 @@ let_ bindings body =
 
 {-| A helper for the Transform library.
 -}
-recurse : (Expr -> Expr) -> Expr -> Expr
-recurse f ( expr, type_ ) =
-    ( case expr of
-        Literal _ ->
-            expr
+recurse : (LocatedExpr -> LocatedExpr) -> LocatedExpr -> LocatedExpr
+recurse f located =
+    mapExpr
+        (\expr ->
+            case expr of
+                Literal _ ->
+                    expr
 
-        Var _ ->
-            expr
+                Var _ ->
+                    expr
 
-        Argument _ ->
-            expr
+                Argument _ ->
+                    expr
 
-        Plus e1 e2 ->
-            Plus (f e1) (f e2)
+                Plus e1 e2 ->
+                    Plus
+                        (f e1)
+                        (f e2)
 
-        Lambda ({ body } as lambda_) ->
-            Lambda { lambda_ | body = f body }
+                Lambda ({ body } as lambda_) ->
+                    Lambda { lambda_ | body = f body }
 
-        Call { fn, argument } ->
-            Call
-                { fn = f fn
-                , argument = f argument
-                }
+                Call { fn, argument } ->
+                    Call
+                        { fn = f fn
+                        , argument = f argument
+                        }
 
-        If { test, then_, else_ } ->
-            If
-                { test = f test
-                , then_ = f then_
-                , else_ = f else_
-                }
+                If { test, then_, else_ } ->
+                    If
+                        { test = f test
+                        , then_ = f then_
+                        , else_ = f else_
+                        }
 
-        Let { bindings, body } ->
-            Let
-                { bindings = Dict.Any.map (always (Common.mapBinding f)) bindings
-                , body = f body
-                }
+                Let { bindings, body } ->
+                    Let
+                        { bindings = Dict.Any.map (always (Common.mapBinding f)) bindings
+                        , body = f body
+                        }
 
-        List items ->
-            List (List.map f items)
+                List items ->
+                    List (List.map f items)
 
-        Unit ->
-            expr
-    , type_
-    )
+                Tuple e1 e2 ->
+                    Tuple (f e1) (f e2)
+
+                Tuple3 e1 e2 e3 ->
+                    Tuple3 (f e1) (f e2) (f e3)
+
+                Unit ->
+                    expr
+        )
+        located
 
 
-transformOnce : (Expr -> Expr) -> Expr -> Expr
-transformOnce pass expr =
+transformOnce : (LocatedExpr -> LocatedExpr) -> LocatedExpr -> LocatedExpr
+transformOnce pass located =
     Transform.transformOnce
         recurse
         pass
-        expr
+        located
 
 
-transformAll : List (Expr -> Maybe Expr) -> Expr -> Expr
-transformAll passes expr =
+transformAll : List (LocatedExpr -> Maybe LocatedExpr) -> LocatedExpr -> LocatedExpr
+transformAll passes located =
     Transform.transformAll
         recurse
         (Transform.orList passes)
-        expr
+        located
 
 
-isArgument : VarName -> Expr -> Bool
-isArgument name ( expr_, _ ) =
-    case expr_ of
+isArgument : VarName -> LocatedExpr -> Bool
+isArgument name located =
+    case getExpr located of
         Argument argName ->
             argName == name
 
@@ -145,9 +165,9 @@ isArgument name ( expr_, _ ) =
             False
 
 
-recursiveChildren : (Expr -> List Expr) -> Expr -> List Expr
-recursiveChildren fn ( expr, _ ) =
-    case expr of
+recursiveChildren : (LocatedExpr -> List LocatedExpr) -> LocatedExpr -> List LocatedExpr
+recursiveChildren fn located =
+    case getExpr located of
         Literal _ ->
             []
 
@@ -182,3 +202,24 @@ recursiveChildren fn ( expr, _ ) =
 
         List items ->
             List.concatMap fn items
+
+        Tuple e1 e2 ->
+            fn e1 ++ fn e2
+
+        Tuple3 e1 e2 e3 ->
+            fn e1 ++ fn e2 ++ fn e3
+
+
+mapExpr : (Expr_ -> Expr_) -> LocatedExpr -> LocatedExpr
+mapExpr =
+    Located.map << Tuple.mapFirst
+
+
+getExpr : LocatedExpr -> Expr_
+getExpr =
+    Tuple.first << Located.unwrap
+
+
+getType : LocatedExpr -> Type
+getType =
+    Tuple.second << Located.unwrap

@@ -1,8 +1,9 @@
 module EmitTest exposing (javascript)
 
 import AST.Common.Literal exposing (Literal(..))
+import AST.Common.Located as Located exposing (Located)
 import AST.Common.Type as Type
-import AST.Typed as Typed exposing (Expr_(..))
+import AST.Typed as Typed exposing (Expr_(..), LocatedExpr)
 import Common
 import Common.Types
     exposing
@@ -14,6 +15,13 @@ import Dict.Any
 import Expect exposing (Expectation)
 import Stage.Emit.JavaScript as JS
 import Test exposing (Test, describe, test, todo)
+import TestHelpers
+    exposing
+        ( typed
+        , typedBool
+        , typedInt
+        , typedString
+        )
 
 
 javascript : Test
@@ -29,20 +37,14 @@ javascript =
                             |> typed
                             |> JS.emitExpr
                             |> Expect.equal output
-
-            typed : Typed.Expr_ -> Typed.Expr
-            typed expr =
-                ( expr, Type.Int )
-
-            typedInt : Int -> Typed.Expr
-            typedInt int =
-                typed (Literal (Int int))
           in
-          describe "emitExpr_"
+          describe "emitExpr"
             [ describe "Int"
                 (List.map runTest
                     [ ( "positive int", Literal (Int 42), "42" )
                     , ( "negative int", Literal (Int -998), "-998" )
+                    , -- Elm wat
+                      ( "negative zero int", Literal (Int (negate 0)), "0" )
                     ]
                 )
 
@@ -52,7 +54,8 @@ javascript =
                     [ ( "positive float", Literal (Float 12.3), "12.3" )
                     , ( "negative float", Literal (Float -12.3), "-12.3" )
                     , ( "positive zero float", Literal (Float 0.0), "0" )
-                    , ( "negative zero float", Literal (Float -0.0), "0" )
+                    , -- Elm wat
+                      ( "negative zero float", Literal (Float -0.0), "0" )
                     , ( "positive infitiny", Literal (Float (1 / 0.0)), "Infinity" )
                     , ( "negative infitiny", Literal (Float (1 / -0.0)), "-Infinity" )
                     ]
@@ -171,11 +174,11 @@ javascript =
                       , "[]"
                       )
                     , ( "single item in list"
-                      , List [ typed (Literal (Int 1)) ]
+                      , List [ typedInt 1 ]
                       , "[1]"
                       )
                     , ( "simple list"
-                      , List [ typed (Literal (Int 1)), typed (Literal (Int 2)), typed (Literal (Int 3)) ]
+                      , List [ typedInt 1, typedInt 2, typedInt 3 ]
                       , "[1, 2, 3]"
                       )
                     ]
@@ -222,9 +225,26 @@ javascript =
                       )
                     ]
                 )
+            , describe "Tuple"
+                (List.map runTest
+                    [ ( "simple tuple", Tuple (typedInt 1) (typedInt 2), "[1,2]" )
+                    , ( "mixed tuple", Tuple (typedInt 1) (typedString "hello"), "[1,\"hello\"]" )
+                    , ( "nested tuple", Tuple (typedInt 1) (typed (Tuple (typedInt 2) (typedInt 3))), "[1,[2,3]]" )
+                    ]
+                )
+            , describe "Tuple3"
+                (List.map runTest
+                    [ ( "simple tuple3", Tuple3 (typedInt 1) (typedInt 2) (typedInt 3), "[1,2,3]" )
+                    , ( "mixed tuple3", Tuple3 (typedInt 1) (typedString "hello") (typedBool True), "[1,\"hello\",true]" )
+                    , ( "nested tuple3"
+                      , Tuple3 (typedInt 1) (typedInt 2) (typed (Tuple3 (typedInt 3) (typedInt 4) (typedInt 5)))
+                      , "[1,2,[3,4,5]]"
+                      )
+                    ]
+                )
             ]
         , let
-            runTest : ( String, TopLevelDeclaration Typed.Expr, String ) -> Test
+            runTest : ( String, TopLevelDeclaration Typed.LocatedExpr, String ) -> Test
             runTest ( description, input, output ) =
                 test description <|
                     \() ->
@@ -237,7 +257,7 @@ javascript =
                 [ ( "simple"
                   , { module_ = ModuleName "Foo"
                     , name = VarName "bar"
-                    , body = ( Literal (Int 1), Type.Int )
+                    , body = typedInt 1
                     }
                   , "const Foo$bar = 1;"
                   )

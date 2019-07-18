@@ -1,6 +1,6 @@
 module AST.Backend exposing
-    ( Expr
-    , Graph
+    ( Graph
+    , LocatedExpr
     , ProjectFields
     )
 
@@ -13,9 +13,9 @@ type alias ProjectFields =
     { programGraph : Graph }
 
 
-type alias Expr =
-    Typed.Expr
+type alias LocatedExpr =
+    Typed.LocatedExpr
 
 
 type alias Graph =
-    Graph.Graph (TopLevelDeclaration Expr) ()
+    Graph.Graph (TopLevelDeclaration LocatedExpr) ()

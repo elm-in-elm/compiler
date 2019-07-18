@@ -2,22 +2,24 @@ module InferTypesFuzz exposing (exprTyped)
 
 import AST.Canonical as Canonical
 import AST.Common.Literal exposing (Literal(..))
+import AST.Common.Located as Located
 import AST.Common.Type as Type exposing (Type)
 import Common.Types exposing (VarName(..))
 import Fuzz exposing (Fuzzer)
 import Random exposing (Generator)
 import Random.Extra as Random
 import Shrink exposing (Shrinker)
+import TestHelpers exposing (located)
 
 
-exprTyped : Type -> Fuzzer Canonical.Expr
+exprTyped : Type -> Fuzzer Canonical.LocatedExpr
 exprTyped targetType =
     Fuzz.custom
         (exprGenerator targetType)
         exprShrinker
 
 
-exprGenerator : Type -> Generator Canonical.Expr
+exprGenerator : Type -> Generator Canonical.LocatedExpr
 exprGenerator targetType =
     let
         cannotFuzz details =
@@ -70,33 +72,33 @@ exprGenerator targetType =
             cannotFuzz ""
 
 
-intExpr : Generator Canonical.Expr
+intExpr : Generator Canonical.LocatedExpr
 intExpr =
     Random.int Random.minInt Random.maxInt
         |> Random.map (literal Int)
 
 
-floatExpr : Generator Canonical.Expr
+floatExpr : Generator Canonical.LocatedExpr
 floatExpr =
     -- Does not produce NaNs, but that should not be an issue for us.
     Random.float (-1.0 / 0.0) (1.0 / 0.0)
         |> Random.map (literal Float)
 
 
-boolExpr : Generator Canonical.Expr
+boolExpr : Generator Canonical.LocatedExpr
 boolExpr =
     Random.bool
         |> Random.map (literal Bool)
 
 
-charExpr : Generator Canonical.Expr
+charExpr : Generator Canonical.LocatedExpr
 charExpr =
     Random.int 0 0x0010FFFF
         |> Random.map Char.fromCode
         |> Random.map (literal Char)
 
 
-stringExpr : Generator Canonical.Expr
+stringExpr : Generator Canonical.LocatedExpr
 stringExpr =
     Random.int 0 0x0010FFFF
         |> Random.list 10
@@ -105,42 +107,48 @@ stringExpr =
         |> Random.map (literal String)
 
 
-unitExpr : Generator Canonical.Expr
+unitExpr : Generator Canonical.LocatedExpr
 unitExpr =
-    Canonical.Unit |> Random.constant
+    Canonical.Unit
+        |> located
+        |> Random.constant
 
 
-literal : (a -> Literal) -> a -> Canonical.Expr
+literal : (a -> Literal) -> a -> Canonical.LocatedExpr
 literal wrap value =
     value
         |> wrap
         |> Canonical.Literal
+        |> located
 
 
-listExpr : Type -> Generator Canonical.Expr
+listExpr : Type -> Generator Canonical.LocatedExpr
 listExpr elementType =
     elementType
         |> exprGenerator
         |> Random.list 10
         |> Random.map Canonical.List
+        |> Random.map located
 
 
-intToIntFunctionExpr : Generator Canonical.Expr
+intToIntFunctionExpr : Generator Canonical.LocatedExpr
 intToIntFunctionExpr =
     let
-        wrapBody argumentName expr =
-            Canonical.Lambda
-                { argument = argumentName
-                , body = Canonical.Plus expr (Canonical.Argument argumentName)
-                }
+        combine argument intPart =
+            Canonical.lambda argument <|
+                located <|
+                    Canonical.Plus
+                        (located <| Canonical.Argument argument)
+                        intPart
 
-        bodyExpr =
+        intSubExpr =
             Type.Int |> exprGenerator
     in
-    Random.map2 wrapBody
+    Random.map2 combine
         -- TODO: Later we will need something better to avoid shadowing.
         randomVarName
-        bodyExpr
+        intSubExpr
+        |> Random.map located
 
 
 randomVarName : Generator VarName
@@ -179,22 +187,27 @@ dumpType type_ =
         |> Tuple.first
 
 
-exprShrinker : Shrinker Canonical.Expr
+exprShrinker : Shrinker Canonical.LocatedExpr
 exprShrinker expr =
-    case expr of
+    case
+        expr |> Located.unwrap
+    of
         Canonical.Literal lit ->
             lit
                 |> shrinkLiteral
                 |> Shrink.map Canonical.Literal
+                |> Shrink.map located
 
         Canonical.Plus left right ->
             expr
+                |> Debug.log "shrinking (+)"
                 |> shrinkPlus left right
 
         Canonical.List elements ->
             elements
                 |> shrinkNonEmptyList exprShrinker
                 |> Shrink.map Canonical.List
+                |> Shrink.map located
 
         Canonical.If { then_, else_ } ->
             [ then_, else_ ]
@@ -230,26 +243,21 @@ shrinkLiteral lit =
             s |> Shrink.string |> Shrink.map String
 
 
-shrinkPlus : Canonical.Expr -> Canonical.Expr -> Shrinker Canonical.Expr
+shrinkPlus : Canonical.LocatedExpr -> Canonical.LocatedExpr -> Shrinker Canonical.LocatedExpr
 shrinkPlus left right _ =
     -- TODO: The Shrink docs were misleading here. Consider reporting an issue.
     exprShrinker left
         |> Shrink.map Canonical.Plus
         |> Shrink.andMap (exprShrinker right)
+        |> Shrink.map located
 
 
-shrinkLambda : VarName -> Canonical.Expr -> Shrinker Canonical.Expr
+shrinkLambda : VarName -> Canonical.LocatedExpr -> Shrinker Canonical.LocatedExpr
 shrinkLambda argument body _ =
-    let
-        combine shrunkBody =
-            Canonical.Lambda
-                { argument = argument
-                , body = shrunkBody
-                }
-    in
     body
         |> exprShrinker
-        |> Shrink.map combine
+        |> Shrink.map (Canonical.lambda argument)
+        |> Shrink.map located
 
 
 shrinkNonEmptyList : Shrinker a -> Shrinker (List a)

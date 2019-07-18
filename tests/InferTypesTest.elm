@@ -1,34 +1,38 @@
 module InferTypesTest exposing (typeInference, typeToString)
 
 import AST.Canonical as Canonical
-import AST.Common.Literal exposing (Literal(..))
-import AST.Common.Type as Type exposing (Type)
+import AST.Common.Literal as Literal
+import AST.Common.Located as Located
+import AST.Common.Type as Type exposing (Type(..))
 import AST.Typed as Typed
 import Common
 import Common.Types as Types exposing (VarName(..))
 import Dict.Any
-import Error exposing (TypeError)
+import Error exposing (TypeError(..))
 import Expect exposing (Expectation)
 import Fuzz exposing (Fuzzer)
 import InferTypesFuzz as Fuzz
 import Stage.InferTypes
 import Test exposing (Test, describe, fuzz, test)
+import TestHelpers exposing (located)
 
 
 typeInference : Test
 typeInference =
     let
-        runTest : ( String, Canonical.Expr, Result Error.TypeError Typed.Expr ) -> Test
-        runTest ( description, input, output ) =
-            test description <|
-                \() ->
-                    Stage.InferTypes.inferExpr input
-                        |> Expect.equal output
-
-        runSection : String -> List ( String, Canonical.Expr, Result Error.TypeError Typed.Expr ) -> Test
+        runSection : String -> List ( String, Canonical.Expr, Result Error.TypeError Type ) -> Test
         runSection description tests =
             describe description
                 (List.map runTest tests)
+
+        runTest : ( String, Canonical.Expr, Result Error.TypeError Type ) -> Test
+        runTest ( description, input, output ) =
+            test description <|
+                \() ->
+                    located input
+                        |> Stage.InferTypes.inferExpr
+                        |> Result.map Typed.getType
+                        |> Expect.equal output
 
         dumpType : Type -> String
         dumpType type_ =
@@ -45,6 +49,7 @@ typeInference =
             fuzz (Fuzz.exprTyped typeWanted) description <|
                 \input ->
                     Stage.InferTypes.inferExpr input
+                        |> Result.map Located.unwrap
                         |> Result.map Tuple.second
                         |> Expect.equal (Ok typeWanted)
 
@@ -58,31 +63,78 @@ typeInference =
         [ runSection "list"
             [ ( "empty list"
               , Canonical.List []
-              , Ok ( Typed.List [], Type.List (Type.Var 1) )
+              , Ok (Type.List (Type.Var 1))
               )
             , ( "one item"
-              , Canonical.List [ Canonical.Literal (Bool True) ]
-              , Ok ( Typed.List [ ( Typed.Literal (Bool True), Type.Bool ) ], Type.List Type.Bool )
+              , Canonical.List [ located (Canonical.Literal (Literal.Bool True)) ]
+              , Ok (Type.List Type.Bool)
               )
             , ( "more items"
-              , Canonical.List [ Canonical.Literal (Int 1), Canonical.Literal (Int 2), Canonical.Literal (Int 3) ]
-              , Ok ( Typed.List [ ( Typed.Literal (Int 1), Type.Int ), ( Typed.Literal (Int 2), Type.Int ), ( Typed.Literal (Int 3), Type.Int ) ], Type.List Type.Int )
+              , Canonical.List
+                    [ located (Canonical.Literal (Literal.Int 1))
+                    , located (Canonical.Literal (Literal.Int 2))
+                    , located (Canonical.Literal (Literal.Int 3))
+                    ]
+              , Ok (Type.List Type.Int)
               )
             , ( "different types"
-              , Canonical.List [ Canonical.Literal (Int 1), Canonical.Literal (String "two") ]
+              , Canonical.List
+                    [ located (Canonical.Literal (Literal.Int 1))
+                    , located (Canonical.Literal (Literal.String "two"))
+                    ]
               , Err (Error.TypeMismatch Type.Int Type.String)
               )
             , ( "more items with different types"
-              , Canonical.List [ Canonical.Literal (Bool True), Canonical.Literal (String "two"), Canonical.Literal (Int 3) ]
+              , Canonical.List
+                    [ located (Canonical.Literal (Literal.Bool True))
+                    , located (Canonical.Literal (Literal.String "two"))
+                    , located (Canonical.Literal (Literal.Int 3))
+                    ]
               , Err (Error.TypeMismatch Type.Bool Type.String)
               )
             , ( "List of List of Int"
-              , Canonical.List [ Canonical.List [ Canonical.Literal (Int 1) ], Canonical.List [ Canonical.Literal (Int 2) ] ]
-              , Ok ( Typed.List [ ( Typed.List [ ( Typed.Literal (Int 1), Type.Int ) ], Type.List Type.Int ), ( Typed.List [ ( Typed.Literal (Int 2), Type.Int ) ], Type.List Type.Int ) ], Type.List (Type.List Type.Int) )
+              , Canonical.List
+                    [ located (Canonical.List [ located (Canonical.Literal (Literal.Int 1)) ])
+                    , located (Canonical.List [ located (Canonical.Literal (Literal.Int 2)) ])
+                    ]
+              , Ok (Type.List (Type.List Type.Int))
               )
             , ( "List of List of different types"
-              , Canonical.List [ Canonical.List [ Canonical.Literal (Int 1) ], Canonical.List [ Canonical.Literal (Bool False) ] ]
+              , Canonical.List
+                    [ located (Canonical.List [ located (Canonical.Literal (Literal.Int 1)) ])
+                    , located (Canonical.List [ located (Canonical.Literal (Literal.Bool False)) ])
+                    ]
               , Err (Error.TypeMismatch Type.Int Type.Bool)
+              )
+            ]
+        , runSection "tuple"
+            [ ( "items with the same types"
+              , Canonical.Tuple
+                    (located (Canonical.Literal (Literal.String "Hello")))
+                    (located (Canonical.Literal (Literal.String "Elm")))
+              , Ok (Tuple String String)
+              )
+            , ( "items of different types"
+              , Canonical.Tuple
+                    (located (Canonical.Literal (Literal.Bool True)))
+                    (located (Canonical.Literal (Literal.Int 1)))
+              , Ok (Tuple Bool Int)
+              )
+            ]
+        , runSection "tuple3"
+            [ ( "same types"
+              , Canonical.Tuple3
+                    (located (Canonical.Literal (Literal.String "FP")))
+                    (located (Canonical.Literal (Literal.String "is")))
+                    (located (Canonical.Literal (Literal.String "good")))
+              , Ok (Tuple3 String String String)
+              )
+            , ( "different types"
+              , Canonical.Tuple3
+                    (located (Canonical.Literal (Literal.Bool True)))
+                    (located (Canonical.Literal (Literal.Int 1)))
+                    (located (Canonical.Literal (Literal.Char 'h')))
+              , Ok (Tuple3 Bool Int Char)
               )
             ]
         , describe "fuzz exprInfer"
@@ -182,6 +234,23 @@ typeToString =
                         )
                     )
                 , "The types `(List a) -> b` and `(List b) -> a` don't match."
+                )
+            ]
+        , describe "tuples"
+            [ runTest
+                ( "tuple with two literals"
+                , Type.Tuple Type.Int Type.String
+                , "( Int, String )"
+                )
+            , runTest
+                ( "tuple with two params"
+                , Type.Tuple (Type.Var 0) (Type.Var 1)
+                , "( a, b )"
+                )
+            , runTest
+                ( "tuple with tree params"
+                , Type.Tuple3 (Type.Var 0) (Type.Var 1) (Type.Var 2)
+                , "( a, b, c )"
                 )
             ]
         ]

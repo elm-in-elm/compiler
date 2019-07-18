@@ -87,7 +87,7 @@ Oh God please yes! :heart: Feel free to look around the [<kbd>help wanted</kbd>]
 | record accessors  | :x:                  | :x:                  | :x:                  | :x:                  | :x:                | :x:                | :x:                  | :x:                  |
 | record updates    | :x:                  | :x:                  | :x:                  | :x:                  | :x:                | :x:                | :x:                  | :x:                  |
 | unit type         | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark:   | :heavy_check_mark:   |
-| tuples, 3-tuples  | :x: [[10]](#f10)     | :heavy_check_mark:   | :x: [[10]](#f10)     | :x: [[11]](#f11)     | :heavy_check_mark: | :x: [[10]](#f10)   | :heavy_check_mark:   | :x: [[10]](#f10)     |
+| tuples, 3-tuples  | :heavy_check_mark:    | :heavy_check_mark:   | :heavy_check_mark:  | :x: [[10]](#f10)     | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark:   | :heavy_check_mark:  |
 | type annotations  | :x:                  | :x:                  | :x:                  | :x:                  | :x:                | :x:                | :x:                  | :x:                  |
 | type aliases      | :x:                  | :x:                  | :x:                  | :x:                  | :x:                | :x:                | :x:                  | :x:                  |
 | custom types      | :x:                  | :x:                  | :x:                  | :x:                  | :x:                | :x:                | :x:                  | :x:                  |
@@ -103,8 +103,7 @@ Oh God please yes! :heart: Feel free to look around the [<kbd>help wanted</kbd>]
 7. <span id="f7"></span> ... this space left intentionally blank :smile: ...
 8. <span id="f8"></span> Not implemented; partially tracked in [#29](https://github.com/elm-in-elm/compiler/issues/29)
 9. <span id="f9"></span> ... this space left intentionally blank :smile: ...
-10. <span id="f10"></span> Not implemented; tracked in [#34](https://github.com/elm-in-elm/compiler/issues/34)
-11. <span id="f11"></span> Not implemented; tracked in [#35](https://github.com/elm-in-elm/compiler/issues/35)
+10. <span id="f10"></span> Not implemented; tracked in [#35](https://github.com/elm-in-elm/compiler/issues/35)
 
 
 ## FAQ
@@ -261,6 +260,12 @@ Make sure to format code before submitting a pull request!
       </td>
     </tr>
     <tr>
+      <td align="center">
+        <img width="150" height="150"
+        src="https://avatars1.githubusercontent.com/u/3983879">
+        </br>
+        Eduard Kyvenko
+      </td>
       <td align="center">
         <img width="150" height="150"
         src="https://raw.github.com/elm-in-elm/compiler/master/assets/user-placeholder.png">

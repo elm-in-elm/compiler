@@ -15,14 +15,14 @@ import Parser.Advanced as P
 import Stage.Parse.Parser as Parser
 
 
-parse : Project a -> FilePath -> FileContents -> Result Error (Module Frontend.Expr)
+parse : Project a -> FilePath -> FileContents -> Result Error (Module Frontend.LocatedExpr)
 parse { sourceDirectory } filePath (FileContents fileContents) =
     P.run (Parser.module_ filePath) fileContents
         |> Result.mapError (ParseError << ParseProblem)
         |> Result.andThen (checkModuleNameAndFilePath sourceDirectory filePath)
 
 
-checkModuleNameAndFilePath : FilePath -> FilePath -> Module Frontend.Expr -> Result Error (Module Frontend.Expr)
+checkModuleNameAndFilePath : FilePath -> FilePath -> Module Frontend.LocatedExpr -> Result Error (Module Frontend.LocatedExpr)
 checkModuleNameAndFilePath sourceDirectory filePath ({ name } as parsedModule) =
     let
         expectedName : Result Error ModuleName
