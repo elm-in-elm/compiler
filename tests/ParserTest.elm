@@ -421,6 +421,46 @@ tripleQuote txt =
     "\"\"\"" ++ txt ++ "\"\"\""
 
 
+{-| TODO some abstraction to make the test cases not care about (and not have to write out) the locations?
+The ideal result would be:
+
+    ( "works with single argument"
+    , "\\x -> x + 1"
+    , Just
+        (Lambda
+            { arguments = [VarName "x"]
+            , body =
+                Plus
+                    (Argument (VarName "x"))
+                    (Literal (Int 1))
+        )
+    )
+
+as if the Expr didn't have LocatedExpr children but Exprs too.
+
+---
+
+One of the possible solutions could be recursion schemes: <https://blog.sumtypeofway.com/an-introduction-to-recursion-schemes/>
+Not the general ones, we can't have those with Elm -it doesn't have higher kinded types, doesn't allow for:
+
+    type Term f
+        = In (f (Term f))
+
+But maybe we could make a specific one:
+
+    type Term f
+        = In (Expr (Term f))
+
+Dunno! We'll have to try.
+
+---
+
+The other solution might be just having an AST.Unwrapped.Frontend module which
+has the Expr type with Expr children (instead of LocatedExpr ones).
+
+The downside of this is some boilerplate. But we already have that :sweat\_smile:
+
+-}
 expr : Test
 expr =
     let
