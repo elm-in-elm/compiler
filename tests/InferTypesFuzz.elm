@@ -28,7 +28,7 @@ exprGenerator targetType =
                     "Cannot fuzz `" ++ dumpType targetType ++ "` expressions."
 
                 message =
-                    if details |> String.isEmpty then
+                    if String.isEmpty details then
                         prefix
 
                     else
