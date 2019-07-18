@@ -22,6 +22,9 @@ optimizeExpr located =
         located
 
 
+{-| TODO try to create some helpers for the optimization passes to make them
+not care about the location that much...
+-}
 optimizePlus : Typed.LocatedExpr -> Maybe Typed.LocatedExpr
 optimizePlus located =
     case Typed.getExpr located of
