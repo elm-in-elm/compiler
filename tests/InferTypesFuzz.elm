@@ -189,9 +189,7 @@ dumpType type_ =
 
 exprShrinker : Shrinker Canonical.LocatedExpr
 exprShrinker expr =
-    case
-        expr |> Located.unwrap
-    of
+    case Located.unwrap expr of
         Canonical.Literal lit ->
             lit
                 |> shrinkLiteral
@@ -213,7 +211,6 @@ exprShrinker expr =
             [ then_, else_ ]
                 |> List.map shrinkTo
                 |> concatShrink
-                -- Lesser hack.
                 |> shrink expr
 
         Canonical.Lambda { argument, body } ->
@@ -245,10 +242,9 @@ shrinkLiteral lit =
 
 shrinkPlus : Canonical.LocatedExpr -> Canonical.LocatedExpr -> Shrinker Canonical.LocatedExpr
 shrinkPlus left right _ =
-    -- TODO: The Shrink docs were misleading here. Consider reporting an issue.
-    exprShrinker left
-        |> Shrink.map Canonical.Plus
-        |> Shrink.andMap (exprShrinker right)
+    lazyMap2 Canonical.Plus
+        (exprShrinker left)
+        (exprShrinker right)
         |> Shrink.map located
 
 
@@ -267,10 +263,9 @@ shrinkNonEmptyList shrinkElement list =
             list |> Shrink.noShrink
 
         first :: rest ->
-            -- TODO: The Shrink docs were misleading here. Consider reporting an issue.
-            shrinkElement first
-                |> Shrink.map (::)
-                |> Shrink.andMap (Shrink.list shrinkElement rest)
+            lazyMap2 (::)
+                (shrinkElement first)
+                (Shrink.list shrinkElement rest)
 
 
 shrinkTo : a -> Shrinker a
@@ -280,11 +275,51 @@ shrinkTo shrunk _ =
         |> Shrink.map (always shrunk)
 
 
-{-| We cannot write a type annotation here.
-The `LazyList a` type used by shrinkers is not exposed anywhere.
+{-| Calls a shrinker with the supplied argument.
+
+Sometimes you build up a shrinker based on the value to shrink.
+Then you need to invoke it.
+Without `shrink` that is
+
+    (value
+        |> someFunc
+        |> someOtherFunc
+    )
+        value
+
+With `shrink` it becomes
+
+    value
+        |> someFunc
+        |> someOtherFunc
+        |> shrink value
+
+---
+
+We cannot write a type annotation here.
+The `LazyList a` type used by shrinkers is not exposed outside `elm-explorations/test`.
+
+    shrink : a -> Shrinker a -> Shrinker a
+
 -}
 shrink expr shrinker =
     shrinker expr
+
+
+{-| Combines two lazy lists using a combining function.
+
+---
+
+We cannot write a type annotation here.
+The `LazyList a` type used by shrinkers is not exposed outside `elm-explorations/test`.
+
+    lazyMap2 : (a -> b -> c) -> LazyList a -> LazyList b -> LazyList c
+
+-}
+lazyMap2 f la lb =
+    la
+        |> Shrink.map f
+        |> Shrink.andMap lb
 
 
 concatShrink : List (Shrinker a) -> Shrinker a
