@@ -45,9 +45,6 @@ emitExpr ( expr, _ ) =
         Plus e1 e2 ->
             "(" ++ emitExpr e1 ++ " + " ++ emitExpr e2 ++ ")"
 
-        ListConcat e1 e2 ->
-            "(" ++ emitExpr e1 ++ " ++ " ++ emitExpr e2 ++ ")"
-
         Lambda { argument, body } ->
             -- TODO are these parentheses needed?
             "((" ++ mangleVarName argument ++ ") => " ++ emitExpr body ++ ")"

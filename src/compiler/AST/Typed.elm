@@ -44,7 +44,6 @@ type Expr_
     | Var { qualifier : ModuleName, name : VarName }
     | Argument VarName
     | Plus Expr Expr
-    | ListConcat Expr Expr
     | Lambda
         { argument : VarName
         , body : Expr
@@ -90,9 +89,6 @@ recurse f ( expr, type_ ) =
 
         Plus e1 e2 ->
             Plus (f e1) (f e2)
-
-        ListConcat e1 e2 ->
-            ListConcat (f e1) (f e2)
 
         Lambda ({ body } as lambda_) ->
             Lambda { lambda_ | body = f body }
@@ -170,10 +166,6 @@ recursiveChildren fn ( expr, _ ) =
             []
 
         Plus left right ->
-            fn left
-                ++ fn right
-
-        ListConcat left right ->
             fn left
                 ++ fn right
 
