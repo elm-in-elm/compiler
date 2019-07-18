@@ -43,22 +43,36 @@ desugarExpr modules thisModule located =
         recurse =
             desugarExpr modules thisModule
 
-        return =
-            locatedResultReturn located
+        return expr =
+            Ok (Located.replaceWith expr located)
 
-        recurseMap =
-            locatedResultMap located
+        map fn =
+            Result.map
+                (\expr ->
+                    Located.replaceWith
+                        (fn expr)
+                        located
+                )
 
-        recurseMap2 =
-            locatedResultMap2 located
+        map2 fn =
+            Result.map2
+                (\expr1 expr2 ->
+                    Located.replaceWith
+                        (fn expr1 expr2)
+                        located
+                )
 
-        recurseMap3 =
-            locatedResultMap3 located
+        map3 fn =
+            Result.map3
+                (\expr1 expr2 expr3 ->
+                    Located.replaceWith
+                        (fn expr1 expr2 expr3)
+                        located
+                )
     in
     case Located.unwrap located of
         Frontend.Literal literal ->
-            Canonical.Literal literal
-                |> return
+            return <| Canonical.Literal literal
 
         Frontend.Var { qualifier, name } ->
             findModuleOfVar modules thisModule qualifier name
@@ -68,14 +82,13 @@ desugarExpr modules thisModule located =
                         , module_ = thisModule.name
                         }
                     )
-                |> recurseMap (\moduleName -> Canonical.var moduleName name)
+                |> map (\moduleName -> Canonical.var moduleName name)
 
         Frontend.Argument varName ->
-            Canonical.Argument varName
-                |> return
+            return <| Canonical.Argument varName
 
         Frontend.Plus e1 e2 ->
-            recurseMap2 Canonical.Plus
+            map2 Canonical.Plus
                 (recurse e1)
                 (recurse e2)
 
@@ -84,7 +97,7 @@ desugarExpr modules thisModule located =
                 |> Result.map (curryLambda located arguments)
 
         Frontend.Call { fn, argument } ->
-            recurseMap2
+            map2
                 (\fn_ argument_ ->
                     Canonical.Call
                         { fn = fn_
@@ -95,7 +108,7 @@ desugarExpr modules thisModule located =
                 (recurse argument)
 
         Frontend.If { test, then_, else_ } ->
-            recurseMap3
+            map3
                 (\test_ then__ else__ ->
                     Canonical.If
                         { test = test_
@@ -108,7 +121,7 @@ desugarExpr modules thisModule located =
                 (recurse else_)
 
         Frontend.Let { bindings, body } ->
-            recurseMap2
+            map2
                 (\bindings_ body_ ->
                     Canonical.Let
                         { bindings =
@@ -125,22 +138,21 @@ desugarExpr modules thisModule located =
         Frontend.List items ->
             List.map recurse items
                 |> List.foldr (Result.map2 (::)) (Ok [])
-                |> recurseMap Canonical.List
+                |> map Canonical.List
 
         Frontend.Tuple e1 e2 ->
-            recurseMap2 Canonical.Tuple
+            map2 Canonical.Tuple
                 (recurse e1)
                 (recurse e2)
 
         Frontend.Tuple3 e1 e2 e3 ->
-            recurseMap3 Canonical.Tuple3
+            map3 Canonical.Tuple3
                 (recurse e1)
                 (recurse e2)
                 (recurse e3)
 
         Frontend.Unit ->
-            Canonical.Unit
-                |> return
+            return Canonical.Unit
 
 
 
@@ -238,42 +250,3 @@ qualifiedVarInAliasedModule modules thisModule maybeModuleName varName =
     in
     -- Reusing the existing functionality. TODO is this a good idea?
     qualifiedVarInImportedModule modules unaliasedModuleName varName
-
-
-locatedResultReturn : Frontend.LocatedExpr -> Canonical.Expr -> Result DesugarError Canonical.LocatedExpr
-locatedResultReturn located expr =
-    Ok
-        (Located.replaceWith
-            expr
-            located
-        )
-
-
-locatedResultMap : Frontend.LocatedExpr -> (a -> Canonical.Expr) -> Result DesugarError a -> Result DesugarError Canonical.LocatedExpr
-locatedResultMap located fn =
-    Result.map
-        (\expr ->
-            Located.replaceWith
-                (fn expr)
-                located
-        )
-
-
-locatedResultMap2 : Frontend.LocatedExpr -> (a -> b -> Canonical.Expr) -> Result DesugarError a -> Result DesugarError b -> Result DesugarError Canonical.LocatedExpr
-locatedResultMap2 located fn =
-    Result.map2
-        (\expr1 expr2 ->
-            Located.replaceWith
-                (fn expr1 expr2)
-                located
-        )
-
-
-locatedResultMap3 : Frontend.LocatedExpr -> (a -> b -> c -> Canonical.Expr) -> Result DesugarError a -> Result DesugarError b -> Result DesugarError c -> Result DesugarError Canonical.LocatedExpr
-locatedResultMap3 located fn =
-    Result.map3
-        (\expr1 expr2 expr3 ->
-            Located.replaceWith
-                (fn expr1 expr2 expr3)
-                located
-        )
