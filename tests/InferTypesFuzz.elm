@@ -34,7 +34,7 @@ exprGenerator targetType =
                     else
                         prefix ++ " " ++ details
             in
-            message |> Debug.todo
+            Debug.todo message
     in
     case targetType of
         Type.Int ->
@@ -56,7 +56,7 @@ exprGenerator targetType =
             unitExpr
 
         Type.List elementType ->
-            if elementType |> Type.isNotParametric then
+            if Type.isNotParametric elementType then
                 listExpr elementType
 
             else
@@ -142,7 +142,7 @@ intToIntFunctionExpr =
                         intPart
 
         intSubExpr =
-            Type.Int |> exprGenerator
+            exprGenerator Type.Int
     in
     Random.map2 combine
         -- TODO: Later we will need something better to avoid shadowing.
@@ -198,7 +198,6 @@ exprShrinker expr =
 
         Canonical.Plus left right ->
             expr
-                |> Debug.log "shrinking (+)"
                 |> shrinkPlus left right
 
         Canonical.List elements ->
@@ -208,6 +207,7 @@ exprShrinker expr =
                 |> Shrink.map located
 
         Canonical.If { then_, else_ } ->
+            -- TODO: Shrink the test once we get more interesting Bool expressions.
             [ then_, else_ ]
                 |> List.map shrinkTo
                 |> concatShrink
@@ -259,13 +259,13 @@ shrinkLambda argument body _ =
 shrinkNonEmptyList : Shrinker a -> Shrinker (List a)
 shrinkNonEmptyList shrinkElement list =
     case list of
-        [] ->
-            list |> Shrink.noShrink
-
         first :: rest ->
             lazyMap2 (::)
                 (shrinkElement first)
                 (Shrink.list shrinkElement rest)
+
+        [] ->
+            Shrink.noShrink list
 
 
 shrinkTo : a -> Shrinker a
