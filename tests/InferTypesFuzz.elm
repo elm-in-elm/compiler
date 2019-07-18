@@ -317,8 +317,7 @@ The `LazyList a` type used by shrinkers is not exposed outside `elm-explorations
 
 -}
 lazyMap2 f la lb =
-    la
-        |> Shrink.map f
+    Shrink.map f la
         |> Shrink.andMap lb
 
 
