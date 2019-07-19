@@ -66,7 +66,7 @@ exprOfType : Type -> Fuzzer Unwrapped.Expr
 exprOfType targetType =
     Fuzz.custom
         (exprOfTypeWithDepth 3 targetType)
-        exprShrinker
+        shrinkExpr
 
 
 exprOfTypeWithDepth : Int -> Type -> Generator Unwrapped.Expr
@@ -272,8 +272,8 @@ dumpType type_ =
 
 {-| An expression shrinker that preserves the inferred type.
 -}
-exprShrinker : Shrinker Unwrapped.Expr
-exprShrinker expr =
+shrinkExpr : Shrinker Unwrapped.Expr
+shrinkExpr expr =
     case expr of
         Unwrapped.Literal lit ->
             lit
@@ -288,7 +288,7 @@ exprShrinker expr =
             -- It can turn a non-empty list empty.
             -- But the lists `[1]` and `[]` will have different types inferred.
             elements
-                |> shrinkNonEmptyList exprShrinker
+                |> shrinkNonEmptyList shrinkExpr
                 |> Shrink.map Unwrapped.List
 
         Unwrapped.If { test, then_, else_ } ->
@@ -332,11 +332,11 @@ The `LazyList a` type used by shrinkers is not exposed outside `elm-explorations
 -}
 shrinkPlus left right =
     ([ lazyMap2 Unwrapped.Plus
-        (exprShrinker left)
+        (shrinkExpr left)
         (singleton right)
      , lazyMap2 Unwrapped.Plus
         (singleton left)
-        (exprShrinker right)
+        (shrinkExpr right)
      ]
         |> List.map always
         |> concatShrink
@@ -367,7 +367,7 @@ shrinkIf test then_ else_ =
     in
     ([ singleton then_
      , singleton else_
-     , test |> exprShrinker |> Shrink.map withTest
+     , test |> shrinkExpr |> Shrink.map withTest
      ]
         |> List.map always
         |> concatShrink
@@ -385,7 +385,7 @@ The `LazyList a` type used by shrinkers is not exposed outside `elm-explorations
 -}
 shrinkLambda argument body =
     body
-        |> exprShrinker
+        |> shrinkExpr
         |> Shrink.map (lambda argument)
 
 
