@@ -1,6 +1,7 @@
 module AST.Common.Located exposing
     ( Located
     , Region
+    , dummyRegion
     , getRegion
     , located
     , map
@@ -74,4 +75,17 @@ mergeRegions : Region -> Region -> Region
 mergeRegions r1 r2 =
     { start = r1.start
     , end = r2.end
+    }
+
+
+dummyRegion : Region
+dummyRegion =
+    { start =
+        { row = 0
+        , col = 0
+        }
+    , end =
+        { row = 0
+        , col = 0
+        }
     }

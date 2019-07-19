@@ -17,7 +17,7 @@ import AST.Typed as Typed exposing (Expr_(..))
 typed : Typed.Expr_ -> Typed.LocatedExpr
 typed expr_ =
     Located.located
-        dummyRegion
+        Located.dummyRegion
         ( expr_, Int )
 
 
@@ -26,7 +26,7 @@ typed expr_ =
 located : expr -> Located expr
 located expr =
     Located.located
-        dummyRegion
+        Located.dummyRegion
         expr
 
 
@@ -52,16 +52,3 @@ typedString str =
         ( Literal (Literal.String str)
         , String
         )
-
-
-dummyRegion : Located.Region
-dummyRegion =
-    { start =
-        { row = 0
-        , col = 0
-        }
-    , end =
-        { row = 0
-        , col = 0
-        }
-    }

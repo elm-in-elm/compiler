@@ -2,6 +2,7 @@ module AST.Canonical exposing
     ( Expr(..)
     , LocatedExpr
     , ProjectFields
+    , fromUnwrapped
     , lambda
     , unwrap
     , var
@@ -128,3 +129,70 @@ unwrap expr =
                 (unwrap e1)
                 (unwrap e2)
                 (unwrap e3)
+
+
+{-| Adds **dummy** locations to the Unwrapped.Expr.
+-}
+fromUnwrapped : Unwrapped.Expr -> LocatedExpr
+fromUnwrapped expr =
+    Located.located Located.dummyRegion <|
+        case expr of
+            Unwrapped.Literal literal ->
+                Literal literal
+
+            Unwrapped.Var var_ ->
+                Var var_
+
+            Unwrapped.Argument name ->
+                Argument name
+
+            Unwrapped.Plus e1 e2 ->
+                Plus
+                    (fromUnwrapped e1)
+                    (fromUnwrapped e2)
+
+            Unwrapped.Lambda { argument, body } ->
+                Lambda
+                    { argument = argument
+                    , body = fromUnwrapped body
+                    }
+
+            Unwrapped.Call { fn, argument } ->
+                Call
+                    { fn = fromUnwrapped fn
+                    , argument = fromUnwrapped argument
+                    }
+
+            Unwrapped.If { test, then_, else_ } ->
+                If
+                    { test = fromUnwrapped test
+                    , then_ = fromUnwrapped then_
+                    , else_ = fromUnwrapped else_
+                    }
+
+            Unwrapped.Let { bindings, body } ->
+                Let
+                    { bindings =
+                        Dict.Any.map
+                            (always (Common.mapBinding fromUnwrapped))
+                            bindings
+                    , body = fromUnwrapped body
+                    }
+
+            Unwrapped.List list ->
+                List
+                    (List.map fromUnwrapped list)
+
+            Unwrapped.Unit ->
+                Unit
+
+            Unwrapped.Tuple e1 e2 ->
+                Tuple
+                    (fromUnwrapped e1)
+                    (fromUnwrapped e2)
+
+            Unwrapped.Tuple3 e1 e2 e3 ->
+                Tuple3
+                    (fromUnwrapped e1)
+                    (fromUnwrapped e2)
+                    (fromUnwrapped e3)
