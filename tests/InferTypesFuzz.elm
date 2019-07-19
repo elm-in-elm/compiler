@@ -15,6 +15,7 @@ import Fuzz exposing (Fuzzer)
 import Random exposing (Generator)
 import Random.Extra as Random
 import Shrink exposing (Shrinker)
+import Shrink.Extra as Shrink
 import Stage.InferTypes
 import Test exposing (Test, describe, fuzz, test)
 import TestHelpers exposing (located)
@@ -331,10 +332,10 @@ The `LazyList a` type used by shrinkers is not exposed outside `elm-explorations
 
 -}
 shrinkPlus left right =
-    ([ lazyMap2 Unwrapped.Plus
+    ([ Shrink.map2 Unwrapped.Plus
         (shrinkExpr left)
         (singleton right)
-     , lazyMap2 Unwrapped.Plus
+     , Shrink.map2 Unwrapped.Plus
         (singleton left)
         (shrinkExpr right)
      ]
@@ -401,7 +402,7 @@ shrinkNonEmptyList : Shrinker a -> Shrinker (List a)
 shrinkNonEmptyList shrinkElement list =
     case list of
         first :: rest ->
-            lazyMap2 (::)
+            Shrink.map2 (::)
                 (shrinkElement first)
                 (Shrink.list shrinkElement rest)
 
@@ -414,21 +415,6 @@ shrinkTo shrunk _ =
     True
         |> Shrink.bool
         |> Shrink.map (always shrunk)
-
-
-{-| Combines two lazy lists using a combining function.
-
----
-
-We cannot write a type annotation here.
-The `LazyList a` type used by shrinkers is not exposed outside `elm-explorations/test`.
-
-    lazyMap2 : (a -> b -> c) -> LazyList a -> LazyList b -> LazyList c
-
--}
-lazyMap2 f la lb =
-    Shrink.map f la
-        |> Shrink.andMap lb
 
 
 {-| Produces a single element lazy list.
