@@ -168,14 +168,7 @@ unwrap expr =
 
         Let { bindings, body } ->
             Unwrapped.Let
-                { bindings =
-                    List.map
-                        (\binding ->
-                            { name = binding.name
-                            , body = unwrap binding.body
-                            }
-                        )
-                        bindings
+                { bindings = List.map (Common.mapBinding unwrap) bindings
                 , body = unwrap body
                 }
 
