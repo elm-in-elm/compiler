@@ -104,6 +104,8 @@ exprGenerator targetType =
 
         Type.List elementType ->
             if Type.isParametric elementType then
+                -- Supporting parametric types might have weird interplay with recursive generation.
+                -- We are leaving it off, at least for now.
                 cannotFuzz "Only lists with non-parametric element types are supported."
 
             else
