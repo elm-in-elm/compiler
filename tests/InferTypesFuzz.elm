@@ -1,6 +1,7 @@
 module InferTypesFuzz exposing (typeInference)
 
 import AST.Canonical as Canonical
+import AST.Canonical.Unwrapped as Unwrapped
 import AST.Common.Literal as Literal exposing (Literal(..))
 import AST.Common.Located as Located
 import AST.Common.Type as Type exposing (Type)
@@ -26,7 +27,9 @@ typeInference =
         fuzzExpr typeWanted =
             fuzz (exprOfType typeWanted) (dumpType typeWanted) <|
                 \input ->
-                    Stage.InferTypes.inferExpr input
+                    input
+                        |> Canonical.fromUnwrapped
+                        |> Stage.InferTypes.inferExpr
                         |> Result.map Located.unwrap
                         |> Result.map Tuple.second
                         |> Expect.equal (Ok typeWanted)
@@ -59,14 +62,14 @@ typeInference =
         ]
 
 
-exprOfType : Type -> Fuzzer Canonical.LocatedExpr
+exprOfType : Type -> Fuzzer Unwrapped.Expr
 exprOfType targetType =
     Fuzz.custom
         (exprOfTypeWithDepth 3 targetType)
         exprShrinker
 
 
-exprOfTypeWithDepth : Int -> Type -> Generator Canonical.LocatedExpr
+exprOfTypeWithDepth : Int -> Type -> Generator Unwrapped.Expr
 exprOfTypeWithDepth depthLeft targetType =
     let
         pickAffordable ( cost, generator ) =
@@ -83,7 +86,7 @@ exprOfTypeWithDepth depthLeft targetType =
         |> Random.choices (basicExprOfType targetType)
 
 
-basicExprOfType : Type -> Generator Canonical.LocatedExpr
+basicExprOfType : Type -> Generator Unwrapped.Expr
 basicExprOfType targetType =
     let
         cannotFuzz details =
@@ -138,16 +141,15 @@ basicExprOfType targetType =
             cannotFuzz ""
 
 
-ifExpr : Int -> Type -> Generator Canonical.LocatedExpr
+ifExpr : Int -> Type -> Generator Unwrapped.Expr
 ifExpr depth targetType =
     let
         combine test then_ else_ =
-            located <|
-                Canonical.If
-                    { test = test
-                    , then_ = then_
-                    , else_ = else_
-                    }
+            Unwrapped.If
+                { test = test
+                , then_ = then_
+                , else_ = else_
+                }
 
         subexpr =
             exprOfTypeWithDepth (depth - 1)
@@ -158,33 +160,33 @@ ifExpr depth targetType =
         (subexpr targetType)
 
 
-intExpr : Generator Canonical.LocatedExpr
+intExpr : Generator Unwrapped.Expr
 intExpr =
     Random.int Random.minInt Random.maxInt
         |> Random.map (literal Int)
 
 
-floatExpr : Generator Canonical.LocatedExpr
+floatExpr : Generator Unwrapped.Expr
 floatExpr =
     -- Does not produce NaNs, but that should not be an issue for us.
     Random.float (-1.0 / 0.0) (1.0 / 0.0)
         |> Random.map (literal Float)
 
 
-boolExpr : Generator Canonical.LocatedExpr
+boolExpr : Generator Unwrapped.Expr
 boolExpr =
     Random.bool
         |> Random.map (literal Bool)
 
 
-charExpr : Generator Canonical.LocatedExpr
+charExpr : Generator Unwrapped.Expr
 charExpr =
     Random.int 0 0x0010FFFF
         |> Random.map Char.fromCode
         |> Random.map (literal Char)
 
 
-stringExpr : Generator Canonical.LocatedExpr
+stringExpr : Generator Unwrapped.Expr
 stringExpr =
     Random.int 0 0x0010FFFF
         |> Random.list 10
@@ -193,39 +195,35 @@ stringExpr =
         |> Random.map (literal String)
 
 
-unitExpr : Generator Canonical.LocatedExpr
+unitExpr : Generator Unwrapped.Expr
 unitExpr =
-    Canonical.Unit
-        |> located
+    Unwrapped.Unit
         |> Random.constant
 
 
-literal : (a -> Literal) -> a -> Canonical.LocatedExpr
+literal : (a -> Literal) -> a -> Unwrapped.Expr
 literal wrap value =
     value
         |> wrap
-        |> Canonical.Literal
-        |> located
+        |> Unwrapped.Literal
 
 
-listExpr : Int -> Type -> Generator Canonical.LocatedExpr
+listExpr : Int -> Type -> Generator Unwrapped.Expr
 listExpr depth elementType =
     elementType
         |> exprOfTypeWithDepth depth
         |> Random.list 10
-        |> Random.map Canonical.List
-        |> Random.map located
+        |> Random.map Unwrapped.List
 
 
-intToIntFunctionExpr : Generator Canonical.LocatedExpr
+intToIntFunctionExpr : Generator Unwrapped.Expr
 intToIntFunctionExpr =
     let
         combine argument intPart =
-            Canonical.lambda argument <|
-                located <|
-                    Canonical.Plus
-                        (located <| Canonical.Argument argument)
-                        intPart
+            lambda argument <|
+                Unwrapped.Plus
+                    (Unwrapped.Argument argument)
+                    intPart
 
         intSubExpr =
             Type.Int |> exprOfTypeWithDepth 0
@@ -234,7 +232,6 @@ intToIntFunctionExpr =
         -- TODO: Later we will need something better to avoid shadowing.
         randomVarName
         intSubExpr
-        |> Random.map located
 
 
 randomVarName : Generator VarName
@@ -275,33 +272,31 @@ dumpType type_ =
 
 {-| An expression shrinker that preserves the inferred type.
 -}
-exprShrinker : Shrinker Canonical.LocatedExpr
+exprShrinker : Shrinker Unwrapped.Expr
 exprShrinker expr =
-    case Located.unwrap expr of
-        Canonical.Literal lit ->
+    case expr of
+        Unwrapped.Literal lit ->
             lit
                 |> shrinkLiteral
-                |> Shrink.map Canonical.Literal
-                |> Shrink.map located
+                |> Shrink.map Unwrapped.Literal
 
-        Canonical.Plus left right ->
+        Unwrapped.Plus left right ->
             expr
                 |> shrinkPlus left right
 
-        Canonical.List elements ->
+        Unwrapped.List elements ->
             elements
                 |> shrinkNonEmptyList exprShrinker
-                |> Shrink.map Canonical.List
-                |> Shrink.map located
+                |> Shrink.map Unwrapped.List
 
-        Canonical.If { then_, else_ } ->
+        Unwrapped.If { then_, else_ } ->
             -- TODO: Shrink the test once we get more interesting Bool expressions.
             [ then_, else_ ]
                 |> List.map shrinkTo
                 |> concatShrink
                 |> shrink expr
 
-        Canonical.Lambda { argument, body } ->
+        Unwrapped.Lambda { argument, body } ->
             expr
                 |> shrinkLambda argument body
 
@@ -328,20 +323,18 @@ shrinkLiteral lit =
             s |> Shrink.string |> Shrink.map String
 
 
-shrinkPlus : Canonical.LocatedExpr -> Canonical.LocatedExpr -> Shrinker Canonical.LocatedExpr
+shrinkPlus : Unwrapped.Expr -> Unwrapped.Expr -> Shrinker Unwrapped.Expr
 shrinkPlus left right _ =
-    lazyMap2 Canonical.Plus
+    lazyMap2 Unwrapped.Plus
         (exprShrinker left)
         (exprShrinker right)
-        |> Shrink.map located
 
 
-shrinkLambda : VarName -> Canonical.LocatedExpr -> Shrinker Canonical.LocatedExpr
+shrinkLambda : VarName -> Unwrapped.Expr -> Shrinker Unwrapped.Expr
 shrinkLambda argument body _ =
     body
         |> exprShrinker
-        |> Shrink.map (Canonical.lambda argument)
-        |> Shrink.map located
+        |> Shrink.map (lambda argument)
 
 
 shrinkNonEmptyList : Shrinker a -> Shrinker (List a)
@@ -413,3 +406,11 @@ concatShrink : List (Shrinker a) -> Shrinker a
 concatShrink shrinkers =
     shrinkers
         |> List.foldl Shrink.merge Shrink.noShrink
+
+
+lambda : VarName -> Unwrapped.Expr -> Unwrapped.Expr
+lambda argument body =
+    Unwrapped.Lambda
+        { argument = argument
+        , body = body
+        }
