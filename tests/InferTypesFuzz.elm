@@ -62,12 +62,29 @@ typeInference =
 exprOfType : Type -> Fuzzer Canonical.LocatedExpr
 exprOfType targetType =
     Fuzz.custom
-        (exprGenerator targetType)
+        (exprOfTypeWithDepth 3 targetType)
         exprShrinker
 
 
-exprGenerator : Type -> Generator Canonical.LocatedExpr
-exprGenerator targetType =
+exprOfTypeWithDepth : Int -> Type -> Generator Canonical.LocatedExpr
+exprOfTypeWithDepth depthLeft targetType =
+    let
+        pickAffordable ( cost, generator ) =
+            if cost <= depthLeft then
+                targetType
+                    |> generator depthLeft
+                    |> Just
+
+            else
+                Nothing
+    in
+    [ ( 1, ifExpr ) ]
+        |> List.filterMap pickAffordable
+        |> Random.choices (basicExprOfType targetType)
+
+
+basicExprOfType : Type -> Generator Canonical.LocatedExpr
+basicExprOfType targetType =
     let
         cannotFuzz details =
             let
@@ -109,7 +126,7 @@ exprGenerator targetType =
                 cannotFuzz "Only lists with non-parametric element types are supported."
 
             else
-                listExpr elementType
+                listExpr 0 elementType
 
         Type.Function Type.Int Type.Int ->
             intToIntFunctionExpr
@@ -119,6 +136,26 @@ exprGenerator targetType =
 
         _ ->
             cannotFuzz ""
+
+
+ifExpr : Int -> Type -> Generator Canonical.LocatedExpr
+ifExpr depth targetType =
+    let
+        combine test then_ else_ =
+            located <|
+                Canonical.If
+                    { test = test
+                    , then_ = then_
+                    , else_ = else_
+                    }
+
+        subexpr =
+            exprOfTypeWithDepth (depth - 1)
+    in
+    Random.map3 combine
+        (subexpr Type.Bool)
+        (subexpr targetType)
+        (subexpr targetType)
 
 
 intExpr : Generator Canonical.LocatedExpr
@@ -171,10 +208,10 @@ literal wrap value =
         |> located
 
 
-listExpr : Type -> Generator Canonical.LocatedExpr
-listExpr elementType =
+listExpr : Int -> Type -> Generator Canonical.LocatedExpr
+listExpr depth elementType =
     elementType
-        |> exprGenerator
+        |> exprOfTypeWithDepth depth
         |> Random.list 10
         |> Random.map Canonical.List
         |> Random.map located
@@ -191,7 +228,7 @@ intToIntFunctionExpr =
                         intPart
 
         intSubExpr =
-            exprGenerator Type.Int
+            Type.Int |> exprOfTypeWithDepth 0
     in
     Random.map2 combine
         -- TODO: Later we will need something better to avoid shadowing.
