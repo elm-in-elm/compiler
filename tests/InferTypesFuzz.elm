@@ -281,24 +281,21 @@ exprShrinker expr =
                 |> Shrink.map Unwrapped.Literal
 
         Unwrapped.Plus left right ->
-            expr
-                |> shrinkPlus left right
+            shrinkPlus left right
 
         Unwrapped.List elements ->
+            -- We are not using the default list shrinker here.
+            -- It can turn a non-empty list empty.
+            -- But the lists `[1]` and `[]` will have different types inferred.
             elements
                 |> shrinkNonEmptyList exprShrinker
                 |> Shrink.map Unwrapped.List
 
-        Unwrapped.If { then_, else_ } ->
-            -- TODO: Shrink the test once we get more interesting Bool expressions.
-            [ then_, else_ ]
-                |> List.map shrinkTo
-                |> concatShrink
-                |> shrink expr
+        Unwrapped.If { test, then_, else_ } ->
+            shrinkIf test then_ else_
 
         Unwrapped.Lambda { argument, body } ->
-            expr
-                |> shrinkLambda argument body
+            shrinkLambda argument body
 
         _ ->
             Shrink.noShrink expr
@@ -323,20 +320,83 @@ shrinkLiteral lit =
             s |> Shrink.string |> Shrink.map String
 
 
-shrinkPlus : Unwrapped.Expr -> Unwrapped.Expr -> Shrinker Unwrapped.Expr
-shrinkPlus left right _ =
-    lazyMap2 Unwrapped.Plus
+{-| Shrinks a plus expression.
+
+---
+
+We cannot write a type annotation here.
+The `LazyList a` type used by shrinkers is not exposed outside `elm-explorations/test`.
+
+    shrinkPlus : Unwrapped.Expr -> Unwrapped.Expr -> LazyList Unwrapped.Expr
+
+-}
+shrinkPlus left right =
+    ([ lazyMap2 Unwrapped.Plus
         (exprShrinker left)
+        (singleton right)
+     , lazyMap2 Unwrapped.Plus
+        (singleton left)
         (exprShrinker right)
+     ]
+        |> List.map always
+        |> concatShrink
+    )
+        -- The value built up to this point is a shrinker.
+        -- We need to call it with an Unwrapped.Expr to get a lazy list.
+        left
 
 
-shrinkLambda : VarName -> Unwrapped.Expr -> Shrinker Unwrapped.Expr
-shrinkLambda argument body _ =
+
+-- shrinkIf : Unwrapped.Expr -> Unwrapped.Expr -> Unwrapped.Expr ->
+
+
+{-| We cannot write a type annotation here.
+The `LazyList a` type used by shrinkers is not exposed outside `elm-explorations/test`.
+
+    shrinkIf : Unwrapped.Expr -> Unwrapped.Expr -> Unwrapped.Expr -> LazyList Unwrapped.Expr
+
+-}
+shrinkIf test then_ else_ =
+    let
+        withTest shrunkTest =
+            Unwrapped.If
+                { test = shrunkTest
+                , then_ = then_
+                , else_ = else_
+                }
+    in
+    ([ singleton then_
+     , singleton else_
+     , test |> exprShrinker |> Shrink.map withTest
+     ]
+        |> List.map always
+        |> concatShrink
+    )
+        -- The value built up to this point is a shrinker.
+        -- We need to call it with an Unwrapped.Expr to get a lazy list.
+        test
+
+
+{-| We cannot write a type annotation here.
+The `LazyList a` type used by shrinkers is not exposed outside `elm-explorations/test`.
+
+    shrinkLambda : VarName -> Unwrapped.Expr -> LazyList Unwrapped.Expr
+
+-}
+shrinkLambda argument body =
     body
         |> exprShrinker
         |> Shrink.map (lambda argument)
 
 
+{-| Given a shrinker of elements, produces a shrinker of lists.
+
+This is different from `Shrink.list` in that it keeps non-empty lists non-empty.
+
+So if you try shriking `[]` you will get nothing.
+And if you try shrinking `[1]` you might get `[0]`, but you will not get `[]`.
+
+-}
 shrinkNonEmptyList : Shrinker a -> Shrinker (List a)
 shrinkNonEmptyList shrinkElement list =
     case list of
@@ -356,37 +416,6 @@ shrinkTo shrunk _ =
         |> Shrink.map (always shrunk)
 
 
-{-| Calls a shrinker with the supplied argument.
-
-Sometimes you build up a shrinker based on the value to shrink.
-Then you need to invoke it.
-Without `shrink` that is
-
-    (value
-        |> someFunc
-        |> someOtherFunc
-    )
-        value
-
-With `shrink` it becomes
-
-    value
-        |> someFunc
-        |> someOtherFunc
-        |> shrink value
-
----
-
-We cannot write a type annotation here.
-The `LazyList a` type used by shrinkers is not exposed outside `elm-explorations/test`.
-
-    shrink : a -> Shrinker a -> Shrinker a
-
--}
-shrink expr shrinker =
-    shrinker expr
-
-
 {-| Combines two lazy lists using a combining function.
 
 ---
@@ -400,6 +429,20 @@ The `LazyList a` type used by shrinkers is not exposed outside `elm-explorations
 lazyMap2 f la lb =
     Shrink.map f la
         |> Shrink.andMap lb
+
+
+{-| Produces a single element lazy list.
+
+---
+
+We cannot write a type annotation here.
+The `LazyList a` type used by shrinkers is not exposed outside `elm-explorations/test`.
+
+    singleton : a -> LazyList a
+
+-}
+singleton x =
+    x |> shrinkTo x
 
 
 concatShrink : List (Shrinker a) -> Shrinker a
