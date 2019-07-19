@@ -24,7 +24,7 @@ typeInference =
     let
         fuzzExpr : Type -> Test
         fuzzExpr typeWanted =
-            fuzz (exprTyped typeWanted) (dumpType typeWanted) <|
+            fuzz (exprOfType typeWanted) (dumpType typeWanted) <|
                 \input ->
                     Stage.InferTypes.inferExpr input
                         |> Result.map Located.unwrap
@@ -59,8 +59,8 @@ typeInference =
         ]
 
 
-exprTyped : Type -> Fuzzer Canonical.LocatedExpr
-exprTyped targetType =
+exprOfType : Type -> Fuzzer Canonical.LocatedExpr
+exprOfType targetType =
     Fuzz.custom
         (exprGenerator targetType)
         exprShrinker
@@ -267,7 +267,7 @@ exprShrinker expr =
                 |> shrinkLambda argument body
 
         _ ->
-            expr |> Shrink.noShrink
+            Shrink.noShrink expr
 
 
 shrinkLiteral : Shrinker Literal
