@@ -11,7 +11,6 @@ import Dict.Any
 import Error exposing (TypeError(..))
 import Expect exposing (Expectation)
 import Fuzz exposing (Fuzzer)
-import InferTypesFuzz as Fuzz
 import Stage.InferTypes
 import Test exposing (Test, describe, fuzz, test)
 import TestHelpers exposing (located)
@@ -33,21 +32,6 @@ typeInference =
                         |> Stage.InferTypes.inferExpr
                         |> Result.map Typed.getType
                         |> Expect.equal output
-
-        fuzzExpr : Type -> Test
-        fuzzExpr typeWanted =
-            fuzz (Fuzz.exprTyped typeWanted) (dumpType typeWanted) <|
-                \input ->
-                    Stage.InferTypes.inferExpr input
-                        |> Result.map Located.unwrap
-                        |> Result.map Tuple.second
-                        |> Expect.equal (Ok typeWanted)
-
-        fuzzExpressions : String -> List Type -> Test
-        fuzzExpressions description types =
-            types
-                |> List.map fuzzExpr
-                |> describe description
     in
     describe "Stage.InferType"
         [ runSection "list"
@@ -126,24 +110,6 @@ typeInference =
                     (located (Canonical.Literal (Literal.Char 'h')))
               , Ok (Tuple3 Bool Int Char)
               )
-            ]
-        , describe "fuzz exprInfer"
-            [ fuzzExpressions "literals"
-                [ Type.Int
-                , Type.Float
-                , Type.Bool
-                , Type.Char
-                , Type.String
-                , Type.Unit
-                ]
-            , fuzzExpressions "lists"
-                [ Type.List Type.Unit
-                , Type.List Type.Int
-                , Type.List (Type.List Type.String)
-                ]
-            , fuzzExpressions "functions"
-                [ Type.Function Type.Int Type.Int
-                ]
             ]
         ]
 

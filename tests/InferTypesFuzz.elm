@@ -1,15 +1,62 @@
-module InferTypesFuzz exposing (exprTyped)
+module InferTypesFuzz exposing (typeInference)
 
 import AST.Canonical as Canonical
-import AST.Common.Literal exposing (Literal(..))
+import AST.Common.Literal as Literal exposing (Literal(..))
 import AST.Common.Located as Located
 import AST.Common.Type as Type exposing (Type)
-import Common.Types exposing (VarName(..))
+import AST.Typed as Typed
+import Common
+import Common.Types as Types exposing (VarName(..))
+import Dict.Any
+import Error exposing (TypeError(..))
+import Expect exposing (Expectation)
 import Fuzz exposing (Fuzzer)
 import Random exposing (Generator)
 import Random.Extra as Random
 import Shrink exposing (Shrinker)
+import Stage.InferTypes
+import Test exposing (Test, describe, fuzz, test)
 import TestHelpers exposing (located)
+
+
+typeInference : Test
+typeInference =
+    let
+        fuzzExpr : Type -> Test
+        fuzzExpr typeWanted =
+            fuzz (exprTyped typeWanted) (dumpType typeWanted) <|
+                \input ->
+                    Stage.InferTypes.inferExpr input
+                        |> Result.map Located.unwrap
+                        |> Result.map Tuple.second
+                        |> Expect.equal (Ok typeWanted)
+
+        fuzzExpressions : String -> List Type -> Test
+        fuzzExpressions description types =
+            types
+                |> List.map fuzzExpr
+                |> describe description
+    in
+    describe "Stage.InferType"
+        [ describe "fuzz exprInfer"
+            [ fuzzExpressions "literals"
+                [ Type.Int
+                , Type.Float
+                , Type.Bool
+                , Type.Char
+                , Type.String
+                , Type.Unit
+                ]
+            , fuzzExpressions "lists"
+                [ Type.List Type.Unit
+                , Type.List Type.Int
+                , Type.List (Type.List Type.String)
+                ]
+            , fuzzExpressions "functions"
+                [ Type.Function Type.Int Type.Int
+                ]
+            ]
+        ]
 
 
 exprTyped : Type -> Fuzzer Canonical.LocatedExpr
