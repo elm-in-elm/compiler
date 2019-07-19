@@ -18,7 +18,7 @@ import Shrink exposing (Shrinker)
 import Shrink.Extra as Shrink
 import Stage.InferTypes
 import Test exposing (Test, describe, fuzz, test)
-import TestHelpers exposing (located)
+import TestHelpers exposing (dumpType)
 
 
 typeInference : Test
@@ -262,13 +262,6 @@ randomVarName =
     Random.map2 (::) firstChar rest
         |> Random.map String.fromList
         |> Random.map VarName
-
-
-dumpType : Type -> String
-dumpType type_ =
-    type_
-        |> Type.toString Type.emptyState
-        |> Tuple.first
 
 
 {-| An expression shrinker that preserves the inferred type.

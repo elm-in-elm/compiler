@@ -13,7 +13,7 @@ import Expect exposing (Expectation)
 import Fuzz exposing (Fuzzer)
 import Stage.InferTypes
 import Test exposing (Test, describe, fuzz, test)
-import TestHelpers exposing (located)
+import TestHelpers exposing (dumpType, located)
 
 
 typeInference : Test
@@ -284,10 +284,3 @@ isParametric =
             , ( Tuple3 String (Function (Var 0) Int) Unit, True )
             , ( Tuple3 Bool Unit (Tuple (Var 0) Int), True )
             ]
-
-
-dumpType : Type -> String
-dumpType type_ =
-    type_
-        |> Type.toString Type.emptyState
-        |> Tuple.first
