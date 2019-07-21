@@ -33,18 +33,17 @@ typeInference =
                         |> Canonical.fromUnwrapped
                         |> Stage.InferTypes.inferExpr
                         |> Result.map Typed.getType
-                        |> Result.map dumpType
                         |> Expect.equal output
     in
     describe "Stage.InferType"
         [ runSection "list"
             [ ( "empty list"
               , CanonicalU.List []
-              , Ok "List a"
+              , Ok (List (Var 0))
               )
             , ( "one item"
               , CanonicalU.List [ CanonicalU.Literal (Literal.Bool True) ]
-              , Ok "List Bool"
+              , Ok (List Bool)
               )
             , ( "more items"
               , CanonicalU.List
@@ -52,7 +51,7 @@ typeInference =
                     , CanonicalU.Literal (Literal.Int 2)
                     , CanonicalU.Literal (Literal.Int 3)
                     ]
-              , Ok "List Int"
+              , Ok (List Int)
               )
             , ( "different types"
               , CanonicalU.List
@@ -74,7 +73,7 @@ typeInference =
                     [ CanonicalU.List [ CanonicalU.Literal (Literal.Int 1) ]
                     , CanonicalU.List [ CanonicalU.Literal (Literal.Int 2) ]
                     ]
-              , Ok "List (List Int)"
+              , Ok (List (List Int))
               )
             , ( "List of List of different types"
               , CanonicalU.List
@@ -89,13 +88,13 @@ typeInference =
               , CanonicalU.Tuple
                     (CanonicalU.Literal (Literal.String "Hello"))
                     (CanonicalU.Literal (Literal.String "Elm"))
-              , Ok "( String, String )"
+              , Ok (Tuple String String)
               )
             , ( "items of different types"
               , CanonicalU.Tuple
                     (CanonicalU.Literal (Literal.Bool True))
                     (CanonicalU.Literal (Literal.Int 1))
-              , Ok "( Bool, Int )"
+              , Ok (Tuple Bool Int)
               )
             ]
         , runSection "tuple3"
@@ -104,14 +103,14 @@ typeInference =
                     (CanonicalU.Literal (Literal.String "FP"))
                     (CanonicalU.Literal (Literal.String "is"))
                     (CanonicalU.Literal (Literal.String "good"))
-              , Ok "( String, String, String )"
+              , Ok (Tuple3 String String String)
               )
             , ( "different types"
               , CanonicalU.Tuple3
                     (CanonicalU.Literal (Literal.Bool True))
                     (CanonicalU.Literal (Literal.Int 1))
                     (CanonicalU.Literal (Literal.Char 'h'))
-              , Ok "( Bool, Int, Char )"
+              , Ok (Tuple3 Bool Int Char)
               )
             ]
         ]
