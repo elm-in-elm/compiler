@@ -77,6 +77,9 @@ exprOfType targetType =
 exprOfTypeWithDepth : Int -> Type -> Generator CanonicalU.Expr
 exprOfTypeWithDepth depthLeft targetType =
     let
+        basicExpr =
+            targetType |> basicExprOfType depthLeft
+
         pickAffordable ( cost, generator ) =
             if cost <= depthLeft then
                 targetType
@@ -86,13 +89,14 @@ exprOfTypeWithDepth depthLeft targetType =
             else
                 Nothing
     in
+    -- TODO: When generating Ints we should be able to use Plus here.
     [ ( 1, ifExpr ) ]
         |> List.filterMap pickAffordable
-        |> Random.choices (basicExprOfType targetType)
+        |> Random.choices basicExpr
 
 
-basicExprOfType : Type -> Generator CanonicalU.Expr
-basicExprOfType targetType =
+basicExprOfType : Int -> Type -> Generator CanonicalU.Expr
+basicExprOfType depthLeft targetType =
     let
         cannotFuzz details =
             let
@@ -134,7 +138,7 @@ basicExprOfType targetType =
                 cannotFuzz "Only lists with non-parametric element types are supported."
 
             else
-                listExpr 0 elementType
+                elementType |> listExpr depthLeft
 
         Type.Function Type.Int Type.Int ->
             intToIntFunctionExpr
@@ -143,7 +147,7 @@ basicExprOfType targetType =
             cannotFuzz "Only `Int -> Int` functions are supported."
 
         Type.Tuple firstType secondType ->
-            tupleExpr firstType secondType
+            ( firstType, secondType ) |> tupleExpr depthLeft
 
         _ ->
             cannotFuzz ""
@@ -217,9 +221,9 @@ literal wrap value =
 
 
 listExpr : Int -> Type -> Generator CanonicalU.Expr
-listExpr depth elementType =
+listExpr depthLeft elementType =
     elementType
-        |> exprOfTypeWithDepth depth
+        |> exprOfTypeWithDepth depthLeft
         |> Random.list 10
         |> Random.map CanonicalU.List
 
@@ -242,11 +246,11 @@ intToIntFunctionExpr =
         intSubExpr
 
 
-tupleExpr : Type -> Type -> Generator CanonicalU.Expr
-tupleExpr firstType secondType =
+tupleExpr : Int -> ( Type, Type ) -> Generator CanonicalU.Expr
+tupleExpr depthLeft ( firstType, secondType ) =
     Random.map2 CanonicalU.Tuple
-        (firstType |> basicExprOfType)
-        (secondType |> basicExprOfType)
+        (firstType |> exprOfTypeWithDepth depthLeft)
+        (secondType |> exprOfTypeWithDepth depthLeft)
 
 
 randomVarName : Generator VarName
