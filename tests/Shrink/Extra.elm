@@ -1,4 +1,4 @@
-module Shrink.Extra exposing (listWithoutEmptying, map2, mergeMany, singleton)
+module Shrink.Extra exposing (listWithoutEmptying, map2, map3, mergeMany, singleton)
 
 import Shrink exposing (Shrinker)
 
@@ -10,12 +10,28 @@ import Shrink exposing (Shrinker)
 We cannot write a type annotation here.
 The `LazyList a` type used by shrinkers is not exposed outside `elm-explorations/test`.
 
-    lazyMap2 : (a -> b -> c) -> LazyList a -> LazyList b -> LazyList c
+    map2 : (a -> b -> c) -> LazyList a -> LazyList b -> LazyList c
 
 -}
 map2 f la lb =
     Shrink.map f la
         |> Shrink.andMap lb
+
+
+{-| Combines two lazy lists using a combining function.
+
+---
+
+We cannot write a type annotation here.
+The `LazyList a` type used by shrinkers is not exposed outside `elm-explorations/test`.
+
+    map3 : (a -> b -> c -> d) -> LazyList a -> LazyList b -> LazyList c -> LazyList d
+
+-}
+map3 f la lb lc =
+    Shrink.map f la
+        |> Shrink.andMap lb
+        |> Shrink.andMap lc
 
 
 {-| Produces a single element lazy list.
