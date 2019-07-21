@@ -62,6 +62,8 @@ typeInference =
             , fuzzExpressions "fuzz tuples"
                 [ Type.Tuple Type.Int Type.String
                 , Type.Tuple Type.Bool Type.Char
+                , Type.Tuple3 Type.Int Type.String Type.Bool
+                , Type.Tuple3 Type.Unit Type.Char Type.Float
                 ]
             ]
         ]
@@ -148,6 +150,9 @@ basicExprOfType depthLeft targetType =
 
         Type.Tuple firstType secondType ->
             ( firstType, secondType ) |> tupleExpr depthLeft
+
+        Type.Tuple3 firstType secondType thirdType ->
+            ( firstType, secondType, thirdType ) |> tuple3Expr depthLeft
 
         _ ->
             cannotFuzz ""
@@ -253,6 +258,14 @@ tupleExpr depthLeft ( firstType, secondType ) =
         (secondType |> exprOfTypeWithDepth depthLeft)
 
 
+tuple3Expr : Int -> ( Type, Type, Type ) -> Generator CanonicalU.Expr
+tuple3Expr depthLeft ( firstType, secondType, thirdType ) =
+    Random.map3 CanonicalU.Tuple3
+        (firstType |> exprOfTypeWithDepth depthLeft)
+        (secondType |> exprOfTypeWithDepth depthLeft)
+        (thirdType |> exprOfTypeWithDepth depthLeft)
+
+
 randomVarName : Generator VarName
 randomVarName =
     let
@@ -286,7 +299,7 @@ randomVarName =
 -}
 shrinkExpr : Shrinker CanonicalU.Expr
 shrinkExpr expr =
-    case expr of
+    case expr |> Debug.log "\nshrinking... " of
         CanonicalU.Literal lit ->
             lit
                 |> shrinkLiteral
@@ -308,6 +321,12 @@ shrinkExpr expr =
 
         CanonicalU.Lambda { argument, body } ->
             shrinkLambda argument body
+
+        CanonicalU.Tuple first second ->
+            shrinkTuple first second
+
+        CanonicalU.Tuple3 first second third ->
+            shrinkTuple3 first second third
 
         _ ->
             Shrink.noShrink expr
@@ -404,12 +423,40 @@ The `LazyList a` type used by shrinkers is not exposed outside `elm-explorations
 
 -}
 shrinkTuple first second =
-    ([ first
-        |> shrinkExpr
-        |> Shrink.map (\shrunk -> CanonicalU.Tuple shrunk second)
-     , second
-        |> shrinkExpr
-        |> Shrink.map (\shrunk -> CanonicalU.Tuple first shrunk)
+    ([ Shrink.map2 CanonicalU.Tuple
+        (shrinkExpr first)
+        (Shrink.singleton second)
+     , Shrink.map2 CanonicalU.Tuple
+        (Shrink.singleton first)
+        (shrinkExpr second)
+     ]
+        |> List.map always
+        |> Shrink.mergeMany
+    )
+        -- The value built up to this point is a shrinker.
+        -- We need to call it with an CanonicalU.Expr to get a lazy list.
+        first
+
+
+{-| We cannot write a type annotation here.
+The `LazyList a` type used by shrinkers is not exposed outside `elm-explorations/test`.
+
+    shrinkTuple3 : CanonicalU.Expr -> CanonicalU.Expr -> CanonicalU.Expr -> LazyList CanonicalU.Expr
+
+-}
+shrinkTuple3 first second third =
+    ([ Shrink.map3 CanonicalU.Tuple3
+        (shrinkExpr first)
+        (Shrink.singleton second)
+        (Shrink.singleton third)
+     , Shrink.map3 CanonicalU.Tuple3
+        (Shrink.singleton first)
+        (shrinkExpr second)
+        (Shrink.singleton third)
+     , Shrink.map3 CanonicalU.Tuple3
+        (Shrink.singleton first)
+        (Shrink.singleton second)
+        (shrinkExpr third)
      ]
         |> List.map always
         |> Shrink.mergeMany
