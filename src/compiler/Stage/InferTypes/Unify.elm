@@ -42,6 +42,17 @@ unify t1 t2 substitutionMap =
             ( Type.List list1, Type.List list2 ) ->
                 unify list1 list2 substitutionMap
 
+            ( Type.Tuple t1e1 t1e2, Type.Tuple t2e1 t2e2 ) ->
+                substitutionMap
+                    |> unify t1e1 t2e1
+                    |> Result.andThen (unify t1e2 t2e2)
+
+            ( Type.Tuple3 t1e1 t1e2 t1e3, Type.Tuple3 t2e1 t2e2 t2e3 ) ->
+                substitutionMap
+                    |> unify t1e1 t2e1
+                    |> Result.andThen (unify t1e2 t2e2)
+                    |> Result.andThen (unify t1e3 t2e3)
+
             _ ->
                 Err (TypeMismatch t1 t2)
 
