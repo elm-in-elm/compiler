@@ -1,7 +1,7 @@
 module InferTypesFuzz exposing (typeInference)
 
 import AST.Canonical as Canonical
-import AST.Canonical.Unwrapped as Unwrapped
+import AST.Canonical.Unwrapped as CanonicalU
 import AST.Common.Literal as Literal exposing (Literal(..))
 import AST.Common.Located as Located
 import AST.Common.Type as Type exposing (Type)
@@ -63,14 +63,14 @@ typeInference =
         ]
 
 
-exprOfType : Type -> Fuzzer Unwrapped.Expr
+exprOfType : Type -> Fuzzer CanonicalU.Expr
 exprOfType targetType =
     Fuzz.custom
         (exprOfTypeWithDepth 3 targetType)
         shrinkExpr
 
 
-exprOfTypeWithDepth : Int -> Type -> Generator Unwrapped.Expr
+exprOfTypeWithDepth : Int -> Type -> Generator CanonicalU.Expr
 exprOfTypeWithDepth depthLeft targetType =
     let
         pickAffordable ( cost, generator ) =
@@ -87,7 +87,7 @@ exprOfTypeWithDepth depthLeft targetType =
         |> Random.choices (basicExprOfType targetType)
 
 
-basicExprOfType : Type -> Generator Unwrapped.Expr
+basicExprOfType : Type -> Generator CanonicalU.Expr
 basicExprOfType targetType =
     let
         cannotFuzz details =
@@ -142,11 +142,11 @@ basicExprOfType targetType =
             cannotFuzz ""
 
 
-ifExpr : Int -> Type -> Generator Unwrapped.Expr
+ifExpr : Int -> Type -> Generator CanonicalU.Expr
 ifExpr depth targetType =
     let
         combine test then_ else_ =
-            Unwrapped.If
+            CanonicalU.If
                 { test = test
                 , then_ = then_
                 , else_ = else_
@@ -161,33 +161,33 @@ ifExpr depth targetType =
         (subexpr targetType)
 
 
-intExpr : Generator Unwrapped.Expr
+intExpr : Generator CanonicalU.Expr
 intExpr =
     Random.int Random.minInt Random.maxInt
         |> Random.map (literal Int)
 
 
-floatExpr : Generator Unwrapped.Expr
+floatExpr : Generator CanonicalU.Expr
 floatExpr =
     -- Does not produce NaNs, but that should not be an issue for us.
     Random.float (-1.0 / 0.0) (1.0 / 0.0)
         |> Random.map (literal Float)
 
 
-boolExpr : Generator Unwrapped.Expr
+boolExpr : Generator CanonicalU.Expr
 boolExpr =
     Random.bool
         |> Random.map (literal Bool)
 
 
-charExpr : Generator Unwrapped.Expr
+charExpr : Generator CanonicalU.Expr
 charExpr =
     Random.int 0 0x0010FFFF
         |> Random.map Char.fromCode
         |> Random.map (literal Char)
 
 
-stringExpr : Generator Unwrapped.Expr
+stringExpr : Generator CanonicalU.Expr
 stringExpr =
     Random.int 0 0x0010FFFF
         |> Random.list 10
@@ -196,34 +196,34 @@ stringExpr =
         |> Random.map (literal String)
 
 
-unitExpr : Generator Unwrapped.Expr
+unitExpr : Generator CanonicalU.Expr
 unitExpr =
-    Unwrapped.Unit
+    CanonicalU.Unit
         |> Random.constant
 
 
-literal : (a -> Literal) -> a -> Unwrapped.Expr
+literal : (a -> Literal) -> a -> CanonicalU.Expr
 literal wrap value =
     value
         |> wrap
-        |> Unwrapped.Literal
+        |> CanonicalU.Literal
 
 
-listExpr : Int -> Type -> Generator Unwrapped.Expr
+listExpr : Int -> Type -> Generator CanonicalU.Expr
 listExpr depth elementType =
     elementType
         |> exprOfTypeWithDepth depth
         |> Random.list 10
-        |> Random.map Unwrapped.List
+        |> Random.map CanonicalU.List
 
 
-intToIntFunctionExpr : Generator Unwrapped.Expr
+intToIntFunctionExpr : Generator CanonicalU.Expr
 intToIntFunctionExpr =
     let
         combine argument intPart =
             lambda argument <|
-                Unwrapped.Plus
-                    (Unwrapped.Argument argument)
+                CanonicalU.Plus
+                    (CanonicalU.Argument argument)
                     intPart
 
         intSubExpr =
@@ -266,29 +266,29 @@ randomVarName =
 
 {-| An expression shrinker that preserves the inferred type.
 -}
-shrinkExpr : Shrinker Unwrapped.Expr
+shrinkExpr : Shrinker CanonicalU.Expr
 shrinkExpr expr =
     case expr of
-        Unwrapped.Literal lit ->
+        CanonicalU.Literal lit ->
             lit
                 |> shrinkLiteral
-                |> Shrink.map Unwrapped.Literal
+                |> Shrink.map CanonicalU.Literal
 
-        Unwrapped.Plus left right ->
+        CanonicalU.Plus left right ->
             shrinkPlus left right
 
-        Unwrapped.List elements ->
+        CanonicalU.List elements ->
             -- We are not using the default list shrinker here.
             -- It can turn a non-empty list empty.
             -- But the lists `[1]` and `[]` will have different types inferred.
             elements
                 |> Shrink.listWithoutEmptying shrinkExpr
-                |> Shrink.map Unwrapped.List
+                |> Shrink.map CanonicalU.List
 
-        Unwrapped.If { test, then_, else_ } ->
+        CanonicalU.If { test, then_, else_ } ->
             shrinkIf test then_ else_
 
-        Unwrapped.Lambda { argument, body } ->
+        CanonicalU.Lambda { argument, body } ->
             shrinkLambda argument body
 
         _ ->
@@ -321,14 +321,14 @@ shrinkLiteral lit =
 We cannot write a type annotation here.
 The `LazyList a` type used by shrinkers is not exposed outside `elm-explorations/test`.
 
-    shrinkPlus : Unwrapped.Expr -> Unwrapped.Expr -> LazyList Unwrapped.Expr
+    shrinkPlus : CanonicalU.Expr -> CanonicalU.Expr -> LazyList CanonicalU.Expr
 
 -}
 shrinkPlus left right =
-    ([ Shrink.map2 Unwrapped.Plus
+    ([ Shrink.map2 CanonicalU.Plus
         (shrinkExpr left)
         (Shrink.singleton right)
-     , Shrink.map2 Unwrapped.Plus
+     , Shrink.map2 CanonicalU.Plus
         (Shrink.singleton left)
         (shrinkExpr right)
      ]
@@ -336,24 +336,20 @@ shrinkPlus left right =
         |> Shrink.mergeMany
     )
         -- The value built up to this point is a shrinker.
-        -- We need to call it with an Unwrapped.Expr to get a lazy list.
+        -- We need to call it with an CanonicalU.Expr to get a lazy list.
         left
-
-
-
--- shrinkIf : Unwrapped.Expr -> Unwrapped.Expr -> Unwrapped.Expr ->
 
 
 {-| We cannot write a type annotation here.
 The `LazyList a` type used by shrinkers is not exposed outside `elm-explorations/test`.
 
-    shrinkIf : Unwrapped.Expr -> Unwrapped.Expr -> Unwrapped.Expr -> LazyList Unwrapped.Expr
+    shrinkIf : CanonicalU.Expr -> CanonicalU.Expr -> CanonicalU.Expr -> LazyList CanonicalU.Expr
 
 -}
 shrinkIf test then_ else_ =
     let
         withTest shrunkTest =
-            Unwrapped.If
+            CanonicalU.If
                 { test = shrunkTest
                 , then_ = then_
                 , else_ = else_
@@ -367,14 +363,14 @@ shrinkIf test then_ else_ =
         |> Shrink.mergeMany
     )
         -- The value built up to this point is a shrinker.
-        -- We need to call it with an Unwrapped.Expr to get a lazy list.
+        -- We need to call it with an CanonicalU.Expr to get a lazy list.
         test
 
 
 {-| We cannot write a type annotation here.
 The `LazyList a` type used by shrinkers is not exposed outside `elm-explorations/test`.
 
-    shrinkLambda : VarName -> Unwrapped.Expr -> LazyList Unwrapped.Expr
+    shrinkLambda : VarName -> CanonicalU.Expr -> LazyList CanonicalU.Expr
 
 -}
 shrinkLambda argument body =
@@ -383,9 +379,9 @@ shrinkLambda argument body =
         |> Shrink.map (lambda argument)
 
 
-lambda : VarName -> Unwrapped.Expr -> Unwrapped.Expr
+lambda : VarName -> CanonicalU.Expr -> CanonicalU.Expr
 lambda argument body =
-    Unwrapped.Lambda
+    CanonicalU.Lambda
         { argument = argument
         , body = body
         }

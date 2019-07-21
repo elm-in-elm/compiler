@@ -1,7 +1,7 @@
 module InferTypesTest exposing (isParametric, niceVarName, typeInference, typeToString)
 
 import AST.Canonical as Canonical
-import AST.Canonical.Unwrapped as Unwrapped
+import AST.Canonical.Unwrapped as CanonicalU
 import AST.Common.Literal as Literal
 import AST.Common.Located as Located
 import AST.Common.Type as Type exposing (Type(..))
@@ -20,12 +20,12 @@ import TestHelpers exposing (dumpType, located)
 typeInference : Test
 typeInference =
     let
-        runSection : String -> List ( String, Unwrapped.Expr, Result Error.TypeError String ) -> Test
+        runSection : String -> List ( String, CanonicalU.Expr, Result Error.TypeError String ) -> Test
         runSection description tests =
             describe description
                 (List.map runTest tests)
 
-        runTest : ( String, Unwrapped.Expr, Result Error.TypeError String ) -> Test
+        runTest : ( String, CanonicalU.Expr, Result Error.TypeError String ) -> Test
         runTest ( description, input, output ) =
             test description <|
                 \() ->
@@ -39,78 +39,78 @@ typeInference =
     describe "Stage.InferType"
         [ runSection "list"
             [ ( "empty list"
-              , Unwrapped.List []
+              , CanonicalU.List []
               , Ok "List a"
               )
             , ( "one item"
-              , Unwrapped.List [ Unwrapped.Literal (Literal.Bool True) ]
+              , CanonicalU.List [ CanonicalU.Literal (Literal.Bool True) ]
               , Ok "List Bool"
               )
             , ( "more items"
-              , Unwrapped.List
-                    [ Unwrapped.Literal (Literal.Int 1)
-                    , Unwrapped.Literal (Literal.Int 2)
-                    , Unwrapped.Literal (Literal.Int 3)
+              , CanonicalU.List
+                    [ CanonicalU.Literal (Literal.Int 1)
+                    , CanonicalU.Literal (Literal.Int 2)
+                    , CanonicalU.Literal (Literal.Int 3)
                     ]
               , Ok "List Int"
               )
             , ( "different types"
-              , Unwrapped.List
-                    [ Unwrapped.Literal (Literal.Int 1)
-                    , Unwrapped.Literal (Literal.String "two")
+              , CanonicalU.List
+                    [ CanonicalU.Literal (Literal.Int 1)
+                    , CanonicalU.Literal (Literal.String "two")
                     ]
               , Err (Error.TypeMismatch Type.Int Type.String)
               )
             , ( "more items with different types"
-              , Unwrapped.List
-                    [ Unwrapped.Literal (Literal.Bool True)
-                    , Unwrapped.Literal (Literal.String "two")
-                    , Unwrapped.Literal (Literal.Int 3)
+              , CanonicalU.List
+                    [ CanonicalU.Literal (Literal.Bool True)
+                    , CanonicalU.Literal (Literal.String "two")
+                    , CanonicalU.Literal (Literal.Int 3)
                     ]
               , Err (Error.TypeMismatch Type.Bool Type.String)
               )
             , ( "List of List of Int"
-              , Unwrapped.List
-                    [ Unwrapped.List [ Unwrapped.Literal (Literal.Int 1) ]
-                    , Unwrapped.List [ Unwrapped.Literal (Literal.Int 2) ]
+              , CanonicalU.List
+                    [ CanonicalU.List [ CanonicalU.Literal (Literal.Int 1) ]
+                    , CanonicalU.List [ CanonicalU.Literal (Literal.Int 2) ]
                     ]
               , Ok "List (List Int)"
               )
             , ( "List of List of different types"
-              , Unwrapped.List
-                    [ Unwrapped.List [ Unwrapped.Literal (Literal.Int 1) ]
-                    , Unwrapped.List [ Unwrapped.Literal (Literal.Bool False) ]
+              , CanonicalU.List
+                    [ CanonicalU.List [ CanonicalU.Literal (Literal.Int 1) ]
+                    , CanonicalU.List [ CanonicalU.Literal (Literal.Bool False) ]
                     ]
               , Err (Error.TypeMismatch Type.Int Type.Bool)
               )
             ]
         , runSection "tuple"
             [ ( "items with the same types"
-              , Unwrapped.Tuple
-                    (Unwrapped.Literal (Literal.String "Hello"))
-                    (Unwrapped.Literal (Literal.String "Elm"))
+              , CanonicalU.Tuple
+                    (CanonicalU.Literal (Literal.String "Hello"))
+                    (CanonicalU.Literal (Literal.String "Elm"))
               , Ok "( String, String )"
               )
             , ( "items of different types"
-              , Unwrapped.Tuple
-                    (Unwrapped.Literal (Literal.Bool True))
-                    (Unwrapped.Literal (Literal.Int 1))
+              , CanonicalU.Tuple
+                    (CanonicalU.Literal (Literal.Bool True))
+                    (CanonicalU.Literal (Literal.Int 1))
               , Ok "( Bool, Int )"
               )
             ]
         , runSection "tuple3"
             [ ( "same types"
-              , Unwrapped.Tuple3
-                    (Unwrapped.Literal (Literal.String "FP"))
-                    (Unwrapped.Literal (Literal.String "is"))
-                    (Unwrapped.Literal (Literal.String "good"))
+              , CanonicalU.Tuple3
+                    (CanonicalU.Literal (Literal.String "FP"))
+                    (CanonicalU.Literal (Literal.String "is"))
+                    (CanonicalU.Literal (Literal.String "good"))
               , Ok "( String, String, String )"
               )
             , ( "different types"
-              , Unwrapped.Tuple3
-                    (Unwrapped.Literal (Literal.Bool True))
-                    (Unwrapped.Literal (Literal.Int 1))
-                    (Unwrapped.Literal (Literal.Char 'h'))
+              , CanonicalU.Tuple3
+                    (CanonicalU.Literal (Literal.Bool True))
+                    (CanonicalU.Literal (Literal.Int 1))
+                    (CanonicalU.Literal (Literal.Char 'h'))
               , Ok "( Bool, Int, Char )"
               )
             ]
