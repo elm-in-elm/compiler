@@ -880,7 +880,7 @@ expr =
                         (Tuple3
                             (Literal (Int 1))
                             (Literal (Int 2))
-                            (Literal (Int 2))
+                            (Literal (Int 3))
                         )
                   )
                 , ( "with inner spaces"
@@ -889,7 +889,7 @@ expr =
                         (Tuple3
                             (Literal (Int 1))
                             (Literal (Int 2))
-                            (Literal (Int 2))
+                            (Literal (Int 3))
                         )
                   )
                 ]
