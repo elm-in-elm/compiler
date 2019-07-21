@@ -42,8 +42,8 @@ typeInference =
                 |> describe description
     in
     describe "Stage.InferType"
-        [ describe "fuzz exprInfer"
-            [ fuzzExpressions "literals"
+        [ describe "inferExpr"
+            [ fuzzExpressions "fuzz literals"
                 [ Type.Int
                 , Type.Float
                 , Type.Bool
@@ -51,12 +51,12 @@ typeInference =
                 , Type.String
                 , Type.Unit
                 ]
-            , fuzzExpressions "lists"
+            , fuzzExpressions "fuzz lists"
                 [ Type.List Type.Unit
                 , Type.List Type.Int
                 , Type.List (Type.List Type.String)
                 ]
-            , fuzzExpressions "functions"
+            , fuzzExpressions "fuzz functions"
                 [ Type.Function Type.Int Type.Int
                 ]
             ]
