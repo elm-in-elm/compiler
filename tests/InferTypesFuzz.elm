@@ -59,6 +59,10 @@ typeInference =
             , fuzzExpressions "fuzz functions"
                 [ Type.Function Type.Int Type.Int
                 ]
+            , fuzzExpressions "fuzz tuples"
+                [ Type.Tuple Type.Int Type.String
+                , Type.Tuple Type.Bool Type.Char
+                ]
             ]
         ]
 
@@ -137,6 +141,9 @@ basicExprOfType targetType =
 
         Type.Function _ _ ->
             cannotFuzz "Only `Int -> Int` functions are supported."
+
+        Type.Tuple firstType secondType ->
+            tupleExpr firstType secondType
 
         _ ->
             cannotFuzz ""
@@ -233,6 +240,13 @@ intToIntFunctionExpr =
         -- TODO: Later we will need something better to avoid shadowing.
         randomVarName
         intSubExpr
+
+
+tupleExpr : Type -> Type -> Generator CanonicalU.Expr
+tupleExpr firstType secondType =
+    Random.map2 CanonicalU.Tuple
+        (firstType |> basicExprOfType)
+        (secondType |> basicExprOfType)
 
 
 randomVarName : Generator VarName
@@ -377,6 +391,28 @@ shrinkLambda argument body =
     body
         |> shrinkExpr
         |> Shrink.map (lambda argument)
+
+
+{-| We cannot write a type annotation here.
+The `LazyList a` type used by shrinkers is not exposed outside `elm-explorations/test`.
+
+    shrinkTuple : CanonicalU.Expr -> CanonicalU.Expr -> LazyList CanonicalU.Expr
+
+-}
+shrinkTuple first second =
+    ([ first
+        |> shrinkExpr
+        |> Shrink.map (\shrunk -> CanonicalU.Tuple shrunk second)
+     , second
+        |> shrinkExpr
+        |> Shrink.map (\shrunk -> CanonicalU.Tuple first shrunk)
+     ]
+        |> List.map always
+        |> Shrink.mergeMany
+    )
+        -- The value built up to this point is a shrinker.
+        -- We need to call it with an CanonicalU.Expr to get a lazy list.
+        first
 
 
 lambda : VarName -> CanonicalU.Expr -> CanonicalU.Expr
