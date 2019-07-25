@@ -20,12 +20,12 @@ import TestHelpers exposing (dumpType, located)
 typeInference : Test
 typeInference =
     let
-        runSection : String -> List ( String, CanonicalU.Expr, Result Error.TypeError String ) -> Test
+        runSection : String -> List ( String, CanonicalU.Expr, Result Error.TypeError Type ) -> Test
         runSection description tests =
             describe description
                 (List.map runTest tests)
 
-        runTest : ( String, CanonicalU.Expr, Result Error.TypeError String ) -> Test
+        runTest : ( String, CanonicalU.Expr, Result Error.TypeError Type ) -> Test
         runTest ( description, input, output ) =
             test description <|
                 \() ->
@@ -39,7 +39,7 @@ typeInference =
         [ runSection "list"
             [ ( "empty list"
               , CanonicalU.List []
-              , Ok (List (Var 0))
+              , Ok (List (Var 1))
               )
             , ( "one item"
               , CanonicalU.List [ CanonicalU.Literal (Literal.Bool True) ]
