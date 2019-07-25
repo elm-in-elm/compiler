@@ -1,106 +1,119 @@
-module InferTypesTest exposing (typeInference, typeToString)
+module InferTypesTest exposing (isParametric, niceVarName, typeInference, typeToString)
 
 import AST.Canonical as Canonical
+import AST.Canonical.Unwrapped as CanonicalU
 import AST.Common.Literal as Literal
 import AST.Common.Located as Located
 import AST.Common.Type as Type exposing (Type(..))
 import AST.Typed as Typed
 import Common
-import Common.Types as Types
+import Common.Types as Types exposing (VarName(..))
 import Dict.Any
 import Error exposing (TypeError(..))
 import Expect exposing (Expectation)
+import Fuzz exposing (Fuzzer)
 import Stage.InferTypes
-import Test exposing (Test, describe, test)
-import TestHelpers exposing (located)
+import Test exposing (Test, describe, fuzz, test)
+import TestHelpers exposing (dumpType, located)
 
 
 typeInference : Test
 typeInference =
     let
-        runSection ( description, tests ) =
+        runSection : String -> List ( String, CanonicalU.Expr, Result Error.TypeError String ) -> Test
+        runSection description tests =
             describe description
                 (List.map runTest tests)
 
+        runTest : ( String, CanonicalU.Expr, Result Error.TypeError String ) -> Test
         runTest ( description, input, output ) =
             test description <|
                 \() ->
-                    located input
+                    input
+                        |> Canonical.fromUnwrapped
                         |> Stage.InferTypes.inferExpr
                         |> Result.map Typed.getType
                         |> Expect.equal output
     in
     describe "Stage.InferType"
-        (List.map runSection
-            [ ( "list"
-              , [ ( "empty list"
-                  , Canonical.List []
-                  , Ok (List (Var 1))
-                  )
-                , ( "one item"
-                  , Canonical.List
-                        [ located (Canonical.Literal (Literal.Int 1)) ]
-                  , Ok (List Int)
-                  )
-                , ( "more items"
-                  , Canonical.List
-                        [ located (Canonical.Literal (Literal.Int 1))
-                        , located (Canonical.Literal (Literal.Int 2))
-                        , located (Canonical.Literal (Literal.Int 3))
-                        ]
-                  , Ok (List Int)
-                  )
-                , ( "different types"
-                  , Canonical.List
-                        [ located (Canonical.Literal (Literal.Int 1))
-                        , located (Canonical.Literal (Literal.String "2"))
-                        ]
-                  , Err (TypeMismatch Int String)
-                  )
-                , ( "more items with different types"
-                  , Canonical.List
-                        [ located (Canonical.Literal (Literal.Bool True))
-                        , located (Canonical.Literal (Literal.String "two"))
-                        , located (Canonical.Literal (Literal.Int 3))
-                        ]
-                  , Err (TypeMismatch Bool String)
-                  )
-                ]
+        [ runSection "list"
+            [ ( "empty list"
+              , CanonicalU.List []
+              , Ok (List (Var 0))
               )
-            , ( "tuple"
-              , [ ( "items with the same types"
-                  , Canonical.Tuple
-                        (located (Canonical.Literal (Literal.String "Hello")))
-                        (located (Canonical.Literal (Literal.String "Elm")))
-                  , Ok (Tuple String String)
-                  )
-                , ( "items of different types"
-                  , Canonical.Tuple
-                        (located (Canonical.Literal (Literal.Bool True)))
-                        (located (Canonical.Literal (Literal.Int 1)))
-                  , Ok (Tuple Bool Int)
-                  )
-                ]
+            , ( "one item"
+              , CanonicalU.List [ CanonicalU.Literal (Literal.Bool True) ]
+              , Ok (List Bool)
               )
-            , ( "tuple3"
-              , [ ( "same types"
-                  , Canonical.Tuple3
-                        (located (Canonical.Literal (Literal.String "FP")))
-                        (located (Canonical.Literal (Literal.String "is")))
-                        (located (Canonical.Literal (Literal.String "good")))
-                  , Ok (Tuple3 String String String)
-                  )
-                , ( "different types"
-                  , Canonical.Tuple3
-                        (located (Canonical.Literal (Literal.Bool True)))
-                        (located (Canonical.Literal (Literal.Int 1)))
-                        (located (Canonical.Literal (Literal.Char 'h')))
-                  , Ok (Tuple3 Bool Int Char)
-                  )
-                ]
+            , ( "more items"
+              , CanonicalU.List
+                    [ CanonicalU.Literal (Literal.Int 1)
+                    , CanonicalU.Literal (Literal.Int 2)
+                    , CanonicalU.Literal (Literal.Int 3)
+                    ]
+              , Ok (List Int)
+              )
+            , ( "different types"
+              , CanonicalU.List
+                    [ CanonicalU.Literal (Literal.Int 1)
+                    , CanonicalU.Literal (Literal.String "two")
+                    ]
+              , Err (Error.TypeMismatch Type.Int Type.String)
+              )
+            , ( "more items with different types"
+              , CanonicalU.List
+                    [ CanonicalU.Literal (Literal.Bool True)
+                    , CanonicalU.Literal (Literal.String "two")
+                    , CanonicalU.Literal (Literal.Int 3)
+                    ]
+              , Err (Error.TypeMismatch Type.Bool Type.String)
+              )
+            , ( "List of List of Int"
+              , CanonicalU.List
+                    [ CanonicalU.List [ CanonicalU.Literal (Literal.Int 1) ]
+                    , CanonicalU.List [ CanonicalU.Literal (Literal.Int 2) ]
+                    ]
+              , Ok (List (List Int))
+              )
+            , ( "List of List of different types"
+              , CanonicalU.List
+                    [ CanonicalU.List [ CanonicalU.Literal (Literal.Int 1) ]
+                    , CanonicalU.List [ CanonicalU.Literal (Literal.Bool False) ]
+                    ]
+              , Err (Error.TypeMismatch Type.Int Type.Bool)
               )
             ]
-        )
+        , runSection "tuple"
+            [ ( "items with the same types"
+              , CanonicalU.Tuple
+                    (CanonicalU.Literal (Literal.String "Hello"))
+                    (CanonicalU.Literal (Literal.String "Elm"))
+              , Ok (Tuple String String)
+              )
+            , ( "items of different types"
+              , CanonicalU.Tuple
+                    (CanonicalU.Literal (Literal.Bool True))
+                    (CanonicalU.Literal (Literal.Int 1))
+              , Ok (Tuple Bool Int)
+              )
+            ]
+        , runSection "tuple3"
+            [ ( "same types"
+              , CanonicalU.Tuple3
+                    (CanonicalU.Literal (Literal.String "FP"))
+                    (CanonicalU.Literal (Literal.String "is"))
+                    (CanonicalU.Literal (Literal.String "good"))
+              , Ok (Tuple3 String String String)
+              )
+            , ( "different types"
+              , CanonicalU.Tuple3
+                    (CanonicalU.Literal (Literal.Bool True))
+                    (CanonicalU.Literal (Literal.Int 1))
+                    (CanonicalU.Literal (Literal.Char 'h'))
+              , Ok (Tuple3 Bool Int Char)
+              )
+            ]
+        ]
 
 
 typeToString : Test
@@ -230,4 +243,46 @@ niceVarName =
             --
             , ( 259, "z9" )
             , ( 260, "a10" )
+            ]
+
+
+isParametric : Test
+isParametric =
+    let
+        runTest : ( Type, Bool ) -> Test
+        runTest ( input, output ) =
+            test (dumpType input) <|
+                \() ->
+                    input
+                        |> Type.isParametric
+                        |> Expect.equal output
+    in
+    describe "Type.isParametric" <|
+        List.map runTest
+            [ ( Unit, False )
+            , ( Bool, False )
+            , ( Char, False )
+            , ( Int, False )
+            , ( String, False )
+            , ( Var 0, True )
+            , ( Function Int String, False )
+            , ( Function (Var 0) Int, True )
+            , ( Function String (Var 0), True )
+            , ( Function Int (Function (Var 0) (Var 0)), True )
+            , ( List Int, False )
+            , ( List (Var 0), True )
+            , ( List (List Int), False )
+            , ( List (List (Var 0)), True )
+            , ( Tuple Int String, False )
+            , ( Tuple (Var 0) Int, True )
+            , ( Tuple String (Var 0), True )
+            , ( Tuple (List (Var 0)) Int, True )
+            , ( Tuple Char (Tuple Int (Var 0)), True )
+            , ( Tuple3 Int String Bool, False )
+            , ( Tuple3 (Var 0) Int Char, True )
+            , ( Tuple3 String (Var 0) Unit, True )
+            , ( Tuple3 Bool Unit (Var 0), True )
+            , ( Tuple3 (List (Var 0)) Int Char, True )
+            , ( Tuple3 String (Function (Var 0) Int) Unit, True )
+            , ( Tuple3 Bool Unit (Tuple (Var 0) Int), True )
             ]

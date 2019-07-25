@@ -29,18 +29,20 @@
     },
     "test-dependencies": {
         "direct": {
-            "elm-explorations/test": "1.2.1"
+            "elm-explorations/test": "1.2.1",
+            "elm-community/random-extra": "3.1.0"
         },
         "indirect": {
             "elm/html": "1.0.0",
-            "elm/random": "1.0.0",
-            "elm/time": "1.0.0",
             "elm/url": "1.0.0",
             "elm/virtual-dom": "1.0.2",
             "elm-community/json-extra": "4.0.0",
             "elm-community/list-extra": "8.2.0",
             "rtfeldman/elm-iso8601-date-strings": "1.1.2",
-            "stil4m/structured-writer": "1.0.2"
+            "stil4m/structured-writer": "1.0.2",
+            "elm/random": "1.0.0",
+            "elm/time": "1.0.0",
+            "owanturist/elm-union-find": "1.0.0"
         }
     }
 }

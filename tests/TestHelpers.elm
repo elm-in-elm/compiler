@@ -1,5 +1,6 @@
 module TestHelpers exposing
-    ( located
+    ( dumpType
+    , located
     , typed
     , typedBool
     , typedInt
@@ -8,8 +9,15 @@ module TestHelpers exposing
 
 import AST.Common.Literal as Literal
 import AST.Common.Located as Located exposing (Located)
-import AST.Common.Type exposing (Type(..))
+import AST.Common.Type as Type exposing (Type(..))
 import AST.Typed as Typed exposing (Expr_(..))
+
+
+dumpType : Type -> String
+dumpType type_ =
+    type_
+        |> Type.toString Type.emptyState
+        |> Tuple.first
 
 
 {-| For when the location and type doesn't matter
