@@ -60,6 +60,8 @@ type ParseContext
     | InLambda
     | InList
     | InUnit
+    | InTuple2
+    | InTuple3
 
 
 type ParseProblem
@@ -102,6 +104,7 @@ type ParseProblem
     | ExpectingLeftBracket
     | ExpectingRightBracket
     | ExpectingListSeparator
+    | ExpectingTupleSeparator
     | ExpectingNotBeginningOfLine
     | ExpectingIf
     | ExpectingThen
