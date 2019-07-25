@@ -344,6 +344,8 @@ expr =
             , always var
             , unit
             , list
+            , tuple
+            , tuple3
             , parenthesizedExpr
             ]
         , andThenOneOf =
@@ -750,6 +752,46 @@ list config =
             , trailing = P.Forbidden
             }
         |> P.inContext InList
+        |> located
+
+
+tuple : ExprConfig -> Parser_ Frontend.LocatedExpr
+tuple config =
+    P.backtrackable
+        (P.succeed Tuple
+            |. P.symbol (P.Token "(" ExpectingLeftParen)
+            |. P.spaces
+            |= PP.subExpression 0 config
+            |. P.spaces
+            |. P.symbol (P.Token "," ExpectingTupleSeparator)
+            |. P.spaces
+            |= PP.subExpression 0 config
+            |. P.spaces
+            |. P.symbol (P.Token ")" ExpectingRightParen)
+            |> P.inContext InTuple
+        )
+        |> located
+
+
+tuple3 : ExprConfig -> Parser_ Frontend.LocatedExpr
+tuple3 config =
+    P.backtrackable
+        (P.succeed Frontend.Tuple3
+            |. P.symbol (P.Token "(" ExpectingLeftParen)
+            |. P.spaces
+            |= PP.subExpression 0 config
+            |. P.spaces
+            |. P.symbol (P.Token "," ExpectingTupleSeparator)
+            |. P.spaces
+            |= PP.subExpression 0 config
+            |. P.spaces
+            |. P.symbol (P.Token "," ExpectingTupleSeparator)
+            |. P.spaces
+            |= PP.subExpression 0 config
+            |. P.spaces
+            |. P.symbol (P.Token ")" ExpectingRightParen)
+            |> P.inContext InTuple3
+        )
         |> located
 
 
