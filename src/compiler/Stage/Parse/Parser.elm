@@ -755,7 +755,7 @@ list config =
         |> located
 
 
-tuple2 : ExprConfig -> Parser_ Frontend.Expr
+tuple2 : ExprConfig -> Parser_ Frontend.LocatedExpr
 tuple2 config =
     P.backtrackable
         (P.succeed Tuple
@@ -770,9 +770,10 @@ tuple2 config =
             |. P.symbol (P.Token ")" ExpectingRightParen)
             |> P.inContext InTuple2
         )
+        |> located
 
 
-tuple3 : ExprConfig -> Parser_ Frontend.Expr
+tuple3 : ExprConfig -> Parser_ Frontend.LocatedExpr
 tuple3 config =
     P.backtrackable
         (P.succeed Frontend.Tuple3
@@ -791,6 +792,7 @@ tuple3 config =
             |. P.symbol (P.Token ")" ExpectingRightParen)
             |> P.inContext InTuple3
         )
+        |> located
 
 
 
