@@ -344,7 +344,7 @@ expr =
             , always var
             , unit
             , list
-            , tuple2
+            , tuple
             , tuple3
             , parenthesizedExpr
             ]
@@ -755,8 +755,8 @@ list config =
         |> located
 
 
-tuple2 : ExprConfig -> Parser_ Frontend.LocatedExpr
-tuple2 config =
+tuple : ExprConfig -> Parser_ Frontend.LocatedExpr
+tuple config =
     P.backtrackable
         (P.succeed Tuple
             |. P.symbol (P.Token "(" ExpectingLeftParen)
@@ -768,7 +768,7 @@ tuple2 config =
             |= PP.subExpression 0 config
             |. P.spaces
             |. P.symbol (P.Token ")" ExpectingRightParen)
-            |> P.inContext InTuple2
+            |> P.inContext InTuple
         )
         |> located
 

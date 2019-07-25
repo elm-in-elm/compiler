@@ -60,7 +60,7 @@ type ParseContext
     | InLambda
     | InList
     | InUnit
-    | InTuple2
+    | InTuple
     | InTuple3
 
 
