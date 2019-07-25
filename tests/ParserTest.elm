@@ -857,40 +857,26 @@ expr =
             , ( "tuple"
               , [ ( "without spaces"
                   , "(1,2)"
-                  , Just
-                        (Tuple
-                            (Literal (Int 1))
-                            (Literal (Int 2))
-                        )
+                  , Just (Tuple (Literal (Int 1)) (Literal (Int 2)))
                   )
                 , ( "with inner spaces"
-                  , "( 1 , 2 )"
-                  , Just
-                        (Tuple
-                            (Literal (Int 1))
-                            (Literal (Int 2))
-                        )
+                  , "( 3 , 4 )"
+                  , Just (Tuple (Literal (Int 3)) (Literal (Int 4)))
+                  )
+                , ( "nested tuple"
+                  , "(5,(6,7))"
+                  , Just (Tuple (Literal (Int 5)) (Tuple (Literal (Int 6)) (Literal (Int 7))))
                   )
                 ]
               )
             , ( "tuple3"
               , [ ( "without spaces"
                   , "(1,2,3)"
-                  , Just
-                        (Tuple3
-                            (Literal (Int 1))
-                            (Literal (Int 2))
-                            (Literal (Int 3))
-                        )
+                  , Just (Tuple3 (Literal (Int 1)) (Literal (Int 2)) (Literal (Int 3)))
                   )
                 , ( "with inner spaces"
-                  , "( 1 , 2 , 3 )"
-                  , Just
-                        (Tuple3
-                            (Literal (Int 1))
-                            (Literal (Int 2))
-                            (Literal (Int 3))
-                        )
+                  , "( 4 , 5 , 6 )"
+                  , Just (Tuple3 (Literal (Int 4)) (Literal (Int 5)) (Literal (Int 6)))
                   )
                 ]
               )
