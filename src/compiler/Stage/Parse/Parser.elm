@@ -361,6 +361,7 @@ expr =
                     )
                 )
             , PP.infixLeft 1 (P.symbol (P.Token "+" ExpectingPlusOperator)) (Located.merge Plus)
+            , PP.infixRight 1 (P.symbol (P.Token "::" ExpectingConsOperator)) (Located.merge Cons)
             ]
         , spaces = P.spaces
         }
