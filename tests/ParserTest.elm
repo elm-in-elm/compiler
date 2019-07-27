@@ -904,6 +904,28 @@ expr =
                   )
                 ]
               )
+            , ( "cons"
+              , [ ( "simple case"
+                  , "1 :: []"
+                  , Just
+                        (Cons
+                            (Literal (Int 1))
+                            (List [])
+                        )
+                  )
+                , ( "multiple values case"
+                  , "1 :: 2 :: []"
+                  , Just
+                        (Cons
+                            (Literal (Int 1))
+                            (Cons
+                                (Literal (Int 2))
+                                (List [])
+                            )
+                        )
+                  )
+                ]
+              )
             ]
         )
 
