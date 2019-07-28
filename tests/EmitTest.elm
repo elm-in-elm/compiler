@@ -1,8 +1,9 @@
 module EmitTest exposing (javascript)
 
 import AST.Common.Literal exposing (Literal(..))
+import AST.Common.Located as Located exposing (Located)
 import AST.Common.Type as Type
-import AST.Typed as Typed exposing (Expr_(..))
+import AST.Typed as Typed exposing (Expr_(..), LocatedExpr)
 import Common
 import Common.Types
     exposing
@@ -14,6 +15,13 @@ import Dict.Any
 import Expect exposing (Expectation)
 import Stage.Emit.JavaScript as JS
 import Test exposing (Test, describe, test, todo)
+import TestHelpers
+    exposing
+        ( typed
+        , typedBool
+        , typedInt
+        , typedString
+        )
 
 
 javascript : Test
@@ -29,22 +37,6 @@ javascript =
                             |> typed
                             |> JS.emitExpr
                             |> Expect.equal output
-
-            typed : Typed.Expr_ -> Typed.Expr
-            typed expr =
-                ( expr, Type.Int )
-
-            typedInt : Int -> Typed.Expr
-            typedInt int =
-                typed (Literal (Int int))
-
-            typedString : String -> Typed.Expr
-            typedString str =
-                typed (Literal (String str))
-
-            typedBool : Bool -> Typed.Expr
-            typedBool bool =
-                typed (Literal (Bool bool))
           in
           describe "emitExpr"
             [ describe "Int"
@@ -182,11 +174,11 @@ javascript =
                       , "[]"
                       )
                     , ( "single item in list"
-                      , List [ typed (Literal (Int 1)) ]
+                      , List [ typedInt 1 ]
                       , "[1]"
                       )
                     , ( "simple list"
-                      , List [ typed (Literal (Int 1)), typed (Literal (Int 2)), typed (Literal (Int 3)) ]
+                      , List [ typedInt 1, typedInt 2, typedInt 3 ]
                       , "[1, 2, 3]"
                       )
                     ]
@@ -252,7 +244,7 @@ javascript =
                 )
             ]
         , let
-            runTest : ( String, TopLevelDeclaration Typed.Expr, String ) -> Test
+            runTest : ( String, TopLevelDeclaration Typed.LocatedExpr, String ) -> Test
             runTest ( description, input, output ) =
                 test description <|
                     \() ->
@@ -265,7 +257,7 @@ javascript =
                 [ ( "simple"
                   , { module_ = ModuleName "Foo"
                     , name = VarName "bar"
-                    , body = ( Literal (Int 1), Type.Int )
+                    , body = typedInt 1
                     }
                   , "const Foo$bar = 1;"
                   )

@@ -1,12 +1,16 @@
 module AST.Frontend exposing
     ( Expr(..)
+    , LocatedExpr
     , ProjectFields
     , lambda
     , transform
+    , unwrap
     , var
     )
 
 import AST.Common.Literal exposing (Literal)
+import AST.Common.Located as Located exposing (Located)
+import AST.Frontend.Unwrapped as Unwrapped
 import Common
 import Common.Types
     exposing
@@ -19,23 +23,27 @@ import Transform
 
 
 type alias ProjectFields =
-    { modules : Modules Expr }
+    { modules : Modules LocatedExpr }
+
+
+type alias LocatedExpr =
+    Located Expr
 
 
 type Expr
     = Literal Literal
     | Var { qualifier : Maybe ModuleName, name : VarName }
     | Argument VarName
-    | Plus Expr Expr
-    | ListConcat Expr Expr
-    | Lambda { arguments : List VarName, body : Expr }
-    | Call { fn : Expr, argument : Expr }
-    | If { test : Expr, then_ : Expr, else_ : Expr }
-    | Let { bindings : List (Binding Expr), body : Expr }
-    | List (List Expr)
+    | Plus LocatedExpr LocatedExpr
+    | ListConcat LocatedExpr LocatedExpr
+    | Lambda { arguments : List VarName, body : LocatedExpr }
+    | Call { fn : LocatedExpr, argument : LocatedExpr }
+    | If { test : LocatedExpr, then_ : LocatedExpr, else_ : LocatedExpr }
+    | Let { bindings : List (Binding LocatedExpr), body : LocatedExpr }
+    | List (List LocatedExpr)
     | Unit
-    | Tuple Expr Expr
-    | Tuple3 Expr Expr Expr
+    | Tuple LocatedExpr LocatedExpr
+    | Tuple3 LocatedExpr LocatedExpr LocatedExpr
 
 
 var : Maybe ModuleName -> VarName -> Expr
@@ -46,7 +54,7 @@ var qualifier name =
         }
 
 
-lambda : List VarName -> Expr -> Expr
+lambda : List VarName -> LocatedExpr -> Expr
 lambda arguments body =
     Lambda
         { arguments = arguments
@@ -54,27 +62,14 @@ lambda arguments body =
         }
 
 
-
-{- Let's not get ahead of ourselves
-
-   | Let
-       { varName : VarName
-       , varBody : Expr
-       , body : Expr
-       }
-   | Fixpoint Expr
-   | Operator
-       { opName : VarName
-       , left : Expr
-       , right : Expr
-       }
--}
-
-
 {-| A helper for the Transform library.
 -}
 recurse : (Expr -> Expr) -> Expr -> Expr
 recurse f expr =
+    let
+        f_ =
+            Located.map f
+    in
     case expr of
         Literal _ ->
             expr
@@ -86,44 +81,46 @@ recurse f expr =
             expr
 
         Plus e1 e2 ->
-            Plus (f e1) (f e2)
+            Plus
+                (f_ e1)
+                (f_ e2)
 
         ListConcat e1 e2 ->
-            ListConcat (f e1) (f e2)
+            ListConcat (f_ e1) (f_ e2)
 
         Lambda ({ body } as lambda_) ->
-            Lambda { lambda_ | body = f body }
+            Lambda { lambda_ | body = f_ body }
 
         Call { fn, argument } ->
             Call
-                { fn = f fn
-                , argument = f argument
+                { fn = f_ fn
+                , argument = f_ argument
                 }
 
         If { test, then_, else_ } ->
             If
-                { test = f test
-                , then_ = f then_
-                , else_ = f else_
+                { test = f_ test
+                , then_ = f_ then_
+                , else_ = f_ else_
                 }
 
         Let { bindings, body } ->
             Let
-                { bindings = List.map (Common.mapBinding f) bindings
-                , body = f body
+                { bindings = List.map (Common.mapBinding f_) bindings
+                , body = f_ body
                 }
 
         List items ->
-            List (List.map f items)
+            List (List.map f_ items)
 
         Unit ->
             expr
 
         Tuple e1 e2 ->
-            Tuple (f e1) (f e2)
+            Tuple (f_ e1) (f_ e2)
 
         Tuple3 e1 e2 e3 ->
-            Tuple3 (f e1) (f e2) (f e3)
+            Tuple3 (f_ e1) (f_ e2) (f_ e3)
 
 
 transform : (Expr -> Expr) -> Expr -> Expr
@@ -135,3 +132,69 @@ transform pass expr =
         recurse
         (Transform.toMaybe pass)
         expr
+
+
+unwrap : LocatedExpr -> Unwrapped.Expr
+unwrap expr =
+    case Located.unwrap expr of
+        Literal literal ->
+            Unwrapped.Literal literal
+
+        Var var_ ->
+            Unwrapped.Var var_
+
+        Argument name ->
+            Unwrapped.Argument name
+
+        Plus e1 e2 ->
+            Unwrapped.Plus
+                (unwrap e1)
+                (unwrap e2)
+
+        ListConcat e1 e2 ->
+            Unwrapped.ListConcat
+                (unwrap e1)
+                (unwrap e2)
+
+        Lambda { arguments, body } ->
+            Unwrapped.Lambda
+                { arguments = arguments
+                , body = unwrap body
+                }
+
+        Call { fn, argument } ->
+            Unwrapped.Call
+                { fn = unwrap fn
+                , argument = unwrap argument
+                }
+
+        If { test, then_, else_ } ->
+            Unwrapped.If
+                { test = unwrap test
+                , then_ = unwrap then_
+                , else_ = unwrap else_
+                }
+
+        Let { bindings, body } ->
+            Unwrapped.Let
+                { bindings = List.map (Common.mapBinding unwrap) bindings
+                , body = unwrap body
+                }
+
+        List list ->
+            Unwrapped.List
+                (List.map unwrap list)
+
+        Unit ->
+            Unwrapped.Unit
+
+        Tuple e1 e2 ->
+            Unwrapped.Tuple
+                (unwrap e1)
+                (unwrap e2)
+
+        Tuple3 e1 e2 e3 ->
+            Unwrapped.Tuple3
+                (unwrap e1)
+                (unwrap e2)
+                (unwrap e3)

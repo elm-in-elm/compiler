@@ -8,7 +8,8 @@ module Stage.Parse.Parser exposing
     )
 
 import AST.Common.Literal exposing (Literal(..))
-import AST.Frontend as Frontend exposing (Expr(..))
+import AST.Common.Located as Located exposing (Located)
+import AST.Frontend as Frontend exposing (Expr(..), LocatedExpr)
 import Common
 import Common.Types
     exposing
@@ -43,10 +44,18 @@ type alias Parser_ a =
 
 
 type alias ExprConfig =
-    PP.Config ParseContext ParseProblem Frontend.Expr
+    PP.Config ParseContext ParseProblem Frontend.LocatedExpr
 
 
-module_ : FilePath -> Parser_ (Module Frontend.Expr)
+located : Parser_ p -> Parser_ (Located p)
+located p =
+    P.succeed Located.parsed
+        |= P.getPosition
+        |= p
+        |= P.getPosition
+
+
+module_ : FilePath -> Parser_ (Module Frontend.LocatedExpr)
 module_ filePath =
     P.succeed
         (\( moduleType_, moduleName_, exposing_ ) dependencies_ topLevelDeclarations_ ->
@@ -299,7 +308,7 @@ reservedWords =
         ]
 
 
-topLevelDeclarations : Parser_ (List (ModuleName -> TopLevelDeclaration Frontend.Expr))
+topLevelDeclarations : Parser_ (List (ModuleName -> TopLevelDeclaration Frontend.LocatedExpr))
 topLevelDeclarations =
     oneOrMoreWith P.spaces
         (P.succeed identity
@@ -308,7 +317,7 @@ topLevelDeclarations =
         )
 
 
-topLevelDeclaration : Parser_ (ModuleName -> TopLevelDeclaration Frontend.Expr)
+topLevelDeclaration : Parser_ (ModuleName -> TopLevelDeclaration Frontend.LocatedExpr)
 topLevelDeclaration =
     P.succeed
         (\name body module__ ->
@@ -324,7 +333,7 @@ topLevelDeclaration =
         |= expr
 
 
-expr : Parser_ Frontend.Expr
+expr : Parser_ Frontend.LocatedExpr
 expr =
     PP.expression
         { oneOf =
@@ -341,14 +350,16 @@ expr =
             -- TODO test this: does `x =\n  call 1\n+ something` work? (it shouldn't: no space before '+')
             [ PP.infixLeft 99
                 checkNotBeginningOfLine
-                (\fn argument ->
-                    Frontend.Call
-                        { fn = fn
-                        , argument = argument
-                        }
+                (Located.merge
+                    (\fn argument ->
+                        Frontend.Call
+                            { fn = fn
+                            , argument = argument
+                            }
+                    )
                 )
-            , PP.infixLeft 1 (P.symbol (P.Token "++" ExpectingConcatOperator)) ListConcat
-            , PP.infixLeft 1 (P.symbol (P.Token "+" ExpectingPlusOperator)) Plus
+            , PP.infixLeft 1 (P.symbol (P.Token "++" ExpectingConcatOperator)) (Located.merge ListConcat)
+            , PP.infixLeft 1 (P.symbol (P.Token "+" ExpectingPlusOperator)) (Located.merge Plus)
             ]
         , spaces = P.spaces
         }
@@ -368,7 +379,7 @@ checkNotBeginningOfLine =
             )
 
 
-parenthesizedExpr : ExprConfig -> Parser_ Frontend.Expr
+parenthesizedExpr : ExprConfig -> Parser_ Frontend.LocatedExpr
 parenthesizedExpr config =
     P.succeed identity
         |. P.symbol (P.Token "(" ExpectingLeftParen)
@@ -376,7 +387,7 @@ parenthesizedExpr config =
         |. P.symbol (P.Token ")" ExpectingRightParen)
 
 
-literal : Parser_ Frontend.Expr
+literal : Parser_ Frontend.LocatedExpr
 literal =
     P.succeed Literal
         |= P.oneOf
@@ -386,6 +397,7 @@ literal =
             , literalBool
             ]
         |> P.inContext InLiteral
+        |> located
 
 
 literalNumber : Parser_ Literal
@@ -571,7 +583,7 @@ literalBool =
             ]
 
 
-var : Parser_ Frontend.Expr
+var : Parser_ Frontend.LocatedExpr
 var =
     P.oneOf
         [ P.map
@@ -579,6 +591,7 @@ var =
             varName
         , qualifiedVar
         ]
+        |> located
 
 
 varName : Parser_ String
@@ -617,7 +630,7 @@ qualifiedVar =
             )
 
 
-lambda : ExprConfig -> Parser_ Frontend.Expr
+lambda : ExprConfig -> Parser_ Frontend.LocatedExpr
 lambda config =
     P.succeed
         (\arguments body ->
@@ -639,7 +652,7 @@ lambda config =
 
                    TODO add a fuzz test for this invariant?
                 -}
-                (Frontend.transform (promoteArguments arguments) body)
+                (Located.map (Frontend.transform (promoteArguments arguments)) body)
         )
         |. P.symbol (P.Token "\\" ExpectingBackslash)
         |= oneOrMoreWith spacesOnly (P.map VarName varName)
@@ -648,9 +661,10 @@ lambda config =
         |. P.spaces
         |= PP.subExpression 0 config
         |> P.inContext InLambda
+        |> located
 
 
-if_ : ExprConfig -> Parser_ Frontend.Expr
+if_ : ExprConfig -> Parser_ Frontend.LocatedExpr
 if_ config =
     P.succeed
         (\test then_ else_ ->
@@ -667,9 +681,10 @@ if_ config =
         |. P.keyword (P.Token "else" ExpectingElse)
         |= PP.subExpression 0 config
         |> P.inContext InIf
+        |> located
 
 
-let_ : ExprConfig -> Parser_ Frontend.Expr
+let_ : ExprConfig -> Parser_ Frontend.LocatedExpr
 let_ config =
     P.succeed
         (\binding_ body ->
@@ -687,9 +702,10 @@ let_ config =
         |. P.spaces
         |= PP.subExpression 0 config
         |> P.inContext InLet
+        |> located
 
 
-binding : ExprConfig -> Parser_ (Binding Frontend.Expr)
+binding : ExprConfig -> Parser_ (Binding Frontend.LocatedExpr)
 binding config =
     P.succeed Binding
         |= P.map VarName varName
@@ -715,14 +731,15 @@ promoteArguments arguments expr_ =
             expr_
 
 
-unit : ExprConfig -> Parser_ Frontend.Expr
+unit : ExprConfig -> Parser_ Frontend.LocatedExpr
 unit _ =
     P.succeed Frontend.Unit
         |. P.keyword (P.Token "()" ExpectingUnit)
         |> P.inContext InUnit
+        |> located
 
 
-list : ExprConfig -> Parser_ Frontend.Expr
+list : ExprConfig -> Parser_ Frontend.LocatedExpr
 list config =
     P.succeed Frontend.List
         |= P.sequence
@@ -734,6 +751,7 @@ list config =
             , trailing = P.Forbidden
             }
         |> P.inContext InList
+        |> located
 
 
 

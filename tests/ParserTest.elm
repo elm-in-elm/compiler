@@ -7,7 +7,8 @@ module ParserTest exposing
     )
 
 import AST.Common.Literal exposing (Literal(..))
-import AST.Frontend exposing (Expr(..))
+import AST.Frontend as Frontend
+import AST.Frontend.Unwrapped exposing (Expr(..))
 import Common
 import Common.Types
     exposing
@@ -432,6 +433,7 @@ expr =
                 \() ->
                     input
                         |> P.run Stage.Parse.Parser.expr
+                        |> Result.map Frontend.unwrap
                         |> expectEqualParseResult input output
     in
     describe "Stage.Parse.Parser.expr"
@@ -440,23 +442,28 @@ expr =
               , [ ( "works with single argument"
                   , "\\x -> x + 1"
                   , Just
-                        (AST.Frontend.lambda
-                            [ VarName "x" ]
-                            (Plus
-                                (Argument (VarName "x"))
-                                (Literal (Int 1))
-                            )
+                        (Lambda
+                            { arguments = [ VarName "x" ]
+                            , body =
+                                Plus
+                                    (Argument (VarName "x"))
+                                    (Literal (Int 1))
+                            }
                         )
                   )
                 , ( "works with multiple arguments"
                   , "\\x y -> x + y"
                   , Just
-                        (AST.Frontend.lambda
-                            [ VarName "x", VarName "y" ]
-                            (Plus
-                                (Argument (VarName "x"))
-                                (Argument (VarName "y"))
-                            )
+                        (Lambda
+                            { arguments =
+                                [ VarName "x"
+                                , VarName "y"
+                                ]
+                            , body =
+                                Plus
+                                    (Argument (VarName "x"))
+                                    (Argument (VarName "y"))
+                            }
                         )
                   )
                 ]
@@ -466,7 +473,7 @@ expr =
                   , "fn 1"
                   , Just
                         (Call
-                            { fn = AST.Frontend.var Nothing (VarName "fn")
+                            { fn = Var { name = VarName "fn", qualifier = Nothing }
                             , argument = Literal (Int 1)
                             }
                         )
@@ -475,8 +482,8 @@ expr =
                   , "fn arg"
                   , Just
                         (Call
-                            { fn = AST.Frontend.var Nothing (VarName "fn")
-                            , argument = AST.Frontend.var Nothing (VarName "arg")
+                            { fn = Var { name = VarName "fn", qualifier = Nothing }
+                            , argument = Var { name = VarName "arg", qualifier = Nothing }
                             }
                         )
                   )
@@ -486,10 +493,10 @@ expr =
                         (Call
                             { fn =
                                 Call
-                                    { fn = AST.Frontend.var Nothing (VarName "fn")
-                                    , argument = AST.Frontend.var Nothing (VarName "arg1")
+                                    { fn = Var { name = VarName "fn", qualifier = Nothing }
+                                    , argument = Var { name = VarName "arg1", qualifier = Nothing }
                                     }
-                            , argument = AST.Frontend.var Nothing (VarName "arg2")
+                            , argument = Var { name = VarName "arg2", qualifier = Nothing }
                             }
                         )
                   )
@@ -497,8 +504,8 @@ expr =
                   , "fn(arg1)"
                   , Just
                         (Call
-                            { fn = AST.Frontend.var Nothing (VarName "fn")
-                            , argument = AST.Frontend.var Nothing (VarName "arg1")
+                            { fn = Var { name = VarName "fn", qualifier = Nothing }
+                            , argument = Var { name = VarName "arg1", qualifier = Nothing }
                             }
                         )
                   )
@@ -508,7 +515,7 @@ expr =
               , [ ( "with one space"
                   , "if 1 then 2 else 3"
                   , Just
-                        (AST.Frontend.If
+                        (If
                             { test = Literal (Int 1)
                             , then_ = Literal (Int 2)
                             , else_ = Literal (Int 3)
@@ -518,7 +525,7 @@ expr =
                 , ( "with multiple spaces"
                   , "if   1   then   2   else   3"
                   , Just
-                        (AST.Frontend.If
+                        (If
                             { test = Literal (Int 1)
                             , then_ = Literal (Int 2)
                             , else_ = Literal (Int 3)
@@ -535,6 +542,10 @@ expr =
                 , ( "zero"
                   , "0"
                   , Just (Literal (Int 0))
+                  )
+                , ( "negative zero"
+                  , "-0"
+                  , Just (Literal (Int (negate 0)))
                   )
                 , ( "hexadecimal int"
                   , "0x123abc"
@@ -561,7 +572,11 @@ expr =
                   )
                 , ( "zero"
                   , "0.0"
-                  , Just (Literal (Float 0.0))
+                  , Just (Literal (Float 0))
+                  )
+                , ( "negative zero"
+                  , "-0.0"
+                  , Just (Literal (Float (negate 0)))
                   )
                 , ( "negative float"
                   , "-4.2"
@@ -749,10 +764,7 @@ expr =
                   )
                 , ( "combo of escapes, newlines, and chars"
                   , tripleQuote "\\u{1F648}\\n\n\n\\r\\t\\\\abc123"
-                  , Just (Literal (String """🙈
-
-
-\u{000D}\t\\abc123"""))
+                  , Just (Literal (String "🙈\n\n\n\u{000D}\t\\abc123"))
                   )
                 ]
               )
@@ -772,7 +784,11 @@ expr =
                   , "let x = 1 in 2"
                   , Just
                         (Let
-                            { bindings = [ { name = VarName "x", body = Literal (Int 1) } ]
+                            { bindings =
+                                [ { name = VarName "x"
+                                  , body = Literal (Int 1)
+                                  }
+                                ]
                             , body = Literal (Int 2)
                             }
                         )
@@ -781,7 +797,11 @@ expr =
                   , "let\n  x =\n      1\nin\n  2"
                   , Just
                         (Let
-                            { bindings = [ { name = VarName "x", body = Literal (Int 1) } ]
+                            { bindings =
+                                [ { name = VarName "x"
+                                  , body = Literal (Int 1)
+                                  }
+                                ]
                             , body = Literal (Int 2)
                             }
                         )
@@ -807,11 +827,23 @@ expr =
                   )
                 , ( "simple list"
                   , "[1,2,3]"
-                  , Just (List [ Literal (Int 1), Literal (Int 2), Literal (Int 3) ])
+                  , Just
+                        (List
+                            [ Literal (Int 1)
+                            , Literal (Int 2)
+                            , Literal (Int 3)
+                            ]
+                        )
                   )
                 , ( "simple list with inner spaces"
                   , "[ 1,  2  , 3 ]"
-                  , Just (List [ Literal (Int 1), Literal (Int 2), Literal (Int 3) ])
+                  , Just
+                        (List
+                            [ Literal (Int 1)
+                            , Literal (Int 2)
+                            , Literal (Int 3)
+                            ]
+                        )
                   )
                 , ( "list concat"
                   , "[] ++ []"
@@ -832,23 +864,41 @@ expr =
               )
             , ( "tuple"
               , [ ( "without spaces"
-                  , "(1,1)"
-                  , Just (Tuple (Literal (Int 1)) (Literal (Int 1)))
+                  , "(1,2)"
+                  , Just
+                        (Tuple
+                            (Literal (Int 1))
+                            (Literal (Int 2))
+                        )
                   )
                 , ( "with inner spaces"
-                  , "( 1 , 1 )"
-                  , Just (Tuple (Literal (Int 1)) (Literal (Int 1)))
+                  , "( 1 , 2 )"
+                  , Just
+                        (Tuple
+                            (Literal (Int 1))
+                            (Literal (Int 2))
+                        )
                   )
                 ]
               )
             , ( "tuple3"
               , [ ( "without spaces"
                   , "(1,2,3)"
-                  , Just (Tuple3 (Literal (Int 1)) (Literal (Int 2)) (Literal (Int 2)))
+                  , Just
+                        (Tuple3
+                            (Literal (Int 1))
+                            (Literal (Int 2))
+                            (Literal (Int 3))
+                        )
                   )
                 , ( "with inner spaces"
                   , "( 1 , 2 , 3 )"
-                  , Just (Tuple3 (Literal (Int 1)) (Literal (Int 2)) (Literal (Int 2)))
+                  , Just
+                        (Tuple3
+                            (Literal (Int 1))
+                            (Literal (Int 2))
+                            (Literal (Int 3))
+                        )
                   )
                 ]
               )

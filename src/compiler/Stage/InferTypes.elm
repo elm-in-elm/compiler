@@ -1,6 +1,7 @@
 module Stage.InferTypes exposing (inferExpr, inferTypes)
 
 import AST.Canonical as Canonical
+import AST.Common.Located as Located
 import AST.Common.Type as Type exposing (Type)
 import AST.Typed as Typed
 import Common.Types exposing (Project)
@@ -33,11 +34,11 @@ inferTypes project =
         |> Result.mapError TypeError
 
 
-inferExpr : Canonical.Expr -> Result TypeError Typed.Expr
-inferExpr expr =
+inferExpr : Canonical.LocatedExpr -> Result TypeError Typed.LocatedExpr
+inferExpr located =
     let
         ( exprWithIds, idSource ) =
-            AssignIds.assignIds expr
+            AssignIds.assignIds located
 
         typeEquations =
             GenerateEquations.generateEquations idSource exprWithIds
@@ -72,18 +73,22 @@ inferExpr expr =
 {-| This function takes care of recursively applying `substituteType`
 from the bottom up.
 -}
-substituteAllTypes : Typed.Expr -> SubstitutionMap -> Typed.Expr
-substituteAllTypes expr substitutionMap =
+substituteAllTypes : Typed.LocatedExpr -> SubstitutionMap -> Typed.LocatedExpr
+substituteAllTypes located substitutionMap =
     Typed.transformOnce
         (substituteType substitutionMap)
-        expr
+        located
 
 
 {-| Only care about this level, don't recurse
 -}
-substituteType : SubstitutionMap -> Typed.Expr -> Typed.Expr
-substituteType substitutionMap ( expr, type_ ) =
-    ( expr, getBetterType substitutionMap type_ )
+substituteType : SubstitutionMap -> Typed.LocatedExpr -> Typed.LocatedExpr
+substituteType substitutionMap located =
+    Located.map
+        (\( expr, type_ ) ->
+            ( expr, getBetterType substitutionMap type_ )
+        )
+        located
 
 
 {-| Tries to resolve `Var 0`-like references through the SubstitutionMap.

@@ -264,7 +264,7 @@ Make sure to format code before submitting a pull request!
         <img width="150" height="150"
         src="https://avatars1.githubusercontent.com/u/3983879">
         </br>
-        Eduard Kyvenko
+        <a href="https://github.com/halfzebra">Eduard Kyvenko</a>
       </td>
       <td align="center">
         <img width="150" height="150"

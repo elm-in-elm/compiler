@@ -30,6 +30,7 @@ subexpression.
 -}
 
 import AST.Common.Literal as Literal
+import AST.Common.Located as Located
 import AST.Common.Type as Type
 import AST.Typed as Typed
 import Common.Types exposing (VarName)
@@ -39,8 +40,12 @@ import Stage.InferTypes.TypeEquation exposing (TypeEquation, equals)
 import Transform
 
 
-generateEquations : IdSource -> Typed.Expr -> ( List TypeEquation, IdSource )
-generateEquations idSource ( expr, type_ ) =
+generateEquations : IdSource -> Typed.LocatedExpr -> ( List TypeEquation, IdSource )
+generateEquations idSource located =
+    let
+        ( expr, type_ ) =
+            Located.unwrap located
+    in
     case expr of
         Typed.Literal (Literal.Int _) ->
             -- integer is an integer ¯\_(ツ)_/¯
@@ -83,10 +88,10 @@ generateEquations idSource ( expr, type_ ) =
         Typed.Plus left right ->
             let
                 ( _, leftType ) =
-                    left
+                    Located.unwrap left
 
                 ( _, rightType ) =
-                    right
+                    Located.unwrap right
 
                 ( leftEquations, idSource1 ) =
                     generateEquations idSource left
@@ -107,7 +112,7 @@ generateEquations idSource ( expr, type_ ) =
         Typed.Lambda { body, argument } ->
             let
                 ( _, bodyType ) =
-                    body
+                    Located.unwrap body
 
                 ( argumentId, idSource1 ) =
                     IdSource.increment idSource
@@ -132,10 +137,10 @@ generateEquations idSource ( expr, type_ ) =
         Typed.Call { fn, argument } ->
             let
                 ( _, fnType ) =
-                    fn
+                    Located.unwrap fn
 
                 ( _, argumentType ) =
-                    argument
+                    Located.unwrap argument
 
                 ( fnEquations, idSource1 ) =
                     generateEquations idSource fn
@@ -154,13 +159,13 @@ generateEquations idSource ( expr, type_ ) =
         Typed.If { test, then_, else_ } ->
             let
                 ( _, testType ) =
-                    test
+                    Located.unwrap test
 
                 ( _, thenType ) =
-                    then_
+                    Located.unwrap then_
 
                 ( _, elseType ) =
-                    else_
+                    Located.unwrap else_
 
                 ( testEquations, idSource1 ) =
                     generateEquations idSource test
@@ -185,7 +190,7 @@ generateEquations idSource ( expr, type_ ) =
         Typed.Let { bindings, body } ->
             let
                 ( _, bodyType ) =
-                    body
+                    Located.unwrap body
 
                 ( bodyEquations, idSource1 ) =
                     generateEquations idSource body
@@ -228,8 +233,11 @@ generateEquations idSource ( expr, type_ ) =
 
                 ( bodyEquations, idSource2 ) =
                     List.foldr
-                        (\(( _, itemType ) as item) ( acc, currentIdSource ) ->
+                        (\item ( acc, currentIdSource ) ->
                             let
+                                ( _, itemType ) =
+                                    Located.unwrap item
+
                                 ( equations, nextIdSource ) =
                                     generateEquations currentIdSource item
                             in
@@ -252,10 +260,10 @@ generateEquations idSource ( expr, type_ ) =
         Typed.Tuple fst snd ->
             let
                 ( _, fstType ) =
-                    fst
+                    Located.unwrap fst
 
                 ( _, sndType ) =
-                    snd
+                    Located.unwrap snd
 
                 ( fstEquations, idSource1 ) =
                     generateEquations idSource fst
@@ -272,13 +280,13 @@ generateEquations idSource ( expr, type_ ) =
         Typed.Tuple3 fst snd trd ->
             let
                 ( _, fstType ) =
-                    fst
+                    Located.unwrap fst
 
                 ( _, sndType ) =
-                    snd
+                    Located.unwrap snd
 
                 ( _, trdType ) =
-                    trd
+                    Located.unwrap trd
 
                 ( fstEquations, idSource1 ) =
                     generateEquations idSource fst
@@ -297,19 +305,19 @@ generateEquations idSource ( expr, type_ ) =
             )
 
 
-findArgumentUsages : VarName -> Typed.Expr -> List Typed.Expr
+findArgumentUsages : VarName -> Typed.LocatedExpr -> List Typed.LocatedExpr
 findArgumentUsages argument bodyExpr =
     bodyExpr
         |> Transform.children Typed.recursiveChildren
         |> List.filter (Typed.isArgument argument)
 
 
-generateArgumentUsageEquations : Int -> List Typed.Expr -> List TypeEquation
+generateArgumentUsageEquations : Int -> List Typed.LocatedExpr -> List TypeEquation
 generateArgumentUsageEquations argumentId usages =
     let
         argumentType =
             Type.Var argumentId
     in
     List.map
-        (\( _, usageType ) -> equals usageType argumentType)
+        (Typed.getType >> equals argumentType)
         usages
