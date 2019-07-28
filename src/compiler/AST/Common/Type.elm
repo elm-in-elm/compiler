@@ -3,6 +3,7 @@ module AST.Common.Type exposing
     , Type(..)
     , emptyState
     , getVarId
+    , isParametric
     , niceVarName
     , toString
     )
@@ -50,6 +51,31 @@ getVarId type_ =
 
         _ ->
             Nothing
+
+
+isParametric : Type -> Bool
+isParametric type_ =
+    case type_ of
+        Var _ ->
+            True
+
+        Function input output ->
+            [ input, output ]
+                |> List.any isParametric
+
+        List element ->
+            isParametric element
+
+        Tuple left right ->
+            [ left, right ]
+                |> List.any isParametric
+
+        Tuple3 left middle right ->
+            [ left, middle, right ]
+                |> List.any isParametric
+
+        _ ->
+            False
 
 
 
