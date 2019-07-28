@@ -17,6 +17,7 @@ type Expr
     | Var { qualifier : Maybe ModuleName, name : VarName }
     | Argument VarName
     | Plus Expr Expr
+    | ListConcat Expr Expr
     | Lambda { arguments : List VarName, body : Expr }
     | Call { fn : Expr, argument : Expr }
     | If { test : Expr, then_ : Expr, else_ : Expr }

@@ -360,6 +360,7 @@ expr =
                             }
                     )
                 )
+            , PP.infixLeft 1 (P.symbol (P.Token "++" ExpectingConcatOperator)) (Located.merge ListConcat)
             , PP.infixLeft 1 (P.symbol (P.Token "+" ExpectingPlusOperator)) (Located.merge Plus)
             ]
         , spaces = P.spaces
