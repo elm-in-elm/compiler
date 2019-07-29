@@ -41,6 +41,7 @@ type Expr
     | Var { qualifier : ModuleName, name : VarName }
     | Argument VarName
     | Plus LocatedExpr LocatedExpr
+    | Cons LocatedExpr LocatedExpr
     | Lambda { argument : VarName, body : LocatedExpr }
     | Call { fn : LocatedExpr, argument : LocatedExpr }
     | If { test : LocatedExpr, then_ : LocatedExpr, else_ : LocatedExpr }
@@ -81,6 +82,11 @@ unwrap expr =
 
         Plus e1 e2 ->
             Unwrapped.Plus
+                (unwrap e1)
+                (unwrap e2)
+
+        Cons e1 e2 ->
+            Unwrapped.Cons
                 (unwrap e1)
                 (unwrap e2)
 
@@ -148,6 +154,11 @@ fromUnwrapped expr =
 
             Unwrapped.Plus e1 e2 ->
                 Plus
+                    (fromUnwrapped e1)
+                    (fromUnwrapped e2)
+
+            Unwrapped.Cons e1 e2 ->
+                Cons
                     (fromUnwrapped e1)
                     (fromUnwrapped e2)
 

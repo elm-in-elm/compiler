@@ -17,6 +17,7 @@ optimizeExpr : Typed.LocatedExpr -> Typed.LocatedExpr
 optimizeExpr located =
     Typed.transformAll
         [ optimizePlus
+        , optimizeCons
         , optimizeIfLiteralBool
         ]
         located
@@ -38,6 +39,26 @@ optimizePlus located =
                             )
                             located
                         )
+
+                _ ->
+                    Nothing
+
+        _ ->
+            Nothing
+
+
+log : String -> a -> b -> b
+log label data returned =
+    Debug.log label data |> (\_ -> returned)
+
+
+optimizeCons : Typed.LocatedExpr -> Maybe Typed.LocatedExpr
+optimizeCons located =
+    case Typed.getExpr located of
+        Typed.Cons l r ->
+            case Typed.getExpr r of
+                Typed.List list ->
+                    Just (Typed.mapExpr (\_ -> Typed.List (l :: list)) r)
 
                 _ ->
                     Nothing

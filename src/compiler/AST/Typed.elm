@@ -8,6 +8,7 @@ module AST.Typed exposing
     , isArgument
     , lambda
     , let_
+    , mapExpr
     , recursiveChildren
     , transformAll
     , transformOnce
@@ -52,6 +53,7 @@ type Expr_
     | Var { qualifier : ModuleName, name : VarName }
     | Argument VarName
     | Plus LocatedExpr LocatedExpr
+    | Cons LocatedExpr LocatedExpr
     | Lambda
         { argument : VarName
         , body : LocatedExpr
@@ -99,6 +101,11 @@ recurse f located =
 
                 Plus e1 e2 ->
                     Plus
+                        (f e1)
+                        (f e2)
+
+                Cons e1 e2 ->
+                    Cons
                         (f e1)
                         (f e2)
 
@@ -178,6 +185,10 @@ recursiveChildren fn located =
             []
 
         Plus left right ->
+            fn left
+                ++ fn right
+
+        Cons left right ->
             fn left
                 ++ fn right
 

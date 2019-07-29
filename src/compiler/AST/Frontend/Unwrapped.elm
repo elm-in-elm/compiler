@@ -17,6 +17,7 @@ type Expr
     | Var { qualifier : Maybe ModuleName, name : VarName }
     | Argument VarName
     | Plus Expr Expr
+    | Cons Expr Expr
     | Lambda { arguments : List VarName, body : Expr }
     | Call { fn : Expr, argument : Expr }
     | If { test : Expr, then_ : Expr, else_ : Expr }
@@ -25,4 +26,3 @@ type Expr
     | Unit
     | Tuple Expr Expr
     | Tuple3 Expr Expr Expr
-    | Cons Expr Expr

@@ -109,6 +109,12 @@ generateEquations idSource located =
             , idSource2
             )
 
+        -- TODO: implement type inference for (::) operator.
+        Typed.Cons left right ->
+            ( []
+            , idSource
+            )
+
         Typed.Lambda { body, argument } ->
             let
                 ( _, bodyType ) =

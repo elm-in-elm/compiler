@@ -45,6 +45,10 @@ emitExpr located =
         Plus e1 e2 ->
             "(" ++ emitExpr e1 ++ " + " ++ emitExpr e2 ++ ")"
 
+        Cons e1 e2 ->
+            -- TODO implement emitter for (::)
+            ""
+
         Lambda { argument, body } ->
             -- TODO are these parentheses needed?
             "((" ++ mangleVarName argument ++ ") => " ++ emitExpr body ++ ")"

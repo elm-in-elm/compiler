@@ -85,7 +85,7 @@ recurse f expr =
                 (f_ e1)
                 (f_ e2)
 
-        Cons e1 e2 -> 
+        Cons e1 e2 ->
             Cons
                 (f_ e1)
                 (f_ e2)
@@ -153,12 +153,10 @@ unwrap expr =
                 (unwrap e1)
                 (unwrap e2)
 
-        
         Cons e1 e2 ->
             Unwrapped.Cons
                 (unwrap e1)
                 (unwrap e2)
-
 
         Lambda { arguments, body } ->
             Unwrapped.Lambda

@@ -164,6 +164,10 @@ findDependencies modules located =
             findDependencies_ e1
                 ++ findDependencies_ e2
 
+        Cons e1 e2 ->
+            findDependencies_ e1
+                ++ findDependencies_ e2
+
         Lambda { argument, body } ->
             findDependencies_ body
                 |> List.filter (\decl -> decl.name /= argument)

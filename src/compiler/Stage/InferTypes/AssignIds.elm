@@ -97,6 +97,16 @@ assignIdsWithHelp idSource located =
             in
             assignId idSource2 (Typed.Plus e1_ e2_)
 
+        Canonical.Cons e1 e2 ->
+            let
+                ( e1_, idSource1 ) =
+                    assignIdsWith idSource e1
+
+                ( e2_, idSource2 ) =
+                    assignIdsWith idSource1 e2
+            in
+            assignId idSource2 (Typed.Cons e1_ e2_)
+
         Canonical.Lambda { argument, body } ->
             let
                 ( body_, idSource1 ) =
