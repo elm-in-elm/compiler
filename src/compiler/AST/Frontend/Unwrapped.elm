@@ -18,6 +18,7 @@ type Expr
     | Argument VarName
     | Plus Expr Expr
     | Cons Expr Expr
+    | ListConcat Expr Expr
     | Lambda { arguments : List VarName, body : Expr }
     | Call { fn : Expr, argument : Expr }
     | If { test : Expr, then_ : Expr, else_ : Expr }

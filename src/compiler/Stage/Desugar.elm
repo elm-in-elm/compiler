@@ -97,6 +97,22 @@ desugarExpr modules thisModule located =
                 (recurse e1)
                 (recurse e2)
 
+        Frontend.ListConcat e1 e2 ->
+            let
+                region =
+                    Located.getRegion located
+
+                listConcatVar =
+                    Frontend.Var { qualifier = Just (Common.Types.ModuleName "List"), name = Common.Types.VarName "append" } |> Located.located region
+
+                firstCall =
+                    Frontend.Call { fn = listConcatVar, argument = e1 } |> Located.located region
+
+                expr =
+                    Frontend.Call { fn = firstCall, argument = e2 } |> Located.located region
+            in
+            recurse expr
+
         Frontend.Lambda { arguments, body } ->
             recurse body
                 |> Result.map (curryLambda located arguments)

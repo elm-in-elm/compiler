@@ -36,6 +36,7 @@ type Expr
     | Argument VarName
     | Plus LocatedExpr LocatedExpr
     | Cons LocatedExpr LocatedExpr
+    | ListConcat LocatedExpr LocatedExpr
     | Lambda { arguments : List VarName, body : LocatedExpr }
     | Call { fn : LocatedExpr, argument : LocatedExpr }
     | If { test : LocatedExpr, then_ : LocatedExpr, else_ : LocatedExpr }
@@ -89,6 +90,9 @@ recurse f expr =
             Cons
                 (f_ e1)
                 (f_ e2)
+
+        ListConcat e1 e2 ->
+            ListConcat (f_ e1) (f_ e2)
 
         Lambda ({ body } as lambda_) ->
             Lambda { lambda_ | body = f_ body }
@@ -155,6 +159,11 @@ unwrap expr =
 
         Cons e1 e2 ->
             Unwrapped.Cons
+                (unwrap e1)
+                (unwrap e2)
+
+        ListConcat e1 e2 ->
+            Unwrapped.ListConcat
                 (unwrap e1)
                 (unwrap e2)
 
