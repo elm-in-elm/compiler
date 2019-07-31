@@ -47,7 +47,7 @@ emitExpr located =
 
         Cons e1 e2 ->
             -- TODO implement emitter for (::)
-            "[].concat([" ++ emitExpr e1 ++ "]," ++ emitExpr e2 ++ ")" 
+            "[].concat([" ++ emitExpr e1 ++ "]," ++ emitExpr e2 ++ ")"
 
         Lambda { argument, body } ->
             -- TODO are these parentheses needed?

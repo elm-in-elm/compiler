@@ -99,8 +99,16 @@ javascript =
                 )
             , describe "Cons"
                 (List.map runTest
-                    [ ( "simple", Cons (typedInt 1) (typedIntList [ 2, 3 ]), "[].concat([1],[2, 3])" )
-                    , ( "nested", Cons (typedInt 1) (typed (Cons (typedInt 1) (typedIntList [ 2, 3 ]))), "[].concat([1],[].concat([1],[2, 3]))" )
+                    [ ( "simple"
+                      , Cons (typedInt 1) (typedIntList [ 2, 3 ])
+                      , "[].concat([1],[2, 3])"
+                      )
+                    , ( "nested"
+                      , Cons
+                            (typedInt 1)
+                            (typed (Cons (typedInt 1) (typedIntList [ 2, 3 ])))
+                      , "[].concat([1],[].concat([1],[2, 3]))"
+                      )
                     ]
                 )
             , describe "Lambda"
