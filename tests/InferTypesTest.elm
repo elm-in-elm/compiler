@@ -7,7 +7,7 @@ import AST.Common.Located as Located
 import AST.Common.Type as Type exposing (Type(..))
 import AST.Typed as Typed
 import Common
-import Common.Types as Types exposing (VarName(..))
+import Common.Types as Types exposing (ModuleName(..), VarName(..))
 import Dict.Any
 import Error exposing (TypeError(..))
 import Expect exposing (Expectation)
@@ -111,6 +111,22 @@ typeInference =
                     (CanonicalU.Literal (Literal.Int 1))
                     (CanonicalU.Literal (Literal.Char 'h'))
               , Ok (Tuple3 Bool Int Char)
+              )
+            ]
+        , runSection "plus"
+            [ ( "same types"
+              , CanonicalU.Plus
+                    (CanonicalU.Var { qualifier = ModuleName "Main", name = VarName "age" })
+                    (CanonicalU.Literal (Literal.Int 1))
+              , Ok Int
+              )
+            ]
+        , runSection "cons"
+            [ ( "variable and list"
+              , CanonicalU.Cons
+                    (CanonicalU.Var { qualifier = ModuleName "Main", name = VarName "age" })
+                    (CanonicalU.List [ CanonicalU.Literal (Literal.Int 1) ])
+              , Ok (List Int)
               )
             ]
         ]

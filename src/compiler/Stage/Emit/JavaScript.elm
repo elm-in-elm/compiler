@@ -46,7 +46,6 @@ emitExpr located =
             "(" ++ emitExpr e1 ++ " + " ++ emitExpr e2 ++ ")"
 
         Cons e1 e2 ->
-            -- TODO implement emitter for (::)
             "[].concat([" ++ emitExpr e1 ++ "]," ++ emitExpr e2 ++ ")"
 
         Lambda { argument, body } ->
