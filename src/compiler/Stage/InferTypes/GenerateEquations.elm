@@ -109,7 +109,6 @@ generateEquations idSource located =
             , idSource2
             )
 
-        -- TODO: implement type inference for (::) operator.
         Typed.Cons left right ->
             let
                 ( _, leftType ) =
