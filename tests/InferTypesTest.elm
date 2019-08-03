@@ -122,7 +122,44 @@ typeInference =
               )
             ]
         , runSection "cons"
-            [ ( "variable and list"
+            [ ( "simple case"
+              , CanonicalU.Cons
+                    (CanonicalU.Literal (Literal.Int 1))
+                    (CanonicalU.List [])
+              , Ok (List Int)
+              )
+            , ( "advanced case"
+              , CanonicalU.Cons
+                    (CanonicalU.Literal (Literal.Int 1))
+                    (CanonicalU.Cons
+                        (CanonicalU.Literal (Literal.Int 2))
+                        (CanonicalU.List
+                            [ CanonicalU.Literal (Literal.Int 3)
+                            , CanonicalU.Literal (Literal.Int 4)
+                            ]
+                        )
+                    )
+              , Ok (List Int)
+              )
+            , ( "fail with wrong argument types"
+              , CanonicalU.Cons
+                    (CanonicalU.List
+                        [ CanonicalU.Literal (Literal.Int 1)
+                        , CanonicalU.Literal (Literal.Int 2)
+                        ]
+                    )
+                    (CanonicalU.List
+                        [ CanonicalU.Literal (Literal.Int 3)
+                        , CanonicalU.Literal (Literal.Int 4)
+                        ]
+                    )
+              , Err
+                    (Error.TypeMismatch
+                        (Type.List Type.Int)
+                        (Type.List (Type.List Type.Int))
+                    )
+              )
+            , ( "variable and list"
               , CanonicalU.Cons
                     (CanonicalU.Var { qualifier = ModuleName "Main", name = VarName "age" })
                     (CanonicalU.List [ CanonicalU.Literal (Literal.Int 1) ])
