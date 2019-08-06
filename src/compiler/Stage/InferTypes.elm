@@ -46,6 +46,10 @@ inferExpr located =
 
                    BTW GenerateEquations needed it because in case of some Exprs
                    (like List) it needed to create a new type ID on the fly.
+
+                   TODO those IDs generated on the fly have bad visibility (you
+                   can only infer their existence from the equations, but can't
+                   clearly see what they belong to). Can we do something about it?
                 -}
                 |> Tuple.first
 
