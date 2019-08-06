@@ -124,7 +124,7 @@ generateEquations idSource located =
                     generateEquations idSource1 right
             in
             ( -- For expression a :: [ b ]:
-                [ equals rightType (Type.List leftType) -- type of b is a List a
+              [ equals rightType (Type.List leftType) -- type of b is a List a
               , equals type_ rightType -- a :: [ b ] is a List b
               ]
                 ++ leftEquations
