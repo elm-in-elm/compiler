@@ -123,7 +123,12 @@ generateEquations idSource located =
                 ( rightEquations, idSource2 ) =
                     generateEquations idSource1 right
             in
-            ( [ equals type_ rightType ] ++ leftEquations ++ rightEquations
+            ( -- For expression a :: [ b ]:
+                [ equals rightType (Type.List leftType) -- type of b is a List a
+              , equals type_ rightType -- a :: [ b ] is a List b
+              ]
+                ++ leftEquations
+                ++ rightEquations
             , idSource2
             )
 
