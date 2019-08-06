@@ -65,23 +65,42 @@ inferExpr located =
            The second option seems like an unnecessary work, but for the purposes
            of readability and education we go with it.
         -}
-        substitutionMap : Result TypeError SubstitutionMap
+        substitutionMap : Result ( TypeError, SubstitutionMap ) SubstitutionMap
         substitutionMap =
             Unify.unifyAllEquations typeEquations
     in
-    Result.map
-        (substituteAllTypes exprWithIds)
-        substitutionMap
+    substitutionMap
+        |> Result.map (substituteAllInExpr exprWithIds)
+        |> Result.mapError substituteAllInError
 
 
 {-| This function takes care of recursively applying `substituteType`
 from the bottom up.
 -}
-substituteAllTypes : Typed.LocatedExpr -> SubstitutionMap -> Typed.LocatedExpr
-substituteAllTypes located substitutionMap =
+substituteAllInExpr : Typed.LocatedExpr -> SubstitutionMap -> Typed.LocatedExpr
+substituteAllInExpr located substitutionMap =
     Typed.transformOnce
         (substituteType substitutionMap)
         located
+
+
+{-| Use whatever information you gathered before the unification failed
+to make the resulting error a bit nicer.
+
+Ie. if we have `t0 == Int` and error `List t0 /= Int`, we can do a bit better
+and return `List Int /= Int` to the user.
+
+-}
+substituteAllInError : ( TypeError, SubstitutionMap ) -> TypeError
+substituteAllInError ( error, substitutionMap ) =
+    case error of
+        TypeMismatch t1 t2 ->
+            TypeMismatch
+                (getBetterType substitutionMap t1)
+                (getBetterType substitutionMap t2)
+
+        OccursCheckFailed id type_ ->
+            OccursCheckFailed id (getBetterType substitutionMap type_)
 
 
 {-| Only care about this level, don't recurse

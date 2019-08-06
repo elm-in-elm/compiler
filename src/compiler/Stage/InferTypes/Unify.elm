@@ -8,7 +8,7 @@ import Stage.InferTypes.TypeEquation as TypeEquation exposing (TypeEquation)
 
 {-| TODO document
 -}
-unifyAllEquations : List TypeEquation -> Result TypeError SubstitutionMap
+unifyAllEquations : List TypeEquation -> Result ( TypeError, SubstitutionMap ) SubstitutionMap
 unifyAllEquations equations =
     List.foldl
         (\equation substitutionMap ->
@@ -22,7 +22,7 @@ unifyAllEquations equations =
         equations
 
 
-unify : Type -> Type -> SubstitutionMap -> Result TypeError SubstitutionMap
+unify : Type -> Type -> SubstitutionMap -> Result ( TypeError, SubstitutionMap ) SubstitutionMap
 unify t1 t2 substitutionMap =
     if t1 == t2 then
         Ok substitutionMap
@@ -54,10 +54,10 @@ unify t1 t2 substitutionMap =
                     |> Result.andThen (unify t1e3 t2e3)
 
             _ ->
-                Err (TypeMismatch t1 t2)
+                Err ( TypeMismatch t1 t2, substitutionMap )
 
 
-unifyVariable : Int -> Type -> SubstitutionMap -> Result TypeError SubstitutionMap
+unifyVariable : Int -> Type -> SubstitutionMap -> Result ( TypeError, SubstitutionMap ) SubstitutionMap
 unifyVariable id type_ substitutionMap =
     case SubstitutionMap.get id substitutionMap of
         Just typeForId ->
@@ -74,7 +74,7 @@ unifyVariable id type_ substitutionMap =
 
                 Nothing ->
                     if occurs id type_ substitutionMap then
-                        Err (OccursCheckFailed id type_)
+                        Err ( OccursCheckFailed id type_, substitutionMap )
 
                     else
                         Ok (SubstitutionMap.insert id type_ substitutionMap)
