@@ -156,7 +156,7 @@ typeInference =
               , Err
                     (Error.TypeMismatch
                         (Type.List Type.Int)
-                        (Type.List (Type.List Type.Int))
+                        Type.Int
                     )
               )
             , ( "variable and list"
