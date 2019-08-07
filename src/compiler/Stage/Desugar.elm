@@ -92,6 +92,11 @@ desugarExpr modules thisModule located =
                 (recurse e1)
                 (recurse e2)
 
+        Frontend.Cons e1 e2 ->
+            map2 Canonical.Cons
+                (recurse e1)
+                (recurse e2)
+
         Frontend.ListConcat e1 e2 ->
             let
                 region =

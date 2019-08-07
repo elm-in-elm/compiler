@@ -8,14 +8,17 @@ module AST.Typed exposing
     , isArgument
     , lambda
     , let_
+    , mapExpr
     , recursiveChildren
     , transformAll
     , transformOnce
+    , unwrap
     )
 
 import AST.Common.Literal exposing (Literal)
 import AST.Common.Located as Located exposing (Located)
 import AST.Common.Type exposing (Type)
+import AST.Typed.Unwrapped as Unwrapped
 import Common
 import Common.Types
     exposing
@@ -52,6 +55,7 @@ type Expr_
     | Var { qualifier : ModuleName, name : VarName }
     | Argument VarName
     | Plus LocatedExpr LocatedExpr
+    | Cons LocatedExpr LocatedExpr
     | Lambda
         { argument : VarName
         , body : LocatedExpr
@@ -99,6 +103,11 @@ recurse f located =
 
                 Plus e1 e2 ->
                     Plus
+                        (f e1)
+                        (f e2)
+
+                Cons e1 e2 ->
+                    Cons
                         (f e1)
                         (f e2)
 
@@ -181,6 +190,10 @@ recursiveChildren fn located =
             fn left
                 ++ fn right
 
+        Cons left right ->
+            fn left
+                ++ fn right
+
         Lambda { body } ->
             fn body
 
@@ -223,3 +236,78 @@ getExpr =
 getType : LocatedExpr -> Type
 getType =
     Tuple.second << Located.unwrap
+
+
+unwrap : LocatedExpr -> Unwrapped.Expr
+unwrap expr =
+    let
+        ( expr_, type_ ) =
+            Located.unwrap expr
+    in
+    ( case expr_ of
+        Literal literal ->
+            Unwrapped.Literal literal
+
+        Var var_ ->
+            Unwrapped.Var var_
+
+        Argument name ->
+            Unwrapped.Argument name
+
+        Plus e1 e2 ->
+            Unwrapped.Plus
+                (unwrap e1)
+                (unwrap e2)
+
+        Cons e1 e2 ->
+            Unwrapped.Cons
+                (unwrap e1)
+                (unwrap e2)
+
+        Lambda { argument, body } ->
+            Unwrapped.Lambda
+                { argument = argument
+                , body = unwrap body
+                }
+
+        Call { fn, argument } ->
+            Unwrapped.Call
+                { fn = unwrap fn
+                , argument = unwrap argument
+                }
+
+        If { test, then_, else_ } ->
+            Unwrapped.If
+                { test = unwrap test
+                , then_ = unwrap then_
+                , else_ = unwrap else_
+                }
+
+        Let { bindings, body } ->
+            Unwrapped.Let
+                { bindings =
+                    Dict.Any.map
+                        (always (Common.mapBinding unwrap))
+                        bindings
+                , body = unwrap body
+                }
+
+        List list ->
+            Unwrapped.List
+                (List.map unwrap list)
+
+        Unit ->
+            Unwrapped.Unit
+
+        Tuple e1 e2 ->
+            Unwrapped.Tuple
+                (unwrap e1)
+                (unwrap e2)
+
+        Tuple3 e1 e2 e3 ->
+            Unwrapped.Tuple3
+                (unwrap e1)
+                (unwrap e2)
+                (unwrap e3)
+    , type_
+    )

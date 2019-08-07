@@ -20,6 +20,7 @@ import TestHelpers
         ( located
         , typedBool
         , typedInt
+        , typedIntList
         )
 
 
@@ -74,6 +75,19 @@ optimize =
                                 (located ( Argument (VarName "x"), Type.Int ))
                             , Type.Int
                             )
+                      )
+                    ]
+                )
+            , describe "optimizeCons"
+                (List.map runTest
+                    [ ( "works with one value"
+                      , located
+                            ( Cons
+                                (typedInt 1)
+                                (typedIntList [ 2, 3 ])
+                            , Type.Int
+                            )
+                      , typedIntList [ 1, 2, 3 ]
                       )
                     ]
                 )

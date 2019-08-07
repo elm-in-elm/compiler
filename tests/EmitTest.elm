@@ -20,6 +20,7 @@ import TestHelpers
         ( typed
         , typedBool
         , typedInt
+        , typedIntList
         , typedString
         )
 
@@ -94,6 +95,20 @@ javascript =
                     -- We need to give the child `Expr`s a type too
                     [ ( "simple", Plus (typedInt 1) (typedInt 2), "(1 + 2)" )
                     , ( "nested", Plus (typedInt 1) (typed (Plus (typedInt 2) (typedInt 3))), "(1 + (2 + 3))" )
+                    ]
+                )
+            , describe "Cons"
+                (List.map runTest
+                    [ ( "simple"
+                      , Cons (typedInt 1) (typedIntList [ 2, 3 ])
+                      , "[1].concat([2, 3])"
+                      )
+                    , ( "nested"
+                      , Cons
+                            (typedInt 1)
+                            (typed (Cons (typedInt 2) (typedIntList [ 3, 4 ])))
+                      , "[1].concat([2].concat([3, 4]))"
+                      )
                     ]
                 )
             , describe "Lambda"

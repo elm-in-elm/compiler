@@ -35,6 +35,7 @@ type Expr
     | Var { qualifier : Maybe ModuleName, name : VarName }
     | Argument VarName
     | Plus LocatedExpr LocatedExpr
+    | Cons LocatedExpr LocatedExpr
     | ListConcat LocatedExpr LocatedExpr
     | Lambda { arguments : List VarName, body : LocatedExpr }
     | Call { fn : LocatedExpr, argument : LocatedExpr }
@@ -82,6 +83,11 @@ recurse f expr =
 
         Plus e1 e2 ->
             Plus
+                (f_ e1)
+                (f_ e2)
+
+        Cons e1 e2 ->
+            Cons
                 (f_ e1)
                 (f_ e2)
 
@@ -148,6 +154,11 @@ unwrap expr =
 
         Plus e1 e2 ->
             Unwrapped.Plus
+                (unwrap e1)
+                (unwrap e2)
+
+        Cons e1 e2 ->
+            Unwrapped.Cons
                 (unwrap e1)
                 (unwrap e2)
 

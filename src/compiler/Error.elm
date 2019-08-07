@@ -96,6 +96,7 @@ type ParseProblem
     | ExpectingDoubleQuote
     | ExpectingTripleQuote
     | ExpectingPlusOperator
+    | ExpectingConsOperator
     | ExpectingConcatOperator
     | ExpectingModuleDot -- `import Foo>.<Bar`
     | ExpectingBackslash -- `>\<x -> x + 1`

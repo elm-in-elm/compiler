@@ -328,6 +328,7 @@ compile project =
                             |> List.map
                                 (\decl ->
                                     decl.body
+                                        |> Frontend.unwrap
                                         |> Debug.log
                                             (Common.moduleNameToString decl.module_
                                                 ++ "."

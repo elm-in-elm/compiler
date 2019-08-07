@@ -4,6 +4,7 @@ module TestHelpers exposing
     , typed
     , typedBool
     , typedInt
+    , typedIntList
     , typedString
     )
 
@@ -59,4 +60,12 @@ typedString str =
     located
         ( Literal (Literal.String str)
         , String
+        )
+
+
+typedIntList : List Int -> Typed.LocatedExpr
+typedIntList list =
+    located
+        ( Typed.List (List.map typedInt list)
+        , Type.List Type.Int
         )

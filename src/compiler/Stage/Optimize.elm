@@ -17,6 +17,7 @@ optimizeExpr : Typed.LocatedExpr -> Typed.LocatedExpr
 optimizeExpr located =
     Typed.transformAll
         [ optimizePlus
+        , optimizeCons
         , optimizeIfLiteralBool
         ]
         located
@@ -31,13 +32,22 @@ optimizePlus located =
         Typed.Plus l r ->
             case ( Typed.getExpr l, Typed.getExpr r ) of
                 ( Typed.Literal (Literal.Int left), Typed.Literal (Literal.Int right) ) ->
-                    Just
-                        (Located.replaceWith
-                            ( Typed.Literal (Literal.Int (left + right))
-                            , Type.Int
-                            )
-                            located
-                        )
+                    Just (Typed.mapExpr (\_ -> Typed.Literal (Literal.Int (left + right))) r)
+
+                _ ->
+                    Nothing
+
+        _ ->
+            Nothing
+
+
+optimizeCons : Typed.LocatedExpr -> Maybe Typed.LocatedExpr
+optimizeCons located =
+    case Typed.getExpr located of
+        Typed.Cons l r ->
+            case Typed.getExpr r of
+                Typed.List list ->
+                    Just (Typed.mapExpr (\_ -> Typed.List (l :: list)) r)
 
                 _ ->
                     Nothing

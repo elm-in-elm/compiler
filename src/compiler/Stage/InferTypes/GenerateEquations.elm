@@ -109,6 +109,29 @@ generateEquations idSource located =
             , idSource2
             )
 
+        Typed.Cons left right ->
+            let
+                ( _, leftType ) =
+                    Located.unwrap left
+
+                ( _, rightType ) =
+                    Located.unwrap right
+
+                ( leftEquations, idSource1 ) =
+                    generateEquations idSource left
+
+                ( rightEquations, idSource2 ) =
+                    generateEquations idSource1 right
+            in
+            ( -- For expression a :: [ b ]:
+              [ equals rightType (Type.List leftType) -- type of b is a List a
+              , equals type_ rightType -- a :: [ b ] is a List b
+              ]
+                ++ leftEquations
+                ++ rightEquations
+            , idSource2
+            )
+
         Typed.Lambda { body, argument } ->
             let
                 ( _, bodyType ) =
