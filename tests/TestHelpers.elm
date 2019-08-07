@@ -66,9 +66,6 @@ typedString str =
 typedIntList : List Int -> Typed.LocatedExpr
 typedIntList list =
     located
-        ( Typed.List
-            (list
-                |> List.map typedInt
-            )
+        ( Typed.List (List.map typedInt list)
         , Type.List Type.Int
         )
