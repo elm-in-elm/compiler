@@ -32,13 +32,7 @@ optimizePlus located =
         Typed.Plus l r ->
             case ( Typed.getExpr l, Typed.getExpr r ) of
                 ( Typed.Literal (Literal.Int left), Typed.Literal (Literal.Int right) ) ->
-                    Just
-                        (Located.replaceWith
-                            ( Typed.Literal (Literal.Int (left + right))
-                            , Type.Int
-                            )
-                            located
-                        )
+                    Just (Typed.mapExpr (\_ -> Typed.Literal (Literal.Int (left + right))) r)
 
                 _ ->
                     Nothing
