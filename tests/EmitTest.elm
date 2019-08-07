@@ -101,13 +101,13 @@ javascript =
                 (List.map runTest
                     [ ( "simple"
                       , Cons (typedInt 1) (typedIntList [ 2, 3 ])
-                      , "[].concat([1],[2, 3])"
+                      , "[1].concat([2, 3])"
                       )
                     , ( "nested"
                       , Cons
                             (typedInt 1)
-                            (typed (Cons (typedInt 1) (typedIntList [ 2, 3 ])))
-                      , "[].concat([1],[].concat([1],[2, 3]))"
+                            (typed (Cons (typedInt 2) (typedIntList [ 3, 4 ])))
+                      , "[1].concat([2].concat([3, 4]))"
                       )
                     ]
                 )

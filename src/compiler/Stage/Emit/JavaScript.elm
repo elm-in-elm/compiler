@@ -46,7 +46,7 @@ emitExpr located =
             "(" ++ emitExpr e1 ++ " + " ++ emitExpr e2 ++ ")"
 
         Cons e1 e2 ->
-            "[].concat([" ++ emitExpr e1 ++ "]," ++ emitExpr e2 ++ ")"
+            "[" ++ emitExpr e1 ++ "].concat(" ++ emitExpr e2 ++ ")"
 
         Lambda { argument, body } ->
             -- TODO are these parentheses needed?
