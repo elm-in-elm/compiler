@@ -932,6 +932,22 @@ expr =
                             )
                         )
                   )
+                , ( "no spaces"
+                  , "1::[]"
+                  , Just
+                        (Cons
+                            (Literal (Int 1))
+                            (List [])
+                        )
+                  )
+                , ( "multiple spaces"
+                  , "1    ::      []"
+                  , Just
+                        (Cons
+                            (Literal (Int 1))
+                            (List [])
+                        )
+                  )
                 ]
               )
             ]
