@@ -47,11 +47,6 @@ optimizePlus located =
             Nothing
 
 
-log : String -> a -> b -> b
-log label data returned =
-    Debug.log label data |> (\_ -> returned)
-
-
 optimizeCons : Typed.LocatedExpr -> Maybe Typed.LocatedExpr
 optimizeCons located =
     case Typed.getExpr located of
