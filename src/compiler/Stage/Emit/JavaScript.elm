@@ -61,6 +61,10 @@ emitExpr located =
                 bindingsJS =
                     bindings
                         |> Dict.values
+                        |> {- AssocList reverses the list on creation:
+                              https://package.elm-lang.org/packages/pzp1997/assoc-list/latest/AssocList#fromList
+                           -}
+                           List.reverse
                         |> List.map (\binding -> "const " ++ mangleVarName binding.name ++ " = " ++ emitExpr binding.body)
                         |> String.join "; "
             in

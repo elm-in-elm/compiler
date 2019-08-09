@@ -4,14 +4,10 @@ import AST.Common.Literal exposing (Literal(..))
 import AST.Common.Located as Located exposing (Located)
 import AST.Common.Type as Type
 import AST.Typed as Typed exposing (Expr_(..))
-import Common
-import Common.Types
-    exposing
-        ( ModuleName(..)
-        , TopLevelDeclaration
-        , VarName(..)
-        )
-import Dict.Any
+import AssocList as Dict
+import Data.Declaration exposing (Declaration)
+import Data.ModuleName as ModuleName exposing (ModuleName)
+import Data.VarName as VarName exposing (VarName)
 import Expect exposing (Expectation)
 import Stage.Optimize
 import Test exposing (Test, describe, test, todo)
@@ -21,6 +17,7 @@ import TestHelpers
         , typedBool
         , typedInt
         , typedIntList
+        , var
         )
 
 
@@ -51,13 +48,13 @@ optimize =
                     , ( "doesn't work if left is not int"
                       , located
                             ( Plus
-                                (located ( Argument (VarName "x"), Type.Int ))
+                                (located ( Argument (var "x"), Type.Int ))
                                 (typedInt 5)
                             , Type.Int
                             )
                       , located
                             ( Plus
-                                (located ( Argument (VarName "x"), Type.Int ))
+                                (located ( Argument (var "x"), Type.Int ))
                                 (typedInt 5)
                             , Type.Int
                             )
@@ -66,13 +63,13 @@ optimize =
                       , located
                             ( Plus
                                 (typedInt 5)
-                                (located ( Argument (VarName "x"), Type.Int ))
+                                (located ( Argument (var "x"), Type.Int ))
                             , Type.Int
                             )
                       , located
                             ( Plus
                                 (typedInt 5)
-                                (located ( Argument (VarName "x"), Type.Int ))
+                                (located ( Argument (var "x"), Type.Int ))
                             , Type.Int
                             )
                       )
@@ -118,7 +115,7 @@ optimize =
                     , ( "doesn't work if the bool is not literal"
                       , located
                             ( If
-                                { test = located ( Argument (VarName "x"), Type.Bool )
+                                { test = located ( Argument (var "x"), Type.Bool )
                                 , then_ = typedInt 0
                                 , else_ = typedInt 42
                                 }
@@ -126,7 +123,7 @@ optimize =
                             )
                       , located
                             ( If
-                                { test = located ( Argument (VarName "x"), Type.Bool )
+                                { test = located ( Argument (var "x"), Type.Bool )
                                 , then_ = typedInt 0
                                 , else_ = typedInt 42
                                 }

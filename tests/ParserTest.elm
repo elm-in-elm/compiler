@@ -1,7 +1,7 @@
 module ParserTest exposing
-    ( dependencies
-    , exposingList
+    ( exposingList
     , expr
+    , imports
     , moduleDeclaration
     , moduleName
     )
@@ -9,22 +9,18 @@ module ParserTest exposing
 import AST.Common.Literal exposing (Literal(..))
 import AST.Frontend as Frontend
 import AST.Frontend.Unwrapped exposing (Expr(..))
-import Common
-import Common.Types
-    exposing
-        ( ExposedItem(..)
-        , Exposing(..)
-        , ModuleName(..)
-        , ModuleType(..)
-        , VarName(..)
-        )
-import Dict.Any
+import AssocList as Dict
+import Data.Exposing exposing (ExposedItem(..), Exposing(..))
+import Data.Module exposing (ModuleType(..))
+import Data.ModuleName as ModuleName exposing (ModuleName)
+import Data.VarName as VarName exposing (VarName)
 import Error exposing (ParseContext, ParseProblem)
 import Expect exposing (Expectation)
 import Parser.Advanced as P
 import Result.Extra
 import Stage.Parse.Parser
 import Test exposing (Test, describe, test)
+import TestHelpers exposing (module_, var)
 
 
 moduleDeclaration : Test
@@ -43,35 +39,35 @@ moduleDeclaration =
             (List.map runTest
                 [ ( "works with simple module name"
                   , "module Foo exposing (..)"
-                  , Just ( PlainModule, ModuleName "Foo", ExposingAll )
+                  , Just ( PlainModule, module_ "Foo", ExposingAll )
                   )
                 , ( "works with nested module name"
                   , "module Foo.Bar exposing (..)"
-                  , Just ( PlainModule, ModuleName "Foo.Bar", ExposingAll )
+                  , Just ( PlainModule, module_ "Foo.Bar", ExposingAll )
                   )
                 , ( "works with even more nested module name"
                   , "module Foo.Bar.Baz.Quux exposing (..)"
-                  , Just ( PlainModule, ModuleName "Foo.Bar.Baz.Quux", ExposingAll )
+                  , Just ( PlainModule, module_ "Foo.Bar.Baz.Quux", ExposingAll )
                   )
                 , ( "allows multiple spaces between the `module` keyword and the module name"
                   , "module  Foo exposing (..)"
-                  , Just ( PlainModule, ModuleName "Foo", ExposingAll )
+                  , Just ( PlainModule, module_ "Foo", ExposingAll )
                   )
                 , ( "allows multiple spaces between the module name and the `exposing` keyword"
                   , "module Foo  exposing (..)"
-                  , Just ( PlainModule, ModuleName "Foo", ExposingAll )
+                  , Just ( PlainModule, module_ "Foo", ExposingAll )
                   )
                 , ( "allows a newline between the module name and the `exposing` keyword"
                   , "module Foo\nexposing (..)"
-                  , Just ( PlainModule, ModuleName "Foo", ExposingAll )
+                  , Just ( PlainModule, module_ "Foo", ExposingAll )
                   )
                 , ( "allows multiple spaces between the `exposing` keyword and the exposing list"
                   , "module Foo exposing  (..)"
-                  , Just ( PlainModule, ModuleName "Foo", ExposingAll )
+                  , Just ( PlainModule, module_ "Foo", ExposingAll )
                   )
                 , ( "allows a newline between the `exposing` keyword and the exposing list"
                   , "module Foo exposing\n(..)"
-                  , Just ( PlainModule, ModuleName "Foo", ExposingAll )
+                  , Just ( PlainModule, module_ "Foo", ExposingAll )
                   )
                 , ( "doesn't work without something after the `exposing` keyword"
                   , "module Foo exposing"
@@ -83,7 +79,7 @@ moduleDeclaration =
             (List.map runTest
                 [ ( "simply works"
                   , "module Foo exposing (..)"
-                  , Just ( PlainModule, ModuleName "Foo", ExposingAll )
+                  , Just ( PlainModule, module_ "Foo", ExposingAll )
                   )
                 ]
             )
@@ -91,7 +87,7 @@ moduleDeclaration =
             (List.map runTest
                 [ ( "simply works"
                   , "port module Foo exposing (..)"
-                  , Just ( PortModule, ModuleName "Foo", ExposingAll )
+                  , Just ( PortModule, module_ "Foo", ExposingAll )
                   )
                 ]
             )
@@ -208,27 +204,27 @@ exposingList =
         ]
 
 
-dependencies : Test
-dependencies =
+imports : Test
+imports =
     let
         runTest ( description, input, output ) =
             test description <|
                 \() ->
                     input
-                        |> P.run Stage.Parse.Parser.dependencies
+                        |> P.run Stage.Parse.Parser.imports
                         |> Result.toMaybe
                         |> Expect.equal output
     in
-    describe "Stage.Parse.Parser.dependencies"
+    describe "Stage.Parse.Parser.imports"
         [ describe "general"
             (List.map runTest
                 [ ( "allows for multiple modifiers"
                   , "import Foo as F exposing (..)"
                   , Just
-                        (Dict.Any.fromList Common.moduleNameToString
-                            [ ( ModuleName "Foo"
-                              , { moduleName = ModuleName "Foo"
-                                , as_ = Just (ModuleName "F")
+                        (Dict.fromList
+                            [ ( module_ "Foo"
+                              , { moduleName = module_ "Foo"
+                                , as_ = Just (module_ "F")
                                 , exposing_ = Just ExposingAll
                                 }
                               )
@@ -238,10 +234,10 @@ dependencies =
                 , ( "allows for multiple spaces"
                   , "import   Foo   as   F   exposing   (..)"
                   , Just
-                        (Dict.Any.fromList Common.moduleNameToString
-                            [ ( ModuleName "Foo"
-                              , { moduleName = ModuleName "Foo"
-                                , as_ = Just (ModuleName "F")
+                        (Dict.fromList
+                            [ ( module_ "Foo"
+                              , { moduleName = module_ "Foo"
+                                , as_ = Just (module_ "F")
                                 , exposing_ = Just ExposingAll
                                 }
                               )
@@ -251,15 +247,15 @@ dependencies =
                 , ( "allows for multiple imports"
                   , "import Foo\nimport Bar"
                   , Just
-                        (Dict.Any.fromList Common.moduleNameToString
-                            [ ( ModuleName "Foo"
-                              , { moduleName = ModuleName "Foo"
+                        (Dict.fromList
+                            [ ( module_ "Foo"
+                              , { moduleName = module_ "Foo"
                                 , as_ = Nothing
                                 , exposing_ = Nothing
                                 }
                               )
-                            , ( ModuleName "Bar"
-                              , { moduleName = ModuleName "Bar"
+                            , ( module_ "Bar"
+                              , { moduleName = module_ "Bar"
                                 , as_ = Nothing
                                 , exposing_ = Nothing
                                 }
@@ -270,15 +266,15 @@ dependencies =
                 , ( "allows for multiple newlines between imports"
                   , "import Foo\n\nimport Bar"
                   , Just
-                        (Dict.Any.fromList Common.moduleNameToString
-                            [ ( ModuleName "Foo"
-                              , { moduleName = ModuleName "Foo"
+                        (Dict.fromList
+                            [ ( module_ "Foo"
+                              , { moduleName = module_ "Foo"
                                 , as_ = Nothing
                                 , exposing_ = Nothing
                                 }
                               )
-                            , ( ModuleName "Bar"
-                              , { moduleName = ModuleName "Bar"
+                            , ( module_ "Bar"
+                              , { moduleName = module_ "Bar"
                                 , as_ = Nothing
                                 , exposing_ = Nothing
                                 }
@@ -297,9 +293,9 @@ dependencies =
                 [ ( "simply works"
                   , "import Foo"
                   , Just
-                        (Dict.Any.fromList Common.moduleNameToString
-                            [ ( ModuleName "Foo"
-                              , { moduleName = ModuleName "Foo"
+                        (Dict.fromList
+                            [ ( module_ "Foo"
+                              , { moduleName = module_ "Foo"
                                 , as_ = Nothing
                                 , exposing_ = Nothing
                                 }
@@ -314,10 +310,10 @@ dependencies =
                 [ ( "simply works"
                   , "import Foo as F"
                   , Just
-                        (Dict.Any.fromList Common.moduleNameToString
-                            [ ( ModuleName "Foo"
-                              , { moduleName = ModuleName "Foo"
-                                , as_ = Just (ModuleName "F")
+                        (Dict.fromList
+                            [ ( module_ "Foo"
+                              , { moduleName = module_ "Foo"
+                                , as_ = Just (module_ "F")
                                 , exposing_ = Nothing
                                 }
                               )
@@ -339,9 +335,9 @@ dependencies =
                 [ ( "simply works"
                   , "import Foo exposing (bar, Baz, Quux(..))"
                   , Just
-                        (Dict.Any.fromList Common.moduleNameToString
-                            [ ( ModuleName "Foo"
-                              , { moduleName = ModuleName "Foo"
+                        (Dict.fromList
+                            [ ( module_ "Foo"
+                              , { moduleName = module_ "Foo"
                                 , as_ = Nothing
                                 , exposing_ =
                                     Just
@@ -443,10 +439,10 @@ expr =
                   , "\\x -> x + 1"
                   , Just
                         (Lambda
-                            { arguments = [ VarName "x" ]
+                            { arguments = [ var "x" ]
                             , body =
                                 Plus
-                                    (Argument (VarName "x"))
+                                    (Argument (var "x"))
                                     (Literal (Int 1))
                             }
                         )
@@ -456,13 +452,13 @@ expr =
                   , Just
                         (Lambda
                             { arguments =
-                                [ VarName "x"
-                                , VarName "y"
+                                [ var "x"
+                                , var "y"
                                 ]
                             , body =
                                 Plus
-                                    (Argument (VarName "x"))
-                                    (Argument (VarName "y"))
+                                    (Argument (var "x"))
+                                    (Argument (var "y"))
                             }
                         )
                   )
@@ -473,7 +469,7 @@ expr =
                   , "fn 1"
                   , Just
                         (Call
-                            { fn = Var { name = VarName "fn", qualifier = Nothing }
+                            { fn = Var { name = var "fn", qualifier = Nothing }
                             , argument = Literal (Int 1)
                             }
                         )
@@ -482,8 +478,8 @@ expr =
                   , "fn arg"
                   , Just
                         (Call
-                            { fn = Var { name = VarName "fn", qualifier = Nothing }
-                            , argument = Var { name = VarName "arg", qualifier = Nothing }
+                            { fn = Var { name = var "fn", qualifier = Nothing }
+                            , argument = Var { name = var "arg", qualifier = Nothing }
                             }
                         )
                   )
@@ -493,10 +489,10 @@ expr =
                         (Call
                             { fn =
                                 Call
-                                    { fn = Var { name = VarName "fn", qualifier = Nothing }
-                                    , argument = Var { name = VarName "arg1", qualifier = Nothing }
+                                    { fn = Var { name = var "fn", qualifier = Nothing }
+                                    , argument = Var { name = var "arg1", qualifier = Nothing }
                                     }
-                            , argument = Var { name = VarName "arg2", qualifier = Nothing }
+                            , argument = Var { name = var "arg2", qualifier = Nothing }
                             }
                         )
                   )
@@ -504,8 +500,8 @@ expr =
                   , "fn(arg1)"
                   , Just
                         (Call
-                            { fn = Var { name = VarName "fn", qualifier = Nothing }
-                            , argument = Var { name = VarName "arg1", qualifier = Nothing }
+                            { fn = Var { name = var "fn", qualifier = Nothing }
+                            , argument = Var { name = var "arg1", qualifier = Nothing }
                             }
                         )
                   )
@@ -785,7 +781,7 @@ expr =
                   , Just
                         (Let
                             { bindings =
-                                [ { name = VarName "x"
+                                [ { name = var "x"
                                   , body = Literal (Int 1)
                                   }
                                 ]
@@ -798,7 +794,7 @@ expr =
                   , Just
                         (Let
                             { bindings =
-                                [ { name = VarName "x"
+                                [ { name = var "x"
                                   , body = Literal (Int 1)
                                   }
                                 ]
