@@ -1,22 +1,17 @@
 module Stage.Optimize.Boilerplate exposing (optimizeProject)
 
 import AST.Typed as Typed
-import Common.Types
-    exposing
-        ( Dict_
-        , Module
-        , Modules
-        , Project
-        , TopLevelDeclaration
-        , VarName
-        )
-import Dict.Any
+import AssocList as Dict exposing (Dict)
+import Data.Declaration exposing (Declaration)
+import Data.Module exposing (Module, Modules)
+import Data.Project exposing (Project)
+import Data.VarName exposing (VarName)
 
 
 optimizeProject : (Typed.LocatedExpr -> Typed.LocatedExpr) -> Project Typed.ProjectFields -> Project Typed.ProjectFields
 optimizeProject optimizeExpr project =
     project.modules
-        |> Dict.Any.map (always (optimizeModule optimizeExpr))
+        |> Dict.map (always (optimizeModule optimizeExpr))
         |> asModulesIn project
 
 
@@ -27,22 +22,22 @@ asModulesIn project modules =
 
 optimizeModule : (Typed.LocatedExpr -> Typed.LocatedExpr) -> Module Typed.LocatedExpr -> Module Typed.LocatedExpr
 optimizeModule optimizeExpr module_ =
-    module_.topLevelDeclarations
-        |> Dict.Any.map (always (optimizeTopLevelDeclaration optimizeExpr))
-        |> asTopLevelDeclarationsIn module_
+    module_.declarations
+        |> Dict.map (always (optimizeDeclaration optimizeExpr))
+        |> asDeclarationsIn module_
 
 
-asTopLevelDeclarationsIn : Module Typed.LocatedExpr -> Dict_ VarName (TopLevelDeclaration Typed.LocatedExpr) -> Module Typed.LocatedExpr
-asTopLevelDeclarationsIn module_ topLevelDeclarations =
-    { module_ | topLevelDeclarations = topLevelDeclarations }
+asDeclarationsIn : Module Typed.LocatedExpr -> Dict VarName (Declaration Typed.LocatedExpr) -> Module Typed.LocatedExpr
+asDeclarationsIn module_ declarations =
+    { module_ | declarations = declarations }
 
 
-optimizeTopLevelDeclaration : (Typed.LocatedExpr -> Typed.LocatedExpr) -> TopLevelDeclaration Typed.LocatedExpr -> TopLevelDeclaration Typed.LocatedExpr
-optimizeTopLevelDeclaration optimizeExpr decl =
+optimizeDeclaration : (Typed.LocatedExpr -> Typed.LocatedExpr) -> Declaration Typed.LocatedExpr -> Declaration Typed.LocatedExpr
+optimizeDeclaration optimizeExpr decl =
     optimizeExpr decl.body
         |> asBodyIn decl
 
 
-asBodyIn : TopLevelDeclaration Typed.LocatedExpr -> Typed.LocatedExpr -> TopLevelDeclaration Typed.LocatedExpr
+asBodyIn : Declaration Typed.LocatedExpr -> Typed.LocatedExpr -> Declaration Typed.LocatedExpr
 asBodyIn decl body =
     { decl | body = body }

@@ -5,15 +5,11 @@ module Stage.Emit exposing (emit)
 import AST.Backend as Backend
 import AST.Common.Literal exposing (Literal(..))
 import AST.Typed exposing (Expr_(..))
-import Common.Types
-    exposing
-        ( FileContents(..)
-        , ModuleName(..)
-        , Project
-        , ProjectToEmit
-        , TopLevelDeclaration
-        , VarName(..)
-        )
+import Data.Declaration exposing (Declaration)
+import Data.FileContents as FileContents
+import Data.ModuleName exposing (ModuleName)
+import Data.Project exposing (Project, ProjectToEmit)
+import Data.VarName as VarName
 import Graph
 import Stage.Emit.JavaScript as JS
 
@@ -22,16 +18,16 @@ emit : Project Backend.ProjectFields -> ProjectToEmit
 emit project =
     project
         |> findPathToMain
-        |> List.map JS.emitTopLevelDeclaration
+        |> List.map JS.emitDeclaration
         |> String.join "\n"
-        |> FileContents
+        |> FileContents.fromString
         |> ProjectToEmit
 
 
 {-| We want to be able to emit `main`. We only emit what's needed for that.
 Taken from the example in elm-community/graph README :sweat\_smile:
 -}
-findPathToMain : Project Backend.ProjectFields -> List (TopLevelDeclaration Backend.LocatedExpr)
+findPathToMain : Project Backend.ProjectFields -> List (Declaration Backend.LocatedExpr)
 findPathToMain { programGraph, mainModuleName } =
     Graph.guidedDfs
         Graph.alongIncomingEdges
@@ -57,7 +53,7 @@ findMain graph mainModuleName =
         |> List.filterMap
             (\{ id, label } ->
                 if
-                    (label.name == VarName "main")
+                    (label.name == VarName.fromString "main")
                         && (label.module_ == mainModuleName)
                 then
                     Just id

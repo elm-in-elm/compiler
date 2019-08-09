@@ -11,14 +11,10 @@ module AST.Frontend exposing
 import AST.Common.Literal exposing (Literal)
 import AST.Common.Located as Located exposing (Located)
 import AST.Frontend.Unwrapped as Unwrapped
-import Common
-import Common.Types
-    exposing
-        ( Binding
-        , ModuleName
-        , Modules
-        , VarName
-        )
+import Data.Binding as Binding exposing (Binding)
+import Data.Module exposing (Modules)
+import Data.ModuleName exposing (ModuleName)
+import Data.VarName exposing (VarName)
 import Transform
 
 
@@ -112,7 +108,7 @@ recurse f expr =
 
         Let { bindings, body } ->
             Let
-                { bindings = List.map (Common.mapBinding f_) bindings
+                { bindings = List.map (Binding.map f_) bindings
                 , body = f_ body
                 }
 
@@ -188,7 +184,7 @@ unwrap expr =
 
         Let { bindings, body } ->
             Unwrapped.Let
-                { bindings = List.map (Common.mapBinding unwrap) bindings
+                { bindings = List.map (Binding.map unwrap) bindings
                 , body = unwrap body
                 }
 

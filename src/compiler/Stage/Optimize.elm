@@ -1,10 +1,8 @@
 module Stage.Optimize exposing (optimize, optimizeExpr)
 
 import AST.Common.Literal as Literal
-import AST.Common.Located as Located
-import AST.Common.Type as Type
 import AST.Typed as Typed
-import Common.Types exposing (Project)
+import Data.Project exposing (Project)
 import Stage.Optimize.Boilerplate as Boilerplate
 
 

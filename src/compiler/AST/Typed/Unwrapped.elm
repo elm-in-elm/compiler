@@ -2,13 +2,10 @@ module AST.Typed.Unwrapped exposing (Expr, Expr_(..))
 
 import AST.Common.Literal exposing (Literal)
 import AST.Common.Type exposing (Type)
-import Common.Types
-    exposing
-        ( Binding
-        , ModuleName
-        , VarName
-        )
-import Dict.Any exposing (AnyDict)
+import AssocList exposing (Dict)
+import Data.Binding exposing (Binding)
+import Data.ModuleName exposing (ModuleName)
+import Data.VarName exposing (VarName)
 
 
 {-| This only differs from AST.Typed.Expr by recursing on itself instead of
@@ -24,13 +21,10 @@ type Expr_
     | Argument VarName
     | Plus Expr Expr
     | Cons Expr Expr
-    | Lambda
-        { argument : VarName
-        , body : Expr
-        }
+    | Lambda { argument : VarName, body : Expr }
     | Call { fn : Expr, argument : Expr }
     | If { test : Expr, then_ : Expr, else_ : Expr }
-    | Let { bindings : AnyDict String VarName (Binding Expr), body : Expr }
+    | Let { bindings : Dict VarName (Binding Expr), body : Expr }
     | List (List Expr)
     | Unit
     | Tuple Expr Expr

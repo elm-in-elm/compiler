@@ -4,22 +4,17 @@ import AST.Canonical as Canonical
 import AST.Common.Literal exposing (Literal)
 import AST.Common.Located as Located
 import AST.Frontend as Frontend
+import AssocList as Dict
+import AssocList.Extra as Dict
 import Basics.Extra exposing (flip)
-import Common
-import Common.Types
-    exposing
-        ( Binding
-        , Module
-        , ModuleName
-        , Modules
-        , Project
-        , VarName
-        )
-import Dict.Any
+import Data.Binding as Binding
+import Data.Module as Module exposing (Module, Modules)
+import Data.ModuleName as ModuleName exposing (ModuleName)
+import Data.Project exposing (Project)
+import Data.VarName as VarName exposing (VarName)
 import Error exposing (DesugarError(..), Error(..))
-import Extra.Dict.Any
 import Maybe.Extra
-import Result.Extra
+import Result.Extra as Result
 import Stage.Desugar.Boilerplate as Boilerplate
 
 
@@ -103,7 +98,11 @@ desugarExpr modules thisModule located =
                     Located.getRegion located
 
                 listConcatVar =
-                    Frontend.Var { qualifier = Just (Common.Types.ModuleName "List"), name = Common.Types.VarName "append" } |> Located.located region
+                    Frontend.Var
+                        { qualifier = Just <| ModuleName.fromString "List"
+                        , name = VarName.fromString "append"
+                        }
+                        |> Located.located region
 
                 firstCall =
                     Frontend.Call { fn = listConcatVar, argument = e1 } |> Located.located region
@@ -148,12 +147,12 @@ desugarExpr modules thisModule located =
                         { bindings =
                             bindings_
                                 |> List.map (\binding -> ( binding.name, binding ))
-                                |> Dict.Any.fromList Common.varNameToString
+                                |> Dict.fromList
                         , body = body_
                         }
                 )
                 -- TODO a bit mouthful:
-                (Result.Extra.combine (List.map (Common.mapBinding recurse >> Common.combineBinding) bindings))
+                (Result.combine (List.map (Binding.map recurse >> Binding.combine) bindings))
                 (recurse body)
 
         Frontend.List items ->
@@ -224,7 +223,7 @@ findModuleOfVar modules thisModule maybeModuleName varName =
 
 unqualifiedVarInThisModule : Module Frontend.LocatedExpr -> Maybe ModuleName -> VarName -> Maybe ModuleName
 unqualifiedVarInThisModule thisModule maybeModuleName varName =
-    if maybeModuleName == Nothing && Dict.Any.member varName thisModule.topLevelDeclarations then
+    if maybeModuleName == Nothing && Dict.member varName thisModule.declarations then
         Just thisModule.name
 
     else
@@ -235,14 +234,14 @@ unqualifiedVarInImportedModule : Modules Frontend.LocatedExpr -> Module Frontend
 unqualifiedVarInImportedModule modules thisModule maybeModuleName varName =
     if maybeModuleName == Nothing then
         -- find a module which exposes that var
-        thisModule.dependencies
-            |> Extra.Dict.Any.find
-                (\_ dependency ->
-                    Dict.Any.get dependency.moduleName modules
-                        |> Maybe.map (Common.exposes varName)
+        thisModule.imports
+            |> Dict.find
+                (\_ import_ ->
+                    Dict.get import_.moduleName modules
+                        |> Maybe.map (Module.exposes varName)
                         |> Maybe.withDefault False
                 )
-            |> Maybe.map (\( _, dependency ) -> dependency.moduleName)
+            |> Maybe.map (\( _, import_ ) -> import_.moduleName)
 
     else
         Nothing
@@ -251,10 +250,10 @@ unqualifiedVarInImportedModule modules thisModule maybeModuleName varName =
 qualifiedVarInImportedModule : Modules Frontend.LocatedExpr -> Maybe ModuleName -> VarName -> Maybe ModuleName
 qualifiedVarInImportedModule modules maybeModuleName varName =
     maybeModuleName
-        |> Maybe.andThen (flip Dict.Any.get modules)
+        |> Maybe.andThen (flip Dict.get modules)
         |> Maybe.andThen
             (\module_ ->
-                if Dict.Any.member varName module_.topLevelDeclarations then
+                if Dict.member varName module_.declarations then
                     Just maybeModuleName
 
                 else
@@ -267,7 +266,7 @@ qualifiedVarInAliasedModule : Modules Frontend.LocatedExpr -> Module Frontend.Lo
 qualifiedVarInAliasedModule modules thisModule maybeModuleName varName =
     let
         unaliasedModuleName =
-            Maybe.andThen (Common.unalias thisModule) maybeModuleName
+            Maybe.andThen (Module.unalias thisModule) maybeModuleName
     in
     -- Reusing the existing functionality. TODO is this a good idea?
     qualifiedVarInImportedModule modules unaliasedModuleName varName

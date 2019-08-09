@@ -43,8 +43,7 @@ import AST.Canonical as Canonical
 import AST.Common.Located as Located
 import AST.Common.Type as Type
 import AST.Typed as Typed
-import Common
-import Dict.Any
+import AssocList as Dict
 import Stage.InferTypes.IdSource as IdSource exposing (IdSource)
 
 
@@ -157,7 +156,7 @@ assignIdsWithHelp idSource located =
             -}
             let
                 bindingsList =
-                    Dict.Any.toList bindings
+                    Dict.toList bindings
 
                 ( body_, idSource1 ) =
                     assignIdsWith idSource body
@@ -178,8 +177,7 @@ assignIdsWithHelp idSource located =
             in
             assignId idSource2
                 (Typed.let_
-                    (Dict.Any.fromList
-                        Common.varNameToString
+                    (Dict.fromList
                         (List.map2
                             (\( name, _ ) body__ -> ( name, { name = name, body = body__ } ))
                             bindingsList

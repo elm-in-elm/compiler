@@ -8,7 +8,8 @@ port module Ports exposing
     , writeToFile
     )
 
-import Common.Types exposing (FileContents(..), FilePath(..))
+import Data.FileContents as FileContents exposing (FileContents)
+import Data.FilePath as FilePath exposing (FilePath)
 import Error exposing (ErrorCode)
 
 
@@ -51,8 +52,8 @@ printlnStderr string =
 
 
 readFile : FilePath -> Cmd msg
-readFile (FilePath filePath) =
-    read filePath
+readFile filePath =
+    read <| FilePath.toString filePath
 
 
 waitForReadFile : (ErrorCode -> msg) -> (FilePath -> FileContents -> msg) -> Sub msg
@@ -60,13 +61,13 @@ waitForReadFile toErrorMsg toMsg =
     Sub.batch
         [ readSubscription
             (\( filePath, fileContents ) ->
-                toMsg (FilePath filePath) (FileContents fileContents)
+                toMsg (FilePath.fromString filePath) (FileContents.fromString fileContents)
             )
         , readErrorSubscription
             (\( filePath, errorCode ) ->
                 let
                     filePath_ =
-                        FilePath filePath
+                        FilePath.fromString filePath
                 in
                 toErrorMsg (Error.parseErrorCode errorCode filePath_)
             )
@@ -74,8 +75,8 @@ waitForReadFile toErrorMsg toMsg =
 
 
 writeToFile : FilePath -> FileContents -> Cmd msg
-writeToFile (FilePath filePath) (FileContents contents) =
+writeToFile filePath contents =
     write
-        { filePath = filePath
-        , contents = contents
+        { filePath = FilePath.toString filePath
+        , contents = FileContents.toString contents
         }

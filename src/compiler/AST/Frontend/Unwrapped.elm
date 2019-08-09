@@ -1,12 +1,9 @@
 module AST.Frontend.Unwrapped exposing (Expr(..))
 
 import AST.Common.Literal exposing (Literal)
-import Common.Types
-    exposing
-        ( Binding
-        , ModuleName
-        , VarName
-        )
+import Data.Binding exposing (Binding)
+import Data.ModuleName exposing (ModuleName)
+import Data.VarName exposing (VarName)
 
 
 {-| This only differs from AST.Frontend.Expr by recursing on itself instead of

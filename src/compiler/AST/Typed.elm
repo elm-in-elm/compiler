@@ -19,15 +19,11 @@ import AST.Common.Literal exposing (Literal)
 import AST.Common.Located as Located exposing (Located)
 import AST.Common.Type exposing (Type)
 import AST.Typed.Unwrapped as Unwrapped
-import Common
-import Common.Types
-    exposing
-        ( Binding
-        , ModuleName
-        , Modules
-        , VarName
-        )
-import Dict.Any exposing (AnyDict)
+import AssocList as Dict exposing (Dict)
+import Data.Binding as Binding exposing (Binding)
+import Data.Module exposing (Modules)
+import Data.ModuleName exposing (ModuleName)
+import Data.VarName exposing (VarName)
 import Transform
 
 
@@ -56,13 +52,10 @@ type Expr_
     | Argument VarName
     | Plus LocatedExpr LocatedExpr
     | Cons LocatedExpr LocatedExpr
-    | Lambda
-        { argument : VarName
-        , body : LocatedExpr
-        }
+    | Lambda { argument : VarName, body : LocatedExpr }
     | Call { fn : LocatedExpr, argument : LocatedExpr }
     | If { test : LocatedExpr, then_ : LocatedExpr, else_ : LocatedExpr }
-    | Let { bindings : AnyDict String VarName (Binding LocatedExpr), body : LocatedExpr }
+    | Let { bindings : Dict VarName (Binding LocatedExpr), body : LocatedExpr }
     | List (List LocatedExpr)
     | Unit
     | Tuple LocatedExpr LocatedExpr
@@ -77,7 +70,7 @@ lambda argument body =
         }
 
 
-let_ : AnyDict String VarName (Binding LocatedExpr) -> LocatedExpr -> Expr_
+let_ : Dict VarName (Binding LocatedExpr) -> LocatedExpr -> Expr_
 let_ bindings body =
     Let
         { bindings = bindings
@@ -129,7 +122,10 @@ recurse f located =
 
                 Let { bindings, body } ->
                     Let
-                        { bindings = Dict.Any.map (always (Common.mapBinding f)) bindings
+                        { bindings =
+                            Dict.map
+                                (always (Binding.map f))
+                                bindings
                         , body = f body
                         }
 
@@ -208,7 +204,7 @@ recursiveChildren fn located =
 
         Let { bindings, body } ->
             fn body
-                ++ List.concatMap (.body >> fn) (Dict.Any.values bindings)
+                ++ List.concatMap (.body >> fn) (Dict.values bindings)
 
         Unit ->
             []
@@ -286,8 +282,8 @@ unwrap expr =
         Let { bindings, body } ->
             Unwrapped.Let
                 { bindings =
-                    Dict.Any.map
-                        (always (Common.mapBinding unwrap))
+                    Dict.map
+                        (always (Binding.map unwrap))
                         bindings
                 , body = unwrap body
                 }

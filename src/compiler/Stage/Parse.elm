@@ -1,33 +1,38 @@
 module Stage.Parse exposing (parse)
 
 import AST.Frontend as Frontend
-import Common
-import Common.Types
-    exposing
-        ( FileContents(..)
-        , FilePath(..)
-        , Module
-        , ModuleName
-        , Project
-        )
-import Error exposing (Error(..), ParseError(..))
+import Data.FileContents as FileContents exposing (FileContents)
+import Data.FilePath as FilePath exposing (FilePath)
+import Data.Module exposing (Module)
+import Data.ModuleName as ModuleName exposing (ModuleName)
+import Data.Project exposing (Project)
+import Error exposing (Error(..), GeneralError(..), ParseError(..))
 import Parser.Advanced as P
 import Stage.Parse.Parser as Parser
 
 
 parse : Project a -> FilePath -> FileContents -> Result Error (Module Frontend.LocatedExpr)
-parse { sourceDirectory } filePath (FileContents fileContents) =
-    P.run (Parser.module_ filePath) fileContents
+parse { sourceDirectory } filePath fileContents =
+    P.run (Parser.module_ filePath) (FileContents.toString fileContents)
         |> Result.mapError (ParseError << ParseProblem)
-        |> Result.andThen (checkModuleNameAndFilePath sourceDirectory filePath)
+        |> Result.andThen
+            (checkModuleNameAndFilePath
+                { sourceDirectory = sourceDirectory
+                , filePath = filePath
+                }
+            )
 
 
-checkModuleNameAndFilePath : FilePath -> FilePath -> Module Frontend.LocatedExpr -> Result Error (Module Frontend.LocatedExpr)
-checkModuleNameAndFilePath sourceDirectory filePath ({ name } as parsedModule) =
+checkModuleNameAndFilePath : { sourceDirectory : FilePath, filePath : FilePath } -> Module Frontend.LocatedExpr -> Result Error (Module Frontend.LocatedExpr)
+checkModuleNameAndFilePath { sourceDirectory, filePath } ({ name } as parsedModule) =
     let
         expectedName : Result Error ModuleName
         expectedName =
-            Common.expectedModuleName sourceDirectory filePath
+            ModuleName.expected
+                { sourceDirectory = FilePath.toString sourceDirectory
+                , filePath = FilePath.toString filePath
+                }
+                |> Result.fromMaybe (GeneralError (FileNotInSourceDirectories filePath))
     in
     if expectedName == Ok name then
         Ok parsedModule

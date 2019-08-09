@@ -251,7 +251,7 @@ shouldWrapParens type_ =
         Var _ ->
             False
 
-        Function t1 t2 ->
+        Function _ _ ->
             True
 
         Int ->
@@ -269,7 +269,7 @@ shouldWrapParens type_ =
         Bool ->
             False
 
-        List param ->
+        List _ ->
             True
 
         Unit ->
