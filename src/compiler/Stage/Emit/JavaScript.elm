@@ -1,17 +1,14 @@
-module Stage.Emit.JavaScript exposing (emitExpr, emitTopLevelDeclaration)
+module Stage.Emit.JavaScript exposing (emitDeclaration, emitExpr)
 
 -- TODO after we figure out module headers, compiling to one vs many files, revise the exposed values here
 
 import AST.Backend as Backend
 import AST.Common.Literal exposing (Literal(..))
 import AST.Typed as Typed exposing (Expr_(..))
-import Common.Types
-    exposing
-        ( ModuleName(..)
-        , TopLevelDeclaration
-        , VarName(..)
-        )
-import Dict.Any
+import AssocList as Dict
+import Data.Declaration exposing (Declaration)
+import Data.ModuleName as ModuleName exposing (ModuleName)
+import Data.VarName as VarName exposing (VarName)
 
 
 emitExpr : Backend.LocatedExpr -> String
@@ -63,7 +60,11 @@ emitExpr located =
             let
                 bindingsJS =
                     bindings
-                        |> Dict.Any.values
+                        |> Dict.values
+                        |> {- AssocList reverses the list on creation:
+                              https://package.elm-lang.org/packages/pzp1997/assoc-list/latest/AssocList#fromList
+                           -}
+                           List.reverse
                         |> List.map (\binding -> "const " ++ mangleVarName binding.name ++ " = " ++ emitExpr binding.body)
                         |> String.join "; "
             in
@@ -84,8 +85,8 @@ emitExpr located =
             "[" ++ emitExpr e1 ++ "," ++ emitExpr e2 ++ "," ++ emitExpr e3 ++ "]"
 
 
-emitTopLevelDeclaration : TopLevelDeclaration Backend.LocatedExpr -> String
-emitTopLevelDeclaration { module_, name, body } =
+emitDeclaration : Declaration Backend.LocatedExpr -> String
+emitDeclaration { module_, name, body } =
     "const "
         ++ mangleQualifiedVar module_ name
         ++ " = "
@@ -99,10 +100,11 @@ mangleQualifiedVar moduleName varName =
 
 
 mangleModuleName : ModuleName -> String
-mangleModuleName (ModuleName moduleName) =
-    String.replace "." "$" moduleName
+mangleModuleName moduleName =
+    String.replace "." "$" (ModuleName.toString moduleName)
 
 
 mangleVarName : VarName -> String
-mangleVarName (VarName varName) =
-    varName
+mangleVarName varName =
+    -- TODO this does nothing currently... what does the official Elm compiler do?
+    VarName.toString varName

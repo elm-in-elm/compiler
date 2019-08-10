@@ -1,7 +1,7 @@
 module Stage.Parse.Parser exposing
-    ( dependencies
-    , exposingList
+    ( exposingList
     , expr
+    , imports
     , moduleDeclaration
     , moduleName
     , module_
@@ -10,22 +10,15 @@ module Stage.Parse.Parser exposing
 import AST.Common.Literal exposing (Literal(..))
 import AST.Common.Located as Located exposing (Located)
 import AST.Frontend as Frontend exposing (Expr(..), LocatedExpr)
-import Common
-import Common.Types
-    exposing
-        ( Binding
-        , Dependency
-        , Dict_
-        , ExposedItem(..)
-        , Exposing(..)
-        , FilePath(..)
-        , Module
-        , ModuleName(..)
-        , ModuleType(..)
-        , TopLevelDeclaration
-        , VarName(..)
-        )
-import Dict.Any
+import AssocList as Dict exposing (Dict)
+import Data.Binding exposing (Binding)
+import Data.Declaration exposing (Declaration)
+import Data.Exposing exposing (ExposedItem(..), Exposing(..))
+import Data.FilePath exposing (FilePath)
+import Data.Import exposing (Import)
+import Data.Module exposing (Module, ModuleType(..))
+import Data.ModuleName as ModuleName exposing (ModuleName)
+import Data.VarName as VarName exposing (VarName)
 import Error
     exposing
         ( Error(..)
@@ -44,7 +37,7 @@ type alias Parser_ a =
 
 
 type alias ExprConfig =
-    PP.Config ParseContext ParseProblem Frontend.LocatedExpr
+    PP.Config ParseContext ParseProblem LocatedExpr
 
 
 located : Parser_ p -> Parser_ (Located p)
@@ -55,32 +48,32 @@ located p =
         |= P.getPosition
 
 
-module_ : FilePath -> Parser_ (Module Frontend.LocatedExpr)
+module_ : FilePath -> Parser_ (Module LocatedExpr)
 module_ filePath =
     P.succeed
-        (\( moduleType_, moduleName_, exposing_ ) dependencies_ topLevelDeclarations_ ->
-            { dependencies = dependencies_
+        (\( moduleType_, moduleName_, exposing_ ) imports_ declarations_ ->
+            { imports = imports_
             , name = moduleName_
             , filePath = filePath
-            , topLevelDeclarations =
-                topLevelDeclarations_
+            , declarations =
+                declarations_
                     |> List.map
                         (\almostDeclaration ->
                             let
-                                declaration =
+                                declaration_ =
                                     almostDeclaration moduleName_
                             in
-                            ( declaration.name, declaration )
+                            ( declaration_.name, declaration_ )
                         )
-                    |> Dict.Any.fromList Common.varNameToString
+                    |> Dict.fromList
             , type_ = moduleType_
             , exposing_ = exposing_
             }
         )
         |= moduleDeclaration
         -- TODO what about module doc comment? is it before the imports or after?
-        |= dependencies
-        |= topLevelDeclarations
+        |= imports
+        |= declarations
 
 
 moduleDeclaration : Parser_ ( ModuleType, ModuleName, Exposing )
@@ -88,7 +81,7 @@ moduleDeclaration =
     P.succeed
         (\moduleType_ moduleName_ exposing_ ->
             ( moduleType_
-            , ModuleName moduleName_
+            , ModuleName.fromString moduleName_
             , exposing_
             )
         )
@@ -103,20 +96,20 @@ moduleDeclaration =
         |. newlines
 
 
-dependencies : Parser_ (Dict_ ModuleName Dependency)
-dependencies =
+imports : Parser_ (Dict ModuleName Import)
+imports =
     P.succeed
         (List.map (\dep -> ( dep.moduleName, dep ))
-            >> Dict.Any.fromList Common.moduleNameToString
+            >> Dict.fromList
         )
-        |= oneOrMoreWith P.spaces dependency
+        |= oneOrMoreWith P.spaces import_
 
 
-dependency : Parser_ Dependency
-dependency =
+import_ : Parser_ Import
+import_ =
     P.succeed
         (\moduleName_ as_ exposing_ ->
-            { moduleName = ModuleName moduleName_
+            { moduleName = ModuleName.fromString moduleName_
             , as_ = as_
             , exposing_ = exposing_
             }
@@ -127,7 +120,7 @@ dependency =
         |= moduleName
         |. P.spaces
         |= P.oneOf
-            [ P.succeed (ModuleName >> Just)
+            [ P.succeed (ModuleName.fromString >> Just)
                 |. P.keyword (P.Token "as" ExpectingAsKeyword)
                 |. P.spaces
                 |= moduleNameWithoutDots
@@ -308,17 +301,17 @@ reservedWords =
         ]
 
 
-topLevelDeclarations : Parser_ (List (ModuleName -> TopLevelDeclaration Frontend.LocatedExpr))
-topLevelDeclarations =
+declarations : Parser_ (List (ModuleName -> Declaration LocatedExpr))
+declarations =
     oneOrMoreWith P.spaces
         (P.succeed identity
-            |= topLevelDeclaration
+            |= declaration
             |. P.spaces
         )
 
 
-topLevelDeclaration : Parser_ (ModuleName -> TopLevelDeclaration Frontend.LocatedExpr)
-topLevelDeclaration =
+declaration : Parser_ (ModuleName -> Declaration LocatedExpr)
+declaration =
     P.succeed
         (\name body module__ ->
             { module_ = module__
@@ -326,14 +319,14 @@ topLevelDeclaration =
             , body = body
             }
         )
-        |= P.map VarName varName
+        |= P.map VarName.fromString varName
         |. P.spaces
         |. P.symbol (P.Token "=" ExpectingEqualsSign)
         |. P.spaces
         |= expr
 
 
-expr : Parser_ Frontend.LocatedExpr
+expr : Parser_ LocatedExpr
 expr =
     PP.expression
         { oneOf =
@@ -382,7 +375,7 @@ checkNotBeginningOfLine =
             )
 
 
-parenthesizedExpr : ExprConfig -> Parser_ Frontend.LocatedExpr
+parenthesizedExpr : ExprConfig -> Parser_ LocatedExpr
 parenthesizedExpr config =
     P.succeed identity
         |. P.symbol (P.Token "(" ExpectingLeftParen)
@@ -390,7 +383,7 @@ parenthesizedExpr config =
         |. P.symbol (P.Token ")" ExpectingRightParen)
 
 
-literal : Parser_ Frontend.LocatedExpr
+literal : Parser_ LocatedExpr
 literal =
     P.succeed Literal
         |= P.oneOf
@@ -586,11 +579,11 @@ literalBool =
             ]
 
 
-var : Parser_ Frontend.LocatedExpr
+var : Parser_ LocatedExpr
 var =
     P.oneOf
         [ P.map
-            (\varName_ -> Frontend.var Nothing (VarName varName_))
+            (\varName_ -> Frontend.var Nothing (VarName.fromString varName_))
             varName
         , qualifiedVar
         ]
@@ -625,15 +618,15 @@ qualifiedVar =
                             Nothing
 
                         else
-                            Just (ModuleName (String.join "." list_))
+                            Just <| ModuleName.fromString <| String.join "." list_
                 in
                 P.map
-                    (\varName_ -> Frontend.var maybeModuleName (VarName varName_))
+                    (\varName_ -> Frontend.var maybeModuleName <| VarName.fromString varName_)
                     varName
             )
 
 
-lambda : ExprConfig -> Parser_ Frontend.LocatedExpr
+lambda : ExprConfig -> Parser_ LocatedExpr
 lambda config =
     P.succeed
         (\arguments body ->
@@ -658,7 +651,7 @@ lambda config =
                 (Located.map (Frontend.transform (promoteArguments arguments)) body)
         )
         |. P.symbol (P.Token "\\" ExpectingBackslash)
-        |= oneOrMoreWith spacesOnly (P.map VarName varName)
+        |= oneOrMoreWith spacesOnly (P.map VarName.fromString varName)
         |. spacesOnly
         |. P.symbol (P.Token "->" ExpectingRightArrow)
         |. P.spaces
@@ -667,7 +660,7 @@ lambda config =
         |> located
 
 
-if_ : ExprConfig -> Parser_ Frontend.LocatedExpr
+if_ : ExprConfig -> Parser_ LocatedExpr
 if_ config =
     P.succeed
         (\test then_ else_ ->
@@ -687,7 +680,7 @@ if_ config =
         |> located
 
 
-let_ : ExprConfig -> Parser_ Frontend.LocatedExpr
+let_ : ExprConfig -> Parser_ LocatedExpr
 let_ config =
     P.succeed
         (\binding_ body ->
@@ -708,10 +701,10 @@ let_ config =
         |> located
 
 
-binding : ExprConfig -> Parser_ (Binding Frontend.LocatedExpr)
+binding : ExprConfig -> Parser_ (Binding LocatedExpr)
 binding config =
     P.succeed Binding
-        |= P.map VarName varName
+        |= P.map VarName.fromString varName
         |. P.spaces
         |. P.symbol (P.Token "=" ExpectingEqualsSign)
         |. P.spaces
@@ -719,7 +712,7 @@ binding config =
         |> P.inContext InLetBinding
 
 
-promoteArguments : List VarName -> Frontend.Expr -> Frontend.Expr
+promoteArguments : List VarName -> Expr -> Expr
 promoteArguments arguments expr_ =
     -- TODO set of arguments instead of list?
     case expr_ of
@@ -734,7 +727,7 @@ promoteArguments arguments expr_ =
             expr_
 
 
-unit : ExprConfig -> Parser_ Frontend.LocatedExpr
+unit : ExprConfig -> Parser_ LocatedExpr
 unit _ =
     P.succeed Frontend.Unit
         |. P.keyword (P.Token "()" ExpectingUnit)
@@ -742,7 +735,7 @@ unit _ =
         |> located
 
 
-list : ExprConfig -> Parser_ Frontend.LocatedExpr
+list : ExprConfig -> Parser_ LocatedExpr
 list config =
     P.succeed Frontend.List
         |= P.sequence
@@ -757,7 +750,7 @@ list config =
         |> located
 
 
-tuple : ExprConfig -> Parser_ Frontend.LocatedExpr
+tuple : ExprConfig -> Parser_ LocatedExpr
 tuple config =
     P.backtrackable
         (P.succeed Tuple
@@ -775,7 +768,7 @@ tuple config =
         |> located
 
 
-tuple3 : ExprConfig -> Parser_ Frontend.LocatedExpr
+tuple3 : ExprConfig -> Parser_ LocatedExpr
 tuple3 config =
     P.backtrackable
         (P.succeed Frontend.Tuple3

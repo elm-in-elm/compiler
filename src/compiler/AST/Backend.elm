@@ -5,7 +5,7 @@ module AST.Backend exposing
     )
 
 import AST.Typed as Typed
-import Common.Types exposing (TopLevelDeclaration)
+import Data.Declaration exposing (Declaration)
 import Graph
 
 
@@ -18,4 +18,4 @@ type alias LocatedExpr =
 
 
 type alias Graph =
-    Graph.Graph (TopLevelDeclaration LocatedExpr) ()
+    Graph.Graph (Declaration LocatedExpr) ()

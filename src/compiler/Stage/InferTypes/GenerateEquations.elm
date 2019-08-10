@@ -33,8 +33,8 @@ import AST.Common.Literal as Literal
 import AST.Common.Located as Located
 import AST.Common.Type as Type
 import AST.Typed as Typed
-import Common.Types exposing (VarName)
-import Dict.Any
+import AssocList as Dict
+import Data.VarName exposing (VarName)
 import Stage.InferTypes.IdSource as IdSource exposing (IdSource)
 import Stage.InferTypes.TypeEquation exposing (TypeEquation, equals)
 import Transform
@@ -230,7 +230,7 @@ generateEquations idSource located =
                             )
                         )
                         ( [], idSource1 )
-                        (Dict.Any.values bindings)
+                        (Dict.values bindings)
             in
             ( -- for expression `let x = a, y = b in c` (pardon the comma):
               -- type of the whole let and type of `c` are the same

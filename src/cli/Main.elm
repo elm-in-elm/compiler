@@ -42,18 +42,14 @@ about returning those.
 -}
 
 import AST.Frontend as Frontend
-import Common
-import Common.Types
-    exposing
-        ( FileContents(..)
-        , FilePath(..)
-        , ModuleName(..)
-        , Modules
-        , Project
-        , ProjectToEmit
-        , Set_
-        )
-import Dict.Any
+import AssocList as Dict
+import AssocSet as Set exposing (Set)
+import Data.Declaration as Declaration
+import Data.FileContents exposing (FileContents)
+import Data.FilePath as FilePath exposing (FilePath)
+import Data.Module exposing (Modules)
+import Data.ModuleName as ModuleName exposing (ModuleName)
+import Data.Project exposing (Project, ProjectToEmit)
 import Elm.Project
 import Error
     exposing
@@ -65,7 +61,6 @@ import Error
 import Json.Decode as JD
 import Platform
 import Ports exposing (println, printlnStderr)
-import Set.Any
 import Stage.Desugar as Desugar
 import Stage.Emit as Emit
 import Stage.InferTypes as InferTypes
@@ -109,7 +104,7 @@ to make functions work with its data instead of the general `Model`.
 -}
 type alias Model_ expr =
     { project : Project expr
-    , waitingForFiles : Set_ FilePath
+    , waitingForFiles : Set FilePath
     }
 
 
@@ -148,7 +143,7 @@ init { mainFilePath, elmJson } =
     let
         mainFilePath_ : FilePath
         mainFilePath_ =
-            FilePath mainFilePath
+            FilePath.fromString mainFilePath
 
         elmJsonProject : Result Error Elm.Project.Project
         elmJsonProject =
@@ -170,7 +165,12 @@ init { mainFilePath, elmJson } =
                            We'd have to read the module name from the file contents in that case.
                            Check that assumption and do the right thing!
                         -}
-                        Common.expectedModuleName sourceDirectory_ mainFilePath_
+                        ModuleName.expected
+                            { sourceDirectory = FilePath.toString sourceDirectory_
+                            , filePath = FilePath.toString mainFilePath_
+                            }
+                            -- TODO this conversion to Result is duplicated. We should really return the Result Error ... in the Name.expectedModuleName!
+                            |> Result.fromMaybe (GeneralError <| FileNotInSourceDirectories mainFilePath_)
                     )
 
         modelAndCmd : Result Error ( Model Frontend.ProjectFields, Cmd Msg )
@@ -183,9 +183,9 @@ init { mainFilePath, elmJson } =
                             , mainModuleName = mainModuleName_
                             , elmJson = elmJsonProject_
                             , sourceDirectory = sourceDirectory_
-                            , modules = Dict.Any.empty Common.moduleNameToString
+                            , modules = Dict.empty
                             }
-                        , waitingForFiles = Set.Any.singleton mainFilePath_ Common.filePathToString
+                        , waitingForFiles = Set.singleton mainFilePath_
                         }
                     , Ports.readFile mainFilePath_
                     )
@@ -228,12 +228,13 @@ getSourceDirectory elmProject =
     case elmProject of
         Elm.Project.Application { dirs } ->
             dirs
-                |> List.head
-                |> Maybe.map FilePath
+                |> {- TODO allow multiple source directories -} List.head
+                |> Maybe.map FilePath.fromString
                 |> Result.fromMaybe (ParseError EmptySourceDirectories)
 
         Elm.Project.Package _ ->
-            Ok (FilePath "src/")
+            -- TODO is it OK that this has the trailing slash?
+            Ok <| FilePath.fromString "src/"
 
 
 update : Msg -> Model Frontend.ProjectFields -> ( Model Frontend.ProjectFields, Cmd Msg )
@@ -265,18 +266,18 @@ handleReadFileSuccess filePath fileContents ({ project } as model) =
         Err error ->
             handleError error
 
-        Ok ({ name, dependencies } as parsedModule) ->
+        Ok ({ name, imports } as parsedModule) ->
             let
-                filesToBeRead : Set_ FilePath
+                filesToBeRead : Set FilePath
                 filesToBeRead =
-                    dependencies
-                        |> Dict.Any.keys
-                        |> List.map (Common.expectedFilePath project.sourceDirectory)
-                        |> Set.Any.fromList Common.filePathToString
+                    imports
+                        |> Dict.keys
+                        |> List.map (FilePath.expected project.sourceDirectory)
+                        |> Set.fromList
 
                 newModules : Modules Frontend.LocatedExpr
                 newModules =
-                    Dict.Any.update name
+                    Dict.update name
                         (always (Just parsedModule))
                         project.modules
 
@@ -284,11 +285,11 @@ handleReadFileSuccess filePath fileContents ({ project } as model) =
                 newProject =
                     { project | modules = newModules }
 
-                newWaitingForFiles : Set_ FilePath
+                newWaitingForFiles : Set FilePath
                 newWaitingForFiles =
                     model.waitingForFiles
-                        |> Set.Any.union filesToBeRead
-                        |> Set.Any.remove filePath
+                        |> Set.union filesToBeRead
+                        |> Set.remove filePath
 
                 newModel : Model_ Frontend.ProjectFields
                 newModel =
@@ -297,13 +298,13 @@ handleReadFileSuccess filePath fileContents ({ project } as model) =
                         , waitingForFiles = newWaitingForFiles
                     }
             in
-            if Set.Any.isEmpty newWaitingForFiles then
+            if Set.isEmpty newWaitingForFiles then
                 compile newProject
 
             else
                 ( Compiling newModel
                 , filesToBeRead
-                    |> Set.Any.toList
+                    |> Set.toList
                     |> List.map Ports.readFile
                     |> Cmd.batch
                 )
@@ -321,19 +322,15 @@ compile project =
     let
         _ =
             project.modules
-                |> Dict.Any.values
+                |> Dict.values
                 |> List.map
                     (\module_ ->
-                        Dict.Any.values module_.topLevelDeclarations
+                        Dict.values module_.declarations
                             |> List.map
                                 (\decl ->
                                     decl.body
                                         |> Frontend.unwrap
-                                        |> Debug.log
-                                            (Common.moduleNameToString decl.module_
-                                                ++ "."
-                                                ++ Common.varNameToString decl.name
-                                            )
+                                        |> Debug.log (Declaration.toString decl)
                                 )
                     )
     in
@@ -358,7 +355,7 @@ writeToFSAndExit result =
         Ok { output } ->
             ( Finished
             , Cmd.batch
-                [ Ports.writeToFile (FilePath "out.js") output
+                [ Ports.writeToFile (FilePath.fromString "out.js") output
                 , println "Compilation finished, writing output to `out.js`."
                 ]
             )
@@ -385,8 +382,8 @@ log msg =
     let
         string =
             case msg of
-                ReadFileSuccess (FilePath filePath) _ ->
-                    "ReadFileSuccess: " ++ filePath
+                ReadFileSuccess filePath _ ->
+                    "ReadFileSuccess: " ++ FilePath.toString filePath
 
                 ReadFileError error ->
                     "ReadFileError: " ++ Error.toString (GeneralError (IOError error))

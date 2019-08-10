@@ -13,13 +13,9 @@ module Error exposing
     )
 
 import AST.Common.Type as Type exposing (Type)
-import Common.Types
-    exposing
-        ( FilePath(..)
-          -- We can't depend on Common, so we deconstruct by hand
-        , ModuleName(..)
-        , VarName(..)
-        )
+import Data.FilePath as FilePath exposing (FilePath)
+import Data.ModuleName as ModuleName exposing (ModuleName)
+import Data.VarName as VarName exposing (VarName)
 import Json.Decode as JD
 import Parser.Advanced as P
 
@@ -142,26 +138,26 @@ toString error =
     case error of
         GeneralError generalError ->
             case generalError of
-                FileNotInSourceDirectories (FilePath filePath) ->
+                FileNotInSourceDirectories filePath ->
                     "File `"
-                        ++ filePath
+                        ++ FilePath.toString filePath
                         ++ "` is not a part of the `sourceDirectories` in elm.json."
 
                 IOError errorCode ->
                     case errorCode of
-                        FileOrDirectoryNotFound (FilePath filePath) ->
-                            "File or directory `" ++ filePath ++ "` not found."
+                        FileOrDirectoryNotFound filePath ->
+                            "File or directory `" ++ FilePath.toString filePath ++ "` not found."
 
                         OtherErrorCode other ->
                             "Encountered error `" ++ other ++ "`."
 
         ParseError parseError ->
             case parseError of
-                ModuleNameDoesntMatchFilePath (ModuleName moduleName) (FilePath filePath) ->
+                ModuleNameDoesntMatchFilePath moduleName filePath ->
                     "Module name `"
-                        ++ moduleName
+                        ++ ModuleName.toString moduleName
                         ++ "` doesn't match the file path `"
-                        ++ filePath
+                        ++ FilePath.toString filePath
                         ++ "`."
 
                 EmptySourceDirectories ->
@@ -184,8 +180,8 @@ toString error =
                         ( maybeModuleName, varName ) =
                             var
 
-                        (ModuleName moduleName) =
-                            module_
+                        moduleName =
+                            ModuleName.toString module_
                     in
                     "Can't find the variable `"
                         ++ fullVarName maybeModuleName varName
@@ -230,10 +226,14 @@ toString error =
 
 
 fullVarName : Maybe ModuleName -> VarName -> String
-fullVarName maybeModuleAlias (VarName varName) =
+fullVarName maybeModuleAlias varName =
+    let
+        varName_ =
+            VarName.toString varName
+    in
     maybeModuleAlias
-        |> Maybe.map (\(ModuleName moduleAlias) -> moduleAlias ++ "." ++ varName)
-        |> Maybe.withDefault varName
+        |> Maybe.map (\moduleAlias -> ModuleName.toString moduleAlias ++ "." ++ varName_)
+        |> Maybe.withDefault varName_
 
 
 parseErrorCode : String -> FilePath -> ErrorCode

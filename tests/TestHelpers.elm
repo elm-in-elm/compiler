@@ -1,17 +1,31 @@
 module TestHelpers exposing
     ( dumpType
     , located
+    , module_
     , typed
     , typedBool
     , typedInt
     , typedIntList
     , typedString
+    , var
     )
 
 import AST.Common.Literal as Literal
 import AST.Common.Located as Located exposing (Located)
 import AST.Common.Type as Type exposing (Type(..))
 import AST.Typed as Typed exposing (Expr_(..))
+import Data.ModuleName as ModuleName exposing (ModuleName)
+import Data.VarName as VarName exposing (VarName)
+
+
+var : String -> VarName
+var string =
+    VarName.fromString string
+
+
+module_ : String -> ModuleName
+module_ string =
+    ModuleName.fromString string
 
 
 dumpType : Type -> String

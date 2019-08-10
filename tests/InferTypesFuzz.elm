@@ -6,9 +6,8 @@ import AST.Common.Literal as Literal exposing (Literal(..))
 import AST.Common.Located as Located
 import AST.Common.Type as Type exposing (Type)
 import AST.Typed as Typed
-import Common
-import Common.Types as Types exposing (VarName(..))
-import Dict.Any
+import AssocList as Dict
+import Data.VarName as VarName exposing (VarName)
 import Error exposing (TypeError(..))
 import Expect exposing (Expectation)
 import Fuzz exposing (Fuzzer)
@@ -292,7 +291,7 @@ randomVarName =
     in
     Random.map2 (::) firstChar rest
         |> Random.map String.fromList
-        |> Random.map VarName
+        |> Random.map VarName.fromString
 
 
 {-| An expression shrinker that preserves the inferred type.

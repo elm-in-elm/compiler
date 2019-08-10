@@ -4,7 +4,7 @@ import AST.Canonical as Canonical
 import AST.Common.Located as Located
 import AST.Common.Type as Type exposing (Type)
 import AST.Typed as Typed
-import Common.Types exposing (Project)
+import Data.Project exposing (Project)
 import Error exposing (Error(..), TypeError(..))
 import Stage.InferTypes.AssignIds as AssignIds
 import Stage.InferTypes.Boilerplate as Boilerplate

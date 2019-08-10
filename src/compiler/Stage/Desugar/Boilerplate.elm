@@ -2,26 +2,20 @@ module Stage.Desugar.Boilerplate exposing (desugarProject)
 
 import AST.Canonical as Canonical
 import AST.Frontend as Frontend
-import Common
-import Common.Types
-    exposing
-        ( Dict_
-        , Module
-        , Modules
-        , Project
-        , TopLevelDeclaration
-        , VarName
-        )
-import Dict.Any
+import AssocList as Dict exposing (Dict)
+import Data.Declaration exposing (Declaration)
+import Data.Module exposing (Module, Modules)
+import Data.Project exposing (Project)
+import Data.VarName exposing (VarName)
 import Error exposing (DesugarError)
-import Extra.Dict.Any
+import OurExtras.AssocList as Dict
 
 
 desugarProject : (Module Frontend.LocatedExpr -> Frontend.LocatedExpr -> Result DesugarError Canonical.LocatedExpr) -> Project Frontend.ProjectFields -> Result DesugarError (Project Canonical.ProjectFields)
 desugarProject desugarExpr project =
     project.modules
-        |> Dict.Any.map (always (desugarModule desugarExpr))
-        |> Extra.Dict.Any.combine Common.moduleNameToString
+        |> Dict.map (always (desugarModule desugarExpr))
+        |> Dict.combine
         |> Result.map (projectOfNewType project)
 
 
@@ -39,33 +33,33 @@ projectOfNewType old modules =
 
 desugarModule : (Module Frontend.LocatedExpr -> Frontend.LocatedExpr -> Result DesugarError Canonical.LocatedExpr) -> Module Frontend.LocatedExpr -> Result DesugarError (Module Canonical.LocatedExpr)
 desugarModule desugarExpr module_ =
-    module_.topLevelDeclarations
-        |> Dict.Any.map (always (desugarTopLevelDeclaration (desugarExpr module_)))
-        |> Extra.Dict.Any.combine Common.varNameToString
+    module_.declarations
+        |> Dict.map (always (desugarDeclaration (desugarExpr module_)))
+        |> Dict.combine
         |> Result.map (moduleOfNewType module_)
 
 
-moduleOfNewType : Module Frontend.LocatedExpr -> Dict_ VarName (TopLevelDeclaration Canonical.LocatedExpr) -> Module Canonical.LocatedExpr
+moduleOfNewType : Module Frontend.LocatedExpr -> Dict VarName (Declaration Canonical.LocatedExpr) -> Module Canonical.LocatedExpr
 moduleOfNewType old newDecls =
-    { dependencies = old.dependencies
+    { imports = old.imports
     , name = old.name
     , filePath = old.filePath
     , type_ = old.type_
     , exposing_ = old.exposing_
 
     -- all that code because of this:
-    , topLevelDeclarations = newDecls
+    , declarations = newDecls
     }
 
 
-desugarTopLevelDeclaration : (Frontend.LocatedExpr -> Result DesugarError Canonical.LocatedExpr) -> TopLevelDeclaration Frontend.LocatedExpr -> Result DesugarError (TopLevelDeclaration Canonical.LocatedExpr)
-desugarTopLevelDeclaration desugarExpr decl =
+desugarDeclaration : (Frontend.LocatedExpr -> Result DesugarError Canonical.LocatedExpr) -> Declaration Frontend.LocatedExpr -> Result DesugarError (Declaration Canonical.LocatedExpr)
+desugarDeclaration desugarExpr decl =
     desugarExpr decl.body
-        |> Result.map (topLevelDeclarationOfNewType decl)
+        |> Result.map (declarationOfNewType decl)
 
 
-topLevelDeclarationOfNewType : TopLevelDeclaration Frontend.LocatedExpr -> Canonical.LocatedExpr -> TopLevelDeclaration Canonical.LocatedExpr
-topLevelDeclarationOfNewType old newBody =
+declarationOfNewType : Declaration Frontend.LocatedExpr -> Canonical.LocatedExpr -> Declaration Canonical.LocatedExpr
+declarationOfNewType old newBody =
     { name = old.name
     , module_ = old.module_
 

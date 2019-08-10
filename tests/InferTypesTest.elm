@@ -6,15 +6,15 @@ import AST.Common.Literal as Literal
 import AST.Common.Located as Located
 import AST.Common.Type as Type exposing (Type(..))
 import AST.Typed as Typed
-import Common
-import Common.Types as Types exposing (ModuleName(..), VarName(..))
-import Dict.Any
+import AssocList as Dict
+import Data.ModuleName as ModuleName exposing (ModuleName)
+import Data.VarName as VarName exposing (VarName)
 import Error exposing (TypeError(..))
 import Expect exposing (Expectation)
 import Fuzz exposing (Fuzzer)
 import Stage.InferTypes
 import Test exposing (Test, describe, fuzz, test)
-import TestHelpers exposing (dumpType, located)
+import TestHelpers exposing (dumpType, located, module_, var)
 
 
 typeInference : Test
@@ -116,7 +116,7 @@ typeInference =
         , runSection "plus"
             [ ( "same types"
               , CanonicalU.Plus
-                    (CanonicalU.Var { qualifier = ModuleName "Main", name = VarName "age" })
+                    (CanonicalU.Var { qualifier = module_ "Main", name = var "age" })
                     (CanonicalU.Literal (Literal.Int 1))
               , Ok Int
               )
@@ -161,7 +161,7 @@ typeInference =
               )
             , ( "variable and list"
               , CanonicalU.Cons
-                    (CanonicalU.Var { qualifier = ModuleName "Main", name = VarName "age" })
+                    (CanonicalU.Var { qualifier = module_ "Main", name = var "age" })
                     (CanonicalU.List [ CanonicalU.Literal (Literal.Int 1) ])
               , Ok (List Int)
               )

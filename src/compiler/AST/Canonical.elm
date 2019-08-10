@@ -11,15 +11,11 @@ module AST.Canonical exposing
 import AST.Canonical.Unwrapped as Unwrapped
 import AST.Common.Literal exposing (Literal)
 import AST.Common.Located as Located exposing (Located)
-import Common
-import Common.Types
-    exposing
-        ( Binding
-        , ModuleName
-        , Modules
-        , VarName
-        )
-import Dict.Any exposing (AnyDict)
+import AssocList as Dict exposing (Dict)
+import Data.Binding as Binding exposing (Binding)
+import Data.Module exposing (Modules)
+import Data.ModuleName exposing (ModuleName)
+import Data.VarName exposing (VarName)
 
 
 type alias ProjectFields =
@@ -45,7 +41,7 @@ type Expr
     | Lambda { argument : VarName, body : LocatedExpr }
     | Call { fn : LocatedExpr, argument : LocatedExpr }
     | If { test : LocatedExpr, then_ : LocatedExpr, else_ : LocatedExpr }
-    | Let { bindings : AnyDict String VarName (Binding LocatedExpr), body : LocatedExpr }
+    | Let { bindings : Dict VarName (Binding LocatedExpr), body : LocatedExpr }
     | List (List LocatedExpr)
     | Unit
     | Tuple LocatedExpr LocatedExpr
@@ -112,8 +108,8 @@ unwrap expr =
         Let { bindings, body } ->
             Unwrapped.Let
                 { bindings =
-                    Dict.Any.map
-                        (always (Common.mapBinding unwrap))
+                    Dict.map
+                        (always (Binding.map unwrap))
                         bindings
                 , body = unwrap body
                 }
@@ -184,8 +180,8 @@ fromUnwrapped expr =
             Unwrapped.Let { bindings, body } ->
                 Let
                     { bindings =
-                        Dict.Any.map
-                            (always (Common.mapBinding fromUnwrapped))
+                        Dict.map
+                            (always (Binding.map fromUnwrapped))
                             bindings
                     , body = fromUnwrapped body
                     }

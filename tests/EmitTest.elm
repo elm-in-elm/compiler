@@ -4,24 +4,22 @@ import AST.Common.Literal exposing (Literal(..))
 import AST.Common.Located as Located exposing (Located)
 import AST.Common.Type as Type
 import AST.Typed as Typed exposing (Expr_(..), LocatedExpr)
-import Common
-import Common.Types
-    exposing
-        ( ModuleName(..)
-        , TopLevelDeclaration
-        , VarName(..)
-        )
-import Dict.Any
+import AssocList as Dict
+import Data.Declaration exposing (Declaration)
+import Data.ModuleName as ModuleName exposing (ModuleName)
+import Data.VarName as VarName exposing (VarName)
 import Expect exposing (Expectation)
 import Stage.Emit.JavaScript as JS
 import Test exposing (Test, describe, test, todo)
 import TestHelpers
     exposing
-        ( typed
+        ( module_
+        , typed
         , typedBool
         , typedInt
         , typedIntList
         , typedString
+        , var
         )
 
 
@@ -81,13 +79,13 @@ javascript =
                 )
             , describe "Var"
                 (List.map runTest
-                    [ ( "simple", Var { qualifier = ModuleName "Foo", name = VarName "bar" }, "Foo$bar" )
-                    , ( "nested", Var { qualifier = ModuleName "Foo.Bar", name = VarName "baz" }, "Foo$Bar$baz" )
+                    [ ( "simple", Var { qualifier = module_ "Foo", name = var "bar" }, "Foo$bar" )
+                    , ( "nested", Var { qualifier = module_ "Foo.Bar", name = var "baz" }, "Foo$Bar$baz" )
                     ]
                 )
             , describe "Argument"
                 (List.map runTest
-                    [ ( "simple", Argument (VarName "foo"), "foo" )
+                    [ ( "simple", Argument (var "foo"), "foo" )
                     ]
                 )
             , describe "Plus"
@@ -115,7 +113,7 @@ javascript =
                 (List.map runTest
                     [ ( "simple"
                       , Lambda
-                            { argument = VarName "x"
+                            { argument = var "x"
                             , body = typedInt 1
                             }
                       , "((x) => 1)"
@@ -126,7 +124,7 @@ javascript =
                 (List.map runTest
                     [ ( "simple"
                       , Call
-                            { fn = typed (Var { qualifier = ModuleName "Basics", name = VarName "negate" })
+                            { fn = typed (Var { qualifier = module_ "Basics", name = var "negate" })
                             , argument = typedInt 1
                             }
                       , "(Basics$negate(1))"
@@ -136,7 +134,7 @@ javascript =
                             { fn =
                                 typed
                                     (Lambda
-                                        { argument = VarName "x"
+                                        { argument = var "x"
                                         , body = typedInt 2
                                         }
                                     )
@@ -169,7 +167,7 @@ javascript =
                             { test =
                                 typed
                                     (Call
-                                        { fn = typed (Var { qualifier = ModuleName "String", name = VarName "isEmpty" })
+                                        { fn = typed (Var { qualifier = module_ "String", name = var "isEmpty" })
                                         , argument = typed (Literal (String "foo"))
                                         }
                                     )
@@ -208,12 +206,11 @@ javascript =
                     [ ( "one binding"
                       , Let
                             { bindings =
-                                Dict.Any.singleton
-                                    (VarName "x")
-                                    { name = VarName "x"
+                                Dict.singleton
+                                    (var "x")
+                                    { name = var "x"
                                     , body = typedInt 2
                                     }
-                                    Common.varNameToString
                             , body = typedInt 1
                             }
                       , "((() => {const x = 2; return 1;})())"
@@ -221,15 +218,14 @@ javascript =
                     , ( "two bindings"
                       , Let
                             { bindings =
-                                Dict.Any.fromList
-                                    Common.varNameToString
-                                    [ ( VarName "x"
-                                      , { name = VarName "x"
+                                Dict.fromList
+                                    [ ( var "x"
+                                      , { name = var "x"
                                         , body = typedInt 2
                                         }
                                       )
-                                    , ( VarName "y"
-                                      , { name = VarName "y"
+                                    , ( var "y"
+                                      , { name = var "y"
                                         , body = typedInt 3
                                         }
                                       )
@@ -259,19 +255,19 @@ javascript =
                 )
             ]
         , let
-            runTest : ( String, TopLevelDeclaration Typed.LocatedExpr, String ) -> Test
+            runTest : ( String, Declaration Typed.LocatedExpr, String ) -> Test
             runTest ( description, input, output ) =
                 test description <|
                     \() ->
                         input
-                            |> JS.emitTopLevelDeclaration
+                            |> JS.emitDeclaration
                             |> Expect.equal output
           in
-          describe "emitTopLevelDeclaration"
+          describe "emitDeclaration"
             (List.map runTest
                 [ ( "simple"
-                  , { module_ = ModuleName "Foo"
-                    , name = VarName "bar"
+                  , { module_ = module_ "Foo"
+                    , name = var "bar"
                     , body = typedInt 1
                     }
                   , "const Foo$bar = 1;"
