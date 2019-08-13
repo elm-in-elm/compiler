@@ -9,31 +9,43 @@ type inference, optimizing, emit), passing its own emit functions.
 
 Gives us constraints on the API:
 
-    parseModule : String -> Result Error (Module Frontend.Expr)
-    desugarModule : Module Frontend.Expr -> Result Error (Module Canonical.Expr)
-    inferModule : Module Canonical.Expr -> Result Error (Module Typed.Expr)
-    optimizeModule : Module Typed.Expr -> Module Typed.Expr
-    emitModuleWith : TODO -> Module Typed.Expr -> Result Error String
+    parseModule : String -> Result Error (Module Frontend.LocatedExpr)
+
+    desugarModule : Module Frontend.LocatedExpr -> Result Error (Module Canonical.LocatedExpr)
+
+    inferModule : Module Canonical.LocatedExpr -> Result Error (Module Typed.LocatedExpr)
+
+    optimizeModule : Module Typed.LocatedExpr -> Module Typed.LocatedExpr
+
+    TODO refactor PrepareForBackend phase into emit helpers (toGraph, find deps of ...), use in JS emit
 
 Unresolved questions:
 
-    1. Multiple modules - better type errors etc. etc.
-    2. Or doing them one-by-one but allowing looking at previously parsed modules?
-    3. Is this combining of emit and "prepare for backend" a good idea? Would
-       the project graph be useful for somebody?
-    4. Do we want to emit types, comments etc.? Is it worth making them available
-       to the emit function? (Folks might eventually create their own
-       Backend.Expr types etc., so maybe make them available at least in the
-       Typed phase?)
+    1. Multiple modules - better type errors etc... Probably needs combining
+       multiple modules into some kind of environment, typechecking *that* and
+       then getting the modules back out of it?
+    2. We're letting user emit the Module however they want. Should we expose the
+       "preparing for backend" stage? It is only about finding the dependency
+       path from `main` to whatever it needs, so maybe we should rename it to say
+       that? I suspect some languages would benefit from it and some wouldn't,
+       so yeah maybe let's expose it...
+    3. Or just expose some kind of helper for getting the path from arbitrary
+       value to whatever it needs?
 
 -}
 
 
-main : String -> Result ElixirError String
+main : String -> Result Error String
 main moduleSourceCode =
     moduleSourceCode
         |> Elm.Compiler.parseModule
         |> Random.andThen Elm.Compiler.desugarModule
         |> Random.andThen Elm.Compiler.inferModule
         |> Random.map Elm.Compiler.optimizeModule
-        |> Random.andThen (Elm.Compiler.emitModuleWith ....TODO....)
+        |> Random.map emitElixirModule
+
+
+emitElixirModule : Module Typed.LocatedExpr -> String
+emitElixirModule =
+    -- TODO maybe flesh this example out a bit to be sure this is feasible?
+    Debug.todo "whatever"

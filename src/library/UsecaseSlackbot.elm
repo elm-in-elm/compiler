@@ -11,11 +11,10 @@ Bonus points for eval function, but that doesn't have to live in elm/compiler.
 Gives us constraints on the API:
 
     parseImport : String -> Result Error Import
-    parseDefinition : String -> Result Error (Definition Frontend.Expr)
-    parseExpr : String -> Result Error Frontend.Expr
 
-    Rename Dependency to Import
-    Rename TopLevelDefinition to Definition
+    parseDefinition : String -> Result Error (Definition Frontend.LocatedExpr)
+
+    parseExpr : String -> Result Error Frontend.LocatedExpr
 
 Unresolved questions:
 
@@ -42,13 +41,13 @@ main snippet =
                 |> List.map Elm.Compiler.parseImport
                 |> Result.Extra.combine
 
-        definitions : Result Error (List (TopLevelDefinition Frontend.Expr))
+        definitions : Result Error (List (Definition Frontend.LocatedExpr))
         definitions =
             definitionSnippets
                 |> List.map Elm.Compiler.parseDefinition
                 |> Result.Extra.combine
 
-        expr : Result Error Frontend.Expr
+        expr : Result Error Frontend.LocatedExpr
         expr =
             Elm.Compiler.parseExpr exprSnippet
     in

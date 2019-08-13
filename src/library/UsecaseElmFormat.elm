@@ -7,7 +7,7 @@ non-opaque access to that AST to be able to emit back to Elm.
 
 Gives us constraints on the API:
 
-    parseModule : String -> Result Error (Module Frontend.Expr)
+    parseModule : String -> Result Error (Module Frontend.LocatedExpr)
 
 -}
 
@@ -23,6 +23,6 @@ main moduleSourceCode =
         |> Random.map emitToElm
 
 
-emitToElm : Module Frontend.Expr -> String
+emitToElm : Module Frontend.LocatedExpr -> String
 emitToElm module_ =
     Debug.todo "whatever"
