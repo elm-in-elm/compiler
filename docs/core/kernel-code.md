@@ -41,7 +41,13 @@ The last column of the table contains a best effort to exhustively list all the 
 |                           | `and`         | todo...       |
 |                           | `or`          | todo...       |
 |                           | `xor`         | todo...       |
-| `Elm.Kernel.Bitwise`      | todo...       |
+| `Elm.Kernel.Bitwise`      | `and`             | todo...   |
+|                           | `or`              | todo...   |
+|                           | `xor`             | todo...   |
+|                           | `complement`      | todo...   |
+|                           | `shiftLeftBy`     | todo...   |
+|                           | `shiftRightBy`    | todo...   |
+|                           | `shiftRightZfBy`  | todo...   |
 | `Elm.Kernel.Char`         | todo...       |
 | `Elm.Kernel.Debug`        | todo...       |
 | `Elm.Kernel.JsArray`      | todo...       |
