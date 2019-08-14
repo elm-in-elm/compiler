@@ -75,8 +75,7 @@ The last column of the table contains a best effort to exhustively list all the 
 |                           | `incomingPortMap`     |                       | todo...                                                                                                           |
 |                           | `setupIncomingPort`   |                       | todo...                                                                                                           |
 |                           | `export`              |                       | todo...                                                                                                           |
-|                           | `mergeExportsProd`    |                       | todo...                                                                                                           |
-|                           | `mergeExportsDebug`   |                       | todo...     
+|                           | `mergeExports`        |                       | todo...                                                                                                           |
 | `Elm.Kernel.Process`      | todo...       |
 | `Elm.Kernel.Scheduler`    | todo...       |
 | `Elm.Kernel.String`       | todo...       |
