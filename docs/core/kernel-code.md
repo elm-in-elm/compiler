@@ -52,7 +52,31 @@ The last column of the table contains a best effort to exhustively list all the 
 | `Elm.Kernel.Debug`        | todo...       |
 | `Elm.Kernel.JsArray`      | todo...       |
 | `Elm.Kernel.List`         | todo...       |
-| `Elm.Kernel.Platform`     | todo...       |
+| `Elm.Kernel.Platform`     | `worker`              |                       | `Platform.worker`                                                                                                 |
+|                           | `initialize`          |                       | `Elm.Kernel.Browser.document`, `Elm.Kernel.Browser.element` in `elm/browser`                                      |
+|                           | `registerPreload`     | [Preload](###Preload) | Never used.                                                                                                       |
+|                           | `setupEffects`        |                       | `Elm.Kernel.Platform.Initialize`                                                                                  |
+|                           | `createManager`       |                       | Compiler generated JavaScript for event managers.                                                                 |                                                                                                                                                   |
+|                           | `instantiateManager`  |                       | `Elm.Kernel.Platform.setupEffects`                                                                                |
+|                           | `sendToApp`           |                       | `Platform.sendToApp`                                                                                              |
+|                           | `sendToSelf`          |                       | `Platform.sendToSelf`                                                                                             |
+|                           | `leaf`                |                       | `Elm.Kernel.Platform.outgoingPort`, `Elm.Kernel.incomingPort`, Compiler generated JavaScript for event managers.  |
+|                           | `batch`               |                       | `Platform.Cmd.batch`, `Platform.Sub.batch`                                                                        |
+|                           | `map`                 |                       | `Platform.Cmd.map`, `Platform.Sub.map`                                                                            |
+|                           | `dispatchEffects`     |                       | todo...                                                                                                           |
+|                           | `gatherEffects`       |                       | todo...                                                                                                           |
+|                           | `toEffect`            |                       | todo...                                                                                                           |
+|                           | `insert`              |                       | todo...                                                                                                           |
+|                           | `checkPortName`       |                       | todo...                                                                                                           |
+|                           | `outgoingPort`        |                       | todo...                                                                                                           |
+|                           | `outgoingPortMap`     |                       | todo...                                                                                                           |
+|                           | `setupOutgoingPort`   |                       | todo...                                                                                                           |
+|                           | `incomingPort`        |                       | todo...                                                                                                           |
+|                           | `incomingPortMap`     |                       | todo...                                                                                                           |
+|                           | `setupIncomingPort`   |                       | todo...                                                                                                           |
+|                           | `export`              |                       | todo...                                                                                                           |
+|                           | `mergeExportsProd`    |                       | todo...                                                                                                           |
+|                           | `mergeExportsDebug`   |                       | todo...     
 | `Elm.Kernel.Process`      | todo...       |
 | `Elm.Kernel.Scheduler`    | todo...       |
 | `Elm.Kernel.String`       | todo...       |
