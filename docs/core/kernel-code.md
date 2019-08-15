@@ -81,6 +81,13 @@ The last column of the table contains a best effort to exhustively list all the 
 | `Elm.Kernel.String`       | todo...       |
 | `Elm.Kernel.Utils`        | todo...       |
 
+## List of all global mutable state
+
+| Module                    | Variable name      | Notes                    | Used by               |
+| ------------------------- | ------------------ | ------------------------ | --------------------- |
+| `Elm.Kernel.Platform`     | `preload`          | [Preload](###Preload)    | Never used.           |
+| `Elm.Kernel.Platform`     | `effectManagers`   | [Effects](###Effects)    | todo...               |
+
 ## Notes
 
 ### 1
@@ -89,3 +96,11 @@ For elm code like `x + y` or `time / 60`, the official compiler generates javasc
 These functions will only be called if the user does `add x y` or `fdiv time 60`.
 I (Harry Sarson) belive that `Basics.add` calls `Elm.Kernel.Basics.add` entirely so that the type resolution part of the compiler can treat `(+)` as an operator defined by `infix left 6 (+) = add`.
 The code generation part of the compiler then special cases these operators.
+
+### Preload
+
+Looks like something that was introduced during the exploration of server side rendering.
+
+### Effects
+
+Todo...
