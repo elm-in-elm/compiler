@@ -2,3 +2,5 @@ build/
 out.js
 elm-stuff/
 node_modules/
+.idea
+*.iml

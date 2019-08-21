@@ -5,7 +5,7 @@ module UsecaseElixir exposing (main)
 In other words, a compiler from Elm to another language.
 
 Needs to thread the source code through the whole pipeline (parsing, desugaring,
-type inference, optimizing, emit), passing its own emit functions.
+type inference, optimizing) and then to its own emit function.
 
 Gives us constraints on the API:
 
@@ -39,10 +39,10 @@ main : String -> Result Error String
 main moduleSourceCode =
     moduleSourceCode
         |> Elm.Compiler.parseModule
-        |> Random.andThen Elm.Compiler.desugarModule
-        |> Random.andThen Elm.Compiler.inferModule
-        |> Random.map Elm.Compiler.optimizeModule
-        |> Random.map emitElixirModule
+        |> Result.andThen Elm.Compiler.desugarModule
+        |> Result.andThen Elm.Compiler.inferModule
+        |> Result.map Elm.Compiler.optimizeModule
+        |> Result.map emitElixirModule
 
 
 emitElixirModule : Module Typed.LocatedExpr -> String

@@ -20,7 +20,7 @@ main : String -> Result Error String
 main moduleSourceCode =
     moduleSourceCode
         |> Elm.Compiler.parseModule
-        |> Random.map emitToElm
+        |> Result.map emitToElm
 
 
 emitToElm : Module Frontend.LocatedExpr -> String
