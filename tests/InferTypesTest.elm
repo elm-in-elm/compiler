@@ -266,14 +266,21 @@ typeToString =
             ]
         , describe "user defined type"
             [ runTest
-                ( "maybe int"
+                ( "type without a param"
+                , Type.UserDefinedType
+                    ( ModuleName.fromString "MyModule", VarName.fromString "MyBool" )
+                    []
+                , "MyModule.MyBool"
+                )
+            , runTest
+                ( "type with a param"
                 , Type.UserDefinedType
                     ( ModuleName.fromString "Maybe", VarName.fromString "Maybe" )
                     [ Type.Int ]
                 , "Maybe.Maybe Int"
                 )
             , runTest
-                ( "maybe a"
+                ( "type with a param 2"
                 , Type.UserDefinedType
                     ( ModuleName.fromString "Maybe", VarName.fromString "Maybe" )
                     [ Type.Var 0 ]
