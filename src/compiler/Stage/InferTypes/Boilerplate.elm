@@ -1,4 +1,4 @@
-module Stage.InferTypes.Boilerplate exposing (inferProject)
+module Stage.InferTypes.Boilerplate exposing (inferModule, inferProject)
 
 import AST.Canonical as Canonical
 import AST.Typed as Typed

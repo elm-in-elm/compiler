@@ -261,7 +261,17 @@ update_ msg model =
 
 handleReadFileSuccess : FilePath -> FileContents -> Model_ Frontend.ProjectFields -> ( Model Frontend.ProjectFields, Cmd Msg )
 handleReadFileSuccess filePath fileContents ({ project } as model) =
-    case Parse.parse project filePath fileContents of
+    let
+        parseResult =
+            Parse.parse filePath fileContents
+                |> Result.andThen
+                    (Parse.checkModuleNameAndFilePath
+                        { sourceDirectory = project.sourceDirectory
+                        , filePath = filePath
+                        }
+                    )
+    in
+    case parseResult of
         Err error ->
             handleError error
 

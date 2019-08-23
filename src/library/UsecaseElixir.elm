@@ -17,8 +17,6 @@ Gives us constraints on the API:
 
     optimizeModule : Module Typed.LocatedExpr -> Module Typed.LocatedExpr
 
-    TODO refactor PrepareForBackend phase into emit helpers (toGraph, find deps of ...), use in JS emit
-
 Unresolved questions:
 
     1. Multiple modules - better type errors etc... Probably needs combining

@@ -7,7 +7,7 @@ import Data.VarName exposing (VarName)
 
 
 {-| This only differs from AST.Frontend.Expr by recursing on itself instead of
-on LocatedExpr. Handy for parser tests!
+on LocatedExpr. Handy for parser tests or when you don't need the location info!
 -}
 type Expr
     = Literal Literal

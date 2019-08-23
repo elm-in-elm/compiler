@@ -1,6 +1,8 @@
 module Stage.Parse.Parser exposing
-    ( exposingList
+    ( declaration
+    , exposingList
     , expr
+    , import_
     , imports
     , moduleDeclaration
     , moduleName

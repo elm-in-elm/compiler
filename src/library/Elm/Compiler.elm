@@ -1,8 +1,10 @@
 module Elm.Compiler exposing
-    ( parseExpr, parseTopLevelDeclarations, parseModule, parseProject
-    , parseToCanonicalExpr, parseToCanonicalTopLevelDeclarations, parseToCanonicalModule, parseToCanonicalProject
-    , parseToTypedExpr, parseToTypedTopLevelDeclarations, parseToTypedModule, parseToTypedProject
-    , dropTypesExpr, dropTypesTopLevelDeclarations, dropTypesModule, dropTypesProject
+    ( parseExpr, parseModule, parseModules, parseImport, parseDeclaration
+    , desugarExpr, desugarModule, desugarModules
+    , inferExpr, inferModule, inferModules
+    , optimizeExpr, optimizeModule, optimizeModules
+    , unwrapFrontendExpr, unwrapCanonicalExpr, unwrapTypedExpr
+    , dropTypesExpr, dropTypesModule, dropTypesModules
     )
 
 {-| High-level common usecases for using the compiler from Elm programs.
@@ -24,100 +26,319 @@ to
     \a -> \b -> \c -> a + b + c
 
 That is one of the things the Desugar phase does. So tools like `elm-format`
-probably won't want to call it!
+probably won't want to touch that phase, and will want to only parse!
 
-@docs parseExpr, parseTopLevelDeclarations, parseModule, parseProject
-
-
-# Parsing to canonical representation
-
-In addition to parsing also performs desugaring. So the returned values contain
-`Canonical.Expr`s instead of `Frontend.Expr`s.
-
-**Useful if you need a cleaned-up version of the AST, eg. for some analysis.**
-
-Note this representation doesn't contain the type information yet. For that,
-look at the `parseToTyped*` family of functions.
-
-@docs parseToCanonicalExpr, parseToCanonicalTopLevelDeclarations, parseToCanonicalModule, parseToCanonicalProject
+@docs parseExpr, parseModule, parseModules, parseImport, parseDeclaration
 
 
-# Parsing to typechecked representation
+# Desugaring
 
-In addition to parsing and desugaring also infers and remembers the types
-the parsed code.
+TODO
 
-**Useful if you need to do analysis that cares about types, or want to do
-anything to the AST after checking the program typechecks.**
+@docs desugarExpr, desugarModule, desugarModules
 
-Note you can drop the type information with `dropTypes` if you want
-typechecked AST without the types.
 
-@docs parseToTypedExpr, parseToTypedTopLevelDeclarations, parseToTypedModule, parseToTypedProject
+# Inferring types
+
+TODO
+
+Note that the more of your code you'll give these functions at once, the better
+the type inference will be. So it's advisable to eg. run `inferModules` once
+instead of running `inferModule` on each of your modules.
+
+@docs inferExpr, inferModule, inferModules
+
+
+# Optimizing
+
+TODO
+
+@docs optimizeExpr, optimizeModule, optimizeModules
+
+
+# Unwrapping expressions
+
+During parsing all the expressions get the location info for where in the source
+string they were parsed, and during later phases the location info sticks around.
+This is handy for nice error messages, but not necessarily useful for all
+applications.
+
+If you don't need the location info, you can unwrap the underlying expressions
+to get rid of it!
+
+@docs unwrapFrontendExpr, unwrapCanonicalExpr, unwrapTypedExpr
 
 
 # Dropping types
 
-Allows you to go from the typechecked representation back to the canonical one.
+TODO
 
-**Useful if your program needs the user program to be typechecked but you don't
-care about the types otherwise.**
-
-@docs dropTypesExpr, dropTypesTopLevelDeclarations, dropTypesModule, dropTypesProject
+@docs dropTypesExpr, dropTypesModule, dropTypesModules
 
 -}
 
-import Dict.Any exposing (AnyDict)
-import Elm.Compiler.AST.Canonical
-import Elm.Compiler.AST.Frontend
-import Elm.Compiler.AST.Typed
-import Elm.Compiler.Error exposing (Error(..))
+import AST.Canonical
+import AST.Frontend
+import AST.Typed
+import AssocList as Dict exposing (Dict)
+import Error exposing (Error(..))
+import OurExtras.AssocList as Dict
+import Parser.Advanced as P
 import Stage.Parser
 
 
-parseExpr : String -> Result Error Frontend.Expr
+
+-- PARSING
 
 
-parseTopLevelDeclarations : String -> Result Error (AnyDict String VarName (TopLevelDeclaration Frontend.Expr))
+{-| A shortcut so that the library users don't have to worry about
+what ParseContext or ParseProblem means. Don't expose it.
+-}
+type alias Parser a =
+    P.Parser ParseContext ParseProblem a
 
 
-parseModule : String -> Result Error (Module Frontend.Expr)
+{-| A helper for a common pattern with our Elm parsers. Don't expose it.
+-}
+parse : Parser a -> String -> Result Error a
+parse parser string =
+    P.run parser string
+        |> Result.mapError (ParseError << ParseProblem)
 
 
-parseProject : String -> Result Error (Project Frontend.Expr)
+{-| Parse a single expression like
+
+    ( 12, "Hello" )
+
+into AST like
+
+    Located
+        {start = ..., end = ...}
+        (Tuple
+            (Located ... (Literal (Int 12)))
+            (Located ... (Literal (String "Hello")))
+        )
+
+If you don't need the location information and want to only keep the expressions,
+use `unwrapFrontendExpr`.
+
+-}
+parseExpr : String -> Result Error Frontend.LocatedExpr
+parseExpr sourceCode =
+    parse Stage.Parse.Parser.expr sourceCode
 
 
-parseToCanonicalExpr : String -> Result Error Canonical.Expr
+{-| TODO
+-}
+parseModule : { filePath : String, sourceCode : String } -> Result Error (Module Frontend.LocatedExpr)
+parseModule { filePath, sourceCode } =
+    -- TODO maybe we can think of a way to not force the user to give us `filePath`?
+    parse (Stage.Parse.Parser.module_ filePath) sourceCode
 
 
-parseToCanonicalTopLevelDeclarations : String -> Result Error (AnyDict String VarName (TopLevelDeclaration Canonical.Expr))
+{-| TODO
+-}
+parseModules : List { filePath : String, sourceCode : String } -> Result Error (Dict ModuleName (Module Frontend.LocatedExpr))
+parseModules files =
+    {- TODO same as with `parseModule` - maybe we can think of a way to not force
+       the user to give us `filePath`?
+    -}
+    files
+        |> List.map parseModule
+        |> Result.combine
+        |> Result.map (Dict.groupBy .name)
 
 
-parseToCanonicalModule : String -> Result Error (Module Canonical.Expr)
+{-| TODO
+-}
+parseImport : String -> Result Error Import
+parseImport sourceCode =
+    parse Stage.Parse.Parser.import_ sourceCode
 
 
-parseToCanonicalProject : String -> Result Error (Project Canonical.Expr)
+{-| TODO
+-}
+parseDeclaration : String -> Result Error (Declaration Frontend.LocatedExpr)
+parseDeclaration sourceCode =
+    parse Stage.Parse.Parser.declaration sourceCode
 
 
-parseToTypedExpr : String -> Result Error Typed.Expr
+
+-- DESUGARING
 
 
-parseToTypedTopLevelDeclarations : String -> Result Error (AnyDict String VarName (TopLevelDeclaration Typed.Expr))
+{-| TODO
+-}
+desugarExpr :
+    Dict ModuleName (Module Frontend.LocatedExpr)
+    -> Module Frontend.LocatedExpr
+    -> Frontend.LocatedExpr
+    -> Result Error Canonical.LocatedExpr
+desugarExpr modules thisModule locatedExpr =
+    Stage.Desugar.desugarExpr modules thisModule locatedExpr
 
 
-parseToTypedModule : String -> Result Error (Module Typed.Expr)
+{-| TODO
+-}
+desugarModule :
+    Dict ModuleName (Module Frontend.LocatedExpr)
+    -> Module Frontend.LocatedExpr
+    -> Result Error (Module Canonical.LocatedExpr)
+desugarModule modules thisModule =
+    Stage.Desugar.Boilerplate.desugarModule (desugarExpr modules) thisModule
 
 
-parseToTypedProject : String -> Result Error (Project Typed.Expr)
+{-| TODO
+-}
+desugarModules : Dict ModuleName (Module Frontend.LocatedExpr) -> Result Error (Dict ModuleName (Module Canonical.LocatedExpr))
+desugarModules modules =
+    modules
+        |> Dict.map (always (desugarModule (desugarExpr modules)))
+        |> Dict.combine
 
 
-dropTypesExpr : Typed.Expr -> Canonical.Expr
+
+-- TYPE INFERENCE
 
 
-dropTypesTopLevelDeclarations : AnyDict String VarName (TopLevelDeclaration Typed.Expr) -> AnyDict String VarName (TopLevelDeclaration Canonical.Expr)
+{-| TODO
+-}
+inferExpr : Canonical.LocatedExpr -> Result Error Typed.LocatedExpr
+inferExpr modules thisModule locatedExpr =
+    Stage.InferTypes.inferExpr locatedExpr
 
 
-dropTypesModule : Module Typed.Expr -> Module Canonical.Expr
+{-| TODO
+-}
+inferModule : Module Canonical.LocatedExpr -> Result Error (Module Typed.LocatedExpr)
+inferModule thisModule =
+    Stage.InferTypes.Boilerplate.inferModule inferExpr thisModule
 
 
-dropTypesProject : Project Typed.Expr -> Project Canonical.Expr
+{-| TODO
+-}
+inferModules : Dict ModuleName (Module Canonical.LocatedExpr) -> Result Error (Dict ModuleName (Module Typed.LocatedExpr))
+inferModules modules =
+    modules
+        |> Dict.map (always (inferModule inferExpr))
+        |> Dict.combine
+
+
+
+-- OPTIMIZE
+
+
+{-| TODO
+-}
+optimizeExpr : Typed.LocatedExpr -> Typed.LocatedExpr
+optimizeExpr locatedExpr =
+    Stage.Optimize.optimizeExpr locatedExpr
+
+
+{-| TODO
+-}
+optimizeModule : Module Typed.LocatedExpr -> Module Typed.LocatedExpr
+optimizeModule thisModule =
+    Stage.Optimize.Boilerplate.optimizeModule optimizeExpr thisModule
+
+
+{-| TODO
+-}
+optimizeModules : Dict ModuleName (Module Typed.LocatedExpr) -> Dict ModuleName (Module Typed.LocatedExpr)
+optimizeModules modules =
+    Dict.map (always optimizeModule) modules
+
+
+
+-- UNWRAPPING
+
+
+{-| Removes all the location info from the Frontend expressions, so eg.
+
+    Located
+        {start = ..., end = ...}
+        (Tuple
+            (Located ... (Literal (Int 12)))
+            (Located ... (Literal (String "Hello")))
+        )
+
+becomes
+
+    Tuple
+        (Literal (Int 12))
+        (Literal (String "Hello"))
+
+-}
+unwrapFrontendExpr : Frontend.LocatedExpr -> Frontend.Unwrapped.Expr
+unwrapFrontendExpr locatedExpr =
+    AST.Frontend.unwrap locatedExpr
+
+
+{-| Removes all the location info from the Canonical expressions, so eg.
+
+    Located
+        {start = ..., end = ...}
+        (Tuple
+            (Located ... (Literal (Int 12)))
+            (Located ... (Literal (String "Hello")))
+        )
+
+becomes
+
+    Tuple
+        (Literal (Int 12))
+        (Literal (String "Hello"))
+
+-}
+unwrapCanonicalExpr : Canonical.LocatedExpr -> Canonical.Unwrapped.Expr
+unwrapCanonicalExpr locatedExpr =
+    AST.Canonical.unwrap locatedExpr
+
+
+{-| Removes all the location info from the Typed expressions, so eg.
+
+    Located
+        { start = ..., end = ... }
+        ( Tuple
+            (Located ... ( Literal (Int 12), Type.Int ))
+            (Located ... ( Literal (String "Hello"), Type.String ))
+        , Type.Tuple Type.Int Type.String
+        )
+
+becomes
+
+    ( Tuple
+        ( Literal (Int 12), Type.Int )
+        ( Literal (String "Hello"), Type.String )
+    , Type.Tuple Type.Int Type.String
+    )
+
+-}
+unwrapTypedExpr : Typed.LocatedExpr -> Typed.Unwrapped.Expr
+unwrapTypedExpr locatedExpr =
+    AST.Typed.unwrap locatedExpr
+
+
+
+-- DROP TYPES
+
+
+{-| TODO
+-}
+dropTypesExpr : Typed.LocatedExpr -> Canonical.LocatedExpr
+dropTypesExpr locatedExpr =
+    Debug.todo "dropTypesExpr"
+
+
+{-| TODO
+-}
+dropTypesModule : Module Typed.LocatedExpr -> Module Canonical.LocatedExpr
+dropTypesModule thisModule =
+    Debug.todo "dropTypesModule"
+
+
+{-| TODO
+-}
+dropTypesModules : Dict ModuleName (Module Typed.LocatedExpr) -> Dict ModuleName (Module Canonical.LocatedExpr)
+dropTypesModules modules =
+    Dict.map (always dropTypesModule) modules

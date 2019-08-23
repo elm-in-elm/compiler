@@ -1,0 +1,16 @@
+stuff to expose:
+
+- Error
+- FilePath
+- FileContents
+- Frontend.LocatedExpr
+- Frontend.Unwrapped.Expr
+- Module
+
+- [ ] should we expose unwrap for the various exprs?
+- [ ] parseProject?
+- [ ] way from typed expr to canonical expr?
+
+
+- [ ] TODO move stuff not used by both cli/ and library/ into cli/ (eg. desugar : Project -> ... Project, etc.)
+- [ ] TODO in similar vein, don't let library/ use Boilerplate stuff - move it somewhere

@@ -1,4 +1,7 @@
-module Stage.Parse exposing (parse)
+module Stage.Parse exposing
+    ( checkModuleNameAndFilePath
+    , parse
+    )
 
 import AST.Frontend as Frontend
 import Data.FileContents as FileContents exposing (FileContents)
@@ -11,18 +14,19 @@ import Parser.Advanced as P
 import Stage.Parse.Parser as Parser
 
 
-parse : Project a -> FilePath -> FileContents -> Result Error (Module Frontend.LocatedExpr)
-parse { sourceDirectory } filePath fileContents =
-    P.run (Parser.module_ filePath) (FileContents.toString fileContents)
+{-| This `parse` function is used only by cli/, not by library/.
+Maybe we should use it in library/ too?
+-}
+parse : FilePath -> FileContents -> Result Error (Module Frontend.LocatedExpr)
+parse filePath fileContents =
+    P.run
+        (Parser.module_ filePath)
+        (FileContents.toString fileContents)
         |> Result.mapError (ParseError << ParseProblem)
-        |> Result.andThen
-            (checkModuleNameAndFilePath
-                { sourceDirectory = sourceDirectory
-                , filePath = filePath
-                }
-            )
 
 
+{-| TODO maybe there should be a "Checks" module for checks across phases?
+-}
 checkModuleNameAndFilePath : { sourceDirectory : FilePath, filePath : FilePath } -> Module Frontend.LocatedExpr -> Result Error (Module Frontend.LocatedExpr)
 checkModuleNameAndFilePath { sourceDirectory, filePath } ({ name } as parsedModule) =
     let

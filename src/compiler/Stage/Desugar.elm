@@ -1,4 +1,4 @@
-module Stage.Desugar exposing (desugar)
+module Stage.Desugar exposing (desugar, desugarExpr)
 
 import AST.Canonical as Canonical
 import AST.Common.Literal exposing (Literal)
