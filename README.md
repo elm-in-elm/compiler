@@ -47,9 +47,9 @@ This is :negative_squared_cross_mark::negative_squared_cross_mark::negative_squa
 
 `elm-in-elm` consists of:
 
-* [a compiler implementation](src/compiler/)
-* [a library](src/library/) :construction: `TODO` :construction:
-* [a CLI tool](src/cli/) :construction: `TODO` :construction:
+* [a compiler implementation](src/)
+* [a library](src/Elm/Compiler.elm) :construction: `TODO` :construction:
+* [a CLI tool](cli/) :construction: `TODO` :construction:
 * and [a test suite](tests/).
 
 It is written in Elm, and compiles Elm to JavaScript, but lays the foundation to be able to compile to different targets in the future.

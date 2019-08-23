@@ -1,4 +1,7 @@
-module Stage.Desugar.Boilerplate exposing (desugarModule, desugarProject)
+module Stage.Desugar.Boilerplate exposing
+    ( desugarModule
+    , desugarProject
+    )
 
 import AST.Canonical as Canonical
 import AST.Frontend as Frontend

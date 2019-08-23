@@ -77,14 +77,36 @@ TODO
 
 -}
 
-import AST.Canonical
-import AST.Frontend
-import AST.Typed
+import AST.Canonical as Canonical
+import AST.Canonical.Unwrapped as CanonicalUnwrapped
+import AST.Frontend as Frontend
+import AST.Frontend.Unwrapped as FrontendUnwrapped
+import AST.Typed as Typed
+import AST.Typed.Unwrapped as TypedUnwrapped
 import AssocList as Dict exposing (Dict)
-import Error exposing (Error(..))
+import Data.Declaration exposing (Declaration)
+import Data.FilePath as FilePath
+import Data.Import exposing (Import)
+import Data.Module exposing (Module)
+import Data.ModuleName exposing (ModuleName)
+import Error
+    exposing
+        ( Error(..)
+        , ParseContext
+        , ParseError(..)
+        , ParseProblem
+        )
 import OurExtras.AssocList as Dict
 import Parser.Advanced as P
-import Stage.Parser
+import Result.Extra as Result
+import Stage.Desugar
+import Stage.Desugar.Boilerplate
+import Stage.InferTypes
+import Stage.InferTypes.Boilerplate
+import Stage.Optimize
+import Stage.Optimize.Boilerplate
+import Stage.Parse
+import Stage.Parse.Parser
 
 
 
@@ -133,7 +155,7 @@ parseExpr sourceCode =
 parseModule : { filePath : String, sourceCode : String } -> Result Error (Module Frontend.LocatedExpr)
 parseModule { filePath, sourceCode } =
     -- TODO maybe we can think of a way to not force the user to give us `filePath`?
-    parse (Stage.Parse.Parser.module_ filePath) sourceCode
+    parse (Stage.Parse.Parser.module_ (FilePath.fromString filePath)) sourceCode
 
 
 {-| TODO
@@ -146,7 +168,7 @@ parseModules files =
     files
         |> List.map parseModule
         |> Result.combine
-        |> Result.map (Dict.groupBy .name)
+        |> Result.map (List.map (\module_ -> ( module_.name, module_ )) >> Dict.fromList)
 
 
 {-| TODO
@@ -158,9 +180,10 @@ parseImport sourceCode =
 
 {-| TODO
 -}
-parseDeclaration : String -> Result Error (Declaration Frontend.LocatedExpr)
-parseDeclaration sourceCode =
+parseDeclaration : ModuleName -> String -> Result Error (Declaration Frontend.LocatedExpr)
+parseDeclaration thisModule sourceCode =
     parse Stage.Parse.Parser.declaration sourceCode
+        |> Result.map (\toDeclaration -> toDeclaration thisModule)
 
 
 
@@ -176,6 +199,7 @@ desugarExpr :
     -> Result Error Canonical.LocatedExpr
 desugarExpr modules thisModule locatedExpr =
     Stage.Desugar.desugarExpr modules thisModule locatedExpr
+        |> Result.mapError DesugarError
 
 
 {-| TODO
@@ -185,7 +209,8 @@ desugarModule :
     -> Module Frontend.LocatedExpr
     -> Result Error (Module Canonical.LocatedExpr)
 desugarModule modules thisModule =
-    Stage.Desugar.Boilerplate.desugarModule (desugarExpr modules) thisModule
+    Stage.Desugar.Boilerplate.desugarModule (Stage.Desugar.desugarExpr modules) thisModule
+        |> Result.mapError DesugarError
 
 
 {-| TODO
@@ -193,8 +218,9 @@ desugarModule modules thisModule =
 desugarModules : Dict ModuleName (Module Frontend.LocatedExpr) -> Result Error (Dict ModuleName (Module Canonical.LocatedExpr))
 desugarModules modules =
     modules
-        |> Dict.map (always (desugarModule (desugarExpr modules)))
+        |> Dict.map (always (Stage.Desugar.Boilerplate.desugarModule (Stage.Desugar.desugarExpr modules)))
         |> Dict.combine
+        |> Result.mapError DesugarError
 
 
 
@@ -204,15 +230,17 @@ desugarModules modules =
 {-| TODO
 -}
 inferExpr : Canonical.LocatedExpr -> Result Error Typed.LocatedExpr
-inferExpr modules thisModule locatedExpr =
+inferExpr locatedExpr =
     Stage.InferTypes.inferExpr locatedExpr
+        |> Result.mapError TypeError
 
 
 {-| TODO
 -}
 inferModule : Module Canonical.LocatedExpr -> Result Error (Module Typed.LocatedExpr)
 inferModule thisModule =
-    Stage.InferTypes.Boilerplate.inferModule inferExpr thisModule
+    Stage.InferTypes.Boilerplate.inferModule Stage.InferTypes.inferExpr thisModule
+        |> Result.mapError TypeError
 
 
 {-| TODO
@@ -220,7 +248,7 @@ inferModule thisModule =
 inferModules : Dict ModuleName (Module Canonical.LocatedExpr) -> Result Error (Dict ModuleName (Module Typed.LocatedExpr))
 inferModules modules =
     modules
-        |> Dict.map (always (inferModule inferExpr))
+        |> Dict.map (always inferModule)
         |> Dict.combine
 
 
@@ -269,9 +297,9 @@ becomes
         (Literal (String "Hello"))
 
 -}
-unwrapFrontendExpr : Frontend.LocatedExpr -> Frontend.Unwrapped.Expr
+unwrapFrontendExpr : Frontend.LocatedExpr -> FrontendUnwrapped.Expr
 unwrapFrontendExpr locatedExpr =
-    AST.Frontend.unwrap locatedExpr
+    Frontend.unwrap locatedExpr
 
 
 {-| Removes all the location info from the Canonical expressions, so eg.
@@ -290,9 +318,9 @@ becomes
         (Literal (String "Hello"))
 
 -}
-unwrapCanonicalExpr : Canonical.LocatedExpr -> Canonical.Unwrapped.Expr
+unwrapCanonicalExpr : Canonical.LocatedExpr -> CanonicalUnwrapped.Expr
 unwrapCanonicalExpr locatedExpr =
-    AST.Canonical.unwrap locatedExpr
+    Canonical.unwrap locatedExpr
 
 
 {-| Removes all the location info from the Typed expressions, so eg.
@@ -314,9 +342,9 @@ becomes
     )
 
 -}
-unwrapTypedExpr : Typed.LocatedExpr -> Typed.Unwrapped.Expr
+unwrapTypedExpr : Typed.LocatedExpr -> TypedUnwrapped.Expr
 unwrapTypedExpr locatedExpr =
-    AST.Typed.unwrap locatedExpr
+    Typed.unwrap locatedExpr
 
 
 

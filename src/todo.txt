@@ -14,3 +14,12 @@ stuff to expose:
 
 - [ ] TODO move stuff not used by both cli/ and library/ into cli/ (eg. desugar : Project -> ... Project, etc.)
 - [ ] TODO in similar vein, don't let library/ use Boilerplate stuff - move it somewhere
+
+
+
+- [ ] after moving of folders around stops, these should all work:
+  - [ ] cli tests (end-to-end tests)
+  - [ ] shared tests (what we have now)
+  - [ ] library tests (should those even exist? it's a pretty thin wrapper over the shared thing...)
+  - [ ] Makefile - building and running the CLI
+  - [ ] publishing the library (is there a way to only simulate this?)

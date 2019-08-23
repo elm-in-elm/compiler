@@ -1,4 +1,7 @@
-module Stage.Optimize.Boilerplate exposing (optimizeProject)
+module Stage.Optimize.Boilerplate exposing
+    ( optimizeModule
+    , optimizeProject
+    )
 
 import AST.Typed as Typed
 import AssocList as Dict exposing (Dict)
