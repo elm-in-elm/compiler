@@ -1,12 +1,12 @@
 module Error exposing
     ( DesugarError(..)
+    , EmitError(..)
     , Error(..)
     , ErrorCode(..)
     , GeneralError(..)
     , ParseContext(..)
     , ParseError(..)
     , ParseProblem(..)
-    , PrepareForBackendError(..)
     , TypeError(..)
     , parseErrorCode
     , toString
@@ -25,7 +25,7 @@ type Error
     | ParseError ParseError
     | DesugarError DesugarError
     | TypeError TypeError
-    | PrepareForBackendError PrepareForBackendError
+    | EmitError EmitError
 
 
 type GeneralError
@@ -129,7 +129,7 @@ type TypeError
     | OccursCheckFailed Int Type
 
 
-type PrepareForBackendError
+type EmitError
     = MainDeclarationNotFound
 
 
@@ -219,8 +219,8 @@ toString error =
                         ++ " occurs in "
                         ++ type2
 
-        PrepareForBackendError prepareForBackendError ->
-            case prepareForBackendError of
+        EmitError emitError ->
+            case emitError of
                 MainDeclarationNotFound ->
                     "Couldn't find the value `main` in the main module given to the compiler!"
 

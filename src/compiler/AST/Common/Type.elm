@@ -1,6 +1,7 @@
 module AST.Common.Type exposing
     ( State
     , Type(..)
+    , TypeArgument(..)
     , emptyState
     , getVarId
     , isParametric
@@ -11,6 +12,8 @@ module AST.Common.Type exposing
 {-| In its own module because both Error.TypeError and AST.Typed need to see it
 -}
 
+import Data.ModuleName as ModuleName exposing (ModuleName)
+import Data.VarName as VarName exposing (VarName)
 import Dict exposing (Dict)
 
 
@@ -41,6 +44,17 @@ type Type
     | Unit
     | Tuple Type Type
     | Tuple3 Type Type Type
+    | {- The actual definitions of type aliases and custom types are elsewhere,
+         this is just a "pointer", "var".
+
+         This constructor encompasses both type aliases and custom types:
+      -}
+      UserDefinedType ( ModuleName, VarName ) (List Type)
+
+
+type TypeArgument
+    = ConcreteType Type
+    | TypeParameter String
 
 
 getVarId : Type -> Maybe Int
@@ -169,6 +183,32 @@ toString state type_ =
             in
             ( "( " ++ t1String ++ ", " ++ t2String ++ ", " ++ t3String ++ " )", state3 )
 
+        UserDefinedType ( moduleName, varName ) typeParameters ->
+            let
+                ( paramsString, state1 ) =
+                    if List.isEmpty typeParameters then
+                        ( "", state )
+
+                    else
+                        List.foldl
+                            (\param ( strings, state2 ) ->
+                                let
+                                    ( string, state3 ) =
+                                        toString state2 param
+                                in
+                                ( string :: strings, state3 )
+                            )
+                            ( [], state )
+                            typeParameters
+                            |> Tuple.mapFirst (String.join " ")
+            in
+            ( ModuleName.toString moduleName
+                ++ "."
+                ++ VarName.toString varName
+                ++ paramsString
+            , state1
+            )
+
 
 getName : State -> Int -> ( String, State )
 getName ((State { counter, mapping }) as state) varId =
@@ -245,6 +285,17 @@ maybeWrapParens type_ ( string, state ) =
         ( string, state )
 
 
+{-| "Is there a possibility this type would need to be surrounded by parentheses?
+
+Eg. function types: normally no need for parentheses:
+
+    fn : Int -> Bool
+
+but there are usecases that need parentheses:
+
+    task : Task (Int -> Bool) String
+
+-}
 shouldWrapParens : Type -> Bool
 shouldWrapParens type_ =
     case type_ of
@@ -280,3 +331,6 @@ shouldWrapParens type_ =
 
         Tuple3 _ _ _ ->
             False
+
+        UserDefinedType _ params ->
+            not (List.isEmpty params)

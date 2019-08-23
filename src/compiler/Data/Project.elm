@@ -1,9 +1,5 @@
-module Data.Project exposing
-    ( Project
-    , ProjectToEmit
-    )
+module Data.Project exposing (Project)
 
-import Data.FileContents exposing (FileContents)
 import Data.FilePath exposing (FilePath)
 import Data.ModuleName exposing (ModuleName)
 import {- elm/project-metadata-utils -} Elm.Project
@@ -13,14 +9,10 @@ import {- elm/project-metadata-utils -} Elm.Project
 Eg. on the frontend we have `program : Modules Frontend.Expr`
 and on the backend we have `graph : Backend.Graph`.
 -}
-type alias Project r =
-    { r
+type alias Project projectFields =
+    { projectFields
         | elmJson : Elm.Project.Project
         , mainFilePath : FilePath
         , mainModuleName : ModuleName
         , sourceDirectory : FilePath
     }
-
-
-type alias ProjectToEmit =
-    { output : FileContents }

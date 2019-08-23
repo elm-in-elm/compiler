@@ -5,7 +5,7 @@ import AST.Common.Located as Located exposing (Located)
 import AST.Common.Type as Type
 import AST.Typed as Typed exposing (Expr_(..), LocatedExpr)
 import AssocList as Dict
-import Data.Declaration exposing (Declaration)
+import Data.Declaration exposing (Declaration, DeclarationBody(..))
 import Data.ModuleName as ModuleName exposing (ModuleName)
 import Data.VarName as VarName exposing (VarName)
 import Expect exposing (Expectation)
@@ -268,7 +268,7 @@ javascript =
                 [ ( "simple"
                   , { module_ = module_ "Foo"
                     , name = var "bar"
-                    , body = typedInt 1
+                    , body = Value <| typedInt 1
                     }
                   , "const Foo$bar = 1;"
                   )

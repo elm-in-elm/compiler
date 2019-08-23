@@ -129,8 +129,8 @@ exposingList =
                       , "(foo, bar)"
                       , Just
                             (ExposingSome
-                                [ ExposedValue "foo"
-                                , ExposedValue "bar"
+                                [ ExposedValue (VarName.fromString "foo")
+                                , ExposedValue (VarName.fromString "bar")
                                 ]
                             )
                       )
@@ -138,8 +138,8 @@ exposingList =
                       , "(foo  ,  bar)"
                       , Just
                             (ExposingSome
-                                [ ExposedValue "foo"
-                                , ExposedValue "bar"
+                                [ ExposedValue (VarName.fromString "foo")
+                                , ExposedValue (VarName.fromString "bar")
                                 ]
                             )
                       )
@@ -147,9 +147,9 @@ exposingList =
                       , "(foo, Bar, Baz(..))"
                       , Just
                             (ExposingSome
-                                [ ExposedValue "foo"
-                                , ExposedType "Bar"
-                                , ExposedTypeAndAllConstructors "Baz"
+                                [ ExposedValue (VarName.fromString "foo")
+                                , ExposedType (VarName.fromString "Bar")
+                                , ExposedTypeAndAllConstructors (VarName.fromString "Baz")
                                 ]
                             )
                       )
@@ -157,8 +157,8 @@ exposingList =
                       , "(foo\n,bar)"
                       , Just
                             (ExposingSome
-                                [ ExposedValue "foo"
-                                , ExposedValue "bar"
+                                [ ExposedValue (VarName.fromString "foo")
+                                , ExposedValue (VarName.fromString "bar")
                                 ]
                             )
                       )
@@ -168,7 +168,7 @@ exposingList =
                 (List.map runTest
                     [ ( "works with a value"
                       , "(foo)"
-                      , Just (ExposingSome [ ExposedValue "foo" ])
+                      , Just (ExposingSome [ ExposedValue (VarName.fromString "foo") ])
                       )
                     ]
                 )
@@ -176,7 +176,7 @@ exposingList =
                 (List.map runTest
                     [ ( "works with exposed type"
                       , "(Foo)"
-                      , Just (ExposingSome [ ExposedType "Foo" ])
+                      , Just (ExposingSome [ ExposedType (VarName.fromString "Foo") ])
                       )
                     ]
                 )
@@ -184,7 +184,7 @@ exposingList =
                 (List.map runTest
                     [ ( "works with exposed type and all constructors"
                       , "(Foo(..))"
-                      , Just (ExposingSome [ ExposedTypeAndAllConstructors "Foo" ])
+                      , Just (ExposingSome [ ExposedTypeAndAllConstructors (VarName.fromString "Foo") ])
                       )
                     , ( "doesn't allow spaces between the module name and the double period list"
                       , "(Foo (..))"
@@ -342,9 +342,9 @@ imports =
                                 , exposing_ =
                                     Just
                                         (ExposingSome
-                                            [ ExposedValue "bar"
-                                            , ExposedType "Baz"
-                                            , ExposedTypeAndAllConstructors "Quux"
+                                            [ ExposedValue (VarName.fromString "bar")
+                                            , ExposedType (VarName.fromString "Baz")
+                                            , ExposedTypeAndAllConstructors (VarName.fromString "Quux")
                                             ]
                                         )
                                 }

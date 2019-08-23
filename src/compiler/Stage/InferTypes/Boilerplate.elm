@@ -3,7 +3,7 @@ module Stage.InferTypes.Boilerplate exposing (inferProject)
 import AST.Canonical as Canonical
 import AST.Typed as Typed
 import AssocList as Dict exposing (Dict)
-import Data.Declaration exposing (Declaration)
+import Data.Declaration as Declaration exposing (Declaration, DeclarationBody(..))
 import Data.Module exposing (Module, Modules)
 import Data.Project exposing (Project)
 import Data.VarName exposing (VarName)
@@ -54,11 +54,13 @@ moduleOfNewType old newDecls =
 
 inferDeclaration : (Canonical.LocatedExpr -> Result TypeError Typed.LocatedExpr) -> Declaration Canonical.LocatedExpr -> Result TypeError (Declaration Typed.LocatedExpr)
 inferDeclaration inferExpr decl =
-    inferExpr decl.body
+    decl.body
+        |> Declaration.mapBody inferExpr
+        |> Declaration.combine
         |> Result.map (declarationOfNewType decl)
 
 
-declarationOfNewType : Declaration Canonical.LocatedExpr -> Typed.LocatedExpr -> Declaration Typed.LocatedExpr
+declarationOfNewType : Declaration Canonical.LocatedExpr -> DeclarationBody Typed.LocatedExpr -> Declaration Typed.LocatedExpr
 declarationOfNewType old newBody =
     { name = old.name
     , module_ = old.module_

@@ -12,7 +12,7 @@ import AST.Common.Located as Located exposing (Located)
 import AST.Frontend as Frontend exposing (Expr(..), LocatedExpr)
 import AssocList as Dict exposing (Dict)
 import Data.Binding exposing (Binding)
-import Data.Declaration exposing (Declaration)
+import Data.Declaration as Declaration exposing (Declaration)
 import Data.Exposing exposing (ExposedItem(..), Exposing(..))
 import Data.FilePath exposing (FilePath)
 import Data.Import exposing (Import)
@@ -248,7 +248,7 @@ exposedItem =
 
 exposedValue : Parser_ ExposedItem
 exposedValue =
-    P.map ExposedValue varName
+    P.map (ExposedValue << VarName.fromString) varName
 
 
 exposedTypeAndOptionallyAllConstructors : Parser_ ExposedItem
@@ -261,7 +261,7 @@ exposedTypeAndOptionallyAllConstructors =
             else
                 ExposedType name
         )
-        |= typeOrConstructorName
+        |= P.map VarName.fromString typeOrConstructorName
         |= P.oneOf
             [ P.succeed True
                 |. P.symbol (P.Token "(..)" ExpectingExposedTypeDoublePeriod)
@@ -323,7 +323,10 @@ declaration =
         |. P.spaces
         |. P.symbol (P.Token "=" ExpectingEqualsSign)
         |. P.spaces
-        |= expr
+        {- TODO this only parses Data.Declaration.Value, not TypeAlias or CustomType
+           Add parsers for type alises and custom types!
+        -}
+        |= P.map Declaration.Value expr
 
 
 expr : Parser_ LocatedExpr

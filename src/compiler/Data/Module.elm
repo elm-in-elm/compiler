@@ -14,7 +14,7 @@ import Data.Exposing exposing (ExposedItem(..), Exposing(..))
 import Data.FilePath exposing (FilePath)
 import Data.Import exposing (Import)
 import Data.ModuleName exposing (ModuleName)
-import Data.VarName as VarName exposing (VarName)
+import Data.VarName exposing (VarName)
 
 
 type alias Module expr =
@@ -60,11 +60,11 @@ exposes varName module_ =
                 (\exposedItem ->
                     case exposedItem of
                         ExposedValue value ->
-                            value == VarName.toString varName
+                            value == varName
 
                         ExposedType type_ ->
                             -- TODO check this code after we have custom types in Frontend.Expr.
-                            type_ == VarName.toString varName
+                            type_ == varName
 
                         ExposedTypeAndAllConstructors _ ->
                             {- TODO when we have custom types in Frontend.Expr,

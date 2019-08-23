@@ -2,7 +2,7 @@ module Stage.InferTypes exposing (inferExpr, inferTypes)
 
 import AST.Canonical as Canonical
 import AST.Common.Located as Located
-import AST.Common.Type as Type exposing (Type)
+import AST.Common.Type as Type exposing (Type(..))
 import AST.Typed as Typed
 import Data.Project exposing (Project)
 import Error exposing (Error(..), TypeError(..))
@@ -129,45 +129,50 @@ getBetterType substitutionMap type_ =
 
     else
         case type_ of
-            Type.Int ->
+            Int ->
                 type_
 
-            Type.Float ->
+            Float ->
                 type_
 
-            Type.Char ->
+            Char ->
                 type_
 
-            Type.String ->
+            String ->
                 type_
 
-            Type.Bool ->
+            Bool ->
                 type_
 
-            Type.Var id ->
+            Var id ->
                 -- walk one extra level
                 SubstitutionMap.get id substitutionMap
                     |> Maybe.map (\typeForId -> getBetterType substitutionMap typeForId)
                     |> Maybe.withDefault type_
 
-            Type.Function arg result ->
-                Type.Function
+            Function arg result ->
+                Function
                     (getBetterType substitutionMap arg)
                     (getBetterType substitutionMap result)
 
-            Type.List param ->
-                Type.List <| getBetterType substitutionMap param
+            List param ->
+                List <| getBetterType substitutionMap param
 
-            Type.Unit ->
+            Unit ->
                 type_
 
-            Type.Tuple e1 e2 ->
-                Type.Tuple
+            Tuple e1 e2 ->
+                Tuple
                     (getBetterType substitutionMap e1)
                     (getBetterType substitutionMap e2)
 
-            Type.Tuple3 e1 e2 e3 ->
-                Type.Tuple3
+            Tuple3 e1 e2 e3 ->
+                Tuple3
                     (getBetterType substitutionMap e1)
                     (getBetterType substitutionMap e2)
                     (getBetterType substitutionMap e3)
+
+            UserDefinedType name params ->
+                UserDefinedType
+                    name
+                    (List.map (getBetterType substitutionMap) params)

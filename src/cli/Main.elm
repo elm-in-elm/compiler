@@ -42,14 +42,14 @@ about returning those.
 -}
 
 import AST.Frontend as Frontend
-import AssocList as Dict
+import AssocList as Dict exposing (Dict)
 import AssocSet as Set exposing (Set)
 import Data.Declaration as Declaration
 import Data.FileContents exposing (FileContents)
 import Data.FilePath as FilePath exposing (FilePath)
 import Data.Module exposing (Modules)
 import Data.ModuleName as ModuleName exposing (ModuleName)
-import Data.Project exposing (Project, ProjectToEmit)
+import Data.Project exposing (Project)
 import Elm.Project
 import Error
     exposing
@@ -62,11 +62,10 @@ import Json.Decode as JD
 import Platform
 import Ports exposing (println, printlnStderr)
 import Stage.Desugar as Desugar
-import Stage.Emit as Emit
+import Stage.Emit.JavaScript as EmitJS
 import Stage.InferTypes as InferTypes
 import Stage.Optimize as Optimize
 import Stage.Parse as Parse
-import Stage.PrepareForBackend as PrepareForBackend
 
 
 {-| We're essentially a Node.JS app (until we get self-hosting :P ).
@@ -90,8 +89,8 @@ type alias Flags =
 {-| `Compiling` is the state we'll be most of the time. The other two are
 mostly useless; they do effectively stop `subscriptions` and `update` though.
 -}
-type Model expr
-    = Compiling (Model_ expr)
+type Model projectFields
+    = Compiling (Model_ projectFields)
     | {- We don't need to remember the error, because we report it
          at the time of transition to this new model. See `handleError`.
       -}
@@ -102,8 +101,8 @@ type Model expr
 {-| Because we're mostly in the `Compiling` state, it is worthwhile
 to make functions work with its data instead of the general `Model`.
 -}
-type alias Model_ expr =
-    { project : Project expr
+type alias Model_ projectFields =
+    { project : Project projectFields
     , waitingForFiles : Set FilePath
     }
 
@@ -315,7 +314,8 @@ handleReadFileError errorCode =
     handleError (GeneralError (IOError errorCode))
 
 
-{-| We're done reading and parsing files. Now we can do the rest synchronously!
+{-| We're done reading and parsing files. All the IO is done, now we can do
+the rest synchronously!
 -}
 compile : Project Frontend.ProjectFields -> ( Model Frontend.ProjectFields, Cmd Msg )
 compile project =
@@ -329,7 +329,7 @@ compile project =
                             |> List.map
                                 (\decl ->
                                     decl.body
-                                        |> Frontend.unwrap
+                                        |> Declaration.mapBody Frontend.unwrap
                                         |> Debug.log (Declaration.toString decl)
                                 )
                     )
@@ -338,8 +338,7 @@ compile project =
         |> Result.andThen Desugar.desugar
         |> Result.andThen InferTypes.inferTypes
         |> Result.map Optimize.optimize
-        |> Result.andThen PrepareForBackend.prepareForBackend
-        |> Result.map Emit.emit
+        |> Result.andThen EmitJS.emitProject
         |> writeToFSAndExit
 
 
@@ -349,15 +348,21 @@ compile project =
 Let's do that - report the error or write the output to a file.
 
 -}
-writeToFSAndExit : Result Error ProjectToEmit -> ( Model Frontend.ProjectFields, Cmd Msg )
+writeToFSAndExit : Result Error (Dict FilePath FileContents) -> ( Model Frontend.ProjectFields, Cmd Msg )
 writeToFSAndExit result =
     case result of
-        Ok { output } ->
+        Ok outputFiles ->
+            let
+                outputCmds =
+                    outputFiles
+                        |> Dict.toList
+                        |> List.map (\( filePath, fileContents ) -> Ports.writeToFile filePath fileContents)
+            in
             ( Finished
             , Cmd.batch
-                [ Ports.writeToFile (FilePath.fromString "out.js") output
-                , println "Compilation finished, writing output to `out.js`."
-                ]
+                (println "Compilation finished, writing output to `out.js`."
+                    :: outputCmds
+                )
             )
 
         Err error ->

@@ -3,7 +3,7 @@ module Stage.Desugar.Boilerplate exposing (desugarProject)
 import AST.Canonical as Canonical
 import AST.Frontend as Frontend
 import AssocList as Dict exposing (Dict)
-import Data.Declaration exposing (Declaration)
+import Data.Declaration as Declaration exposing (Declaration, DeclarationBody)
 import Data.Module exposing (Module, Modules)
 import Data.Project exposing (Project)
 import Data.VarName exposing (VarName)
@@ -54,11 +54,13 @@ moduleOfNewType old newDecls =
 
 desugarDeclaration : (Frontend.LocatedExpr -> Result DesugarError Canonical.LocatedExpr) -> Declaration Frontend.LocatedExpr -> Result DesugarError (Declaration Canonical.LocatedExpr)
 desugarDeclaration desugarExpr decl =
-    desugarExpr decl.body
+    decl.body
+        |> Declaration.mapBody desugarExpr
+        |> Declaration.combine
         |> Result.map (declarationOfNewType decl)
 
 
-declarationOfNewType : Declaration Frontend.LocatedExpr -> Canonical.LocatedExpr -> Declaration Canonical.LocatedExpr
+declarationOfNewType : Declaration Frontend.LocatedExpr -> DeclarationBody Canonical.LocatedExpr -> Declaration Canonical.LocatedExpr
 declarationOfNewType old newBody =
     { name = old.name
     , module_ = old.module_

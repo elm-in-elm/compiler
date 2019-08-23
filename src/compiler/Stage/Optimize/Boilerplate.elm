@@ -2,7 +2,7 @@ module Stage.Optimize.Boilerplate exposing (optimizeProject)
 
 import AST.Typed as Typed
 import AssocList as Dict exposing (Dict)
-import Data.Declaration exposing (Declaration)
+import Data.Declaration as Declaration exposing (Declaration, DeclarationBody(..))
 import Data.Module exposing (Module, Modules)
 import Data.Project exposing (Project)
 import Data.VarName exposing (VarName)
@@ -34,10 +34,11 @@ asDeclarationsIn module_ declarations =
 
 optimizeDeclaration : (Typed.LocatedExpr -> Typed.LocatedExpr) -> Declaration Typed.LocatedExpr -> Declaration Typed.LocatedExpr
 optimizeDeclaration optimizeExpr decl =
-    optimizeExpr decl.body
+    decl.body
+        |> Declaration.mapBody optimizeExpr
         |> asBodyIn decl
 
 
-asBodyIn : Declaration Typed.LocatedExpr -> Typed.LocatedExpr -> Declaration Typed.LocatedExpr
+asBodyIn : Declaration Typed.LocatedExpr -> DeclarationBody Typed.LocatedExpr -> Declaration Typed.LocatedExpr
 asBodyIn decl body =
     { decl | body = body }

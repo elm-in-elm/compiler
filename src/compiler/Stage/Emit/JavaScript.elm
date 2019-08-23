@@ -1,17 +1,71 @@
-module Stage.Emit.JavaScript exposing (emitDeclaration, emitExpr)
+module Stage.Emit.JavaScript exposing
+    ( emitProject
+    , emitDeclaration, emitExpr
+    )
 
--- TODO after we figure out module headers, compiling to one vs many files, revise the exposed values here
+{-| The `emitProject` function is the main entrypoint in this module, ie. every
+`Stage.Emit.<INSERT LANGUAGE HERE>` module has to expose this function to fit
+well with the APIs of the other stages. See src/cli/Main.elm and its `compile`
+function for example usage.
 
-import AST.Backend as Backend
+@docs emitProject
+
+All the other exposed functions are (as of time of writing) exposed only for
+testing purposes.
+
+@docs emitDeclaration, emitExpr
+
+-}
+
 import AST.Common.Literal exposing (Literal(..))
 import AST.Typed as Typed exposing (Expr_(..))
-import AssocList as Dict
-import Data.Declaration exposing (Declaration)
+import AssocList as Dict exposing (Dict)
+import Data.Declaration exposing (Declaration, DeclarationBody(..))
+import Data.FileContents as FileContents exposing (FileContents)
+import Data.FilePath as FilePath exposing (FilePath)
 import Data.ModuleName as ModuleName exposing (ModuleName)
+import Data.Project exposing (Project)
 import Data.VarName as VarName exposing (VarName)
+import Error exposing (Error(..))
+import Stage.Emit as Emit
 
 
-emitExpr : Backend.LocatedExpr -> String
+type alias ProjectFields =
+    { declarationList : List (Declaration Typed.LocatedExpr) }
+
+
+emitProject : Project Typed.ProjectFields -> Result Error (Dict FilePath FileContents)
+emitProject project =
+    Ok project
+        |> Result.andThen prepareProjectFields
+        |> Result.map emitProject_
+
+
+prepareProjectFields : Project Typed.ProjectFields -> Result Error (Project ProjectFields)
+prepareProjectFields project =
+    Emit.projectToDeclarationList project
+        |> Result.mapError EmitError
+        |> Result.map
+            (\declarationList ->
+                { mainFilePath = project.mainFilePath
+                , mainModuleName = project.mainModuleName
+                , elmJson = project.elmJson
+                , sourceDirectory = project.sourceDirectory
+                , declarationList = declarationList
+                }
+            )
+
+
+emitProject_ : Project ProjectFields -> Dict FilePath FileContents
+emitProject_ { declarationList } =
+    declarationList
+        |> List.map emitDeclaration
+        |> String.join "\n"
+        |> FileContents.fromString
+        |> Dict.singleton (FilePath.fromString "out.js")
+
+
+emitExpr : Typed.LocatedExpr -> String
 emitExpr located =
     case Typed.getExpr located of
         Literal (Int int) ->
@@ -85,13 +139,21 @@ emitExpr located =
             "[" ++ emitExpr e1 ++ "," ++ emitExpr e2 ++ "," ++ emitExpr e3 ++ "]"
 
 
-emitDeclaration : Declaration Backend.LocatedExpr -> String
+emitDeclaration : Declaration Typed.LocatedExpr -> String
 emitDeclaration { module_, name, body } =
-    "const "
-        ++ mangleQualifiedVar module_ name
-        ++ " = "
-        ++ emitExpr body
-        ++ ";"
+    case body of
+        Value expr ->
+            "const "
+                ++ mangleQualifiedVar module_ name
+                ++ " = "
+                ++ emitExpr expr
+                ++ ";"
+
+        TypeAlias _ ->
+            ""
+
+        CustomType _ ->
+            ""
 
 
 mangleQualifiedVar : ModuleName -> VarName -> String
