@@ -264,6 +264,22 @@ typeToString =
                 , "( a, b, c )"
                 )
             ]
+        , describe "user defined type"
+            [ runTest
+                ( "maybe int"
+                , Type.UserDefinedType
+                    ( ModuleName.fromString "Maybe", VarName.fromString "Maybe" )
+                    [ Type.Int ]
+                , "Maybe.Maybe Int"
+                )
+            , runTest
+                ( "maybe a"
+                , Type.UserDefinedType
+                    ( ModuleName.fromString "Maybe", VarName.fromString "Maybe" )
+                    [ Type.Var 0 ]
+                , "Maybe.Maybe a"
+                )
+            ]
         ]
 
 
