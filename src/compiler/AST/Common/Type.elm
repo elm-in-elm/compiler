@@ -200,7 +200,7 @@ toString state type_ =
                             )
                             ( [], state )
                             typeParameters
-                            |> Tuple.mapFirst (String.join " ")
+                            |> Tuple.mapFirst (\paramStrings -> " " ++ String.join " " paramStrings)
             in
             ( ModuleName.toString moduleName
                 ++ "."
