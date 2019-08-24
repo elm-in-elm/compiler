@@ -1,6 +1,6 @@
 const fs = require('fs').promises; // needs Node.JS v10+
 
-const {Elm}          = require('../../build/elm.js'); // build using Makefile... no Webpack around here!
+const {Elm}          = require('../build/elm.js'); // build using Makefile... no Webpack around here!
 const {registerPort} = require('./utils.js');
 
 // Async/await is nice! (needs Node.JS v7.6+)

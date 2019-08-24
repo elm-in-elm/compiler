@@ -3,7 +3,17 @@
 COLOR_OFF="\e[0m";
 DIM="\e[2m";
 
+LOCKNAME=$(cat /dev/urandom | tr -cd 'a-f0-9' | head -c 16);
+LOCKFILE="/tmp/elm-lock-${LOCKNAME}"
+
+function compile {
+  elm make --output /dev/null && cd cli && elm make Main.elm --output /dev/null && cd ..;
+}
+
 function run {
+  (
+  flock 200
+
   clear;
   tput reset;
 
@@ -11,7 +21,9 @@ function run {
   date -R;
   echo -en "${COLOR_OFF}";
 
-  ./compile.sh;
+  compile;
+
+  ) 200>"${LOCKFILE}"
 }
 
 run;
