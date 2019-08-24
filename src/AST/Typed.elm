@@ -3,6 +3,7 @@ module AST.Typed exposing
     , Expr_(..)
     , LocatedExpr
     , ProjectFields
+    , dropTypes
     , getExpr
     , getType
     , isArgument
@@ -15,6 +16,7 @@ module AST.Typed exposing
     , unwrap
     )
 
+import AST.Canonical as Canonical
 import AST.Common.Literal exposing (Literal)
 import AST.Common.Located as Located exposing (Located)
 import AST.Common.Type exposing (Type)
@@ -81,88 +83,93 @@ let_ bindings body =
 {-| A helper for the Transform library.
 -}
 recurse : (LocatedExpr -> LocatedExpr) -> LocatedExpr -> LocatedExpr
-recurse f located =
-    mapExpr
-        (\expr ->
-            case expr of
-                Literal _ ->
-                    expr
+recurse fn locatedExpr =
+    locatedExpr
+        |> mapExpr
+            (\expr ->
+                case expr of
+                    Literal _ ->
+                        expr
 
-                Var _ ->
-                    expr
+                    Var _ ->
+                        expr
 
-                Argument _ ->
-                    expr
+                    Argument _ ->
+                        expr
 
-                Plus e1 e2 ->
-                    Plus
-                        (f e1)
-                        (f e2)
+                    Plus e1 e2 ->
+                        Plus
+                            (fn e1)
+                            (fn e2)
 
-                Cons e1 e2 ->
-                    Cons
-                        (f e1)
-                        (f e2)
+                    Cons e1 e2 ->
+                        Cons
+                            (fn e1)
+                            (fn e2)
 
-                Lambda ({ body } as lambda_) ->
-                    Lambda { lambda_ | body = f body }
+                    Lambda ({ body } as lambda_) ->
+                        Lambda { lambda_ | body = fn body }
 
-                Call { fn, argument } ->
-                    Call
-                        { fn = f fn
-                        , argument = f argument
-                        }
+                    Call call ->
+                        Call
+                            { fn = fn call.fn
+                            , argument = fn call.argument
+                            }
 
-                If { test, then_, else_ } ->
-                    If
-                        { test = f test
-                        , then_ = f then_
-                        , else_ = f else_
-                        }
+                    If { test, then_, else_ } ->
+                        If
+                            { test = fn test
+                            , then_ = fn then_
+                            , else_ = fn else_
+                            }
 
-                Let { bindings, body } ->
-                    Let
-                        { bindings =
-                            Dict.map
-                                (always (Binding.map f))
-                                bindings
-                        , body = f body
-                        }
+                    Let { bindings, body } ->
+                        Let
+                            { bindings =
+                                Dict.map
+                                    (always (Binding.map fn))
+                                    bindings
+                            , body = fn body
+                            }
 
-                List items ->
-                    List (List.map f items)
+                    List items ->
+                        List (List.map fn items)
 
-                Tuple e1 e2 ->
-                    Tuple (f e1) (f e2)
+                    Tuple e1 e2 ->
+                        Tuple
+                            (fn e1)
+                            (fn e2)
 
-                Tuple3 e1 e2 e3 ->
-                    Tuple3 (f e1) (f e2) (f e3)
+                    Tuple3 e1 e2 e3 ->
+                        Tuple3
+                            (fn e1)
+                            (fn e2)
+                            (fn e3)
 
-                Unit ->
-                    expr
-        )
-        located
+                    Unit ->
+                        expr
+            )
 
 
 transformOnce : (LocatedExpr -> LocatedExpr) -> LocatedExpr -> LocatedExpr
-transformOnce pass located =
+transformOnce pass locatedExpr =
     Transform.transformOnce
         recurse
         pass
-        located
+        locatedExpr
 
 
 transformAll : List (LocatedExpr -> Maybe LocatedExpr) -> LocatedExpr -> LocatedExpr
-transformAll passes located =
+transformAll passes locatedExpr =
     Transform.transformAll
         recurse
         (Transform.orList passes)
-        located
+        locatedExpr
 
 
 isArgument : VarName -> LocatedExpr -> Bool
-isArgument name located =
-    case getExpr located of
+isArgument name locatedExpr =
+    case getExpr locatedExpr of
         Argument argName ->
             argName == name
 
@@ -171,8 +178,8 @@ isArgument name located =
 
 
 recursiveChildren : (LocatedExpr -> List LocatedExpr) -> LocatedExpr -> List LocatedExpr
-recursiveChildren fn located =
-    case getExpr located of
+recursiveChildren fn locatedExpr =
+    case getExpr locatedExpr of
         Literal _ ->
             []
 
@@ -220,18 +227,19 @@ recursiveChildren fn located =
 
 
 mapExpr : (Expr_ -> Expr_) -> LocatedExpr -> LocatedExpr
-mapExpr =
-    Located.map << Tuple.mapFirst
+mapExpr fn locatedExpr =
+    locatedExpr
+        |> Located.map (Tuple.mapFirst fn)
 
 
 getExpr : LocatedExpr -> Expr_
-getExpr =
-    Tuple.first << Located.unwrap
+getExpr locatedExpr =
+    Tuple.first <| Located.unwrap locatedExpr
 
 
 getType : LocatedExpr -> Type
-getType =
-    Tuple.second << Located.unwrap
+getType locatedExpr =
+    Tuple.second <| Located.unwrap locatedExpr
 
 
 unwrap : LocatedExpr -> Unwrapped.Expr
@@ -307,3 +315,72 @@ unwrap expr =
                 (unwrap e3)
     , type_
     )
+
+
+dropTypes : LocatedExpr -> Canonical.LocatedExpr
+dropTypes locatedExpr =
+    locatedExpr
+        |> Located.map
+            (\( expr, _ ) ->
+                case expr of
+                    Literal literal ->
+                        Canonical.Literal literal
+
+                    Var var ->
+                        Canonical.Var var
+
+                    Argument var ->
+                        Canonical.Argument var
+
+                    Plus e1 e2 ->
+                        Canonical.Plus
+                            (dropTypes e1)
+                            (dropTypes e2)
+
+                    Cons e1 e2 ->
+                        Canonical.Cons
+                            (dropTypes e1)
+                            (dropTypes e2)
+
+                    Lambda { argument, body } ->
+                        Canonical.Lambda
+                            { argument = argument
+                            , body = dropTypes body
+                            }
+
+                    Call { fn, argument } ->
+                        Canonical.Call
+                            { fn = dropTypes fn
+                            , argument = dropTypes argument
+                            }
+
+                    If { test, then_, else_ } ->
+                        Canonical.If
+                            { test = dropTypes test
+                            , then_ = dropTypes then_
+                            , else_ = dropTypes else_
+                            }
+
+                    Let { bindings, body } ->
+                        Canonical.Let
+                            { bindings = Dict.map (always (Binding.map dropTypes)) bindings
+                            , body = dropTypes body
+                            }
+
+                    List exprs ->
+                        Canonical.List (List.map dropTypes exprs)
+
+                    Unit ->
+                        Canonical.Unit
+
+                    Tuple e1 e2 ->
+                        Canonical.Tuple
+                            (dropTypes e1)
+                            (dropTypes e2)
+
+                    Tuple3 e1 e2 e3 ->
+                        Canonical.Tuple3
+                            (dropTypes e1)
+                            (dropTypes e2)
+                            (dropTypes e3)
+            )

@@ -4,12 +4,13 @@ module Data.Module exposing
     , ModuleType(..)
     , Modules
     , exposes
+    , map
     , unalias
     )
 
 import AssocList as Dict exposing (Dict)
 import AssocList.Extra as Dict
-import Data.Declaration exposing (Declaration)
+import Data.Declaration as Declaration exposing (Declaration)
 import Data.Exposing exposing (ExposedItem(..), Exposing(..))
 import Data.FilePath exposing (FilePath)
 import Data.Import exposing (Import)
@@ -83,3 +84,14 @@ unalias thisModule moduleName =
     thisModule.imports
         |> Dict.find (\_ dep -> dep.as_ == Just moduleName)
         |> Maybe.map (Tuple.second >> .moduleName)
+
+
+map : (a -> b) -> Module a -> Module b
+map fn module_ =
+    { imports = module_.imports
+    , name = module_.name
+    , filePath = module_.filePath
+    , declarations = Dict.map (always <| Declaration.map fn) module_.declarations
+    , type_ = module_.type_
+    , exposing_ = module_.exposing_
+    }

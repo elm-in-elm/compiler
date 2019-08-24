@@ -87,7 +87,7 @@ import AssocList as Dict exposing (Dict)
 import Data.Declaration exposing (Declaration)
 import Data.FilePath as FilePath
 import Data.Import exposing (Import)
-import Data.Module exposing (Module)
+import Data.Module as Module exposing (Module)
 import Data.ModuleName exposing (ModuleName)
 import Error
     exposing
@@ -354,14 +354,14 @@ unwrapTypedExpr locatedExpr =
 -}
 dropTypesExpr : Typed.LocatedExpr -> Canonical.LocatedExpr
 dropTypesExpr locatedExpr =
-    Debug.todo "dropTypesExpr"
+    Typed.dropTypes locatedExpr
 
 
 {-| TODO
 -}
 dropTypesModule : Module Typed.LocatedExpr -> Module Canonical.LocatedExpr
-dropTypesModule thisModule =
-    Debug.todo "dropTypesModule"
+dropTypesModule module_ =
+    Module.map dropTypesExpr module_
 
 
 {-| TODO

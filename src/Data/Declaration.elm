@@ -3,6 +3,7 @@ module Data.Declaration exposing
     , Declaration
     , DeclarationBody(..)
     , combine
+    , map
     , mapBody
     , toString
     )
@@ -40,6 +41,14 @@ type alias Constructor =
 toString : Declaration a -> String
 toString { name, module_ } =
     ModuleName.toString module_ ++ "." ++ VarName.toString name
+
+
+map : (a -> b) -> Declaration a -> Declaration b
+map fn declaration =
+    { module_ = declaration.module_
+    , name = declaration.name
+    , body = mapBody fn declaration.body
+    }
 
 
 mapBody : (a -> b) -> DeclarationBody a -> DeclarationBody b
