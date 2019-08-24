@@ -427,21 +427,59 @@ unwrapTypedExpr locatedExpr =
 -- DROP TYPES
 
 
-{-| TODO
+{-| Drop types from a single expression.
+
+The real type is
+
+    Typed.LocatedExpr -> Canonical.LocatedExpr
+
+Example usage:
+
+    Located
+        { start = ..., end = ... }
+        ( Tuple
+            (Located ... ( Literal (Int 12), Type.Int ))
+            (Located ... ( Literal (String "Hello"), Type.String ))
+        , Type.Tuple Type.Int Type.String
+        )
+
+becomes
+
+    Located
+        { start = ..., end = ... }
+        (Tuple
+            (Located ... (Literal (Int 12))
+            (Located ... (Literal (String "Hello"))
+        )
+
+If location info is not useful to you either, look for `unwrap*` functions above.
+
 -}
 dropTypesExpr : Typed.LocatedExpr -> Canonical.LocatedExpr
 dropTypesExpr locatedExpr =
     Typed.dropTypes locatedExpr
 
 
-{-| TODO
+{-| Drop types from all expressions in the module.
+
+The real type is
+
+    Module Typed.LocatedExpr
+    -> Module Canonical.LocatedExpr
+
 -}
 dropTypesModule : Module Typed.LocatedExpr -> Module Canonical.LocatedExpr
 dropTypesModule module_ =
     Module.map dropTypesExpr module_
 
 
-{-| TODO
+{-| Drop types from all expressions in all the modules.
+
+The real type is
+
+    Dict ModuleName (Module Typed.LocatedExpr)
+    -> Dict ModuleName (Module Canonical.LocatedExpr)
+
 -}
 dropTypesModules : Dict ModuleName (Module Typed.LocatedExpr) -> Dict ModuleName (Module Canonical.LocatedExpr)
 dropTypesModules modules =
