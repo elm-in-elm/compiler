@@ -105,7 +105,6 @@ import Stage.InferTypes
 import Stage.InferTypes.Boilerplate
 import Stage.Optimize
 import Stage.Optimize.Boilerplate
-import Stage.Parse
 import Stage.Parse.Parser
 
 

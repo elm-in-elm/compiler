@@ -131,6 +131,8 @@ type TypeError
 
 type EmitError
     = MainDeclarationNotFound
+    | ModuleNotFound ModuleName VarName
+    | DeclarationNotFound ModuleName VarName
 
 
 toString : Error -> String
@@ -223,6 +225,20 @@ toString error =
             case emitError of
                 MainDeclarationNotFound ->
                     "Couldn't find the value `main` in the main module given to the compiler!"
+
+                ModuleNotFound moduleName typeName ->
+                    "Couldn't find the module `"
+                        ++ ModuleName.toString moduleName
+                        ++ "` when looking at the usage of type `"
+                        ++ VarName.toString typeName
+                        ++ "`."
+
+                DeclarationNotFound moduleName typeName ->
+                    "Couldn't find the declaration `"
+                        ++ VarName.toString typeName
+                        ++ "` in the module `"
+                        ++ ModuleName.toString moduleName
+                        ++ "`."
 
 
 fullVarName : Maybe ModuleName -> VarName -> String

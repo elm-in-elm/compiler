@@ -8,7 +8,6 @@ import Data.FileContents as FileContents exposing (FileContents)
 import Data.FilePath as FilePath exposing (FilePath)
 import Data.Module exposing (Module)
 import Data.ModuleName as ModuleName exposing (ModuleName)
-import Data.Project exposing (Project)
 import Error exposing (Error(..), GeneralError(..), ParseError(..))
 import Parser.Advanced as P
 import Stage.Parse.Parser as Parser
