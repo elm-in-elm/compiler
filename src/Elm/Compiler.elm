@@ -17,7 +17,7 @@ with the other functions exposed in this library!
 
 **Useful eg. for tools like `elm-format`** that convert back to the Elm
 representation, trying to do as few changes as possible. Ie. it would be bad
-if it changed
+if `elm-format` changed
 
     \a b c -> a + b + c
 
@@ -26,7 +26,7 @@ to
     \a -> \b -> \c -> a + b + c
 
 That is one of the things the Desugar phase does. So tools like `elm-format`
-probably won't want to touch that phase, and will want to only parse!
+probably don't want to touch that phase, and will want to only parse!
 
 @docs parseExpr, parseModule, parseModules, parseImport, parseDeclaration
 
@@ -141,7 +141,11 @@ into AST like
         )
 
 If you don't need the location information and want to only keep the expressions,
-use `unwrapFrontendExpr`.
+use `unwrapFrontendExpr` to get something like
+
+    Tuple
+        (Literal (Int 12))
+        (Literal (String "Hello"))
 
 -}
 parseExpr : String -> Result Error Frontend.LocatedExpr
@@ -149,7 +153,44 @@ parseExpr sourceCode =
     parse Stage.Parse.Parser.expr sourceCode
 
 
-{-| TODO
+{-| Parse a module (one `*.elm` file). Get a `Module` datastructure back, holding
+the information about its exposed values, imports, declarations and more.
+
+A file like
+
+    module Main exposing (foo)
+
+    import Bar as B exposing (bar)
+
+    foo =
+        123
+
+will get parsed into
+
+    { imports =
+        Dict.fromList
+            [ ( "Bar"
+              , { moduleName = "Bar"
+                , as_ = Just "B"
+                , exposing_ = Just (ExposingSome [ ExposedValue "bar" ])
+                }
+              )
+            ]
+    , name = "Foo"
+    , filePath = "src/Foo.elm" -- what you pass into the function
+    , declarations =
+        Dict.fromList
+            [ ( "foo"
+              , { module_ = "Foo"
+                , name = "foo"
+                , body = Value (AST.Frontend.Literal (Literal.Int 123))
+                }
+              )
+            ]
+    , type_ = PlainModule
+    , exposing_ = ExposingSome [ ExposedValue "foo" ]
+    }
+
 -}
 parseModule : { filePath : String, sourceCode : String } -> Result Error (Module Frontend.LocatedExpr)
 parseModule { filePath, sourceCode } =
