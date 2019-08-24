@@ -71,7 +71,11 @@ to get rid of it!
 
 # Dropping types
 
-TODO
+If you want to typecheck the code but then don't do anything with the types
+afterwards, you can drop them from the expressions you have. This is essentially
+a move backwards in the compiler phases:
+
+![Stages of the compiler](https://github.com/elm-in-elm/compiler/raw/add-library/assets/stages.png)
 
 @docs dropTypesExpr, dropTypesModule, dropTypesModules
 
@@ -239,7 +243,18 @@ parseImport sourceCode =
     parse Stage.Parse.Parser.import_ sourceCode
 
 
-{-| TODO
+{-| Parse a single declaration, like
+
+    foo =
+        123
+
+into
+
+    { module_ = "Foo" -- what you pass into the function
+    , name = "foo"
+    , body = Value (AST.Frontend.Literal (Literal.Int 123))
+    }
+
 -}
 parseDeclaration : ModuleName -> String -> Result Error (Declaration Frontend.LocatedExpr)
 parseDeclaration thisModule sourceCode =
