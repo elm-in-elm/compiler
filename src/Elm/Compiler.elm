@@ -198,7 +198,7 @@ parseModule { filePath, sourceCode } =
     parse (Stage.Parse.Parser.module_ (FilePath.fromString filePath)) sourceCode
 
 
-{-| TODO
+{-| Parse multiple modules (`*.elm` files) - see `parseModule` for details.
 -}
 parseModules : List { filePath : String, sourceCode : String } -> Result Error (Dict ModuleName (Module Frontend.LocatedExpr))
 parseModules files =
@@ -211,7 +211,28 @@ parseModules files =
         |> Result.map (List.map (\module_ -> ( module_.name, module_ )) >> Dict.fromList)
 
 
-{-| TODO
+{-| Parse a single import statement, like
+
+    import Foo as F exposing
+        ( foo
+        , Bar(..)
+        , Baz
+        )
+
+into
+
+    { moduleName = "Foo"
+    , as_ = Just "F"
+    , exposing_ =
+        Just
+            (ExposingSome
+                [ ExposedValue "foo"
+                , ExposedTypeAndAllConstructors "Bar"
+                , ExposedType "Baz"
+                ]
+            )
+    }
+
 -}
 parseImport : String -> Result Error Import
 parseImport sourceCode =
