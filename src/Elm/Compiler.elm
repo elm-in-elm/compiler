@@ -2,15 +2,17 @@ module Elm.Compiler exposing
     ( parseExpr, parseModule, parseModules, parseImport, parseDeclaration
     , desugarExpr, desugarModule, desugarModules
     , inferExpr, inferModule, inferModules
-    , optimizeExpr, optimizeModule, optimizeModules
+    , defaultOptimizations
+    , optimizeExpr, optimizeExprWith, optimizeModule, optimizeModuleWith, optimizeModules, optimizeModulesWith
     , unwrapFrontendExpr, unwrapCanonicalExpr, unwrapTypedExpr
     , dropTypesExpr, dropTypesModule, dropTypesModules
     )
 
-{-| High-level common usecases for using the compiler from Elm programs.
+{-| Functions for working with Elm source code.
 
-You can implement all of these (and change them up to suit your needs)
-with the other functions exposed in this library!
+The compiler phases in general look like this:
+
+![Stages of the compiler](https://github.com/elm-in-elm/compiler/raw/add-library/assets/stages.png)
 
 
 # Parsing
@@ -51,9 +53,14 @@ instead of running `inferModule` on each of your modules.
 
 # Optimizing
 
-TODO
+After typechecking the expressions are ready to be optimized. (The inferred types
+are available to you inside the optimizations!)
 
-@docs optimizeExpr, optimizeModule, optimizeModules
+@docs defaultOptimizations
+
+The optimizations are of the shape `Expr -> Maybe Expr` because
+
+@docs optimizeExpr, optimizeExprWith, optimizeModule, optimizeModuleWith, optimizeModules, optimizeModulesWith
 
 
 # Unwrapping expressions
@@ -332,11 +339,28 @@ inferModules modules =
 -- OPTIMIZE
 
 
+{-| The default optimizations the elm-in-elm compiler uses.
+
+TODO the types will change
+
+-}
+defaultOptimizations : List (Typed.LocatedExpr -> Maybe Typed.LocatedExpr)
+defaultOptimizations =
+    Stage.Optimize.defaultOptimizations
+
+
 {-| TODO
 -}
 optimizeExpr : Typed.LocatedExpr -> Typed.LocatedExpr
 optimizeExpr locatedExpr =
     Stage.Optimize.optimizeExpr locatedExpr
+
+
+{-| TODO
+-}
+optimizeExprWith : List (Typed.LocatedExpr -> Maybe Typed.LocatedExpr) -> Typed.LocatedExpr -> Typed.LocatedExpr
+optimizeExprWith optimizations locatedExpr =
+    Stage.Optimize.optimizeExprWith locatedExpr
 
 
 {-| TODO
@@ -348,9 +372,23 @@ optimizeModule thisModule =
 
 {-| TODO
 -}
+optimizeModuleWith : List (Typed.LocatedExpr -> Maybe Typed.LocatedExpr) -> Module Typed.LocatedExpr -> Module Typed.LocatedExpr
+optimizeModuleWith optimizations thisModule =
+    Stage.Optimize.Boilerplate.optimizeModule (optimizeExprWith optimizations) thisModule
+
+
+{-| TODO
+-}
 optimizeModules : Dict ModuleName (Module Typed.LocatedExpr) -> Dict ModuleName (Module Typed.LocatedExpr)
 optimizeModules modules =
     Dict.map (always optimizeModule) modules
+
+
+{-| TODO
+-}
+optimizeModulesWith : List (Typed.LocatedExpr -> Maybe Typed.LocatedExpr) -> Dict ModuleName (Module Typed.LocatedExpr) -> Dict ModuleName (Module Typed.LocatedExpr)
+optimizeModulesWith optimizations modules =
+    Dict.map (always (optimizeModuleWith optimizations)) modules
 
 
 

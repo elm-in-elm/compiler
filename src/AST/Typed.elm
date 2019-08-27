@@ -10,6 +10,7 @@ module AST.Typed exposing
     , lambda
     , let_
     , mapExpr
+    , mapUnwrapped
     , recursiveChildren
     , transformAll
     , transformOnce
@@ -230,6 +231,14 @@ mapExpr : (Expr_ -> Expr_) -> LocatedExpr -> LocatedExpr
 mapExpr fn locatedExpr =
     locatedExpr
         |> Located.map (Tuple.mapFirst fn)
+
+
+mapUnwrapped : (Unwrapped.Expr -> Unwrapped.Expr) -> LocatedExpr -> LocatedExpr
+mapUnwrapped fn locatedExpr =
+    -- TODO this will need unifying Expr and Unwrapped.Expr
+    -- implementation in the current form is probably impossible
+    -- implementation with unified Exprs: https://ellie-app.com/6sYrTsJfDh3a1
+    Debug.todo "mapUnwrapped"
 
 
 getExpr : LocatedExpr -> Expr_

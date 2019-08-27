@@ -1,4 +1,9 @@
-module Stage.Optimize exposing (optimize, optimizeExpr)
+module Stage.Optimize exposing
+    ( defaultOptimizations
+    , optimize
+    , optimizeExpr
+    , optimizeExprWith
+    )
 
 import AST.Common.Literal as Literal
 import AST.Typed as Typed
@@ -11,14 +16,23 @@ optimize project =
     Boilerplate.optimizeProject optimizeExpr project
 
 
-optimizeExpr : Typed.LocatedExpr -> Typed.LocatedExpr
-optimizeExpr located =
-    Typed.transformAll
-        [ optimizePlus
-        , optimizeCons
-        , optimizeIfLiteralBool
-        ]
-        located
+optimizeExpr : Typed.Expr -> Typed.Expr
+optimizeExpr locatedExpr =
+    optimizeExprWith defaultOptimizations locatedExpr
+
+
+optimizeExprWith : List (Typed.LocatedExpr -> Maybe Typed.LocatedExpr) -> Typed.Expr -> Typed.Expr
+optimizeExprWith optimizations locatedExpr =
+    Typed.transformAll optimizations locatedExpr
+
+
+defaultOptimizations : List (Typed.LocatedExpr -> Maybe Typed.LocatedExpr)
+defaultOptimizations =
+    -- TODO these will have to use `mapUnwrapped` and have different types
+    [ optimizePlus
+    , optimizeCons
+    , optimizeIfLiteralBool
+    ]
 
 
 {-| TODO try to create some helpers for the optimization passes to make them
