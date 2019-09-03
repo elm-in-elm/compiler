@@ -360,7 +360,7 @@ optimizeExpr locatedExpr =
 -}
 optimizeExprWith : List (Typed.LocatedExpr -> Maybe Typed.LocatedExpr) -> Typed.LocatedExpr -> Typed.LocatedExpr
 optimizeExprWith optimizations locatedExpr =
-    Stage.Optimize.optimizeExprWith locatedExpr
+    Stage.Optimize.optimizeExprWith optimizations locatedExpr
 
 
 {-| TODO

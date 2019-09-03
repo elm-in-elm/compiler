@@ -16,12 +16,12 @@ optimize project =
     Boilerplate.optimizeProject optimizeExpr project
 
 
-optimizeExpr : Typed.Expr -> Typed.Expr
+optimizeExpr : Typed.LocatedExpr -> Typed.LocatedExpr
 optimizeExpr locatedExpr =
     optimizeExprWith defaultOptimizations locatedExpr
 
 
-optimizeExprWith : List (Typed.LocatedExpr -> Maybe Typed.LocatedExpr) -> Typed.Expr -> Typed.Expr
+optimizeExprWith : List (Typed.LocatedExpr -> Maybe Typed.LocatedExpr) -> Typed.LocatedExpr -> Typed.LocatedExpr
 optimizeExprWith optimizations locatedExpr =
     Typed.transformAll optimizations locatedExpr
 
