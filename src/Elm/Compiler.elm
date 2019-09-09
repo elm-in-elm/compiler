@@ -35,7 +35,27 @@ probably don't want to touch that phase, and will want to only parse!
 
 # Desugaring
 
-TODO
+After we parse the source code from a `String` to the AST, we desugar it -
+simplify the AST type as much as possible to make later phases simpler and easier.
+
+The best example to illustrate this (it doesn't actually happen though!) is
+`let` vs `where`. Imagine if Elm allowed for `where` constructs in its syntax,
+like Haskell does:
+
+    foo = x + y
+        where
+            x = 123
+            y = x + 2
+
+Then we'd like to convert these to `let` constructs (or the other way round)
+as soon as possible, so that the other phases don't need to handle two
+almost identical scenarios all over the place.
+
+Examples of real desugarings include:
+
+  - making functions only take one argument,
+  - fully qualify all variables
+  - etc.
 
 @docs desugarExpr, desugarModule, desugarModules
 
