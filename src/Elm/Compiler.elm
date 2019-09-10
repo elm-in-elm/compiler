@@ -62,7 +62,8 @@ Examples of real desugarings include:
 
 # Inferring types
 
-TODO
+These functions compute the types of the given expressions, as well as check them
+against the user-defined type annotations.
 
 Note that the more of your code you'll give these functions at once, the better
 the type inference will be. So it's advisable to eg. run `inferModules` once
@@ -293,7 +294,24 @@ parseDeclaration thisModule sourceCode =
 -- DESUGARING
 
 
-{-| TODO
+{-| Desugar a single expression like
+
+    Lambda
+        { arguments = [ "x", "y" ]
+        , body = AST.Frontend.Literal (Literal.Int 42)
+        }
+
+into AST like
+
+    Lambda
+        { argument = "x"
+        , body =
+            Lambda
+                { argument = "y"
+                , body = AST.Frontend.Literal (Literal.Int 42)
+                }
+        }
+
 -}
 desugarExpr :
     Dict ModuleName (Module Frontend.LocatedExpr)
@@ -305,7 +323,7 @@ desugarExpr modules thisModule locatedExpr =
         |> Result.mapError DesugarError
 
 
-{-| TODO
+{-| Desugar a module (one `*.elm` file).
 -}
 desugarModule :
     Dict ModuleName (Module Frontend.LocatedExpr)
@@ -316,7 +334,7 @@ desugarModule modules thisModule =
         |> Result.mapError DesugarError
 
 
-{-| TODO
+{-| Desugar multiple modules (`*.elm` files) - see `desugarModule` for details.
 -}
 desugarModules : Dict ModuleName (Module Frontend.LocatedExpr) -> Result Error (Dict ModuleName (Module Canonical.LocatedExpr))
 desugarModules modules =
@@ -330,7 +348,7 @@ desugarModules modules =
 -- TYPE INFERENCE
 
 
-{-| TODO
+{-| Infer the types of a single expression.
 -}
 inferExpr : Canonical.LocatedExpr -> Result Error Typed.LocatedExpr
 inferExpr locatedExpr =
@@ -338,7 +356,7 @@ inferExpr locatedExpr =
         |> Result.mapError TypeError
 
 
-{-| TODO
+{-| Infer the types of expressions in a module (a single `*.elm` file).
 -}
 inferModule : Module Canonical.LocatedExpr -> Result Error (Module Typed.LocatedExpr)
 inferModule thisModule =
@@ -346,7 +364,7 @@ inferModule thisModule =
         |> Result.mapError TypeError
 
 
-{-| TODO
+{-| Infer the types of expressions in multiple modules (`*.elm` files).
 -}
 inferModules : Dict ModuleName (Module Canonical.LocatedExpr) -> Result Error (Dict ModuleName (Module Typed.LocatedExpr))
 inferModules modules =
@@ -360,9 +378,6 @@ inferModules modules =
 
 
 {-| The default optimizations the elm-in-elm compiler uses.
-
-TODO the types will change
-
 -}
 defaultOptimizations : List (Typed.LocatedExpr -> Maybe Typed.LocatedExpr)
 defaultOptimizations =
