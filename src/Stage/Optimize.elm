@@ -21,23 +21,21 @@ optimizeExpr locatedExpr =
     optimizeExprWith defaultOptimizations locatedExpr
 
 
-optimizeExprWith : List (Typed.LocatedExpr -> Maybe Typed.LocatedExpr) -> Typed.LocatedExpr -> Typed.LocatedExpr
+optimizeExprWith : List ( String, Typed.LocatedExpr -> Maybe Typed.LocatedExpr ) -> Typed.LocatedExpr -> Typed.LocatedExpr
 optimizeExprWith optimizations locatedExpr =
-    Typed.transformAll optimizations locatedExpr
+    Typed.transformAll
+        (List.map Tuple.second optimizations)
+        locatedExpr
 
 
-defaultOptimizations : List (Typed.LocatedExpr -> Maybe Typed.LocatedExpr)
+defaultOptimizations : List ( String, Typed.LocatedExpr -> Maybe Typed.LocatedExpr )
 defaultOptimizations =
-    -- TODO these will have to use `mapUnwrapped` and have different types
-    [ optimizePlus
-    , optimizeCons
-    , optimizeIfLiteralBool
+    [ ( "plus", optimizePlus )
+    , ( "cons", optimizeCons )
+    , ( "if-literal-bool", optimizeIfLiteralBool )
     ]
 
 
-{-| TODO try to create some helpers for the optimization passes to make them
-not care about the location that much...
--}
 optimizePlus : Typed.LocatedExpr -> Maybe Typed.LocatedExpr
 optimizePlus located =
     case Typed.getExpr located of

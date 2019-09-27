@@ -75,11 +75,45 @@ instead of running `inferModule` on each of your modules.
 # Optimizing
 
 After typechecking the expressions are ready to be optimized. (The inferred types
-are available to you inside the optimizations!)
+are available to you inside the optimizations! (Unfortunately, the location
+information is also available to you inside the optimization. Sorry.))
 
 @docs defaultOptimizations
 
-The optimizations are of the shape `Expr -> Maybe Expr` because
+The optimizations are of the shape `Expr -> Maybe Expr`, and you **shouldn't
+recurse** inside them. That's done for you automatically. You should only
+consider one "layer", whatever that means for your optimization.
+
+Eg. the `plus` optimization is (conceptually):
+
+    optimizePlus : Expr -> Maybe Expr
+    optimizePlus expr =
+        case expr of
+            Plus (Int a) (Int b) ->
+                Just (Int (a + b))
+
+            _ ->
+                Nothing
+
+Where it only is concerned with the addition of two integers. Any other
+expression will just get ignored.
+
+Your optimizations are then run from the bottom up, repeated as many times as
+needed on the same expression until the optimization produces `Nothing`
+("Nothing else I can do here!"). At that point, the engine moves "up" to the
+parent expression, and so on until it reaches and optimizes the topmost
+expression.
+
+Note the optimizations in the list of optimizations are combined in such a way
+that they take turns on the expression: for the list of three optimizations
+`[plus, cons, myCustomOne]` it might behave something like this:
+
+    plus -> plus -> plus -> (plus starts returning Nothing)
+    -> cons -> plus (still Nothing) -> cons
+    -> plus (the last cons allowed plus to do something again!)
+    -> plus (Nothing again) -> cons (Nothing here too)
+    -> myCustomOne (Nothing)
+    -> END (go to parent expression or end if you're at the topmost one).
 
 @docs optimizeExpr, optimizeExprWith, optimizeModule, optimizeModuleWith, optimizeModules, optimizeModulesWith
 
@@ -378,48 +412,91 @@ inferModules modules =
 
 
 {-| The default optimizations the elm-in-elm compiler uses.
+
+    Try evaluating it in the REPL: you should see that each optimization function
+    has a name String next to it.
+
+        > import Elm.Compiler
+        > Elm.Compiler.optimizations
+        [ ("plus", ...)
+        , ("cons", ...)
+        , ("if-literal-bool", ...)
+        ]
+
+        >
+
+    You can use this to filter optimizations you don't want!
+
+       wantedOptimizations = Set.fromList [ "plus", "if-literal-bool ]
+
+       optimizations
+           |> List.filter (\(name, _) -> Set.member name wantedOptimizations)
+
 -}
-defaultOptimizations : List (Typed.LocatedExpr -> Maybe Typed.LocatedExpr)
+defaultOptimizations : List ( String, Typed.LocatedExpr -> Maybe Typed.LocatedExpr )
 defaultOptimizations =
     Stage.Optimize.defaultOptimizations
 
 
-{-| TODO
+{-| Optimize a given (typed) expression using the default set of optimizations.
+
+For using your own optimizations instead of or in addition to the default ones,
+look at the `optimizeExprWith` function.
+
 -}
 optimizeExpr : Typed.LocatedExpr -> Typed.LocatedExpr
 optimizeExpr locatedExpr =
     Stage.Optimize.optimizeExpr locatedExpr
 
 
-{-| TODO
+{-| Optimize a given (typed) expression using a custom set of optimizations.
 -}
-optimizeExprWith : List (Typed.LocatedExpr -> Maybe Typed.LocatedExpr) -> Typed.LocatedExpr -> Typed.LocatedExpr
+optimizeExprWith : List ( String, Typed.LocatedExpr -> Maybe Typed.LocatedExpr ) -> Typed.LocatedExpr -> Typed.LocatedExpr
 optimizeExprWith optimizations locatedExpr =
     Stage.Optimize.optimizeExprWith optimizations locatedExpr
 
 
-{-| TODO
+{-| Optimize all expressions in a given module using the default set of
+optimizations.
+
+Note there is currently no inter-definition optimizations (inlining etc.) -
+only the optimizations on each separate expression.
+
+For using your own optimizations instead of or in addition to the default ones,
+look at the `optimizeModuleWith` function.
+
 -}
 optimizeModule : Module Typed.LocatedExpr -> Module Typed.LocatedExpr
 optimizeModule thisModule =
     Stage.Optimize.Boilerplate.optimizeModule optimizeExpr thisModule
 
 
-{-| TODO
+{-| Optimize all expressions in a given module using a custom set of
+optimizations.
+
+Note there is currently no inter-definition optimizations (inlining etc.) -
+only the optimizations on each separate expression.
+
 -}
 optimizeModuleWith : List (Typed.LocatedExpr -> Maybe Typed.LocatedExpr) -> Module Typed.LocatedExpr -> Module Typed.LocatedExpr
 optimizeModuleWith optimizations thisModule =
     Stage.Optimize.Boilerplate.optimizeModule (optimizeExprWith optimizations) thisModule
 
 
-{-| TODO
+{-| Optimize all expressions in multiple modules using the default set of
+optimizations.
+
+For using your own optimizations instead of or in addition to the default ones,
+look at the `optimizeModulesWith` function.
+
 -}
 optimizeModules : Dict ModuleName (Module Typed.LocatedExpr) -> Dict ModuleName (Module Typed.LocatedExpr)
 optimizeModules modules =
     Dict.map (always optimizeModule) modules
 
 
-{-| TODO
+{-| Optimize all expressions in multiple modules using a custom set of
+optimizations.
 -}
 optimizeModulesWith : List (Typed.LocatedExpr -> Maybe Typed.LocatedExpr) -> Dict ModuleName (Module Typed.LocatedExpr) -> Dict ModuleName (Module Typed.LocatedExpr)
 optimizeModulesWith optimizations modules =
