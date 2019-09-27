@@ -478,7 +478,7 @@ Note there is currently no inter-definition optimizations (inlining etc.) -
 only the optimizations on each separate expression.
 
 -}
-optimizeModuleWith : List (Typed.LocatedExpr -> Maybe Typed.LocatedExpr) -> Module Typed.LocatedExpr -> Module Typed.LocatedExpr
+optimizeModuleWith : List ( String, Typed.LocatedExpr -> Maybe Typed.LocatedExpr ) -> Module Typed.LocatedExpr -> Module Typed.LocatedExpr
 optimizeModuleWith optimizations thisModule =
     Stage.Optimize.Boilerplate.optimizeModule (optimizeExprWith optimizations) thisModule
 
@@ -498,7 +498,7 @@ optimizeModules modules =
 {-| Optimize all expressions in multiple modules using a custom set of
 optimizations.
 -}
-optimizeModulesWith : List (Typed.LocatedExpr -> Maybe Typed.LocatedExpr) -> Dict ModuleName (Module Typed.LocatedExpr) -> Dict ModuleName (Module Typed.LocatedExpr)
+optimizeModulesWith : List ( String, Typed.LocatedExpr -> Maybe Typed.LocatedExpr ) -> Dict ModuleName (Module Typed.LocatedExpr) -> Dict ModuleName (Module Typed.LocatedExpr)
 optimizeModulesWith optimizations modules =
     Dict.map (always (optimizeModuleWith optimizations)) modules
 
