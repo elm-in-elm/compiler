@@ -24,8 +24,8 @@ three parts:
 
 We also have a fourth part:
 
-  - `substituteAllTypes`: recursively replace type variable IDs with their
-    inferred types.
+  - `substituteAllInExpr` and `substituteAllInError`: recursively replace type
+    variable IDs with their inferred types.
 
 -}
 inferTypes : Project Canonical.ProjectFields -> Result Error (Project Typed.ProjectFields)
