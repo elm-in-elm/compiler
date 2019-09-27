@@ -1,13 +1,9 @@
-module UsecaseElmFormat exposing (main)
+module ElmFormat exposing (main)
 
 {-| Usecase: elm-format
 
 Needs to parse a module to frontend AST (as close to source as possible), and
 non-opaque access to that AST to be able to emit back to Elm.
-
-Gives us constraints on the API:
-
-    parseModule : String -> Result Error (Module Frontend.LocatedExpr)
 
 -}
 

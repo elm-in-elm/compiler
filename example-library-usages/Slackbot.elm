@@ -1,4 +1,4 @@
-module UsecaseSlackbot exposing (main)
+module Slackbot exposing (main)
 
 {-| Usecase: Elm-evaluating Slackbot
 
@@ -7,20 +7,6 @@ an expression.
 
 Bonus points for eval function, but that doesn't have to live in elm/compiler.
 (elm/interpreter? :P)
-
-Gives us constraints on the API:
-
-    parseImport : String -> Result Error Import
-
-    parseDefinition : String -> Result Error (Definition Frontend.LocatedExpr)
-
-    parseExpr : String -> Result Error Frontend.LocatedExpr
-
-Unresolved questions:
-
-    1. Is there a nice way of adding user errors to elm/compiler's Error type?
-       Or is it better for them to wrap it themselves?
-       (CustomError = ElmError Error | Custom)
 
 -}
 
