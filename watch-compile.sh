@@ -7,7 +7,7 @@ LOCKNAME=$(cat /dev/urandom | tr -cd 'a-f0-9' | head -c 16);
 LOCKFILE="/tmp/elm-lock-${LOCKNAME}"
 
 function compile {
-  elm make --output /dev/null && cd cli && elm make Main.elm --output /dev/null && cd ..;
+  elm-master make --output /dev/null && cd cli && elm make Main.elm --output /dev/null && cd ..;
 }
 
 function run {
