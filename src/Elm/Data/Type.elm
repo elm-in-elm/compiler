@@ -9,6 +9,7 @@ module Elm.Data.Type exposing (Type(..), TypeArgument(..), isParametric, varId)
 import Dict exposing (Dict)
 
 
+{-| -}
 type Type
     = {- READ THIS!
 
@@ -44,11 +45,22 @@ type Type
       UserDefinedType { module_ : String, name : String } (List Type)
 
 
+{-| Type argument of a polymorphic type.
+
+    Maybe Int
+    --> ConcreteType Int
+
+    Maybe a
+    --> TypeVariable "a"
+
+-}
 type TypeArgument
     = ConcreteType Type
-    | TypeParameter String
+    | TypeVariable String
 
 
+{-| Unwrap the ID of the type variable
+-}
 varId : Type -> Maybe Int
 varId type_ =
     case type_ of

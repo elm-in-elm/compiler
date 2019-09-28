@@ -1,14 +1,54 @@
 module Elm.Data.Type.ToString exposing
-    ( State
-    , emptyState
+    ( toString
+    , State, emptyState
     , niceVarName
-    , toString
     )
+
+{-| Functions for printing types.
+
+The reason this isn't just a simple `toString` function is that type variables
+need to have consistent names across multiple `toString` calls (eg. in error
+messages).
+
+To accomplish this, we pass a state around as an argument.
+
+This is how the simple case would look:
+
+    toString emptyState (List Int)
+    --> ("List Int", ...)
+
+And for cases where you're printing multiple types and they have to make sense
+together, you pass the state returned from first call to the second call:
+
+    let
+        (typeString1, state1) =
+            toString emptyState (Function (Var 0) (Var 1))
+
+        (typeString2, _) =
+            toString state1 (Function Int (Var 1))
+    in
+    typeString1 ++ " is not the same as " ++ typeString2
+    --> "(a -> b) is not the same as (Int -> b)
+
+The important thing here is that the `Var 1` was rendered the same in both cases.
+If you didn't do that and passed `emptyState` to both cases, you'd get:
+
+    "(a -> b) is not the same as (Int -> a)"
+
+Which would be misleading!
+
+@docs toString
+@docs State, emptyState
+@docs niceVarName
+
+-}
 
 import Dict exposing (Dict)
 import Elm.Data.Type exposing (Type(..))
 
 
+{-| State for keeping track of the type variables' chosen names
+-}
 type State
     = State
         { mapping : Dict Int String
@@ -16,6 +56,8 @@ type State
         }
 
 
+{-| Initial state to start with
+-}
 emptyState : State
 emptyState =
     State
@@ -24,6 +66,9 @@ emptyState =
         }
 
 
+{-| The main function of this module. Use the state returned here
+in the subsequent calls (if they're going to end up as part of the same string!)
+-}
 toString : State -> Type -> ( String, State )
 toString state type_ =
     case type_ of
@@ -94,10 +139,10 @@ toString state type_ =
             in
             ( "( " ++ t1String ++ ", " ++ t2String ++ ", " ++ t3String ++ " )", state3 )
 
-        UserDefinedType { module_, name } typeParameters ->
+        UserDefinedType { module_, name } typeVariables ->
             let
                 ( paramsString, state1 ) =
-                    if List.isEmpty typeParameters then
+                    if List.isEmpty typeVariables then
                         ( "", state )
 
                     else
@@ -110,7 +155,7 @@ toString state type_ =
                                 ( string :: strings, state3 )
                             )
                             ( [], state )
-                            typeParameters
+                            typeVariables
                             |> Tuple.mapFirst (\paramStrings -> " " ++ String.join " " paramStrings)
             in
             ( module_ ++ "." ++ name ++ paramsString
@@ -137,10 +182,14 @@ getName ((State { counter, mapping }) as state) varId =
             )
 
 
-{-| We're generating the nice variable names using this sequence:
+{-| Function to get from a number to a nice type variable name.
+It follows this sequence:
 
     a, b, ..., z, | a1, b1, ..., z1, | a2, b2, ..., z2, | ...
     0  1       25 | 26  27       51  | 52  53       77  |
+
+Note the number passed into this function isn't the number inside `Var`
+but the counter inside `State`.
 
 -}
 niceVarName : Int -> String

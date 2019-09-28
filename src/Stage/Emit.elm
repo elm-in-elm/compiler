@@ -291,7 +291,7 @@ findDependenciesOfTypeArgument modules typeArgument =
         ConcreteType type_ ->
             findDependenciesOfType modules type_
 
-        TypeParameter _ ->
+        TypeVariable _ ->
             Ok []
 
 
