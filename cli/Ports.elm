@@ -28,7 +28,7 @@ port readSubscription : ({ filePath : FilePath, fileContents : FileContents } ->
 port readErrorSubscription : ({ filePath : FilePath, errorCode : String } -> msg) -> Sub msg
 
 
-port writeToFile : { filePath : String, fileContents : String } -> Cmd msg
+port writeToFile : { filePath : FilePath, fileContents : FileContents } -> Cmd msg
 
 
 print : String -> Cmd msg
