@@ -1,25 +1,23 @@
 module EmitTest exposing (javascript)
 
-import AST.Common.Literal exposing (Literal(..))
-import AST.Common.Located as Located exposing (Located)
-import AST.Common.Type as Type
-import AST.Typed as Typed exposing (Expr_(..), LocatedExpr)
-import Data.Declaration exposing (Declaration, DeclarationBody(..))
-import Data.ModuleName as ModuleName exposing (ModuleName)
-import Data.VarName as VarName exposing (VarName)
 import Dict
+import Elm.AST.Common.Literal exposing (Literal(..))
+import Elm.AST.Common.Located as Located exposing (Located)
+import Elm.AST.Typed as Typed exposing (Expr_(..), LocatedExpr)
+import Elm.Data.Declaration exposing (Declaration, DeclarationBody(..))
+import Elm.Data.ModuleName as ModuleName exposing (ModuleName)
+import Elm.Data.Type as Type
+import Elm.Data.VarName as VarName exposing (VarName)
 import Expect exposing (Expectation)
 import Stage.Emit.JavaScript as JS
 import Test exposing (Test, describe, test, todo)
 import TestHelpers
     exposing
-        ( module_
-        , typed
+        ( typed
         , typedBool
         , typedInt
         , typedIntList
         , typedString
-        , var
         )
 
 
@@ -79,13 +77,13 @@ javascript =
                 )
             , describe "Var"
                 (List.map runTest
-                    [ ( "simple", Var { qualifier = module_ "Foo", name = var "bar" }, "Foo$bar" )
-                    , ( "nested", Var { qualifier = module_ "Foo.Bar", name = var "baz" }, "Foo$Bar$baz" )
+                    [ ( "simple", Var { module_ = "Foo", name = "bar" }, "Foo$bar" )
+                    , ( "nested", Var { module_ = "Foo.Bar", name = "baz" }, "Foo$Bar$baz" )
                     ]
                 )
             , describe "Argument"
                 (List.map runTest
-                    [ ( "simple", Argument (var "foo"), "foo" )
+                    [ ( "simple", Argument "foo", "foo" )
                     ]
                 )
             , describe "Plus"
@@ -113,7 +111,7 @@ javascript =
                 (List.map runTest
                     [ ( "simple"
                       , Lambda
-                            { argument = var "x"
+                            { argument = "x"
                             , body = typedInt 1
                             }
                       , "((x) => 1)"
@@ -124,7 +122,7 @@ javascript =
                 (List.map runTest
                     [ ( "simple"
                       , Call
-                            { fn = typed (Var { qualifier = module_ "Basics", name = var "negate" })
+                            { fn = typed (Var { module_ = "Basics", name = "negate" })
                             , argument = typedInt 1
                             }
                       , "(Basics$negate(1))"
@@ -134,7 +132,7 @@ javascript =
                             { fn =
                                 typed
                                     (Lambda
-                                        { argument = var "x"
+                                        { argument = "x"
                                         , body = typedInt 2
                                         }
                                     )
@@ -167,7 +165,7 @@ javascript =
                             { test =
                                 typed
                                     (Call
-                                        { fn = typed (Var { qualifier = module_ "String", name = var "isEmpty" })
+                                        { fn = typed (Var { module_ = "String", name = "isEmpty" })
                                         , argument = typed (Literal (String "foo"))
                                         }
                                     )
@@ -207,8 +205,8 @@ javascript =
                       , Let
                             { bindings =
                                 Dict.singleton
-                                    (var "x")
-                                    { name = var "x"
+                                    "x"
+                                    { name = "x"
                                     , body = typedInt 2
                                     }
                             , body = typedInt 1
@@ -219,13 +217,13 @@ javascript =
                       , Let
                             { bindings =
                                 Dict.fromList
-                                    [ ( var "x"
-                                      , { name = var "x"
+                                    [ ( "x"
+                                      , { name = "x"
                                         , body = typedInt 2
                                         }
                                       )
-                                    , ( var "y"
-                                      , { name = var "y"
+                                    , ( "y"
+                                      , { name = "y"
                                         , body = typedInt 3
                                         }
                                       )
@@ -266,8 +264,8 @@ javascript =
           describe "emitDeclaration"
             (List.map runTest
                 [ ( "simple"
-                  , { module_ = module_ "Foo"
-                    , name = var "bar"
+                  , { module_ = "Foo"
+                    , name = "bar"
                     , body = Value <| typedInt 1
                     }
                   , "const Foo$bar = 1;"

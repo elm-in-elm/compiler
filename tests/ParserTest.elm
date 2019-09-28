@@ -6,15 +6,15 @@ module ParserTest exposing
     , moduleName
     )
 
-import AST.Common.Literal exposing (Literal(..))
-import AST.Frontend as Frontend
-import AST.Frontend.Unwrapped exposing (Expr(..))
-import Data.Exposing exposing (ExposedItem(..), Exposing(..))
-import Data.Module exposing (ModuleType(..))
-import Data.ModuleName as ModuleName exposing (ModuleName)
-import Data.VarName as VarName exposing (VarName)
 import Dict
-import Error exposing (ParseContext, ParseProblem)
+import Elm.AST.Common.Literal exposing (Literal(..))
+import Elm.AST.Frontend as Frontend
+import Elm.AST.Frontend.Unwrapped exposing (Expr(..))
+import Elm.Compiler.Error exposing (ParseContext, ParseProblem)
+import Elm.Data.Exposing exposing (ExposedItem(..), Exposing(..))
+import Elm.Data.Module exposing (ModuleType(..))
+import Elm.Data.ModuleName as ModuleName exposing (ModuleName)
+import Elm.Data.VarName as VarName exposing (VarName)
 import Expect exposing (Expectation)
 import Parser.Advanced as P
 import Result.Extra
@@ -38,35 +38,35 @@ moduleDeclaration =
             (List.map runTest
                 [ ( "works with simple module name"
                   , "module Foo exposing (..)"
-                  , Just ( PlainModule, module_ "Foo", ExposingAll )
+                  , Just ( PlainModule, "Foo", ExposingAll )
                   )
                 , ( "works with nested module name"
                   , "module Foo.Bar exposing (..)"
-                  , Just ( PlainModule, module_ "Foo.Bar", ExposingAll )
+                  , Just ( PlainModule, "Foo.Bar", ExposingAll )
                   )
                 , ( "works with even more nested module name"
                   , "module Foo.Bar.Baz.Quux exposing (..)"
-                  , Just ( PlainModule, module_ "Foo.Bar.Baz.Quux", ExposingAll )
+                  , Just ( PlainModule, "Foo.Bar.Baz.Quux", ExposingAll )
                   )
                 , ( "allows multiple spaces between the `module` keyword and the module name"
                   , "module  Foo exposing (..)"
-                  , Just ( PlainModule, module_ "Foo", ExposingAll )
+                  , Just ( PlainModule, "Foo", ExposingAll )
                   )
                 , ( "allows multiple spaces between the module name and the `exposing` keyword"
                   , "module Foo  exposing (..)"
-                  , Just ( PlainModule, module_ "Foo", ExposingAll )
+                  , Just ( PlainModule, "Foo", ExposingAll )
                   )
                 , ( "allows a newline between the module name and the `exposing` keyword"
                   , "module Foo\nexposing (..)"
-                  , Just ( PlainModule, module_ "Foo", ExposingAll )
+                  , Just ( PlainModule, "Foo", ExposingAll )
                   )
                 , ( "allows multiple spaces between the `exposing` keyword and the exposing list"
                   , "module Foo exposing  (..)"
-                  , Just ( PlainModule, module_ "Foo", ExposingAll )
+                  , Just ( PlainModule, "Foo", ExposingAll )
                   )
                 , ( "allows a newline between the `exposing` keyword and the exposing list"
                   , "module Foo exposing\n(..)"
-                  , Just ( PlainModule, module_ "Foo", ExposingAll )
+                  , Just ( PlainModule, "Foo", ExposingAll )
                   )
                 , ( "doesn't work without something after the `exposing` keyword"
                   , "module Foo exposing"
@@ -78,7 +78,7 @@ moduleDeclaration =
             (List.map runTest
                 [ ( "simply works"
                   , "module Foo exposing (..)"
-                  , Just ( PlainModule, module_ "Foo", ExposingAll )
+                  , Just ( PlainModule, "Foo", ExposingAll )
                   )
                 ]
             )
@@ -86,7 +86,7 @@ moduleDeclaration =
             (List.map runTest
                 [ ( "simply works"
                   , "port module Foo exposing (..)"
-                  , Just ( PortModule, module_ "Foo", ExposingAll )
+                  , Just ( PortModule, "Foo", ExposingAll )
                   )
                 ]
             )
@@ -128,8 +128,8 @@ exposingList =
                       , "(foo, bar)"
                       , Just
                             (ExposingSome
-                                [ ExposedValue (VarName.fromString "foo")
-                                , ExposedValue (VarName.fromString "bar")
+                                [ ExposedValue "foo"
+                                , ExposedValue "bar"
                                 ]
                             )
                       )
@@ -137,8 +137,8 @@ exposingList =
                       , "(foo  ,  bar)"
                       , Just
                             (ExposingSome
-                                [ ExposedValue (VarName.fromString "foo")
-                                , ExposedValue (VarName.fromString "bar")
+                                [ ExposedValue "foo"
+                                , ExposedValue "bar"
                                 ]
                             )
                       )
@@ -146,9 +146,9 @@ exposingList =
                       , "(foo, Bar, Baz(..))"
                       , Just
                             (ExposingSome
-                                [ ExposedValue (VarName.fromString "foo")
-                                , ExposedType (VarName.fromString "Bar")
-                                , ExposedTypeAndAllConstructors (VarName.fromString "Baz")
+                                [ ExposedValue "foo"
+                                , ExposedType "Bar"
+                                , ExposedTypeAndAllConstructors "Baz"
                                 ]
                             )
                       )
@@ -156,8 +156,8 @@ exposingList =
                       , "(foo\n,bar)"
                       , Just
                             (ExposingSome
-                                [ ExposedValue (VarName.fromString "foo")
-                                , ExposedValue (VarName.fromString "bar")
+                                [ ExposedValue "foo"
+                                , ExposedValue "bar"
                                 ]
                             )
                       )
@@ -167,7 +167,7 @@ exposingList =
                 (List.map runTest
                     [ ( "works with a value"
                       , "(foo)"
-                      , Just (ExposingSome [ ExposedValue (VarName.fromString "foo") ])
+                      , Just (ExposingSome [ ExposedValue "foo" ])
                       )
                     ]
                 )
@@ -175,7 +175,7 @@ exposingList =
                 (List.map runTest
                     [ ( "works with exposed type"
                       , "(Foo)"
-                      , Just (ExposingSome [ ExposedType (VarName.fromString "Foo") ])
+                      , Just (ExposingSome [ ExposedType "Foo" ])
                       )
                     ]
                 )
@@ -183,7 +183,7 @@ exposingList =
                 (List.map runTest
                     [ ( "works with exposed type and all constructors"
                       , "(Foo(..))"
-                      , Just (ExposingSome [ ExposedTypeAndAllConstructors (VarName.fromString "Foo") ])
+                      , Just (ExposingSome [ ExposedTypeAndAllConstructors "Foo" ])
                       )
                     , ( "doesn't allow spaces between the module name and the double period list"
                       , "(Foo (..))"
@@ -221,9 +221,9 @@ imports =
                   , "import Foo as F exposing (..)"
                   , Just
                         (Dict.fromList
-                            [ ( module_ "Foo"
-                              , { moduleName = module_ "Foo"
-                                , as_ = Just (module_ "F")
+                            [ ( "Foo"
+                              , { moduleName = "Foo"
+                                , as_ = Just "F"
                                 , exposing_ = Just ExposingAll
                                 }
                               )
@@ -234,9 +234,9 @@ imports =
                   , "import   Foo   as   F   exposing   (..)"
                   , Just
                         (Dict.fromList
-                            [ ( module_ "Foo"
-                              , { moduleName = module_ "Foo"
-                                , as_ = Just (module_ "F")
+                            [ ( "Foo"
+                              , { moduleName = "Foo"
+                                , as_ = Just "F"
                                 , exposing_ = Just ExposingAll
                                 }
                               )
@@ -247,14 +247,14 @@ imports =
                   , "import Foo\nimport Bar"
                   , Just
                         (Dict.fromList
-                            [ ( module_ "Foo"
-                              , { moduleName = module_ "Foo"
+                            [ ( "Foo"
+                              , { moduleName = "Foo"
                                 , as_ = Nothing
                                 , exposing_ = Nothing
                                 }
                               )
-                            , ( module_ "Bar"
-                              , { moduleName = module_ "Bar"
+                            , ( "Bar"
+                              , { moduleName = "Bar"
                                 , as_ = Nothing
                                 , exposing_ = Nothing
                                 }
@@ -266,14 +266,14 @@ imports =
                   , "import Foo\n\nimport Bar"
                   , Just
                         (Dict.fromList
-                            [ ( module_ "Foo"
-                              , { moduleName = module_ "Foo"
+                            [ ( "Foo"
+                              , { moduleName = "Foo"
                                 , as_ = Nothing
                                 , exposing_ = Nothing
                                 }
                               )
-                            , ( module_ "Bar"
-                              , { moduleName = module_ "Bar"
+                            , ( "Bar"
+                              , { moduleName = "Bar"
                                 , as_ = Nothing
                                 , exposing_ = Nothing
                                 }
@@ -293,8 +293,8 @@ imports =
                   , "import Foo"
                   , Just
                         (Dict.fromList
-                            [ ( module_ "Foo"
-                              , { moduleName = module_ "Foo"
+                            [ ( "Foo"
+                              , { moduleName = "Foo"
                                 , as_ = Nothing
                                 , exposing_ = Nothing
                                 }
@@ -310,9 +310,9 @@ imports =
                   , "import Foo as F"
                   , Just
                         (Dict.fromList
-                            [ ( module_ "Foo"
-                              , { moduleName = module_ "Foo"
-                                , as_ = Just (module_ "F")
+                            [ ( "Foo"
+                              , { moduleName = "Foo"
+                                , as_ = Just "F"
                                 , exposing_ = Nothing
                                 }
                               )
@@ -335,15 +335,15 @@ imports =
                   , "import Foo exposing (bar, Baz, Quux(..))"
                   , Just
                         (Dict.fromList
-                            [ ( module_ "Foo"
-                              , { moduleName = module_ "Foo"
+                            [ ( "Foo"
+                              , { moduleName = "Foo"
                                 , as_ = Nothing
                                 , exposing_ =
                                     Just
                                         (ExposingSome
-                                            [ ExposedValue (VarName.fromString "bar")
-                                            , ExposedType (VarName.fromString "Baz")
-                                            , ExposedTypeAndAllConstructors (VarName.fromString "Quux")
+                                            [ ExposedValue "bar"
+                                            , ExposedType "Baz"
+                                            , ExposedTypeAndAllConstructors "Quux"
                                             ]
                                         )
                                 }
@@ -438,10 +438,10 @@ expr =
                   , "\\x -> x + 1"
                   , Just
                         (Lambda
-                            { arguments = [ var "x" ]
+                            { arguments = [ "x" ]
                             , body =
                                 Plus
-                                    (Argument (var "x"))
+                                    (Argument "x")
                                     (Literal (Int 1))
                             }
                         )
@@ -451,13 +451,13 @@ expr =
                   , Just
                         (Lambda
                             { arguments =
-                                [ var "x"
-                                , var "y"
+                                [ "x"
+                                , "y"
                                 ]
                             , body =
                                 Plus
-                                    (Argument (var "x"))
-                                    (Argument (var "y"))
+                                    (Argument "x")
+                                    (Argument "y")
                             }
                         )
                   )
@@ -468,7 +468,7 @@ expr =
                   , "fn 1"
                   , Just
                         (Call
-                            { fn = Var { name = var "fn", qualifier = Nothing }
+                            { fn = Var { name = "fn", module_ = Nothing }
                             , argument = Literal (Int 1)
                             }
                         )
@@ -477,8 +477,8 @@ expr =
                   , "fn arg"
                   , Just
                         (Call
-                            { fn = Var { name = var "fn", qualifier = Nothing }
-                            , argument = Var { name = var "arg", qualifier = Nothing }
+                            { fn = Var { name = "fn", module_ = Nothing }
+                            , argument = Var { name = "arg", module_ = Nothing }
                             }
                         )
                   )
@@ -488,10 +488,10 @@ expr =
                         (Call
                             { fn =
                                 Call
-                                    { fn = Var { name = var "fn", qualifier = Nothing }
-                                    , argument = Var { name = var "arg1", qualifier = Nothing }
+                                    { fn = Var { name = "fn", module_ = Nothing }
+                                    , argument = Var { name = "arg1", module_ = Nothing }
                                     }
-                            , argument = Var { name = var "arg2", qualifier = Nothing }
+                            , argument = Var { name = "arg2", module_ = Nothing }
                             }
                         )
                   )
@@ -499,8 +499,8 @@ expr =
                   , "fn(arg1)"
                   , Just
                         (Call
-                            { fn = Var { name = var "fn", qualifier = Nothing }
-                            , argument = Var { name = var "arg1", qualifier = Nothing }
+                            { fn = Var { name = "fn", module_ = Nothing }
+                            , argument = Var { name = "arg1", module_ = Nothing }
                             }
                         )
                   )
@@ -780,7 +780,7 @@ expr =
                   , Just
                         (Let
                             { bindings =
-                                [ { name = var "x"
+                                [ { name = "x"
                                   , body = Literal (Int 1)
                                   }
                                 ]
@@ -793,7 +793,7 @@ expr =
                   , Just
                         (Let
                             { bindings =
-                                [ { name = var "x"
+                                [ { name = "x"
                                   , body = Literal (Int 1)
                                   }
                                 ]

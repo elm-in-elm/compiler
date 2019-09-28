@@ -1,13 +1,13 @@
 module InferTypesFuzz exposing (typeInference)
 
-import AST.Canonical as Canonical
-import AST.Canonical.Unwrapped as CanonicalU
-import AST.Common.Literal as Literal exposing (Literal(..))
-import AST.Common.Located as Located
-import AST.Common.Type as Type exposing (Type)
-import AST.Typed as Typed
-import Data.VarName as VarName exposing (VarName)
-import Error exposing (TypeError(..))
+import Elm.AST.Canonical as Canonical
+import Elm.AST.Canonical.Unwrapped as CanonicalU
+import Elm.AST.Common.Literal as Literal exposing (Literal(..))
+import Elm.AST.Common.Located as Located
+import Elm.AST.Typed as Typed
+import Elm.Compiler.Error exposing (TypeError(..))
+import Elm.Data.Type as Type exposing (Type)
+import Elm.Data.VarName as VarName exposing (VarName)
 import Expect exposing (Expectation)
 import Fuzz exposing (Fuzzer)
 import Random exposing (Generator)
@@ -290,7 +290,6 @@ randomVarName =
     in
     Random.map2 (::) firstChar rest
         |> Random.map String.fromList
-        |> Random.map VarName.fromString
 
 
 {-| An expression shrinker that preserves the inferred type.

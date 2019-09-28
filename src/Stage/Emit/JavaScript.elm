@@ -114,12 +114,9 @@ emitExpr located =
                 bindingsJS =
                     bindings
                         |> Dict.values
-                        |> {- TODO does this still need the reversing after we
-                              removed assoc list from here and are using Dict
-                              again? If an emit test is failing and it looks
-                              weird, this is probably the cause.
-                           -}
-                           List.reverse
+                        {- TODO this doesn't take inter-let dependencies into
+                           account, also Dict.values just returns stuff "randomly"
+                        -}
                         |> List.map (\binding -> "const " ++ mangleVarName binding.name ++ " = " ++ emitExpr binding.body)
                         |> String.join "; "
             in

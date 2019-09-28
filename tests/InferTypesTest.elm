@@ -1,30 +1,31 @@
 module InferTypesTest exposing (isParametric, niceVarName, typeInference, typeToString)
 
-import AST.Canonical as Canonical
-import AST.Canonical.Unwrapped as CanonicalU
-import AST.Common.Literal as Literal
-import AST.Common.Located as Located
-import AST.Common.Type as Type exposing (Type(..))
-import AST.Typed as Typed
-import Data.ModuleName as ModuleName exposing (ModuleName)
-import Data.VarName as VarName exposing (VarName)
-import Error exposing (TypeError(..))
+import Elm.AST.Canonical as Canonical
+import Elm.AST.Canonical.Unwrapped as CanonicalU
+import Elm.AST.Common.Literal as Literal
+import Elm.AST.Common.Located as Located
+import Elm.AST.Typed as Typed
+import Elm.Compiler.Error as Error exposing (Error(..), TypeError(..))
+import Elm.Data.ModuleName as ModuleName exposing (ModuleName)
+import Elm.Data.Type as Type exposing (Type(..))
+import Elm.Data.Type.ToString as TypeToString
+import Elm.Data.VarName as VarName exposing (VarName)
 import Expect exposing (Expectation)
 import Fuzz exposing (Fuzzer)
 import Stage.InferTypes
 import Test exposing (Test, describe, fuzz, test)
-import TestHelpers exposing (dumpType, located, module_, var)
+import TestHelpers exposing (dumpType, located)
 
 
 typeInference : Test
 typeInference =
     let
-        runSection : String -> List ( String, CanonicalU.Expr, Result Error.TypeError Type ) -> Test
+        runSection : String -> List ( String, CanonicalU.Expr, Result TypeError Type ) -> Test
         runSection description tests =
             describe description
                 (List.map runTest tests)
 
-        runTest : ( String, CanonicalU.Expr, Result Error.TypeError Type ) -> Test
+        runTest : ( String, CanonicalU.Expr, Result TypeError Type ) -> Test
         runTest ( description, input, output ) =
             test description <|
                 \() ->
@@ -57,7 +58,7 @@ typeInference =
                     [ CanonicalU.Literal (Literal.Int 1)
                     , CanonicalU.Literal (Literal.String "two")
                     ]
-              , Err (Error.TypeMismatch Type.Int Type.String)
+              , Err (TypeMismatch Int String)
               )
             , ( "more items with different types"
               , CanonicalU.List
@@ -65,7 +66,7 @@ typeInference =
                     , CanonicalU.Literal (Literal.String "two")
                     , CanonicalU.Literal (Literal.Int 3)
                     ]
-              , Err (Error.TypeMismatch Type.Bool Type.String)
+              , Err (TypeMismatch Bool String)
               )
             , ( "List of List of Int"
               , CanonicalU.List
@@ -79,7 +80,7 @@ typeInference =
                     [ CanonicalU.List [ CanonicalU.Literal (Literal.Int 1) ]
                     , CanonicalU.List [ CanonicalU.Literal (Literal.Bool False) ]
                     ]
-              , Err (Error.TypeMismatch Type.Int Type.Bool)
+              , Err (TypeMismatch Int Bool)
               )
             ]
         , runSection "tuple"
@@ -115,7 +116,7 @@ typeInference =
         , runSection "plus"
             [ ( "same types"
               , CanonicalU.Plus
-                    (CanonicalU.Var { qualifier = module_ "Main", name = var "age" })
+                    (CanonicalU.Var { module_ = "Main", name = "age" })
                     (CanonicalU.Literal (Literal.Int 1))
               , Ok Int
               )
@@ -153,14 +154,14 @@ typeInference =
                         ]
                     )
               , Err
-                    (Error.TypeMismatch
-                        (Type.List Type.Int)
-                        Type.Int
+                    (TypeMismatch
+                        (List Int)
+                        Int
                     )
               )
             , ( "variable and list"
               , CanonicalU.Cons
-                    (CanonicalU.Var { qualifier = module_ "Main", name = var "age" })
+                    (CanonicalU.Var { module_ = "Main", name = "age" })
                     (CanonicalU.List [ CanonicalU.Literal (Literal.Int 1) ])
               , Ok (List Int)
               )
@@ -174,7 +175,7 @@ typeToString =
         toStringOnce : Type -> String
         toStringOnce type_ =
             type_
-                |> Type.toString Type.emptyState
+                |> TypeToString.toString TypeToString.emptyState
                 |> Tuple.first
 
         runTest ( description, input, output ) =
@@ -192,55 +193,55 @@ typeToString =
         [ describe "list"
             [ runTest
                 ( "empty list"
-                , Type.List (Type.Var 0)
+                , List (Var 0)
                 , "List a"
                 )
             , runTest
                 ( "one item in list"
-                , Type.List Type.Bool
+                , List Bool
                 , "List Bool"
                 )
             , runTest
                 ( "list of list of String"
-                , Type.List (Type.List Type.String)
+                , List (List String)
                 , "List (List String)"
                 )
             ]
         , describe "lambda"
             [ runTest
                 ( "function with one param"
-                , Type.Function (Type.Var 99) Type.Int
+                , Function (Var 99) Int
                 , "a -> Int"
                 )
             , runTest
                 ( "function with two params"
-                , Type.Function (Type.Var 0) (Type.Function (Type.Var 1) (Type.Var 1))
+                , Function (Var 0) (Function (Var 1) (Var 1))
                 , "a -> b -> b"
                 )
             , runTest
                 ( "function as param"
-                , Type.Function (Type.Function (Type.Var 9) (Type.Var 9)) (Type.Var 0)
+                , Function (Function (Var 9) (Var 9)) (Var 0)
                 , "(a -> a) -> b"
                 )
             , runTest
                 ( "list of functions"
-                , Type.List (Type.Function (Type.Var 0) (Type.Var 0))
+                , List (Function (Var 0) (Var 0))
                 , "List (a -> a)"
                 )
             ]
         , describe "edges"
             [ runEqual
                 ( "Var number doesn't count"
-                , toStringOnce <| Type.List (Type.Var 0)
-                , toStringOnce <| Type.List (Type.Var 1)
+                , toStringOnce <| List (Var 0)
+                , toStringOnce <| List (Var 1)
                 )
             , runEqual
                 ( "TypeMismatch types share vars index"
                 , Error.toString
-                    (Error.TypeError
-                        (Error.TypeMismatch
-                            (Type.Function (Type.List (Type.Var 0)) (Type.Var 1))
-                            (Type.Function (Type.List (Type.Var 1)) (Type.Var 0))
+                    (TypeError
+                        (TypeMismatch
+                            (Function (List (Var 0)) (Var 1))
+                            (Function (List (Var 1)) (Var 0))
                         )
                     )
                 , "The types `(List a) -> b` and `(List b) -> a` don't match."
@@ -249,40 +250,40 @@ typeToString =
         , describe "tuples"
             [ runTest
                 ( "tuple with two literals"
-                , Type.Tuple Type.Int Type.String
+                , Tuple Int String
                 , "( Int, String )"
                 )
             , runTest
                 ( "tuple with two params"
-                , Type.Tuple (Type.Var 0) (Type.Var 1)
+                , Tuple (Var 0) (Var 1)
                 , "( a, b )"
                 )
             , runTest
                 ( "tuple with tree params"
-                , Type.Tuple3 (Type.Var 0) (Type.Var 1) (Type.Var 2)
+                , Tuple3 (Var 0) (Var 1) (Var 2)
                 , "( a, b, c )"
                 )
             ]
         , describe "user defined type"
             [ runTest
                 ( "type without a param"
-                , Type.UserDefinedType
-                    ( ModuleName.fromString "MyModule", VarName.fromString "MyBool" )
+                , UserDefinedType
+                    { module_ = "MyModule", name = "MyBool" }
                     []
                 , "MyModule.MyBool"
                 )
             , runTest
                 ( "type with a param"
-                , Type.UserDefinedType
-                    ( ModuleName.fromString "Maybe", VarName.fromString "Maybe" )
-                    [ Type.Int ]
+                , UserDefinedType
+                    { module_ = "Maybe", name = "Maybe" }
+                    [ Int ]
                 , "Maybe.Maybe Int"
                 )
             , runTest
                 ( "type with a param 2"
-                , Type.UserDefinedType
-                    ( ModuleName.fromString "Maybe", VarName.fromString "Maybe" )
-                    [ Type.Var 0 ]
+                , UserDefinedType
+                    { module_ = "Maybe", name = "Maybe" }
+                    [ Var 0 ]
                 , "Maybe.Maybe a"
                 )
             ]
@@ -295,7 +296,7 @@ niceVarName =
         runTest ( input, output ) =
             test output <|
                 \() ->
-                    Type.niceVarName input
+                    TypeToString.niceVarName input
                         |> Expect.equal output
     in
     describe "Type.niceVarName" <|

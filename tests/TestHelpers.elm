@@ -1,25 +1,24 @@
 module TestHelpers exposing
     ( dumpType
     , located
-    , module_
     , typed
     , typedBool
     , typedInt
     , typedIntList
     , typedString
-    , var
     )
 
-import AST.Common.Literal as Literal
-import AST.Common.Located as Located exposing (Located)
-import AST.Common.Type as Type exposing (Type(..))
-import AST.Typed as Typed exposing (Expr_(..))
+import Elm.AST.Common.Literal as Literal
+import Elm.AST.Common.Located as Located exposing (Located)
+import Elm.AST.Typed as Typed exposing (Expr_(..))
+import Elm.Data.Type as Type exposing (Type(..))
+import Elm.Data.Type.ToString as TypeToString
 
 
 dumpType : Type -> String
 dumpType type_ =
     type_
-        |> Type.toString Type.emptyState
+        |> TypeToString.toString TypeToString.emptyState
         |> Tuple.first
 
 
