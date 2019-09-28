@@ -9,7 +9,6 @@ To get things out of the way: it would be great if the pipeline could be pure:
         |> desugar
         |> inferTypes
         |> optimize
-        |> prepareForBackend
         |> emit
 
 But we have to read files and parse them (to, in turn, find more files to read!),
@@ -41,23 +40,23 @@ about returning those.
 
 -}
 
-import AST.Frontend as Frontend
 import AssocList as Dict exposing (Dict)
 import AssocSet as Set exposing (Set)
-import Data.Declaration as Declaration
-import Data.FileContents exposing (FileContents)
-import Data.FilePath as FilePath exposing (FilePath)
-import Data.Module exposing (Modules)
-import Data.ModuleName as ModuleName exposing (ModuleName)
-import Data.Project exposing (Project)
-import Elm.Project
-import Error
+import Elm.AST.Frontend as Frontend
+import Elm.Compiler.Error as Error
     exposing
         ( Error(..)
         , ErrorCode
         , GeneralError(..)
         , ParseError(..)
         )
+import Elm.Data.Declaration as Declaration
+import Elm.Data.FileContents exposing (FileContents)
+import Elm.Data.FilePath as FilePath exposing (FilePath)
+import Elm.Data.Module exposing (Modules)
+import Elm.Data.ModuleName as ModuleName exposing (ModuleName)
+import Elm.Data.Project exposing (Project)
+import Elm.Project
 import Json.Decode as JD
 import Platform
 import Ports exposing (println, printlnStderr)
@@ -108,7 +107,7 @@ type alias Model_ projectFields =
 
 
 type Msg
-    = ReadFileSuccess FilePath FileContents
+    = ReadFileSuccess { filePath : FilePath, fileContents : FileContents }
     | ReadFileError ErrorCode -- already contains the FilePath
 
 
@@ -140,10 +139,6 @@ We have two tasks here:
 init : Flags -> ( Model Frontend.ProjectFields, Cmd Msg )
 init { mainFilePath, elmJson } =
     let
-        mainFilePath_ : FilePath
-        mainFilePath_ =
-            FilePath.fromString mainFilePath
-
         elmJsonProject : Result Error Elm.Project.Project
         elmJsonProject =
             JD.decodeString (JD.map normalizeDirs Elm.Project.decoder) elmJson
@@ -164,12 +159,12 @@ init { mainFilePath, elmJson } =
                            We'd have to read the module name from the file contents in that case.
                            Check that assumption and do the right thing!
                         -}
-                        ModuleName.expected
-                            { sourceDirectory = FilePath.toString sourceDirectory_
-                            , filePath = FilePath.toString mainFilePath_
+                        ModuleName.expectedModuleName
+                            { sourceDirectory = sourceDirectory_
+                            , filePath = mainFilePath
                             }
                             -- TODO this conversion to Result is duplicated. We should really return the Result Error ... in the Name.expectedModuleName!
-                            |> Result.fromMaybe (GeneralError <| FileNotInSourceDirectories mainFilePath_)
+                            |> Result.fromMaybe (GeneralError <| FileNotInSourceDirectories mainFilePath)
                     )
 
         modelAndCmd : Result Error ( Model Frontend.ProjectFields, Cmd Msg )
@@ -178,15 +173,15 @@ init { mainFilePath, elmJson } =
                 (\mainModuleName_ elmJsonProject_ sourceDirectory_ ->
                     ( Compiling
                         { project =
-                            { mainFilePath = mainFilePath_
+                            { mainFilePath = mainFilePath
                             , mainModuleName = mainModuleName_
                             , elmJson = elmJsonProject_
                             , sourceDirectory = sourceDirectory_
                             , modules = Dict.empty
                             }
-                        , waitingForFiles = Set.singleton mainFilePath_
+                        , waitingForFiles = Set.singleton mainFilePath
                         }
-                    , Ports.readFile mainFilePath_
+                    , Ports.readFile mainFilePath
                     )
                 )
                 mainModuleName
@@ -228,12 +223,11 @@ getSourceDirectory elmProject =
         Elm.Project.Application { dirs } ->
             dirs
                 |> {- TODO allow multiple source directories -} List.head
-                |> Maybe.map FilePath.fromString
                 |> Result.fromMaybe (ParseError EmptySourceDirectories)
 
         Elm.Project.Package _ ->
             -- TODO is it OK that this has the trailing slash?
-            Ok <| FilePath.fromString "src/"
+            Ok "src/"
 
 
 update : Msg -> Model Frontend.ProjectFields -> ( Model Frontend.ProjectFields, Cmd Msg )
@@ -252,18 +246,18 @@ update msg model =
 update_ : Msg -> Model_ Frontend.ProjectFields -> ( Model Frontend.ProjectFields, Cmd Msg )
 update_ msg model =
     case {- log -} msg of
-        ReadFileSuccess filePath fileContents ->
-            handleReadFileSuccess filePath fileContents model
+        ReadFileSuccess file ->
+            handleReadFileSuccess file model
 
         ReadFileError errorCode ->
             handleReadFileError errorCode
 
 
-handleReadFileSuccess : FilePath -> FileContents -> Model_ Frontend.ProjectFields -> ( Model Frontend.ProjectFields, Cmd Msg )
-handleReadFileSuccess filePath fileContents ({ project } as model) =
+handleReadFileSuccess : { filePath : FilePath, fileContents : FileContents } -> Model_ Frontend.ProjectFields -> ( Model Frontend.ProjectFields, Cmd Msg )
+handleReadFileSuccess ({ filePath } as file) ({ project } as model) =
     let
         parseResult =
-            Parse.parse filePath fileContents
+            Parse.parse file
                 |> Result.andThen
                     (Parse.checkModuleNameAndFilePath
                         { sourceDirectory = project.sourceDirectory
@@ -281,7 +275,13 @@ handleReadFileSuccess filePath fileContents ({ project } as model) =
                 filesToBeRead =
                     imports
                         |> Dict.keys
-                        |> List.map (FilePath.expected project.sourceDirectory)
+                        |> List.map
+                            (\moduleName ->
+                                FilePath.expectedFilePath
+                                    { sourceDirectory = project.sourceDirectory
+                                    , moduleName = moduleName
+                                    }
+                            )
                         |> Set.fromList
 
                 newModules : Modules Frontend.LocatedExpr
@@ -397,8 +397,8 @@ log msg =
     let
         string =
             case msg of
-                ReadFileSuccess filePath _ ->
-                    "ReadFileSuccess: " ++ FilePath.toString filePath
+                ReadFileSuccess { filePath } ->
+                    "ReadFileSuccess: " ++ filePath
 
                 ReadFileError error ->
                     "ReadFileError: " ++ Error.toString (GeneralError (IOError error))

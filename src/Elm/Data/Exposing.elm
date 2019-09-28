@@ -1,10 +1,8 @@
-module Data.Exposing exposing
+module Elm.Data.Exposing exposing
     ( ExposedItem(..)
     , Exposing(..)
     , name
     )
-
-import Data.VarName exposing (VarName)
 
 
 type Exposing
@@ -13,12 +11,12 @@ type Exposing
 
 
 type ExposedItem
-    = ExposedValue VarName -- exposing (foo)
-    | ExposedType VarName -- exposing (Foo)
-    | ExposedTypeAndAllConstructors VarName -- exposing (Foo(..))
+    = ExposedValue String -- exposing (foo)
+    | ExposedType String -- exposing (Foo)
+    | ExposedTypeAndAllConstructors String -- exposing (Foo(..))
 
 
-name : ExposedItem -> VarName
+name : ExposedItem -> String
 name item =
     case item of
         ExposedValue name_ ->

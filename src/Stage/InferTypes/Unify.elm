@@ -1,7 +1,7 @@
 module Stage.InferTypes.Unify exposing (unifyAllEquations)
 
-import AST.Common.Type as Type exposing (Type)
-import Error exposing (TypeError(..))
+import Elm.AST.Common.Type as Type exposing (Type)
+import Elm.Compiler.Error exposing (TypeError(..))
 import Stage.InferTypes.SubstitutionMap as SubstitutionMap exposing (SubstitutionMap)
 import Stage.InferTypes.TypeEquation as TypeEquation exposing (TypeEquation)
 

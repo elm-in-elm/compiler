@@ -1,14 +1,12 @@
-module Data.Binding exposing
+module Elm.Data.Binding exposing
     ( Binding
     , combine
     , map
     )
 
-import Data.VarName exposing (VarName)
-
 
 type alias Binding expr =
-    { name : VarName
+    { name : String
     , body : expr
     }
 

@@ -1,4 +1,4 @@
-module Data.Declaration exposing
+module Elm.Data.Declaration exposing
     ( Constructor
     , Declaration
     , DeclarationBody(..)
@@ -8,14 +8,12 @@ module Data.Declaration exposing
     , toString
     )
 
-import AST.Common.Type exposing (Type, TypeArgument)
-import Data.ModuleName as ModuleName exposing (ModuleName)
-import Data.VarName as VarName exposing (VarName)
+import Elm.AST.Common.Type exposing (Type, TypeArgument)
 
 
 type alias Declaration expr =
-    { module_ : ModuleName
-    , name : VarName
+    { module_ : String
+    , name : String
     , body : DeclarationBody expr
     }
 
@@ -39,8 +37,8 @@ type alias Constructor =
 
 
 toString : Declaration a -> String
-toString { name, module_ } =
-    ModuleName.toString module_ ++ "." ++ VarName.toString name
+toString { module_, name } =
+    module_ ++ "." ++ name
 
 
 map : (a -> b) -> Declaration a -> Declaration b

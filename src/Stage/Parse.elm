@@ -3,12 +3,12 @@ module Stage.Parse exposing
     , parse
     )
 
-import AST.Frontend as Frontend
-import Data.FileContents as FileContents exposing (FileContents)
-import Data.FilePath as FilePath exposing (FilePath)
-import Data.Module exposing (Module)
-import Data.ModuleName as ModuleName exposing (ModuleName)
-import Error exposing (Error(..), GeneralError(..), ParseError(..))
+import Elm.AST.Frontend as Frontend
+import Elm.Compiler.Error exposing (Error(..), GeneralError(..), ParseError(..))
+import Elm.Data.FileContents exposing (FileContents)
+import Elm.Data.FilePath exposing (FilePath)
+import Elm.Data.Module exposing (Module)
+import Elm.Data.ModuleName as ModuleName exposing (ModuleName)
 import Parser.Advanced as P
 import Stage.Parse.Parser as Parser
 
@@ -16,11 +16,11 @@ import Stage.Parse.Parser as Parser
 {-| This `parse` function is used only by cli/, not by library/.
 Maybe we should use it in library/ too?
 -}
-parse : FilePath -> FileContents -> Result Error (Module Frontend.LocatedExpr)
-parse filePath fileContents =
+parse : { filePath : FilePath, fileContents : FileContents } -> Result Error (Module Frontend.LocatedExpr)
+parse { filePath, fileContents } =
     P.run
         (Parser.module_ filePath)
-        (FileContents.toString fileContents)
+        fileContents
         |> Result.mapError (ParseError << ParseProblem)
 
 
@@ -31,9 +31,9 @@ checkModuleNameAndFilePath { sourceDirectory, filePath } ({ name } as parsedModu
     let
         expectedName : Result Error ModuleName
         expectedName =
-            ModuleName.expected
-                { sourceDirectory = FilePath.toString sourceDirectory
-                , filePath = FilePath.toString filePath
+            ModuleName.expectedModuleName
+                { sourceDirectory = sourceDirectory
+                , filePath = filePath
                 }
                 |> Result.fromMaybe (GeneralError (FileNotInSourceDirectories filePath))
     in
@@ -41,4 +41,11 @@ checkModuleNameAndFilePath { sourceDirectory, filePath } ({ name } as parsedModu
         Ok parsedModule
 
     else
-        Err (ParseError (ModuleNameDoesntMatchFilePath name filePath))
+        Err
+            (ParseError
+                (ModuleNameDoesntMatchFilePath
+                    { moduleName = name
+                    , filePath = filePath
+                    }
+                )
+            )

@@ -1,13 +1,11 @@
-module Data.ModuleName exposing
+module Elm.Data.ModuleName exposing
     ( ModuleName
-    , expected
-    , fromString
-    , toString
+    , expectedModuleName
     )
 
 
-type ModuleName
-    = ModuleName String
+type alias ModuleName =
+    String
 
 
 {-| Nothing if the source directory doesn't agree with the file path.
@@ -23,8 +21,8 @@ Doesn't use the FilePath type to avoid cycles. TODO maybe we can prevent it with
 TODO doesn't work with multiple source directories!
 
 -}
-expected : { sourceDirectory : String, filePath : String } -> Maybe ModuleName
-expected { sourceDirectory, filePath } =
+expectedModuleName : { sourceDirectory : String, filePath : String } -> Maybe ModuleName
+expectedModuleName { sourceDirectory, filePath } =
     if String.startsWith sourceDirectory filePath then
         let
             lengthToDrop : Int
@@ -36,18 +34,7 @@ expected { sourceDirectory, filePath } =
             |> String.dropLeft lengthToDrop
             |> String.replace "/" "."
             |> String.dropRight {- .elm -} 4
-            |> ModuleName
             |> Just
 
     else
         Nothing
-
-
-toString : ModuleName -> String
-toString (ModuleName moduleName) =
-    moduleName
-
-
-fromString : String -> ModuleName
-fromString string =
-    ModuleName string

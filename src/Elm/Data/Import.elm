@@ -1,7 +1,6 @@
-module Data.Import exposing (Import)
+module Elm.Data.Import exposing (Import)
 
-import Data.Exposing exposing (Exposing)
-import Data.ModuleName exposing (ModuleName)
+import Elm.Data.Exposing exposing (Exposing)
 
 
 {-| All four possibilities of the Maybes make sense:
@@ -13,7 +12,7 @@ import Data.ModuleName exposing (ModuleName)
 
 -}
 type alias Import =
-    { moduleName : ModuleName
-    , as_ : Maybe ModuleName
+    { moduleName : String
+    , as_ : Maybe String
     , exposing_ : Maybe Exposing
     }

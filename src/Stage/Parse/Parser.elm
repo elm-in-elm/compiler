@@ -9,25 +9,25 @@ module Stage.Parse.Parser exposing
     , module_
     )
 
-import AST.Common.Literal exposing (Literal(..))
-import AST.Common.Located as Located exposing (Located)
-import AST.Frontend as Frontend exposing (Expr(..), LocatedExpr)
 import AssocList as Dict exposing (Dict)
-import Data.Binding exposing (Binding)
-import Data.Declaration as Declaration exposing (Declaration)
-import Data.Exposing exposing (ExposedItem(..), Exposing(..))
-import Data.FilePath exposing (FilePath)
-import Data.Import exposing (Import)
-import Data.Module exposing (Module, ModuleType(..))
-import Data.ModuleName as ModuleName exposing (ModuleName)
-import Data.VarName as VarName exposing (VarName)
-import Error
+import Elm.AST.Common.Literal exposing (Literal(..))
+import Elm.AST.Common.Located as Located exposing (Located)
+import Elm.AST.Frontend as Frontend exposing (Expr(..), LocatedExpr)
+import Elm.Compiler.Error
     exposing
         ( Error(..)
         , ParseContext(..)
         , ParseError(..)
         , ParseProblem(..)
         )
+import Elm.Data.Binding exposing (Binding)
+import Elm.Data.Declaration as Declaration exposing (Declaration)
+import Elm.Data.Exposing exposing (ExposedItem(..), Exposing(..))
+import Elm.Data.FilePath exposing (FilePath)
+import Elm.Data.Import exposing (Import)
+import Elm.Data.Module exposing (Module, ModuleType(..))
+import Elm.Data.ModuleName exposing (ModuleName)
+import Elm.Data.VarName exposing (VarName)
 import Hex
 import Parser.Advanced as P exposing ((|.), (|=), Parser)
 import Pratt.Advanced as PP
@@ -83,7 +83,7 @@ moduleDeclaration =
     P.succeed
         (\moduleType_ moduleName_ exposing_ ->
             ( moduleType_
-            , ModuleName.fromString moduleName_
+            , moduleName_
             , exposing_
             )
         )
@@ -111,7 +111,7 @@ import_ : Parser_ Import
 import_ =
     P.succeed
         (\moduleName_ as_ exposing_ ->
-            { moduleName = ModuleName.fromString moduleName_
+            { moduleName = moduleName_
             , as_ = as_
             , exposing_ = exposing_
             }
@@ -122,7 +122,7 @@ import_ =
         |= moduleName
         |. P.spaces
         |= P.oneOf
-            [ P.succeed (ModuleName.fromString >> Just)
+            [ P.succeed Just
                 |. P.keyword (P.Token "as" ExpectingAsKeyword)
                 |. P.spaces
                 |= moduleNameWithoutDots
@@ -169,8 +169,8 @@ portModuleType =
 
 effectModuleType : Parser_ ModuleType
 effectModuleType =
-    -- TODO more metadata?
-    P.succeed (EffectModule {})
+    -- TODO some metadata?
+    P.succeed EffectModule
         |. P.keyword (P.Token "effect" ExpectingEffectKeyword)
         |. spacesOnly
         |. P.keyword (P.Token "module" ExpectingModuleKeyword)
@@ -250,7 +250,7 @@ exposedItem =
 
 exposedValue : Parser_ ExposedItem
 exposedValue =
-    P.map (ExposedValue << VarName.fromString) varName
+    P.map ExposedValue varName
 
 
 exposedTypeAndOptionallyAllConstructors : Parser_ ExposedItem
@@ -263,7 +263,7 @@ exposedTypeAndOptionallyAllConstructors =
             else
                 ExposedType name
         )
-        |= P.map VarName.fromString typeOrConstructorName
+        |= typeOrConstructorName
         |= P.oneOf
             [ P.succeed True
                 |. P.symbol (P.Token "(..)" ExpectingExposedTypeDoublePeriod)
@@ -321,7 +321,7 @@ declaration =
             , body = body
             }
         )
-        |= P.map VarName.fromString varName
+        |= varName
         |. P.spaces
         |. P.symbol (P.Token "=" ExpectingEqualsSign)
         |. P.spaces
@@ -588,7 +588,7 @@ var : Parser_ LocatedExpr
 var =
     P.oneOf
         [ P.map
-            (\varName_ -> Frontend.var Nothing (VarName.fromString varName_))
+            (\varName_ -> Frontend.Var { module_ = Nothing, name = varName_ })
             varName
         , qualifiedVar
         ]
@@ -623,10 +623,10 @@ qualifiedVar =
                             Nothing
 
                         else
-                            Just <| ModuleName.fromString <| String.join "." list_
+                            Just <| String.join "." list_
                 in
                 P.map
-                    (\varName_ -> Frontend.var maybeModuleName <| VarName.fromString varName_)
+                    (\varName_ -> Frontend.Var { module_ = maybeModuleName, name = varName_ })
                     varName
             )
 
@@ -656,7 +656,7 @@ lambda config =
                 (Located.map (Frontend.transform (promoteArguments arguments)) body)
         )
         |. P.symbol (P.Token "\\" ExpectingBackslash)
-        |= oneOrMoreWith spacesOnly (P.map VarName.fromString varName)
+        |= oneOrMoreWith spacesOnly varName
         |. spacesOnly
         |. P.symbol (P.Token "->" ExpectingRightArrow)
         |. P.spaces
@@ -709,7 +709,7 @@ let_ config =
 binding : ExprConfig -> Parser_ (Binding LocatedExpr)
 binding config =
     P.succeed Binding
-        |= P.map VarName.fromString varName
+        |= varName
         |. P.spaces
         |. P.symbol (P.Token "=" ExpectingEqualsSign)
         |. P.spaces
@@ -721,9 +721,9 @@ promoteArguments : List VarName -> Expr -> Expr
 promoteArguments arguments expr_ =
     -- TODO set of arguments instead of list?
     case expr_ of
-        Var { qualifier, name } ->
-            if qualifier == Nothing && List.member name arguments then
-                Argument name
+        Var var_ ->
+            if var_.module_ == Nothing && List.member var_.name arguments then
+                Argument var_.name
 
             else
                 expr_

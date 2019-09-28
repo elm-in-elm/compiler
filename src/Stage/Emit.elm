@@ -28,18 +28,18 @@ TODO we'll probably have to detect cycles and do something like IIFE
 
 -}
 
-import AST.Common.Type as Type exposing (Type, TypeArgument(..))
-import AST.Typed as Typed exposing (Expr_(..))
 import AssocList as Dict exposing (Dict)
 import AssocList.Extra as Dict
 import AssocSet as Set exposing (Set)
-import Data.Declaration exposing (Declaration, DeclarationBody(..))
-import Data.Exposing as Exposing exposing (ExposedItem(..), Exposing(..))
-import Data.Module exposing (Module, Modules)
-import Data.ModuleName exposing (ModuleName)
-import Data.Project exposing (Project)
-import Data.VarName as VarName exposing (VarName)
-import Error exposing (EmitError(..))
+import Elm.AST.Common.Type as Type exposing (Type, TypeArgument(..))
+import Elm.AST.Typed as Typed exposing (Expr_(..))
+import Elm.Compiler.Error exposing (EmitError(..))
+import Elm.Data.Declaration exposing (Declaration, DeclarationBody(..))
+import Elm.Data.Exposing as Exposing exposing (ExposedItem(..), Exposing(..))
+import Elm.Data.Module exposing (Module, Modules)
+import Elm.Data.ModuleName exposing (ModuleName)
+import Elm.Data.Project exposing (Project)
+import Elm.Data.VarName exposing (VarName)
 import Graph
 import Result.Extra as Result
 
@@ -67,7 +67,7 @@ findPathToMain : ModuleName -> Graph -> List (Declaration Typed.LocatedExpr)
 findPathToMain mainModuleName programGraph =
     findPath
         programGraph
-        (Set.singleton ( mainModuleName, VarName.fromString "main" ))
+        (Set.singleton ( mainModuleName, "main" ))
 
 
 {-| In this case we don't have `main`s but
@@ -171,7 +171,7 @@ modulesToGraph mainModuleName modules =
         maybeMainDeclaration : Maybe (Declaration Typed.LocatedExpr)
         maybeMainDeclaration =
             Dict.get mainModuleName modules
-                |> Maybe.andThen (.declarations >> Dict.get (VarName.fromString "main"))
+                |> Maybe.andThen (.declarations >> Dict.get "main")
     in
     maybeMainDeclaration
         |> Result.fromMaybe MainDeclarationNotFound
@@ -335,16 +335,16 @@ findDependenciesOfType modules type_ =
                 (findDependencies_ t2)
                 (findDependencies_ t3)
 
-        Type.UserDefinedType ( moduleName, varName ) paramTypes ->
+        Type.UserDefinedType { module_, name } paramTypes ->
             let
                 typeDependencies =
                     modules
-                        |> Dict.get moduleName
-                        |> Result.fromMaybe (ModuleNotFound moduleName varName)
+                        |> Dict.get module_
+                        |> Result.fromMaybe (ModuleNotFoundForType { module_ = module_, type_ = name })
                         |> Result.andThen
                             (.declarations
-                                >> Dict.get varName
-                                >> Result.fromMaybe (DeclarationNotFound moduleName varName)
+                                >> Dict.get name
+                                >> Result.fromMaybe (DeclarationNotFound { module_ = module_, name = name })
                             )
                         |> Result.andThen (.body >> findDependencies modules)
 
@@ -369,11 +369,15 @@ findDependenciesOfExpr modules locatedExpr =
         Literal _ ->
             Ok []
 
-        Var { qualifier, name } ->
+        Var { module_, name } ->
             modules
-                |> Dict.get qualifier
-                |> Result.fromMaybe (ModuleNotFound qualifier name)
-                |> Result.andThen (.declarations >> Dict.get name >> Result.fromMaybe (DeclarationNotFound qualifier name))
+                |> Dict.get module_
+                |> Result.fromMaybe (ModuleNotFoundForVar { module_ = module_, var = name })
+                |> Result.andThen
+                    (.declarations
+                        >> Dict.get name
+                        >> Result.fromMaybe (DeclarationNotFound { module_ = module_, name = name })
+                    )
                 |> Result.map List.singleton
 
         Argument _ ->

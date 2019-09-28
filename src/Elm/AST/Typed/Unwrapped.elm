@@ -1,11 +1,9 @@
-module AST.Typed.Unwrapped exposing (Expr, Expr_(..))
+module Elm.AST.Typed.Unwrapped exposing (Expr, Expr_(..))
 
-import AST.Common.Literal exposing (Literal)
-import AST.Common.Type exposing (Type)
 import AssocList exposing (Dict)
-import Data.Binding exposing (Binding)
-import Data.ModuleName exposing (ModuleName)
-import Data.VarName exposing (VarName)
+import Elm.AST.Common.Literal exposing (Literal)
+import Elm.AST.Common.Type exposing (Type)
+import Elm.Data.Binding exposing (Binding)
 
 
 {-| This only differs from AST.Typed.Expr by recursing on itself instead of
@@ -17,14 +15,14 @@ type alias Expr =
 
 type Expr_
     = Literal Literal
-    | Var { qualifier : ModuleName, name : VarName }
-    | Argument VarName
+    | Var { module_ : String, name : String }
+    | Argument String
     | Plus Expr Expr
     | Cons Expr Expr
-    | Lambda { argument : VarName, body : Expr }
+    | Lambda { argument : String, body : Expr }
     | Call { fn : Expr, argument : Expr }
     | If { test : Expr, then_ : Expr, else_ : Expr }
-    | Let { bindings : Dict VarName (Binding Expr), body : Expr }
+    | Let { bindings : Dict String (Binding Expr), body : Expr }
     | List (List Expr)
     | Unit
     | Tuple Expr Expr

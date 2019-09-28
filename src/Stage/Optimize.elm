@@ -5,9 +5,9 @@ module Stage.Optimize exposing
     , optimizeExprWith
     )
 
-import AST.Common.Literal as Literal
-import AST.Typed as Typed
-import Data.Project exposing (Project)
+import Elm.AST.Common.Literal as Literal
+import Elm.AST.Typed as Typed
+import Elm.Data.Project exposing (Project)
 import Stage.Optimize.Boilerplate as Boilerplate
 
 

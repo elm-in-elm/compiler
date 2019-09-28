@@ -29,12 +29,11 @@ subexpression.
 
 -}
 
-import AST.Common.Literal as Literal
-import AST.Common.Located as Located
-import AST.Common.Type as Type
-import AST.Typed as Typed
 import AssocList as Dict
-import Data.VarName exposing (VarName)
+import Elm.AST.Common.Literal as Literal
+import Elm.AST.Common.Located as Located
+import Elm.AST.Common.Type as Type
+import Elm.AST.Typed as Typed
 import Stage.InferTypes.IdSource as IdSource exposing (IdSource)
 import Stage.InferTypes.TypeEquation exposing (TypeEquation, equals)
 import Transform
@@ -328,7 +327,7 @@ generateEquations idSource located =
             )
 
 
-findArgumentUsages : VarName -> Typed.LocatedExpr -> List Typed.LocatedExpr
+findArgumentUsages : String -> Typed.LocatedExpr -> List Typed.LocatedExpr
 findArgumentUsages argument bodyExpr =
     bodyExpr
         |> Transform.children Typed.recursiveChildren

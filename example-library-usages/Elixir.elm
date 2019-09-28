@@ -1,4 +1,4 @@
-module Elixir exposing (main)
+module Elixir exposing (main_)
 
 {-| Usecase: Elixir
 
@@ -9,18 +9,27 @@ type inference, optimizing) and then to its own emit function.
 
 -}
 
+import Elm.AST.Typed as Typed
+import Elm.AST.Typed.Unwrapped as TypedU
+import Elm.Compiler
+import Elm.Compiler.Error exposing (Error)
+import Elm.Data.Module as Module exposing (Module)
 
-main : String -> Result Error String
-main moduleSourceCode =
-    moduleSourceCode
+
+main_ : String -> Result Error String
+main_ moduleSourceCode =
+    { filePath = "src/Foo.elm"
+    , sourceCode = moduleSourceCode
+    }
         |> Elm.Compiler.parseModule
-        |> Result.andThen Elm.Compiler.desugarModule
+        |> Result.andThen Elm.Compiler.desugarOnlyModule
         |> Result.andThen Elm.Compiler.inferModule
         |> Result.map Elm.Compiler.optimizeModule
+        |> Result.map (Module.map Typed.unwrap)
         |> Result.map emitElixirModule
 
 
-emitElixirModule : Module Typed.LocatedExpr -> String
+emitElixirModule : Module TypedU.Expr -> String
 emitElixirModule =
-    -- TODO maybe flesh this example out a bit to be sure this is feasible?
+    -- TODO flesh out this example
     Debug.todo "whatever"

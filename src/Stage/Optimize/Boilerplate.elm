@@ -3,12 +3,12 @@ module Stage.Optimize.Boilerplate exposing
     , optimizeProject
     )
 
-import AST.Typed as Typed
 import AssocList as Dict exposing (Dict)
-import Data.Declaration as Declaration exposing (Declaration, DeclarationBody(..))
-import Data.Module exposing (Module, Modules)
-import Data.Project exposing (Project)
-import Data.VarName exposing (VarName)
+import Elm.AST.Typed as Typed
+import Elm.Data.Declaration as Declaration exposing (Declaration, DeclarationBody(..))
+import Elm.Data.Module exposing (Module, Modules)
+import Elm.Data.Project exposing (Project)
+import Elm.Data.VarName exposing (VarName)
 
 
 optimizeProject : (Typed.LocatedExpr -> Typed.LocatedExpr) -> Project Typed.ProjectFields -> Project Typed.ProjectFields

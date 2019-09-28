@@ -1,4 +1,4 @@
-module AST.Common.Located exposing
+module Elm.AST.Common.Located exposing
     ( Located
     , Region
     , dummyRegion

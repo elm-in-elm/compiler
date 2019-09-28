@@ -1,4 +1,4 @@
-module AST.Common.Type exposing
+module Elm.AST.Common.Type exposing
     ( State
     , Type(..)
     , TypeArgument(..)
@@ -12,9 +12,8 @@ module AST.Common.Type exposing
 {-| In its own module because both Error.TypeError and AST.Typed need to see it
 -}
 
-import Data.ModuleName as ModuleName exposing (ModuleName)
-import Data.VarName as VarName exposing (VarName)
 import Dict exposing (Dict)
+import Elm.Data.ModuleName
 
 
 {-| READ THIS!
@@ -49,7 +48,7 @@ type Type
 
          This constructor encompasses both type aliases and custom types:
       -}
-      UserDefinedType ( ModuleName, VarName ) (List Type)
+      UserDefinedType { module_ : String, name : String } (List Type)
 
 
 type TypeArgument
@@ -183,7 +182,7 @@ toString state type_ =
             in
             ( "( " ++ t1String ++ ", " ++ t2String ++ ", " ++ t3String ++ " )", state3 )
 
-        UserDefinedType ( moduleName, varName ) typeParameters ->
+        UserDefinedType { module_, name } typeParameters ->
             let
                 ( paramsString, state1 ) =
                     if List.isEmpty typeParameters then
@@ -202,10 +201,7 @@ toString state type_ =
                             typeParameters
                             |> Tuple.mapFirst (\paramStrings -> " " ++ String.join " " paramStrings)
             in
-            ( ModuleName.toString moduleName
-                ++ "."
-                ++ VarName.toString varName
-                ++ paramsString
+            ( module_ ++ "." ++ name ++ paramsString
             , state1
             )
 

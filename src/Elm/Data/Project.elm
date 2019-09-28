@@ -1,7 +1,7 @@
-module Data.Project exposing (Project)
+module Elm.Data.Project exposing (Project)
 
-import Data.FilePath exposing (FilePath)
-import Data.ModuleName exposing (ModuleName)
+import Elm.Data.FilePath exposing (FilePath)
+import Elm.Data.ModuleName exposing (ModuleName)
 import {- elm/project-metadata-utils -} Elm.Project
 
 

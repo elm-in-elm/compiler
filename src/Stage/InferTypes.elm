@@ -1,11 +1,11 @@
 module Stage.InferTypes exposing (inferExpr, inferTypes)
 
-import AST.Canonical as Canonical
-import AST.Common.Located as Located
-import AST.Common.Type exposing (Type(..))
-import AST.Typed as Typed
-import Data.Project exposing (Project)
-import Error exposing (Error(..), TypeError(..))
+import Elm.AST.Canonical as Canonical
+import Elm.AST.Common.Located as Located
+import Elm.AST.Common.Type exposing (Type(..))
+import Elm.AST.Typed as Typed
+import Elm.Compiler.Error exposing (Error(..), TypeError(..))
+import Elm.Data.Project exposing (Project)
 import Stage.InferTypes.AssignIds as AssignIds
 import Stage.InferTypes.Boilerplate as Boilerplate
 import Stage.InferTypes.GenerateEquations as GenerateEquations

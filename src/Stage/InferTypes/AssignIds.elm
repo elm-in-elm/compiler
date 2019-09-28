@@ -39,11 +39,11 @@ Output:
 
 -}
 
-import AST.Canonical as Canonical
-import AST.Common.Located as Located
-import AST.Common.Type as Type
-import AST.Typed as Typed
 import AssocList as Dict
+import Elm.AST.Canonical as Canonical
+import Elm.AST.Common.Located as Located
+import Elm.AST.Common.Type as Type
+import Elm.AST.Typed as Typed
 import Stage.InferTypes.IdSource as IdSource exposing (IdSource)
 
 

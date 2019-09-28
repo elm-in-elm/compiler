@@ -1,4 +1,4 @@
-module Error exposing
+module Elm.Compiler.Error exposing
     ( DesugarError(..)
     , EmitError(..)
     , Error(..)
@@ -12,10 +12,10 @@ module Error exposing
     , toString
     )
 
-import AST.Common.Type as Type exposing (Type)
-import Data.FilePath as FilePath exposing (FilePath)
-import Data.ModuleName as ModuleName exposing (ModuleName)
-import Data.VarName as VarName exposing (VarName)
+import Elm.AST.Common.Type as Type exposing (Type)
+import Elm.Data.FilePath exposing (FilePath)
+import Elm.Data.ModuleName exposing (ModuleName)
+import Elm.Data.VarName exposing (VarName)
 import Json.Decode as JD
 import Parser.Advanced as P
 
@@ -34,7 +34,10 @@ type GeneralError
 
 
 type ParseError
-    = ModuleNameDoesntMatchFilePath ModuleName FilePath
+    = ModuleNameDoesntMatchFilePath
+        { moduleName : ModuleName
+        , filePath : FilePath
+        }
     | EmptySourceDirectories
     | InvalidElmJson JD.Error
     | ParseProblem (List (P.DeadEnd ParseContext ParseProblem))
@@ -119,7 +122,7 @@ type ParseProblem
 
 type DesugarError
     = VarNotInEnvOfModule
-        { var : ( Maybe ModuleName, VarName )
+        { var : { module_ : Maybe ModuleName, name : VarName }
         , module_ : ModuleName
         }
 
@@ -131,8 +134,9 @@ type TypeError
 
 type EmitError
     = MainDeclarationNotFound
-    | ModuleNotFound ModuleName VarName
-    | DeclarationNotFound ModuleName VarName
+    | ModuleNotFoundForVar { module_ : ModuleName, var : VarName }
+    | ModuleNotFoundForType { module_ : ModuleName, type_ : VarName }
+    | DeclarationNotFound { module_ : ModuleName, name : VarName }
 
 
 toString : Error -> String
@@ -142,24 +146,24 @@ toString error =
             case generalError of
                 FileNotInSourceDirectories filePath ->
                     "File `"
-                        ++ FilePath.toString filePath
+                        ++ filePath
                         ++ "` is not a part of the `sourceDirectories` in elm.json."
 
                 IOError errorCode ->
                     case errorCode of
                         FileOrDirectoryNotFound filePath ->
-                            "File or directory `" ++ FilePath.toString filePath ++ "` not found."
+                            "File or directory `" ++ filePath ++ "` not found."
 
                         OtherErrorCode other ->
                             "Encountered error `" ++ other ++ "`."
 
         ParseError parseError ->
             case parseError of
-                ModuleNameDoesntMatchFilePath moduleName filePath ->
+                ModuleNameDoesntMatchFilePath { moduleName, filePath } ->
                     "Module name `"
-                        ++ ModuleName.toString moduleName
+                        ++ moduleName
                         ++ "` doesn't match the file path `"
-                        ++ FilePath.toString filePath
+                        ++ filePath
                         ++ "`."
 
                 EmptySourceDirectories ->
@@ -178,18 +182,11 @@ toString error =
         DesugarError desugarError ->
             case desugarError of
                 VarNotInEnvOfModule { var, module_ } ->
-                    let
-                        ( maybeModuleName, varName ) =
-                            var
-
-                        moduleName =
-                            ModuleName.toString module_
-                    in
-                    "Can't find the variable `"
-                        ++ fullVarName maybeModuleName varName
-                        ++ "` in the module `"
-                        ++ moduleName
-                        ++ "`. Have you imported it?"
+                    "The variable `"
+                        ++ fullVarName var
+                        ++ "` is not visible from the module `"
+                        ++ module_
+                        ++ "`. Have you imported it? Does it exist?"
 
         TypeError typeError ->
             case typeError of
@@ -226,40 +223,43 @@ toString error =
                 MainDeclarationNotFound ->
                     "Couldn't find the value `main` in the main module given to the compiler!"
 
-                ModuleNotFound moduleName typeName ->
+                ModuleNotFoundForVar { module_, var } ->
                     "Couldn't find the module `"
-                        ++ ModuleName.toString moduleName
+                        ++ module_
+                        ++ "` when looking at the usage of variable `"
+                        ++ var
+                        ++ "`."
+
+                ModuleNotFoundForType { module_, type_ } ->
+                    "Couldn't find the module `"
+                        ++ module_
                         ++ "` when looking at the usage of type `"
-                        ++ VarName.toString typeName
+                        ++ type_
                         ++ "`."
 
-                DeclarationNotFound moduleName typeName ->
+                DeclarationNotFound { module_, name } ->
                     "Couldn't find the declaration `"
-                        ++ VarName.toString typeName
+                        ++ name
                         ++ "` in the module `"
-                        ++ ModuleName.toString moduleName
+                        ++ module_
                         ++ "`."
 
 
-fullVarName : Maybe ModuleName -> VarName -> String
-fullVarName maybeModuleAlias varName =
-    let
-        varName_ =
-            VarName.toString varName
-    in
-    maybeModuleAlias
-        |> Maybe.map (\moduleAlias -> ModuleName.toString moduleAlias ++ "." ++ varName_)
-        |> Maybe.withDefault varName_
+fullVarName : { module_ : Maybe ModuleName, name : VarName } -> String
+fullVarName { module_, name } =
+    module_
+        |> Maybe.map (\moduleAlias -> moduleAlias ++ "." ++ name)
+        |> Maybe.withDefault name
 
 
-parseErrorCode : String -> FilePath -> ErrorCode
-parseErrorCode code filePath =
-    case code of
+parseErrorCode : { errorCode : String, filePath : FilePath } -> ErrorCode
+parseErrorCode { errorCode, filePath } =
+    case errorCode of
         "ENOENT" ->
             FileOrDirectoryNotFound filePath
 
         _ ->
-            OtherErrorCode code
+            OtherErrorCode errorCode
 
 
 type ErrorCode

@@ -1,20 +1,19 @@
-module AST.Frontend exposing
+module Elm.AST.Frontend exposing
     ( Expr(..)
     , LocatedExpr
     , ProjectFields
     , lambda
     , transform
     , unwrap
-    , var
     )
 
-import AST.Common.Literal exposing (Literal)
-import AST.Common.Located as Located exposing (Located)
-import AST.Frontend.Unwrapped as Unwrapped
-import Data.Binding as Binding exposing (Binding)
-import Data.Module exposing (Modules)
-import Data.ModuleName exposing (ModuleName)
-import Data.VarName exposing (VarName)
+import Elm.AST.Common.Literal exposing (Literal)
+import Elm.AST.Common.Located as Located exposing (Located)
+import Elm.AST.Frontend.Unwrapped as Unwrapped
+import Elm.Data.Binding as Binding exposing (Binding)
+import Elm.Data.Module exposing (Modules)
+import Elm.Data.ModuleName exposing (ModuleName)
+import Elm.Data.VarName exposing (VarName)
 import Transform
 
 
@@ -28,7 +27,7 @@ type alias LocatedExpr =
 
 type Expr
     = Literal Literal
-    | Var { qualifier : Maybe ModuleName, name : VarName }
+    | Var { module_ : Maybe ModuleName, name : VarName }
     | Argument VarName
     | Plus LocatedExpr LocatedExpr
     | Cons LocatedExpr LocatedExpr
@@ -41,14 +40,6 @@ type Expr
     | Unit
     | Tuple LocatedExpr LocatedExpr
     | Tuple3 LocatedExpr LocatedExpr LocatedExpr
-
-
-var : Maybe ModuleName -> VarName -> Expr
-var qualifier name =
-    Var
-        { qualifier = qualifier
-        , name = name
-        }
 
 
 lambda : List VarName -> LocatedExpr -> Expr

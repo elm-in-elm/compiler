@@ -1,4 +1,4 @@
-module AST.Typed exposing
+module Elm.AST.Typed exposing
     ( Expr
     , Expr_(..)
     , LocatedExpr
@@ -16,16 +16,14 @@ module AST.Typed exposing
     , unwrap
     )
 
-import AST.Canonical as Canonical
-import AST.Common.Literal exposing (Literal)
-import AST.Common.Located as Located exposing (Located)
-import AST.Common.Type exposing (Type)
-import AST.Typed.Unwrapped as Unwrapped
 import AssocList as Dict exposing (Dict)
-import Data.Binding as Binding exposing (Binding)
-import Data.Module exposing (Modules)
-import Data.ModuleName exposing (ModuleName)
-import Data.VarName exposing (VarName)
+import Elm.AST.Canonical as Canonical
+import Elm.AST.Common.Literal exposing (Literal)
+import Elm.AST.Common.Located as Located exposing (Located)
+import Elm.AST.Common.Type exposing (Type)
+import Elm.AST.Typed.Unwrapped as Unwrapped
+import Elm.Data.Binding as Binding exposing (Binding)
+import Elm.Data.Module exposing (Modules)
 import Transform
 
 
@@ -50,21 +48,21 @@ type alias Expr =
 
 type Expr_
     = Literal Literal
-    | Var { qualifier : ModuleName, name : VarName }
-    | Argument VarName
+    | Var { module_ : String, name : String }
+    | Argument String
     | Plus LocatedExpr LocatedExpr
     | Cons LocatedExpr LocatedExpr
-    | Lambda { argument : VarName, body : LocatedExpr }
+    | Lambda { argument : String, body : LocatedExpr }
     | Call { fn : LocatedExpr, argument : LocatedExpr }
     | If { test : LocatedExpr, then_ : LocatedExpr, else_ : LocatedExpr }
-    | Let { bindings : Dict VarName (Binding LocatedExpr), body : LocatedExpr }
+    | Let { bindings : Dict String (Binding LocatedExpr), body : LocatedExpr }
     | List (List LocatedExpr)
     | Unit
     | Tuple LocatedExpr LocatedExpr
     | Tuple3 LocatedExpr LocatedExpr LocatedExpr
 
 
-lambda : VarName -> LocatedExpr -> Expr_
+lambda : String -> LocatedExpr -> Expr_
 lambda argument body =
     Lambda
         { argument = argument
@@ -72,7 +70,7 @@ lambda argument body =
         }
 
 
-let_ : Dict VarName (Binding LocatedExpr) -> LocatedExpr -> Expr_
+let_ : Dict String (Binding LocatedExpr) -> LocatedExpr -> Expr_
 let_ bindings body =
     Let
         { bindings = bindings
@@ -167,7 +165,7 @@ transformAll passes locatedExpr =
         locatedExpr
 
 
-isArgument : VarName -> LocatedExpr -> Bool
+isArgument : String -> LocatedExpr -> Bool
 isArgument name locatedExpr =
     case getExpr locatedExpr of
         Argument argName ->

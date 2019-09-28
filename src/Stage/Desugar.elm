@@ -1,18 +1,18 @@
 module Stage.Desugar exposing (desugar, desugarExpr)
 
-import AST.Canonical as Canonical
-import AST.Common.Literal exposing (Literal)
-import AST.Common.Located as Located
-import AST.Frontend as Frontend
 import AssocList as Dict
 import AssocList.Extra as Dict
 import Basics.Extra exposing (flip)
-import Data.Binding as Binding
-import Data.Module as Module exposing (Module, Modules)
-import Data.ModuleName as ModuleName exposing (ModuleName)
-import Data.Project exposing (Project)
-import Data.VarName as VarName exposing (VarName)
-import Error exposing (DesugarError(..), Error(..))
+import Elm.AST.Canonical as Canonical
+import Elm.AST.Common.Literal exposing (Literal)
+import Elm.AST.Common.Located as Located
+import Elm.AST.Frontend as Frontend
+import Elm.Compiler.Error exposing (DesugarError(..), Error(..))
+import Elm.Data.Binding as Binding
+import Elm.Data.Module as Module exposing (Module, Modules)
+import Elm.Data.ModuleName exposing (ModuleName)
+import Elm.Data.Project exposing (Project)
+import Elm.Data.VarName exposing (VarName)
 import Maybe.Extra
 import Result.Extra as Result
 import Stage.Desugar.Boilerplate as Boilerplate
@@ -69,15 +69,15 @@ desugarExpr modules thisModule located =
         Frontend.Literal literal ->
             return <| Canonical.Literal literal
 
-        Frontend.Var { qualifier, name } ->
-            findModuleOfVar modules thisModule qualifier name
+        Frontend.Var var ->
+            findModuleOfVar modules thisModule var
                 |> Result.fromMaybe
                     (VarNotInEnvOfModule
-                        { var = ( qualifier, name )
+                        { var = var
                         , module_ = thisModule.name
                         }
                     )
-                |> map (\moduleName -> Canonical.var moduleName name)
+                |> map (\moduleName -> Canonical.Var { module_ = moduleName, name = var.name })
 
         Frontend.Argument varName ->
             return <| Canonical.Argument varName
@@ -99,8 +99,8 @@ desugarExpr modules thisModule located =
 
                 listConcatVar =
                     Frontend.Var
-                        { qualifier = Just <| ModuleName.fromString "List"
-                        , name = VarName.fromString "append"
+                        { module_ = Just "List"
+                        , name = "append"
                         }
                         |> Located.located region
 
@@ -188,7 +188,11 @@ desugarExpr modules thisModule located =
     Canonical.Lambda arg1 (Canonical.Lambda arg2 body)
 
 -}
-curryLambda : Frontend.LocatedExpr -> List VarName -> Canonical.LocatedExpr -> Canonical.LocatedExpr
+curryLambda :
+    Frontend.LocatedExpr
+    -> List VarName
+    -> Canonical.LocatedExpr
+    -> Canonical.LocatedExpr
 curryLambda located arguments body =
     List.foldr
         (\argument body_ ->
@@ -210,35 +214,46 @@ curryLambda located arguments body =
 In all these cases we need to find the full unaliased module name of the var.
 
 -}
-findModuleOfVar : Modules Frontend.LocatedExpr -> Module Frontend.LocatedExpr -> Maybe ModuleName -> VarName -> Maybe ModuleName
-findModuleOfVar modules thisModule maybeModuleName varName =
+findModuleOfVar :
+    Modules Frontend.LocatedExpr
+    -> Module Frontend.LocatedExpr
+    -> { module_ : Maybe ModuleName, name : VarName }
+    -> Maybe ModuleName
+findModuleOfVar modules thisModule var =
     {- TODO does this allow for some collisions by "returning early"?
        Should we check that exactly one is Just and the others are Nothing?
     -}
-    unqualifiedVarInThisModule thisModule maybeModuleName varName
-        |> Maybe.Extra.orElseLazy (\() -> unqualifiedVarInImportedModule modules thisModule maybeModuleName varName)
-        |> Maybe.Extra.orElseLazy (\() -> qualifiedVarInImportedModule modules maybeModuleName varName)
-        |> Maybe.Extra.orElseLazy (\() -> qualifiedVarInAliasedModule modules thisModule maybeModuleName varName)
+    unqualifiedVarInThisModule thisModule var
+        |> Maybe.Extra.orElseLazy (\() -> unqualifiedVarInImportedModule modules thisModule var)
+        |> Maybe.Extra.orElseLazy (\() -> qualifiedVarInImportedModule modules var)
+        |> Maybe.Extra.orElseLazy (\() -> qualifiedVarInAliasedModule modules thisModule var)
 
 
-unqualifiedVarInThisModule : Module Frontend.LocatedExpr -> Maybe ModuleName -> VarName -> Maybe ModuleName
-unqualifiedVarInThisModule thisModule maybeModuleName varName =
-    if maybeModuleName == Nothing && Dict.member varName thisModule.declarations then
+unqualifiedVarInThisModule :
+    Module Frontend.LocatedExpr
+    -> { module_ : Maybe ModuleName, name : VarName }
+    -> Maybe ModuleName
+unqualifiedVarInThisModule thisModule { module_, name } =
+    if module_ == Nothing && Dict.member name thisModule.declarations then
         Just thisModule.name
 
     else
         Nothing
 
 
-unqualifiedVarInImportedModule : Modules Frontend.LocatedExpr -> Module Frontend.LocatedExpr -> Maybe ModuleName -> VarName -> Maybe ModuleName
-unqualifiedVarInImportedModule modules thisModule maybeModuleName varName =
-    if maybeModuleName == Nothing then
+unqualifiedVarInImportedModule :
+    Modules Frontend.LocatedExpr
+    -> Module Frontend.LocatedExpr
+    -> { module_ : Maybe ModuleName, name : VarName }
+    -> Maybe ModuleName
+unqualifiedVarInImportedModule modules thisModule { module_, name } =
+    if module_ == Nothing then
         -- find a module which exposes that var
         thisModule.imports
             |> Dict.find
                 (\_ import_ ->
                     Dict.get import_.moduleName modules
-                        |> Maybe.map (Module.exposes varName)
+                        |> Maybe.map (Module.exposes name)
                         |> Maybe.withDefault False
                 )
             |> Maybe.map (\( _, import_ ) -> import_.moduleName)
@@ -247,14 +262,17 @@ unqualifiedVarInImportedModule modules thisModule maybeModuleName varName =
         Nothing
 
 
-qualifiedVarInImportedModule : Modules Frontend.LocatedExpr -> Maybe ModuleName -> VarName -> Maybe ModuleName
-qualifiedVarInImportedModule modules maybeModuleName varName =
-    maybeModuleName
+qualifiedVarInImportedModule :
+    Modules Frontend.LocatedExpr
+    -> { module_ : Maybe ModuleName, name : VarName }
+    -> Maybe ModuleName
+qualifiedVarInImportedModule modules { module_, name } =
+    module_
         |> Maybe.andThen (flip Dict.get modules)
         |> Maybe.andThen
-            (\module_ ->
-                if Dict.member varName module_.declarations then
-                    Just maybeModuleName
+            (\module__ ->
+                if Dict.member name module__.declarations then
+                    Just module_
 
                 else
                     Nothing
@@ -262,11 +280,15 @@ qualifiedVarInImportedModule modules maybeModuleName varName =
         |> Maybe.withDefault Nothing
 
 
-qualifiedVarInAliasedModule : Modules Frontend.LocatedExpr -> Module Frontend.LocatedExpr -> Maybe ModuleName -> VarName -> Maybe ModuleName
-qualifiedVarInAliasedModule modules thisModule maybeModuleName varName =
+qualifiedVarInAliasedModule :
+    Modules Frontend.LocatedExpr
+    -> Module Frontend.LocatedExpr
+    -> { module_ : Maybe ModuleName, name : VarName }
+    -> Maybe ModuleName
+qualifiedVarInAliasedModule modules thisModule { module_, name } =
     let
         unaliasedModuleName =
-            Maybe.andThen (Module.unalias thisModule) maybeModuleName
+            Maybe.andThen (Module.unalias thisModule) module_
     in
     -- Reusing the existing functionality. TODO is this a good idea?
-    qualifiedVarInImportedModule modules unaliasedModuleName varName
+    qualifiedVarInImportedModule modules { module_ = unaliasedModuleName, name = name }

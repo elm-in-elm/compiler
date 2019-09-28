@@ -17,16 +17,16 @@ testing purposes.
 
 -}
 
-import AST.Common.Literal exposing (Literal(..))
-import AST.Typed as Typed exposing (Expr_(..))
 import AssocList as Dict exposing (Dict)
-import Data.Declaration exposing (Declaration, DeclarationBody(..))
-import Data.FileContents as FileContents exposing (FileContents)
-import Data.FilePath as FilePath exposing (FilePath)
-import Data.ModuleName as ModuleName exposing (ModuleName)
-import Data.Project exposing (Project)
-import Data.VarName as VarName exposing (VarName)
-import Error exposing (Error(..))
+import Elm.AST.Common.Literal exposing (Literal(..))
+import Elm.AST.Typed as Typed exposing (Expr_(..))
+import Elm.Compiler.Error exposing (Error(..))
+import Elm.Data.Declaration exposing (Declaration, DeclarationBody(..))
+import Elm.Data.FileContents as FileContents exposing (FileContents)
+import Elm.Data.FilePath as FilePath exposing (FilePath)
+import Elm.Data.ModuleName as ModuleName exposing (ModuleName)
+import Elm.Data.Project exposing (Project)
+import Elm.Data.VarName as VarName exposing (VarName)
 import Stage.Emit as Emit
 
 
@@ -61,8 +61,7 @@ emitProject_ { declarationList } =
     declarationList
         |> List.map emitDeclaration
         |> String.join "\n"
-        |> FileContents.fromString
-        |> Dict.singleton (FilePath.fromString "out.js")
+        |> Dict.singleton "out.js"
 
 
 emitExpr : Typed.LocatedExpr -> String
@@ -87,8 +86,8 @@ emitExpr located =
             else
                 "false"
 
-        Var { qualifier, name } ->
-            mangleQualifiedVar qualifier name
+        Var var ->
+            mangleQualifiedVar var
 
         Argument argument ->
             mangleVarName argument
@@ -144,7 +143,7 @@ emitDeclaration { module_, name, body } =
     case body of
         Value expr ->
             "const "
-                ++ mangleQualifiedVar module_ name
+                ++ mangleQualifiedVar { module_ = module_, name = name }
                 ++ " = "
                 ++ emitExpr expr
                 ++ ";"
@@ -156,17 +155,17 @@ emitDeclaration { module_, name, body } =
             ""
 
 
-mangleQualifiedVar : ModuleName -> VarName -> String
-mangleQualifiedVar moduleName varName =
-    mangleModuleName moduleName ++ "$" ++ mangleVarName varName
+mangleQualifiedVar : { module_ : ModuleName, name : VarName } -> String
+mangleQualifiedVar { module_, name } =
+    mangleModuleName module_ ++ "$" ++ mangleVarName name
 
 
 mangleModuleName : ModuleName -> String
 mangleModuleName moduleName =
-    String.replace "." "$" (ModuleName.toString moduleName)
+    String.replace "." "$" moduleName
 
 
 mangleVarName : VarName -> String
 mangleVarName varName =
     -- TODO this does nothing currently... what does the official Elm compiler do?
-    VarName.toString varName
+    varName

@@ -6,8 +6,8 @@ module Stage.InferTypes.SubstitutionMap exposing
     , isEmpty
     )
 
-import AST.Common.Type exposing (Type)
 import Dict exposing (Dict)
+import Elm.AST.Common.Type exposing (Type)
 
 
 {-| A thin opaque wrapper around a dict from type variable IDs to inferred types.

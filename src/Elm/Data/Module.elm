@@ -1,6 +1,5 @@
-module Data.Module exposing
-    ( EffectMetadata
-    , Module
+module Elm.Data.Module exposing
+    ( Module
     , ModuleType(..)
     , Modules
     , exposes
@@ -10,12 +9,12 @@ module Data.Module exposing
 
 import AssocList as Dict exposing (Dict)
 import AssocList.Extra as Dict
-import Data.Declaration as Declaration exposing (Declaration)
-import Data.Exposing exposing (ExposedItem(..), Exposing(..))
-import Data.FilePath exposing (FilePath)
-import Data.Import exposing (Import)
-import Data.ModuleName exposing (ModuleName)
-import Data.VarName exposing (VarName)
+import Elm.Data.Declaration as Declaration exposing (Declaration)
+import Elm.Data.Exposing exposing (ExposedItem(..), Exposing(..))
+import Elm.Data.FilePath exposing (FilePath)
+import Elm.Data.Import exposing (Import)
+import Elm.Data.ModuleName exposing (ModuleName)
+import Elm.Data.VarName exposing (VarName)
 
 
 type alias Module expr =
@@ -33,11 +32,7 @@ type alias Module expr =
 type ModuleType
     = PlainModule
     | PortModule
-    | EffectModule EffectMetadata
-
-
-type alias EffectMetadata =
-    {}
+    | EffectModule
 
 
 type alias Modules expr =

@@ -1,8 +1,8 @@
-module Slackbot exposing (main)
+module Slackbot exposing (main_)
 
 {-| Usecase: Elm-evaluating Slackbot
 
-Needs to parse the given snippet as either an import, top-level definition or
+Needs to parse the given snippet as either an import, top-level Declaration or
 an expression.
 
 Bonus points for eval function, but that doesn't have to live in elm/compiler.
@@ -10,31 +10,58 @@ Bonus points for eval function, but that doesn't have to live in elm/compiler.
 
 -}
 
-import Elm.Compiler.AST.Frontend as Frontend
+import Elm.AST.Frontend as Frontend
+import Elm.Compiler
 import Elm.Compiler.Error exposing (Error)
-import Elm.Compiler.Import exposing (Import)
+import Elm.Data.Declaration exposing (Declaration)
+import Elm.Data.Import exposing (Import)
+import Result.Extra
 
 
-main : String -> Result SlackbotError SlackbotValue
-main snippet =
+type SlackbotError
+    = ElmCompilerError Error
+    | CustomFoo
+
+
+type SlackbotValue
+    = -- TODO
+      SlackbotValue
+
+
+type alias Snippets =
+    { imports : List String
+    , declarations : List String
+    , expr : String
+    }
+
+
+main_ : String -> Result SlackbotError SlackbotValue
+main_ snippet =
     let
-        ( importSnippets, definitionSnippets, exprSnippet ) =
+        snippets : Snippets
+        snippets =
             Debug.todo "whatever"
 
         imports : Result Error (List Import)
         imports =
-            importSnippets
+            snippets.imports
                 |> List.map Elm.Compiler.parseImport
                 |> Result.Extra.combine
 
-        definitions : Result Error (List (Definition Frontend.LocatedExpr))
-        definitions =
-            definitionSnippets
-                |> List.map Elm.Compiler.parseDefinition
+        declarations : Result Error (List (Declaration Frontend.LocatedExpr))
+        declarations =
+            snippets.declarations
+                |> List.map
+                    (\declaration ->
+                        Elm.Compiler.parseDeclaration
+                            { moduleName = Debug.todo "???"
+                            , declaration = declaration
+                            }
+                    )
                 |> Result.Extra.combine
 
         expr : Result Error Frontend.LocatedExpr
         expr =
-            Elm.Compiler.parseExpr exprSnippet
+            Elm.Compiler.parseExpr snippets.expr
     in
     Debug.todo "whatever"

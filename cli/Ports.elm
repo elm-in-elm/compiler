@@ -8,9 +8,9 @@ port module Ports exposing
     , writeToFile
     )
 
-import Data.FileContents as FileContents exposing (FileContents)
-import Data.FilePath as FilePath exposing (FilePath)
-import Error exposing (ErrorCode)
+import Elm.Compiler.Error as Error exposing (ErrorCode)
+import Elm.Data.FileContents exposing (FileContents)
+import Elm.Data.FilePath exposing (FilePath)
 
 
 port stdout : String -> Cmd msg
@@ -22,10 +22,10 @@ port stderr : String -> Cmd msg
 port read : String -> Cmd msg
 
 
-port readSubscription : (( String, String ) -> msg) -> Sub msg
+port readSubscription : ({ filePath : FilePath, fileContents : FileContents } -> msg) -> Sub msg
 
 
-port readErrorSubscription : (( String, String ) -> msg) -> Sub msg
+port readErrorSubscription : ({ filePath : FilePath, errorCode : String } -> msg) -> Sub msg
 
 
 port write : { filePath : String, contents : String } -> Cmd msg
@@ -53,30 +53,20 @@ printlnStderr string =
 
 readFile : FilePath -> Cmd msg
 readFile filePath =
-    read <| FilePath.toString filePath
+    read filePath
 
 
-waitForReadFile : (ErrorCode -> msg) -> (FilePath -> FileContents -> msg) -> Sub msg
+waitForReadFile : (ErrorCode -> msg) -> ({ filePath : FilePath, fileContents : FileContents } -> msg) -> Sub msg
 waitForReadFile toErrorMsg toMsg =
     Sub.batch
-        [ readSubscription
-            (\( filePath, fileContents ) ->
-                toMsg (FilePath.fromString filePath) (FileContents.fromString fileContents)
-            )
-        , readErrorSubscription
-            (\( filePath, errorCode ) ->
-                let
-                    filePath_ =
-                        FilePath.fromString filePath
-                in
-                toErrorMsg (Error.parseErrorCode errorCode filePath_)
-            )
+        [ readSubscription toMsg
+        , readErrorSubscription (toErrorMsg << Error.parseErrorCode)
         ]
 
 
 writeToFile : FilePath -> FileContents -> Cmd msg
 writeToFile filePath contents =
     write
-        { filePath = FilePath.toString filePath
-        , contents = FileContents.toString contents
+        { filePath = filePath
+        , contents = contents
         }

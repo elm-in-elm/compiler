@@ -3,14 +3,14 @@ module Stage.Desugar.Boilerplate exposing
     , desugarProject
     )
 
-import AST.Canonical as Canonical
-import AST.Frontend as Frontend
 import AssocList as Dict exposing (Dict)
-import Data.Declaration as Declaration exposing (Declaration, DeclarationBody)
-import Data.Module exposing (Module, Modules)
-import Data.Project exposing (Project)
-import Data.VarName exposing (VarName)
-import Error exposing (DesugarError)
+import Elm.AST.Canonical as Canonical
+import Elm.AST.Frontend as Frontend
+import Elm.Compiler.Error exposing (DesugarError)
+import Elm.Data.Declaration as Declaration exposing (Declaration, DeclarationBody)
+import Elm.Data.Module exposing (Module, Modules)
+import Elm.Data.Project exposing (Project)
+import Elm.Data.VarName exposing (VarName)
 import OurExtras.AssocList as Dict
 
 

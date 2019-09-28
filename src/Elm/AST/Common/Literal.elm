@@ -1,4 +1,4 @@
-module AST.Common.Literal exposing (Literal(..))
+module Elm.AST.Common.Literal exposing (Literal(..))
 
 
 type Literal

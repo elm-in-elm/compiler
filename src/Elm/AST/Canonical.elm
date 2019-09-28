@@ -1,21 +1,20 @@
-module AST.Canonical exposing
+module Elm.AST.Canonical exposing
     ( Expr(..)
     , LocatedExpr
     , ProjectFields
     , fromUnwrapped
     , lambda
     , unwrap
-    , var
     )
 
-import AST.Canonical.Unwrapped as Unwrapped
-import AST.Common.Literal exposing (Literal)
-import AST.Common.Located as Located exposing (Located)
 import AssocList as Dict exposing (Dict)
-import Data.Binding as Binding exposing (Binding)
-import Data.Module exposing (Modules)
-import Data.ModuleName exposing (ModuleName)
-import Data.VarName exposing (VarName)
+import Elm.AST.Canonical.Unwrapped as Unwrapped
+import Elm.AST.Common.Literal exposing (Literal)
+import Elm.AST.Common.Located as Located exposing (Located)
+import Elm.Data.Binding as Binding exposing (Binding)
+import Elm.Data.Module exposing (Modules)
+import Elm.Data.ModuleName exposing (ModuleName)
+import Elm.Data.VarName exposing (VarName)
 
 
 type alias ProjectFields =
@@ -34,7 +33,7 @@ type alias LocatedExpr =
 -}
 type Expr
     = Literal Literal
-    | Var { qualifier : ModuleName, name : VarName }
+    | Var { module_ : ModuleName, name : VarName }
     | Argument VarName
     | Plus LocatedExpr LocatedExpr
     | Cons LocatedExpr LocatedExpr
@@ -46,14 +45,6 @@ type Expr
     | Unit
     | Tuple LocatedExpr LocatedExpr
     | Tuple3 LocatedExpr LocatedExpr LocatedExpr
-
-
-var : ModuleName -> VarName -> Expr
-var qualifier name =
-    Var
-        { qualifier = qualifier
-        , name = name
-        }
 
 
 lambda : VarName -> LocatedExpr -> Expr

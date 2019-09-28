@@ -30,14 +30,20 @@ const {registerPort} = require('./utils.js');
   registerPort(app, 'read', async function(filename) {
     try {
       const contents = await fs.readFile(`${exampleProjectPath}/${filename}`, {encoding: 'utf8'});
-      app.ports.readSubscription.send([filename, contents]);
+      app.ports.readSubscription.send({
+        filePath: filename,
+        fileContents: contents,
+      });
     } catch (e) {
       console.log('---------------------------');
       console.log('-- DEVELOPMENT ERROR ------');
       console.log('---------------------------');
       console.log(`\n${e.message}`);
       if (e.code != null) {
-        app.ports.readErrorSubscription.send([filename, e.code]);
+        app.ports.readErrorSubscription.send({
+          filePath: filename,
+          errorCode: e.code,
+        });
       }
     }
   });

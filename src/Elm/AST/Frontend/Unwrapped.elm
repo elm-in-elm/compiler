@@ -1,9 +1,7 @@
-module AST.Frontend.Unwrapped exposing (Expr(..))
+module Elm.AST.Frontend.Unwrapped exposing (Expr(..))
 
-import AST.Common.Literal exposing (Literal)
-import Data.Binding exposing (Binding)
-import Data.ModuleName exposing (ModuleName)
-import Data.VarName exposing (VarName)
+import Elm.AST.Common.Literal exposing (Literal)
+import Elm.Data.Binding exposing (Binding)
 
 
 {-| This only differs from AST.Frontend.Expr by recursing on itself instead of
@@ -11,12 +9,12 @@ on LocatedExpr. Handy for parser tests or when you don't need the location info!
 -}
 type Expr
     = Literal Literal
-    | Var { qualifier : Maybe ModuleName, name : VarName }
-    | Argument VarName
+    | Var { module_ : Maybe String, name : String }
+    | Argument String
     | Plus Expr Expr
     | Cons Expr Expr
     | ListConcat Expr Expr
-    | Lambda { arguments : List VarName, body : Expr }
+    | Lambda { arguments : List String, body : Expr }
     | Call { fn : Expr, argument : Expr }
     | If { test : Expr, then_ : Expr, else_ : Expr }
     | Let { bindings : List (Binding Expr), body : Expr }

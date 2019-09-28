@@ -1,6 +1,6 @@
 module Elm.Compiler exposing
     ( parseExpr, parseModule, parseModules, parseImport, parseDeclaration
-    , desugarExpr, desugarModule, desugarModules
+    , desugarExpr, desugarModule, desugarModules, desugarOnlyModule
     , inferExpr, inferModule, inferModules
     , defaultOptimizations
     , optimizeExpr, optimizeExprWith, optimizeModule, optimizeModuleWith, optimizeModules, optimizeModulesWith
@@ -57,7 +57,7 @@ Examples of real desugarings include:
   - fully qualify all variables
   - etc.
 
-@docs desugarExpr, desugarModule, desugarModules
+@docs desugarExpr, desugarModule, desugarModules, desugarOnlyModule
 
 
 # Inferring types
@@ -143,25 +143,26 @@ a move backwards in the compiler phases:
 
 -}
 
-import AST.Canonical as Canonical
-import AST.Canonical.Unwrapped as CanonicalUnwrapped
-import AST.Frontend as Frontend
-import AST.Frontend.Unwrapped as FrontendUnwrapped
-import AST.Typed as Typed
-import AST.Typed.Unwrapped as TypedUnwrapped
 import AssocList as Dict exposing (Dict)
-import Data.Declaration exposing (Declaration)
-import Data.FilePath as FilePath
-import Data.Import exposing (Import)
-import Data.Module as Module exposing (Module)
-import Data.ModuleName exposing (ModuleName)
-import Error
+import Elm.AST.Canonical as Canonical
+import Elm.AST.Canonical.Unwrapped as CanonicalUnwrapped
+import Elm.AST.Frontend as Frontend
+import Elm.AST.Frontend.Unwrapped as FrontendUnwrapped
+import Elm.AST.Typed as Typed
+import Elm.AST.Typed.Unwrapped as TypedUnwrapped
+import Elm.Compiler.Error
     exposing
         ( Error(..)
         , ParseContext
         , ParseError(..)
         , ParseProblem
         )
+import Elm.Data.Declaration exposing (Declaration)
+import Elm.Data.FileContents exposing (FileContents)
+import Elm.Data.FilePath exposing (FilePath)
+import Elm.Data.Import exposing (Import)
+import Elm.Data.Module as Module exposing (Module)
+import Elm.Data.ModuleName exposing (ModuleName)
 import OurExtras.AssocList as Dict
 import Parser.Advanced as P
 import Result.Extra as Result
@@ -187,7 +188,7 @@ type alias Parser a =
 
 {-| A helper for a common pattern with our Elm parsers. Don't expose it.
 -}
-parse : Parser a -> String -> Result Error a
+parse : Parser a -> FileContents -> Result Error a
 parse parser string =
     P.run parser string
         |> Result.mapError (ParseError << ParseProblem)
@@ -214,7 +215,7 @@ use `unwrapFrontendExpr` to get something like
         (Literal (String "Hello"))
 
 -}
-parseExpr : String -> Result Error Frontend.LocatedExpr
+parseExpr : FileContents -> Result Error Frontend.LocatedExpr
 parseExpr sourceCode =
     parse Stage.Parse.Parser.expr sourceCode
 
@@ -258,15 +259,19 @@ will get parsed into
     }
 
 -}
-parseModule : { filePath : String, sourceCode : String } -> Result Error (Module Frontend.LocatedExpr)
+parseModule :
+    { filePath : FilePath, sourceCode : FileContents }
+    -> Result Error (Module Frontend.LocatedExpr)
 parseModule { filePath, sourceCode } =
     -- TODO maybe we can think of a way to not force the user to give us `filePath`?
-    parse (Stage.Parse.Parser.module_ (FilePath.fromString filePath)) sourceCode
+    parse (Stage.Parse.Parser.module_ filePath) sourceCode
 
 
 {-| Parse multiple modules (`*.elm` files) - see `parseModule` for details.
 -}
-parseModules : List { filePath : String, sourceCode : String } -> Result Error (Dict ModuleName (Module Frontend.LocatedExpr))
+parseModules :
+    List { filePath : FilePath, sourceCode : FileContents }
+    -> Result Error (Dict ModuleName (Module Frontend.LocatedExpr))
 parseModules files =
     {- TODO same as with `parseModule` - maybe we can think of a way to not force
        the user to give us `filePath`?
@@ -300,7 +305,7 @@ into
     }
 
 -}
-parseImport : String -> Result Error Import
+parseImport : FileContents -> Result Error Import
 parseImport sourceCode =
     parse Stage.Parse.Parser.import_ sourceCode
 
@@ -318,10 +323,10 @@ into
     }
 
 -}
-parseDeclaration : ModuleName -> String -> Result Error (Declaration Frontend.LocatedExpr)
-parseDeclaration thisModule sourceCode =
-    parse Stage.Parse.Parser.declaration sourceCode
-        |> Result.map (\toDeclaration -> toDeclaration thisModule)
+parseDeclaration : { moduleName : ModuleName, declaration : FileContents } -> Result Error (Declaration Frontend.LocatedExpr)
+parseDeclaration { moduleName, declaration } =
+    parse Stage.Parse.Parser.declaration declaration
+        |> Result.map (\toDeclaration -> toDeclaration moduleName)
 
 
 
@@ -370,12 +375,26 @@ desugarModule modules thisModule =
 
 {-| Desugar multiple modules (`*.elm` files) - see `desugarModule` for details.
 -}
-desugarModules : Dict ModuleName (Module Frontend.LocatedExpr) -> Result Error (Dict ModuleName (Module Canonical.LocatedExpr))
+desugarModules :
+    Dict ModuleName (Module Frontend.LocatedExpr)
+    -> Result Error (Dict ModuleName (Module Canonical.LocatedExpr))
 desugarModules modules =
     modules
         |> Dict.map (always (Stage.Desugar.Boilerplate.desugarModule (Stage.Desugar.desugarExpr modules)))
         |> Dict.combine
         |> Result.mapError DesugarError
+
+
+{-| Desugar a module (one `*.elm` file), without the intention of desugaring
+another one.
+-}
+desugarOnlyModule :
+    Module Frontend.LocatedExpr
+    -> Result Error (Module Canonical.LocatedExpr)
+desugarOnlyModule module_ =
+    desugarModule
+        (Dict.singleton module_.name module_)
+        module_
 
 
 
@@ -392,7 +411,9 @@ inferExpr locatedExpr =
 
 {-| Infer the types of expressions in a module (a single `*.elm` file).
 -}
-inferModule : Module Canonical.LocatedExpr -> Result Error (Module Typed.LocatedExpr)
+inferModule :
+    Module Canonical.LocatedExpr
+    -> Result Error (Module Typed.LocatedExpr)
 inferModule thisModule =
     Stage.InferTypes.Boilerplate.inferModule Stage.InferTypes.inferExpr thisModule
         |> Result.mapError TypeError
@@ -400,7 +421,9 @@ inferModule thisModule =
 
 {-| Infer the types of expressions in multiple modules (`*.elm` files).
 -}
-inferModules : Dict ModuleName (Module Canonical.LocatedExpr) -> Result Error (Dict ModuleName (Module Typed.LocatedExpr))
+inferModules :
+    Dict ModuleName (Module Canonical.LocatedExpr)
+    -> Result Error (Dict ModuleName (Module Typed.LocatedExpr))
 inferModules modules =
     modules
         |> Dict.map (always inferModule)
@@ -451,7 +474,10 @@ optimizeExpr locatedExpr =
 
 {-| Optimize a given (typed) expression using a custom set of optimizations.
 -}
-optimizeExprWith : List ( String, Typed.LocatedExpr -> Maybe Typed.LocatedExpr ) -> Typed.LocatedExpr -> Typed.LocatedExpr
+optimizeExprWith :
+    List ( String, Typed.LocatedExpr -> Maybe Typed.LocatedExpr )
+    -> Typed.LocatedExpr
+    -> Typed.LocatedExpr
 optimizeExprWith optimizations locatedExpr =
     Stage.Optimize.optimizeExprWith optimizations locatedExpr
 
@@ -478,7 +504,10 @@ Note there is currently no inter-definition optimizations (inlining etc.) -
 only the optimizations on each separate expression.
 
 -}
-optimizeModuleWith : List ( String, Typed.LocatedExpr -> Maybe Typed.LocatedExpr ) -> Module Typed.LocatedExpr -> Module Typed.LocatedExpr
+optimizeModuleWith :
+    List ( String, Typed.LocatedExpr -> Maybe Typed.LocatedExpr )
+    -> Module Typed.LocatedExpr
+    -> Module Typed.LocatedExpr
 optimizeModuleWith optimizations thisModule =
     Stage.Optimize.Boilerplate.optimizeModule (optimizeExprWith optimizations) thisModule
 
@@ -490,7 +519,9 @@ For using your own optimizations instead of or in addition to the default ones,
 look at the `optimizeModulesWith` function.
 
 -}
-optimizeModules : Dict ModuleName (Module Typed.LocatedExpr) -> Dict ModuleName (Module Typed.LocatedExpr)
+optimizeModules :
+    Dict ModuleName (Module Typed.LocatedExpr)
+    -> Dict ModuleName (Module Typed.LocatedExpr)
 optimizeModules modules =
     Dict.map (always optimizeModule) modules
 
@@ -498,7 +529,10 @@ optimizeModules modules =
 {-| Optimize all expressions in multiple modules using a custom set of
 optimizations.
 -}
-optimizeModulesWith : List ( String, Typed.LocatedExpr -> Maybe Typed.LocatedExpr ) -> Dict ModuleName (Module Typed.LocatedExpr) -> Dict ModuleName (Module Typed.LocatedExpr)
+optimizeModulesWith :
+    List ( String, Typed.LocatedExpr -> Maybe Typed.LocatedExpr )
+    -> Dict ModuleName (Module Typed.LocatedExpr)
+    -> Dict ModuleName (Module Typed.LocatedExpr)
 optimizeModulesWith optimizations modules =
     Dict.map (always (optimizeModuleWith optimizations)) modules
 
@@ -631,6 +665,8 @@ The real type is
     -> Dict ModuleName (Module Canonical.LocatedExpr)
 
 -}
-dropTypesModules : Dict ModuleName (Module Typed.LocatedExpr) -> Dict ModuleName (Module Canonical.LocatedExpr)
+dropTypesModules :
+    Dict ModuleName (Module Typed.LocatedExpr)
+    -> Dict ModuleName (Module Canonical.LocatedExpr)
 dropTypesModules modules =
     Dict.map (always dropTypesModule) modules
