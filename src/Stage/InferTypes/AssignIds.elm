@@ -76,8 +76,20 @@ assignIdsWithHelp idSource located =
            (no solving needed!) but let's be uniform and do everything through
            the constraint solver in stages 2 and 3.
         -}
-        Canonical.Literal literal ->
-            assignId idSource (Typed.Literal literal)
+        Canonical.Int int ->
+            assignId idSource (Typed.Int int)
+
+        Canonical.Float float ->
+            assignId idSource (Typed.Float float)
+
+        Canonical.Char char ->
+            assignId idSource (Typed.Char char)
+
+        Canonical.String string ->
+            assignId idSource (Typed.String string)
+
+        Canonical.Bool bool ->
+            assignId idSource (Typed.Bool bool)
 
         -- We remember argument's IDs so that we can later use them in Lambda
         Canonical.Argument name ->

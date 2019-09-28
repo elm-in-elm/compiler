@@ -1,15 +1,14 @@
 module Stage.Desugar exposing (desugar, desugarExpr)
 
 import Basics.Extra exposing (flip)
-import Dict
+import Dict exposing (Dict)
 import Dict.Extra as Dict
 import Elm.AST.Canonical as Canonical
-import Elm.AST.Common.Literal exposing (Literal)
 import Elm.AST.Common.Located as Located
 import Elm.AST.Frontend as Frontend
 import Elm.Compiler.Error exposing (DesugarError(..), Error(..))
 import Elm.Data.Binding as Binding
-import Elm.Data.Module as Module exposing (Module, Modules)
+import Elm.Data.Module as Module exposing (Module)
 import Elm.Data.ModuleName exposing (ModuleName)
 import Elm.Data.Project exposing (Project)
 import Elm.Data.VarName exposing (VarName)
@@ -29,7 +28,7 @@ of them. Thus, we get some separation of concerns - each pass only cares about
 a small subset of the whole process!
 -}
 desugarExpr :
-    Modules Frontend.LocatedExpr
+    Dict ModuleName (Module Frontend.LocatedExpr)
     -> Module Frontend.LocatedExpr
     -> Frontend.LocatedExpr
     -> Result DesugarError Canonical.LocatedExpr
@@ -66,8 +65,20 @@ desugarExpr modules thisModule located =
                 )
     in
     case Located.unwrap located of
-        Frontend.Literal literal ->
-            return <| Canonical.Literal literal
+        Frontend.Int int ->
+            return <| Canonical.Int int
+
+        Frontend.Float float ->
+            return <| Canonical.Float float
+
+        Frontend.Char char ->
+            return <| Canonical.Char char
+
+        Frontend.String string ->
+            return <| Canonical.String string
+
+        Frontend.Bool bool ->
+            return <| Canonical.Bool bool
 
         Frontend.Var var ->
             findModuleOfVar modules thisModule var
@@ -215,7 +226,7 @@ In all these cases we need to find the full unaliased module name of the var.
 
 -}
 findModuleOfVar :
-    Modules Frontend.LocatedExpr
+    Dict ModuleName (Module Frontend.LocatedExpr)
     -> Module Frontend.LocatedExpr
     -> { module_ : Maybe ModuleName, name : VarName }
     -> Maybe ModuleName
@@ -242,7 +253,7 @@ unqualifiedVarInThisModule thisModule { module_, name } =
 
 
 unqualifiedVarInImportedModule :
-    Modules Frontend.LocatedExpr
+    Dict ModuleName (Module Frontend.LocatedExpr)
     -> Module Frontend.LocatedExpr
     -> { module_ : Maybe ModuleName, name : VarName }
     -> Maybe ModuleName
@@ -263,7 +274,7 @@ unqualifiedVarInImportedModule modules thisModule { module_, name } =
 
 
 qualifiedVarInImportedModule :
-    Modules Frontend.LocatedExpr
+    Dict ModuleName (Module Frontend.LocatedExpr)
     -> { module_ : Maybe ModuleName, name : VarName }
     -> Maybe ModuleName
 qualifiedVarInImportedModule modules { module_, name } =
@@ -281,7 +292,7 @@ qualifiedVarInImportedModule modules { module_, name } =
 
 
 qualifiedVarInAliasedModule :
-    Modules Frontend.LocatedExpr
+    Dict ModuleName (Module Frontend.LocatedExpr)
     -> Module Frontend.LocatedExpr
     -> { module_ : Maybe ModuleName, name : VarName }
     -> Maybe ModuleName

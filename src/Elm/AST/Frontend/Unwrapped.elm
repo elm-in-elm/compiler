@@ -1,6 +1,5 @@
 module Elm.AST.Frontend.Unwrapped exposing (Expr(..))
 
-import Elm.AST.Common.Literal exposing (Literal)
 import Elm.Data.Binding exposing (Binding)
 import Elm.Data.ModuleName exposing (ModuleName)
 import Elm.Data.VarName exposing (VarName)
@@ -10,7 +9,11 @@ import Elm.Data.VarName exposing (VarName)
 on LocatedExpr. Handy for parser tests or when you don't need the location info!
 -}
 type Expr
-    = Literal Literal
+    = Int Int
+    | Float Float
+    | Char Char
+    | String String
+    | Bool Bool
     | Var { module_ : Maybe ModuleName, name : VarName }
     | Argument VarName
     | Plus Expr Expr

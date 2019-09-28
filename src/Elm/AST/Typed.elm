@@ -18,11 +18,10 @@ module Elm.AST.Typed exposing
 
 import Dict exposing (Dict)
 import Elm.AST.Canonical as Canonical
-import Elm.AST.Common.Literal exposing (Literal)
 import Elm.AST.Common.Located as Located exposing (Located)
 import Elm.AST.Typed.Unwrapped as Unwrapped
 import Elm.Data.Binding as Binding exposing (Binding)
-import Elm.Data.Module exposing (Modules)
+import Elm.Data.Module exposing (Module)
 import Elm.Data.ModuleName exposing (ModuleName)
 import Elm.Data.Type exposing (Type)
 import Elm.Data.VarName exposing (VarName)
@@ -30,7 +29,7 @@ import Transform
 
 
 type alias ProjectFields =
-    { modules : Modules LocatedExpr }
+    { modules : Dict ModuleName (Module LocatedExpr) }
 
 
 type alias LocatedExpr =
@@ -49,7 +48,11 @@ type alias Expr =
 
 
 type Expr_
-    = Literal Literal
+    = Int Int
+    | Float Float
+    | Char Char
+    | String String
+    | Bool Bool
     | Var { module_ : ModuleName, name : VarName }
     | Argument VarName
     | Plus LocatedExpr LocatedExpr
@@ -88,7 +91,19 @@ recurse fn locatedExpr =
         |> mapExpr
             (\expr ->
                 case expr of
-                    Literal _ ->
+                    Int _ ->
+                        expr
+
+                    Float _ ->
+                        expr
+
+                    Char _ ->
+                        expr
+
+                    String _ ->
+                        expr
+
+                    Bool _ ->
                         expr
 
                     Var _ ->
@@ -180,7 +195,19 @@ isArgument name locatedExpr =
 recursiveChildren : (LocatedExpr -> List LocatedExpr) -> LocatedExpr -> List LocatedExpr
 recursiveChildren fn locatedExpr =
     case getExpr locatedExpr of
-        Literal _ ->
+        Int _ ->
+            []
+
+        Float _ ->
+            []
+
+        Char _ ->
+            []
+
+        String _ ->
+            []
+
+        Bool _ ->
             []
 
         Var _ ->
@@ -249,8 +276,20 @@ unwrap expr =
             Located.unwrap expr
     in
     ( case expr_ of
-        Literal literal ->
-            Unwrapped.Literal literal
+        Int int ->
+            Unwrapped.Int int
+
+        Float float ->
+            Unwrapped.Float float
+
+        Char char ->
+            Unwrapped.Char char
+
+        String string ->
+            Unwrapped.String string
+
+        Bool bool ->
+            Unwrapped.Bool bool
 
         Var var_ ->
             Unwrapped.Var var_
@@ -323,8 +362,20 @@ dropTypes locatedExpr =
         |> Located.map
             (\( expr, _ ) ->
                 case expr of
-                    Literal literal ->
-                        Canonical.Literal literal
+                    Int int ->
+                        Canonical.Int int
+
+                    Float float ->
+                        Canonical.Float float
+
+                    Char char ->
+                        Canonical.Char char
+
+                    String string ->
+                        Canonical.String string
+
+                    Bool bool ->
+                        Canonical.Bool bool
 
                     Var var ->
                         Canonical.Var var

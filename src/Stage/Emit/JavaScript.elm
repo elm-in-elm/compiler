@@ -18,7 +18,6 @@ testing purposes.
 -}
 
 import Dict exposing (Dict)
-import Elm.AST.Common.Literal exposing (Literal(..))
 import Elm.AST.Typed as Typed exposing (Expr_(..))
 import Elm.Compiler.Error exposing (Error(..))
 import Elm.Data.Declaration exposing (Declaration, DeclarationBody(..))
@@ -67,19 +66,19 @@ emitProject_ { declarationList } =
 emitExpr : Typed.LocatedExpr -> String
 emitExpr located =
     case Typed.getExpr located of
-        Literal (Int int) ->
+        Int int ->
             String.fromInt int
 
-        Literal (Float float) ->
+        Float float ->
             String.fromFloat float
 
-        Literal (Char char) ->
+        Char char ->
             "\"" ++ String.fromChar char ++ "\""
 
-        Literal (String string) ->
+        String string ->
             "\"" ++ string ++ "\""
 
-        Literal (Bool bool) ->
+        Bool bool ->
             if bool then
                 "true"
 

@@ -7,18 +7,18 @@ module Elm.AST.Frontend exposing
     , unwrap
     )
 
-import Elm.AST.Common.Literal exposing (Literal)
+import Dict exposing (Dict)
 import Elm.AST.Common.Located as Located exposing (Located)
 import Elm.AST.Frontend.Unwrapped as Unwrapped
 import Elm.Data.Binding as Binding exposing (Binding)
-import Elm.Data.Module exposing (Modules)
+import Elm.Data.Module exposing (Module)
 import Elm.Data.ModuleName exposing (ModuleName)
 import Elm.Data.VarName exposing (VarName)
 import Transform
 
 
 type alias ProjectFields =
-    { modules : Modules LocatedExpr }
+    { modules : Dict ModuleName (Module LocatedExpr) }
 
 
 type alias LocatedExpr =
@@ -26,7 +26,11 @@ type alias LocatedExpr =
 
 
 type Expr
-    = Literal Literal
+    = Int Int
+    | Float Float
+    | Char Char
+    | String String
+    | Bool Bool
     | Var { module_ : Maybe ModuleName, name : VarName }
     | Argument VarName
     | Plus LocatedExpr LocatedExpr
@@ -59,7 +63,19 @@ recurse f expr =
             Located.map f
     in
     case expr of
-        Literal _ ->
+        Int _ ->
+            expr
+
+        Float _ ->
+            expr
+
+        Char _ ->
+            expr
+
+        String _ ->
+            expr
+
+        Bool _ ->
             expr
 
         Var _ ->
@@ -130,8 +146,20 @@ transform pass expr =
 unwrap : LocatedExpr -> Unwrapped.Expr
 unwrap expr =
     case Located.unwrap expr of
-        Literal literal ->
-            Unwrapped.Literal literal
+        Int int ->
+            Unwrapped.Int int
+
+        Float float ->
+            Unwrapped.Float float
+
+        Char char ->
+            Unwrapped.Char char
+
+        String string ->
+            Unwrapped.String string
+
+        Bool bool ->
+            Unwrapped.Bool bool
 
         Var var_ ->
             Unwrapped.Var var_

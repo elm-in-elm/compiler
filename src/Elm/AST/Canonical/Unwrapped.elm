@@ -1,7 +1,6 @@
 module Elm.AST.Canonical.Unwrapped exposing (Expr(..))
 
 import Dict exposing (Dict)
-import Elm.AST.Common.Literal exposing (Literal)
 import Elm.Data.Binding exposing (Binding)
 import Elm.Data.ModuleName exposing (ModuleName)
 import Elm.Data.VarName exposing (VarName)
@@ -11,7 +10,11 @@ import Elm.Data.VarName exposing (VarName)
 on LocatedExpr. Handy for type inference fuzzers!
 -}
 type Expr
-    = Literal Literal
+    = Int Int
+    | Float Float
+    | Char Char
+    | String String
+    | Bool Bool
     | Var { module_ : ModuleName, name : VarName }
     | Argument VarName
     | Plus Expr Expr

@@ -36,7 +36,7 @@ import Elm.AST.Typed as Typed exposing (Expr_(..))
 import Elm.Compiler.Error exposing (EmitError(..))
 import Elm.Data.Declaration exposing (Declaration, DeclarationBody(..))
 import Elm.Data.Exposing as Exposing exposing (ExposedItem(..), Exposing(..))
-import Elm.Data.Module exposing (Module, Modules)
+import Elm.Data.Module exposing (Module)
 import Elm.Data.ModuleName exposing (ModuleName)
 import Elm.Data.Project exposing (Project)
 import Elm.Data.Type as Type exposing (Type, TypeArgument(..))
@@ -164,7 +164,10 @@ type alias Dependency =
     }
 
 
-modulesToGraph : ModuleName -> Modules Typed.LocatedExpr -> Result EmitError Graph
+modulesToGraph :
+    ModuleName
+    -> Dict ModuleName (Module Typed.LocatedExpr)
+    -> Result EmitError Graph
 modulesToGraph mainModuleName modules =
     {- TODO this is probably a bit far off, but... how to allow for cyclic
        dependencies in lambdas but not in exposed expressions?
@@ -221,7 +224,7 @@ modulesToGraph mainModuleName modules =
 
 
 collectDependencies :
-    Modules Typed.LocatedExpr
+    Dict ModuleName (Module Typed.LocatedExpr)
     -> List (Declaration Typed.LocatedExpr)
     -> AssocSet.Set (Declaration Typed.LocatedExpr)
     -> List Dependency
@@ -269,7 +272,10 @@ collectDependencies modules remainingDeclarations doneDeclarations doneDependenc
                         )
 
 
-findDependencies : Modules Typed.LocatedExpr -> DeclarationBody Typed.LocatedExpr -> Result EmitError (List (Declaration Typed.LocatedExpr))
+findDependencies :
+    Dict ModuleName (Module Typed.LocatedExpr)
+    -> DeclarationBody Typed.LocatedExpr
+    -> Result EmitError (List (Declaration Typed.LocatedExpr))
 findDependencies modules declarationBody =
     case declarationBody of
         Value locatedExpr ->
@@ -285,7 +291,10 @@ findDependencies modules declarationBody =
                 |> Result.map List.concat
 
 
-findDependenciesOfTypeArgument : Modules Typed.LocatedExpr -> TypeArgument -> Result EmitError (List (Declaration Typed.LocatedExpr))
+findDependenciesOfTypeArgument :
+    Dict ModuleName (Module Typed.LocatedExpr)
+    -> TypeArgument
+    -> Result EmitError (List (Declaration Typed.LocatedExpr))
 findDependenciesOfTypeArgument modules typeArgument =
     case typeArgument of
         ConcreteType type_ ->
@@ -295,7 +304,10 @@ findDependenciesOfTypeArgument modules typeArgument =
             Ok []
 
 
-findDependenciesOfType : Modules Typed.LocatedExpr -> Type -> Result EmitError (List (Declaration Typed.LocatedExpr))
+findDependenciesOfType :
+    Dict ModuleName (Module Typed.LocatedExpr)
+    -> Type
+    -> Result EmitError (List (Declaration Typed.LocatedExpr))
 findDependenciesOfType modules type_ =
     let
         findDependencies_ =
@@ -366,14 +378,29 @@ findDependenciesOfType modules type_ =
                 paramsDependencies
 
 
-findDependenciesOfExpr : Modules Typed.LocatedExpr -> Typed.LocatedExpr -> Result EmitError (List (Declaration Typed.LocatedExpr))
+findDependenciesOfExpr :
+    Dict ModuleName (Module Typed.LocatedExpr)
+    -> Typed.LocatedExpr
+    -> Result EmitError (List (Declaration Typed.LocatedExpr))
 findDependenciesOfExpr modules locatedExpr =
     let
         findDependencies_ =
             findDependenciesOfExpr modules
     in
     case Typed.getExpr locatedExpr of
-        Literal _ ->
+        Int _ ->
+            Ok []
+
+        Float _ ->
+            Ok []
+
+        Char _ ->
+            Ok []
+
+        String _ ->
+            Ok []
+
+        Bool _ ->
             Ok []
 
         Var { module_, name } ->

@@ -9,16 +9,15 @@ module Elm.AST.Canonical exposing
 
 import Dict exposing (Dict)
 import Elm.AST.Canonical.Unwrapped as Unwrapped
-import Elm.AST.Common.Literal exposing (Literal)
 import Elm.AST.Common.Located as Located exposing (Located)
 import Elm.Data.Binding as Binding exposing (Binding)
-import Elm.Data.Module exposing (Modules)
+import Elm.Data.Module exposing (Module)
 import Elm.Data.ModuleName exposing (ModuleName)
 import Elm.Data.VarName exposing (VarName)
 
 
 type alias ProjectFields =
-    { modules : Modules LocatedExpr }
+    { modules : Dict ModuleName (Module LocatedExpr) }
 
 
 type alias LocatedExpr =
@@ -32,7 +31,11 @@ type alias LocatedExpr =
 
 -}
 type Expr
-    = Literal Literal
+    = Int Int
+    | Float Float
+    | Char Char
+    | String String
+    | Bool Bool
     | Var { module_ : ModuleName, name : VarName }
     | Argument VarName
     | Plus LocatedExpr LocatedExpr
@@ -58,8 +61,20 @@ lambda argument body =
 unwrap : LocatedExpr -> Unwrapped.Expr
 unwrap expr =
     case Located.unwrap expr of
-        Literal literal ->
-            Unwrapped.Literal literal
+        Int int ->
+            Unwrapped.Int int
+
+        Float float ->
+            Unwrapped.Float float
+
+        Char char ->
+            Unwrapped.Char char
+
+        String string ->
+            Unwrapped.String string
+
+        Bool bool ->
+            Unwrapped.Bool bool
 
         Var var_ ->
             Unwrapped.Var var_
@@ -130,8 +145,20 @@ fromUnwrapped : Unwrapped.Expr -> LocatedExpr
 fromUnwrapped expr =
     Located.located Located.dummyRegion <|
         case expr of
-            Unwrapped.Literal literal ->
-                Literal literal
+            Unwrapped.Int int ->
+                Int int
+
+            Unwrapped.Float float ->
+                Float float
+
+            Unwrapped.Char char ->
+                Char char
+
+            Unwrapped.String string ->
+                String string
+
+            Unwrapped.Bool bool ->
+                Bool bool
 
             Unwrapped.Var var_ ->
                 Var var_

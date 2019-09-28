@@ -5,7 +5,6 @@ module Stage.Optimize exposing
     , optimizeExprWith
     )
 
-import Elm.AST.Common.Literal as Literal
 import Elm.AST.Typed as Typed
 import Elm.Data.Project exposing (Project)
 import Stage.Optimize.Boilerplate as Boilerplate
@@ -41,8 +40,8 @@ optimizePlus located =
     case Typed.getExpr located of
         Typed.Plus l r ->
             case ( Typed.getExpr l, Typed.getExpr r ) of
-                ( Typed.Literal (Literal.Int left), Typed.Literal (Literal.Int right) ) ->
-                    Just (Typed.mapExpr (\_ -> Typed.Literal (Literal.Int (left + right))) r)
+                ( Typed.Int left, Typed.Int right ) ->
+                    Just (Typed.mapExpr (\_ -> Typed.Int (left + right)) r)
 
                 _ ->
                     Nothing
@@ -71,7 +70,7 @@ optimizeIfLiteralBool located =
     case Typed.getExpr located of
         Typed.If { test, then_, else_ } ->
             case Typed.getExpr test of
-                Typed.Literal (Literal.Bool bool) ->
+                Typed.Bool bool ->
                     Just
                         (if bool then
                             then_

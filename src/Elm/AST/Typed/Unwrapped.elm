@@ -1,7 +1,6 @@
 module Elm.AST.Typed.Unwrapped exposing (Expr, Expr_(..))
 
 import Dict exposing (Dict)
-import Elm.AST.Common.Literal exposing (Literal)
 import Elm.Data.Binding exposing (Binding)
 import Elm.Data.ModuleName exposing (ModuleName)
 import Elm.Data.Type exposing (Type)
@@ -16,7 +15,11 @@ type alias Expr =
 
 
 type Expr_
-    = Literal Literal
+    = Int Int
+    | Float Float
+    | Char Char
+    | String String
+    | Bool Bool
     | Var { module_ : ModuleName, name : VarName }
     | Argument VarName
     | Plus Expr Expr

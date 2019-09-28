@@ -25,7 +25,6 @@
         "Elm.AST.Canonical.Unwrapped",
         "Elm.AST.Typed",
         "Elm.AST.Typed.Unwrapped",
-        "Elm.AST.Common.Literal",
         "Elm.AST.Common.Located"
     ],
     "elm-version": "0.19.0 <= v < 0.20.0",

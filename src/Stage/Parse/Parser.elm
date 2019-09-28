@@ -10,7 +10,6 @@ module Stage.Parse.Parser exposing
     )
 
 import Dict exposing (Dict)
-import Elm.AST.Common.Literal exposing (Literal(..))
 import Elm.AST.Common.Located as Located exposing (Located)
 import Elm.AST.Frontend as Frontend exposing (Expr(..), LocatedExpr)
 import Elm.Compiler.Error
@@ -390,18 +389,15 @@ parenthesizedExpr config =
 
 literal : Parser_ LocatedExpr
 literal =
-    P.succeed Literal
-        |= P.oneOf
-            [ literalNumber
-            , literalChar
-            , literalString
-            , literalBool
-            ]
-        |> P.inContext InLiteral
-        |> located
+    P.oneOf
+        [ literalNumber
+        , literalChar
+        , literalString
+        , literalBool
+        ]
 
 
-literalNumber : Parser_ Literal
+literalNumber : Parser_ LocatedExpr
 literalNumber =
     let
         parseLiteralNumber =
@@ -434,6 +430,7 @@ literalNumber =
         , parseLiteralNumber
         ]
         |> P.inContext InNumber
+        |> located
 
 
 type Quotes
@@ -538,16 +535,17 @@ unicodeCharacter =
         |> P.inContext InUnicodeCharacter
 
 
-literalChar : Parser_ Literal
+literalChar : Parser_ LocatedExpr
 literalChar =
     P.succeed Char
         |. P.symbol singleQuote
         |= character SingleQuote
         |. P.symbol singleQuote
         |> P.inContext InChar
+        |> located
 
 
-literalString : Parser_ Literal
+literalString : Parser_ LocatedExpr
 literalString =
     P.succeed String
         |= P.oneOf
@@ -555,6 +553,7 @@ literalString =
             , doubleQuoteString
             ]
         |> P.inContext InString
+        |> located
 
 
 doubleQuoteString : Parser_ String
@@ -575,13 +574,14 @@ tripleQuoteString =
         |> P.inContext InTripleQuoteString
 
 
-literalBool : Parser_ Literal
+literalBool : Parser_ LocatedExpr
 literalBool =
     P.succeed Bool
         |= P.oneOf
             [ P.map (always True) <| P.keyword (P.Token "True" ExpectingTrue)
             , P.map (always False) <| P.keyword (P.Token "False" ExpectingFalse)
             ]
+        |> located
 
 
 var : Parser_ LocatedExpr

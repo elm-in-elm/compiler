@@ -42,17 +42,11 @@ about returning those.
 
 import Dict exposing (Dict)
 import Elm.AST.Frontend as Frontend
-import Elm.Compiler.Error as Error
-    exposing
-        ( Error(..)
-        , ErrorCode
-        , GeneralError(..)
-        , ParseError(..)
-        )
+import Elm.Compiler.Error as Error exposing (Error(..), ParseError(..))
 import Elm.Data.Declaration as Declaration
 import Elm.Data.FileContents exposing (FileContents)
 import Elm.Data.FilePath as FilePath exposing (FilePath)
-import Elm.Data.Module exposing (Modules)
+import Elm.Data.Module exposing (Module)
 import Elm.Data.ModuleName as ModuleName exposing (ModuleName)
 import Elm.Data.Project exposing (Project)
 import Elm.Project
@@ -120,7 +114,9 @@ subscriptions model =
                to us when we've already found an error elsewhere or finished
                the compilation.
             -}
-            Ports.waitForReadFile ReadFileError ReadFileSuccess
+            Ports.waitForReadFile
+                (ReadFileError << parseErrorCode)
+                ReadFileSuccess
 
         EncounteredError ->
             Sub.none
@@ -144,12 +140,13 @@ init { mainFilePath, elmJson } =
             JD.decodeString (JD.map normalizeDirs Elm.Project.decoder) elmJson
                 |> Result.mapError (ParseError << InvalidElmJson)
 
-        sourceDirectory : Result Error FilePath
+        sourceDirectory : Result CLIError FilePath
         sourceDirectory =
             elmJsonProject
                 |> Result.andThen getSourceDirectory
+                |> Result.mapError CompilerError
 
-        mainModuleName : Result Error ModuleName
+        mainModuleName : Result CLIError ModuleName
         mainModuleName =
             sourceDirectory
                 |> Result.andThen
@@ -164,10 +161,10 @@ init { mainFilePath, elmJson } =
                             , filePath = mainFilePath
                             }
                             -- TODO this conversion to Result is duplicated. We should really return the Result Error ... in the Name.expectedModuleName!
-                            |> Result.fromMaybe (GeneralError <| FileNotInSourceDirectories mainFilePath)
+                            |> Result.fromMaybe (FileNotInSourceDirectories mainFilePath)
                     )
 
-        modelAndCmd : Result Error ( Model Frontend.ProjectFields, Cmd Msg )
+        modelAndCmd : Result CLIError ( Model Frontend.ProjectFields, Cmd Msg )
         modelAndCmd =
             Result.map3
                 (\mainModuleName_ elmJsonProject_ sourceDirectory_ ->
@@ -185,7 +182,7 @@ init { mainFilePath, elmJson } =
                     )
                 )
                 mainModuleName
-                elmJsonProject
+                (elmJsonProject |> Result.mapError CompilerError)
                 sourceDirectory
     in
     case modelAndCmd of
@@ -256,7 +253,7 @@ handleReadFileSuccess ({ filePath } as file) ({ project } as model) =
         parseResult =
             Parse.parse file
                 |> Result.andThen
-                    (Parse.checkModuleNameAndFilePath
+                    (checkModuleNameAndFilePath
                         { sourceDirectory = project.sourceDirectory
                         , filePath = filePath
                         }
@@ -264,7 +261,7 @@ handleReadFileSuccess ({ filePath } as file) ({ project } as model) =
     in
     case parseResult of
         Err error ->
-            handleError error
+            handleError <| CompilerError error
 
         Ok ({ name, imports } as parsedModule) ->
             let
@@ -281,7 +278,7 @@ handleReadFileSuccess ({ filePath } as file) ({ project } as model) =
                             )
                         |> Set.fromList
 
-                newModules : Modules Frontend.LocatedExpr
+                newModules : Dict ModuleName (Module Frontend.LocatedExpr)
                 newModules =
                     Dict.update name
                         (always (Just parsedModule))
@@ -318,7 +315,7 @@ handleReadFileSuccess ({ filePath } as file) ({ project } as model) =
 
 handleReadFileError : ErrorCode -> ( Model Frontend.ProjectFields, Cmd Msg )
 handleReadFileError errorCode =
-    handleError (GeneralError (IOError errorCode))
+    handleError (IOError errorCode)
 
 
 {-| We're done reading and parsing files. All the IO is done, now we can do
@@ -337,7 +334,7 @@ compile project =
                                 (\decl ->
                                     decl.body
                                         |> Declaration.mapBody Frontend.unwrap
-                                        |> Debug.log (\{ module_, name } -> module_ ++ "." ++ name)
+                                        |> Debug.log (decl.module_ ++ "." ++ decl.name)
                                 )
                     )
     in
@@ -346,6 +343,7 @@ compile project =
         |> Result.andThen InferTypes.inferTypes
         |> Result.map Optimize.optimize
         |> Result.andThen EmitJS.emitProject
+        |> Result.mapError CompilerError
         |> writeToFSAndExit
 
 
@@ -355,7 +353,9 @@ compile project =
 Let's do that - report the error or write the output to a file.
 
 -}
-writeToFSAndExit : Result Error (Dict FilePath FileContents) -> ( Model Frontend.ProjectFields, Cmd Msg )
+writeToFSAndExit :
+    Result CLIError (Dict FilePath FileContents)
+    -> ( Model Frontend.ProjectFields, Cmd Msg )
 writeToFSAndExit result =
     case result of
         Ok outputFiles ->
@@ -388,10 +388,10 @@ Stop everything, abort mission, jump ship!
 The `EncounteredError` model stops most everything (`update`, `subscriptions`).
 
 -}
-handleError : Error -> ( Model dontcare, Cmd Msg )
+handleError : CLIError -> ( Model dontcare, Cmd Msg )
 handleError error =
     ( EncounteredError
-    , printlnStderr (Error.toString error)
+    , printlnStderr (errorToString error)
     )
 
 
@@ -404,9 +404,81 @@ log msg =
                     "ReadFileSuccess: " ++ filePath
 
                 ReadFileError error ->
-                    "ReadFileError: " ++ Error.toString (GeneralError (IOError error))
+                    "ReadFileError: " ++ errorToString (IOError error)
 
         _ =
             Debug.log string ()
     in
     msg
+
+
+
+-- ERRORS
+
+
+type CLIError
+    = FileNotInSourceDirectories FilePath
+    | IOError ErrorCode
+    | CompilerError Error
+
+
+type ErrorCode
+    = FileOrDirectoryNotFound FilePath
+    | OtherErrorCode String
+
+
+errorToString : CLIError -> String
+errorToString error =
+    case error of
+        FileNotInSourceDirectories filePath ->
+            "File `"
+                ++ filePath
+                ++ "` is not a part of the `sourceDirectories` in elm.json."
+
+        IOError errorCode ->
+            case errorCode of
+                FileOrDirectoryNotFound filePath ->
+                    "File or directory `" ++ filePath ++ "` not found."
+
+                OtherErrorCode other ->
+                    "Encountered error `" ++ other ++ "`."
+
+        CompilerError compilerError ->
+            Error.toString compilerError
+
+
+parseErrorCode : { errorCode : String, filePath : FilePath } -> ErrorCode
+parseErrorCode { errorCode, filePath } =
+    case errorCode of
+        "ENOENT" ->
+            FileOrDirectoryNotFound filePath
+
+        _ ->
+            OtherErrorCode errorCode
+
+
+{-| TODO maybe there should be a "Checks" module for checks across phases?
+-}
+checkModuleNameAndFilePath : { sourceDirectory : FilePath, filePath : FilePath } -> Module Frontend.LocatedExpr -> Result Error (Module Frontend.LocatedExpr)
+checkModuleNameAndFilePath { sourceDirectory, filePath } ({ name } as parsedModule) =
+    let
+        expectedName : Result CLIError ModuleName
+        expectedName =
+            ModuleName.expectedModuleName
+                { sourceDirectory = sourceDirectory
+                , filePath = filePath
+                }
+                |> Result.fromMaybe (FileNotInSourceDirectories filePath)
+    in
+    if expectedName == Ok name then
+        Ok parsedModule
+
+    else
+        Err
+            (ParseError
+                (ModuleNameDoesntMatchFilePath
+                    { moduleName = name
+                    , filePath = filePath
+                    }
+                )
+            )

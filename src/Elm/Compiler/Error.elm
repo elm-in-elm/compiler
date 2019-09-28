@@ -1,16 +1,20 @@
 module Elm.Compiler.Error exposing
-    ( DesugarError(..)
-    , EmitError(..)
-    , Error(..)
-    , ErrorCode(..)
-    , GeneralError(..)
-    , ParseContext(..)
-    , ParseError(..)
-    , ParseProblem(..)
+    ( Error(..), toString
+    , ParseError(..), ParseProblem(..), ParseContext(..)
+    , DesugarError(..)
     , TypeError(..)
-    , parseErrorCode
-    , toString
+    , EmitError(..)
     )
+
+{-| All the errors the compiler can encounter.
+
+@docs Error, toString
+@docs ParseError, ParseProblem, ParseContext
+@docs DesugarError
+@docs TypeError
+@docs EmitError
+
+-}
 
 import Elm.Data.FilePath exposing (FilePath)
 import Elm.Data.ModuleName exposing (ModuleName)
@@ -21,19 +25,17 @@ import Json.Decode as JD
 import Parser.Advanced as P
 
 
+{-| The top-level error type that breaks down into specific error types.
+-}
 type Error
-    = GeneralError GeneralError
-    | ParseError ParseError
+    = ParseError ParseError
     | DesugarError DesugarError
     | TypeError TypeError
     | EmitError EmitError
 
 
-type GeneralError
-    = FileNotInSourceDirectories FilePath
-    | IOError ErrorCode
-
-
+{-| Errors encountered during parsing from String to AST.
+-}
 type ParseError
     = ModuleNameDoesntMatchFilePath
         { moduleName : ModuleName
@@ -44,6 +46,9 @@ type ParseError
     | ParseProblem (List (P.DeadEnd ParseContext ParseProblem))
 
 
+{-| Context information about what was the parser trying to do at the time of
+the error. Was it trying to parse an `if` expression? A list? etc.
+-}
 type ParseContext
     = InLiteral
     | InNumber
@@ -64,6 +69,9 @@ type ParseContext
     | InTuple3
 
 
+{-| The specific problem the parser encountered. Together with ParseContext and
+the location info this should give you enough info about what's wrong.
+-}
 type ParseProblem
     = ExpectingPortKeyword -- `>port< module ...`
     | ExpectingEffectKeyword -- `>effect< module ...`
@@ -121,6 +129,8 @@ type ParseProblem
     | CompilerBug String
 
 
+{-| Errors encountered during desugaring from the Frontend AST to Canonical AST.
+-}
 type DesugarError
     = VarNotInEnvOfModule
         { var : { module_ : Maybe ModuleName, name : VarName }
@@ -128,11 +138,17 @@ type DesugarError
         }
 
 
+{-| Errors encountered during typechecking.
+-}
 type TypeError
     = TypeMismatch Type Type
     | OccursCheckFailed Int Type
 
 
+{-| Errors encountered during emit. As you're free to do the emit phase however
+you want, this is only returned from the helpers in Stage.Emit, should you choose
+to use them :)
+-}
 type EmitError
     = MainDeclarationNotFound
     | ModuleNotFoundForVar { module_ : ModuleName, var : VarName }
@@ -140,24 +156,11 @@ type EmitError
     | DeclarationNotFound { module_ : ModuleName, name : VarName }
 
 
+{-| English description of the error. Feel free to write your own!
+-}
 toString : Error -> String
 toString error =
     case error of
-        GeneralError generalError ->
-            case generalError of
-                FileNotInSourceDirectories filePath ->
-                    "File `"
-                        ++ filePath
-                        ++ "` is not a part of the `sourceDirectories` in elm.json."
-
-                IOError errorCode ->
-                    case errorCode of
-                        FileOrDirectoryNotFound filePath ->
-                            "File or directory `" ++ filePath ++ "` not found."
-
-                        OtherErrorCode other ->
-                            "Encountered error `" ++ other ++ "`."
-
         ParseError parseError ->
             case parseError of
                 ModuleNameDoesntMatchFilePath { moduleName, filePath } ->
@@ -252,18 +255,3 @@ fullVarName { module_, name } =
     module_
         |> Maybe.map (\moduleAlias -> moduleAlias ++ "." ++ name)
         |> Maybe.withDefault name
-
-
-parseErrorCode : { errorCode : String, filePath : FilePath } -> ErrorCode
-parseErrorCode { errorCode, filePath } =
-    case errorCode of
-        "ENOENT" ->
-            FileOrDirectoryNotFound filePath
-
-        _ ->
-            OtherErrorCode errorCode
-
-
-type ErrorCode
-    = FileOrDirectoryNotFound FilePath
-    | OtherErrorCode String

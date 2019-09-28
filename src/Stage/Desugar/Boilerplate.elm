@@ -8,7 +8,8 @@ import Elm.AST.Canonical as Canonical
 import Elm.AST.Frontend as Frontend
 import Elm.Compiler.Error exposing (DesugarError)
 import Elm.Data.Declaration as Declaration exposing (Declaration, DeclarationBody)
-import Elm.Data.Module exposing (Module, Modules)
+import Elm.Data.Module exposing (Module)
+import Elm.Data.ModuleName exposing (ModuleName)
 import Elm.Data.Project exposing (Project)
 import Elm.Data.VarName exposing (VarName)
 import OurExtras.Dict as Dict
@@ -22,7 +23,7 @@ desugarProject desugarExpr project =
         |> Result.map (projectOfNewType project)
 
 
-projectOfNewType : Project Frontend.ProjectFields -> Modules Canonical.LocatedExpr -> Project Canonical.ProjectFields
+projectOfNewType : Project Frontend.ProjectFields -> Dict ModuleName (Module Canonical.LocatedExpr) -> Project Canonical.ProjectFields
 projectOfNewType old modules =
     { elmJson = old.elmJson
     , mainFilePath = old.mainFilePath

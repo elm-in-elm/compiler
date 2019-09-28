@@ -1,11 +1,17 @@
 module Elm.Data.Module exposing
-    ( Module
-    , ModuleType(..)
-    , Modules
-    , exposes
+    ( Module, ModuleType(..)
     , map
-    , unalias
+    , unalias, exposes
     )
+
+{-| Module information (corresponds to a single .elm file).
+Name, imports, contents, etc.
+
+@docs Module, ModuleType
+@docs map
+@docs unalias, exposes
+
+-}
 
 import Dict exposing (Dict)
 import Dict.Extra as Dict
@@ -17,6 +23,7 @@ import Elm.Data.ModuleName exposing (ModuleName)
 import Elm.Data.VarName exposing (VarName)
 
 
+{-| -}
 type alias Module expr =
     -- TODO comments? doc comments?
     { -- TODO somewhere check that dependencies' exposing lists contain only what's in that module's exposing list
@@ -29,17 +36,25 @@ type alias Module expr =
     }
 
 
+{-|
+
+    module Main exposing ...
+    --> PlainModule
+
+    port module Main exposing ...
+    --> PortModule
+
+    effect module Main where ... exposing ...
+    --> EffectModule
+
+-}
 type ModuleType
     = PlainModule
     | PortModule
     | EffectModule
 
 
-type alias Modules expr =
-    Dict ModuleName (Module expr)
-
-
-{-| Is this variable name exposed in this module?
+{-| Does this module expose this variable name?
 -}
 exposes : VarName -> Module a -> Bool
 exposes varName module_ =
@@ -72,7 +87,19 @@ exposes varName module_ =
                 && isInDeclarations
 
 
-{-| Given `import Foo as F`, `unalias ... (ModuleName "F")` => `Just (ModuleName "Foo")`
+{-| Reverses the aliasing in import statements for a single module name.
+
+Given `import Foo as F`:
+
+    unalias module_ "F"
+    --> Just "Foo"
+
+    unalias module_ "Foo"
+    --> Nothing
+
+    unalias module_ "Foox"
+    --> Nothing
+
 -}
 unalias : Module a -> ModuleName -> Maybe ModuleName
 unalias thisModule moduleName =
@@ -81,6 +108,8 @@ unalias thisModule moduleName =
         |> Maybe.map (Tuple.second >> .moduleName)
 
 
+{-| Apply a function to all the expressions inside the module.
+-}
 map : (a -> b) -> Module a -> Module b
 map fn module_ =
     { imports = module_.imports

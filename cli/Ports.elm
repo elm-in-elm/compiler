@@ -8,7 +8,6 @@ port module Ports exposing
     , writeToFile
     )
 
-import Elm.Compiler.Error as Error exposing (ErrorCode)
 import Elm.Data.FileContents exposing (FileContents)
 import Elm.Data.FilePath exposing (FilePath)
 
@@ -56,9 +55,9 @@ readFile filePath =
     read filePath
 
 
-waitForReadFile : (ErrorCode -> msg) -> ({ filePath : FilePath, fileContents : FileContents } -> msg) -> Sub msg
+waitForReadFile : ({ errorCode : String, filePath : FilePath } -> msg) -> ({ filePath : FilePath, fileContents : FileContents } -> msg) -> Sub msg
 waitForReadFile toErrorMsg toMsg =
     Sub.batch
         [ readSubscription toMsg
-        , readErrorSubscription (toErrorMsg << Error.parseErrorCode)
+        , readErrorSubscription toErrorMsg
         ]

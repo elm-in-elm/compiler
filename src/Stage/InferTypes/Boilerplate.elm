@@ -8,13 +8,17 @@ import Elm.AST.Canonical as Canonical
 import Elm.AST.Typed as Typed
 import Elm.Compiler.Error exposing (TypeError)
 import Elm.Data.Declaration as Declaration exposing (Declaration, DeclarationBody(..))
-import Elm.Data.Module exposing (Module, Modules)
+import Elm.Data.Module exposing (Module)
+import Elm.Data.ModuleName exposing (ModuleName)
 import Elm.Data.Project exposing (Project)
 import Elm.Data.VarName exposing (VarName)
 import OurExtras.Dict as Dict
 
 
-inferProject : (Canonical.LocatedExpr -> Result TypeError Typed.LocatedExpr) -> Project Canonical.ProjectFields -> Result TypeError (Project Typed.ProjectFields)
+inferProject :
+    (Canonical.LocatedExpr -> Result TypeError Typed.LocatedExpr)
+    -> Project Canonical.ProjectFields
+    -> Result TypeError (Project Typed.ProjectFields)
 inferProject inferExpr project =
     project.modules
         |> Dict.map (always (inferModule inferExpr))
@@ -22,7 +26,10 @@ inferProject inferExpr project =
         |> Result.map (projectOfNewType project)
 
 
-projectOfNewType : Project Canonical.ProjectFields -> Modules Typed.LocatedExpr -> Project Typed.ProjectFields
+projectOfNewType :
+    Project Canonical.ProjectFields
+    -> Dict ModuleName (Module Typed.LocatedExpr)
+    -> Project Typed.ProjectFields
 projectOfNewType old modules =
     { elmJson = old.elmJson
     , mainFilePath = old.mainFilePath
@@ -34,7 +41,10 @@ projectOfNewType old modules =
     }
 
 
-inferModule : (Canonical.LocatedExpr -> Result TypeError Typed.LocatedExpr) -> Module Canonical.LocatedExpr -> Result TypeError (Module Typed.LocatedExpr)
+inferModule :
+    (Canonical.LocatedExpr -> Result TypeError Typed.LocatedExpr)
+    -> Module Canonical.LocatedExpr
+    -> Result TypeError (Module Typed.LocatedExpr)
 inferModule inferExpr module_ =
     module_.declarations
         |> Dict.map (always (inferDeclaration inferExpr))
@@ -42,7 +52,10 @@ inferModule inferExpr module_ =
         |> Result.map (moduleOfNewType module_)
 
 
-moduleOfNewType : Module Canonical.LocatedExpr -> Dict VarName (Declaration Typed.LocatedExpr) -> Module Typed.LocatedExpr
+moduleOfNewType :
+    Module Canonical.LocatedExpr
+    -> Dict VarName (Declaration Typed.LocatedExpr)
+    -> Module Typed.LocatedExpr
 moduleOfNewType old newDecls =
     { imports = old.imports
     , name = old.name
@@ -55,7 +68,10 @@ moduleOfNewType old newDecls =
     }
 
 
-inferDeclaration : (Canonical.LocatedExpr -> Result TypeError Typed.LocatedExpr) -> Declaration Canonical.LocatedExpr -> Result TypeError (Declaration Typed.LocatedExpr)
+inferDeclaration :
+    (Canonical.LocatedExpr -> Result TypeError Typed.LocatedExpr)
+    -> Declaration Canonical.LocatedExpr
+    -> Result TypeError (Declaration Typed.LocatedExpr)
 inferDeclaration inferExpr decl =
     decl.body
         |> Declaration.mapBody inferExpr
@@ -63,7 +79,10 @@ inferDeclaration inferExpr decl =
         |> Result.map (declarationOfNewType decl)
 
 
-declarationOfNewType : Declaration Canonical.LocatedExpr -> DeclarationBody Typed.LocatedExpr -> Declaration Typed.LocatedExpr
+declarationOfNewType :
+    Declaration Canonical.LocatedExpr
+    -> DeclarationBody Typed.LocatedExpr
+    -> Declaration Typed.LocatedExpr
 declarationOfNewType old newBody =
     { name = old.name
     , module_ = old.module_

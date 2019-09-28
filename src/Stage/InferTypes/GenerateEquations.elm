@@ -30,7 +30,6 @@ subexpression.
 -}
 
 import Dict
-import Elm.AST.Common.Literal as Literal
 import Elm.AST.Common.Located as Located
 import Elm.AST.Typed as Typed
 import Elm.Data.Type as Type
@@ -47,31 +46,31 @@ generateEquations idSource located =
             Located.unwrap located
     in
     case expr of
-        Typed.Literal (Literal.Int _) ->
+        Typed.Int _ ->
             -- integer is an integer ¯\_(ツ)_/¯
             ( [ equals type_ Type.Int ]
             , idSource
             )
 
-        Typed.Literal (Literal.Float _) ->
+        Typed.Float _ ->
             -- float is a float
             ( [ equals type_ Type.Float ]
             , idSource
             )
 
-        Typed.Literal (Literal.Char _) ->
+        Typed.Char _ ->
             -- char is a char
             ( [ equals type_ Type.Char ]
             , idSource
             )
 
-        Typed.Literal (Literal.String _) ->
+        Typed.String _ ->
             -- string is a string
             ( [ equals type_ Type.String ]
             , idSource
             )
 
-        Typed.Literal (Literal.Bool _) ->
+        Typed.Bool _ ->
             -- bool is a bool
             ( [ equals type_ Type.Bool ]
             , idSource
