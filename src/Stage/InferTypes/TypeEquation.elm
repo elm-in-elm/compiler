@@ -4,7 +4,7 @@ module Stage.InferTypes.TypeEquation exposing
     , unwrap
     )
 
-import Elm.AST.Common.Type exposing (Type)
+import Elm.Data.Type exposing (Type)
 
 
 {-| Could be an alias, but let's go with opaque types:

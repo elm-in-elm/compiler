@@ -1,18 +1,33 @@
 module Elm.Data.Import exposing (Import)
 
-import Elm.Data.Exposing exposing (Exposing)
+{-| The import statement.
 
+      import Foo
+      --> Import "Foo Nothing Nothing
 
-{-| All four possibilities of the Maybes make sense:
+      import Foo.Bar
+      --> Import "Foo.Bar" Nothing Nothing
 
-                   | exposing_ = Nothing | exposing_ = Just ...
-    ---------------|---------------------|-------------------------------
-    as_ = Nothing  | import Foo          | import Foo exposing (..)
-    as_ = Just "F" | import Foo as F     | import Foo as F exposing (..)
+      import Foo as F
+      --> Import "Foo" (Just "F") Nothing
+
+      import Foo exposing (..)
+      --> Import "Foo" Nothing (Just ExposingAll)
+
+      import Foo as F exposing (..)
+      --> Import "Foo" (Just "F") (Just ExposingAll)
+
+@docs Import
 
 -}
+
+import Elm.Data.Exposing exposing (Exposing)
+import Elm.Data.ModuleName exposing (ModuleName)
+
+
+{-| -}
 type alias Import =
-    { moduleName : String
-    , as_ : Maybe String
+    { moduleName : ModuleName
+    , as_ : Maybe ModuleName
     , exposing_ : Maybe Exposing
     }

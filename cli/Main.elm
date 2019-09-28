@@ -200,19 +200,16 @@ normalizeDirs : Elm.Project.Project -> Elm.Project.Project
 normalizeDirs project =
     case project of
         Elm.Project.Application data ->
-            Elm.Project.Application { data | dirs = List.map normalizeDir data.dirs }
+            Elm.Project.Application
+                { data
+                    | dirs =
+                        List.map
+                            FilePath.removeTrailingSlash
+                            data.dirs
+                }
 
         Elm.Project.Package data ->
             Elm.Project.Package data
-
-
-normalizeDir : String -> String
-normalizeDir dir =
-    if String.endsWith "/" dir then
-        String.dropRight 1 dir
-
-    else
-        dir
 
 
 {-| Applications tell us their source directories; packages have `src/`.

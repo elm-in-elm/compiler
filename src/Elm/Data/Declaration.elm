@@ -8,7 +8,7 @@ module Elm.Data.Declaration exposing
     , toString
     )
 
-import Elm.AST.Common.Type exposing (Type, TypeArgument)
+import Elm.Data.Type exposing (Type, TypeArgument)
 
 
 type alias Declaration expr =

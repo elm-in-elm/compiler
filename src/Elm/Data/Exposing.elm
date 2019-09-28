@@ -1,22 +1,52 @@
-module Elm.Data.Exposing exposing
-    ( ExposedItem(..)
-    , Exposing(..)
-    , name
-    )
+module Elm.Data.Exposing exposing (Exposing(..), ExposedItem(..), name)
+
+{-| The `exposing (...)` line of module header and import statements.
+
+    module Foo exposing (..)
+    --> ExposingAll
+
+    module Foo exposing (bar)
+    --> ExposingSome [ExposedValue "bar"]
+
+    module Foo exposing (Bar)
+    --> ExposingSome [ExposedType "Bar"]
+
+    module Foo exposing (Bar(..))
+    --> ExposingSome [ExposedTypeAndAllConstructors "Bar"]
+
+@docs Exposing, ExposedItem, name
+
+-}
+
+import Elm.Data.VarName exposing (VarName)
 
 
+{-| -}
 type Exposing
     = ExposingAll -- exposing (..)
     | ExposingSome (List ExposedItem) -- exposing (foo, Foo, Bar(..))
 
 
+{-| -}
 type ExposedItem
-    = ExposedValue String -- exposing (foo)
-    | ExposedType String -- exposing (Foo)
-    | ExposedTypeAndAllConstructors String -- exposing (Foo(..))
+    = ExposedValue VarName -- exposing (foo)
+    | ExposedType VarName -- exposing (Foo)
+    | ExposedTypeAndAllConstructors VarName -- exposing (Foo(..))
 
 
-name : ExposedItem -> String
+{-| Unwraps the variable or type name from the ExposedItem.
+
+    name (ExposedValue "foo")
+    --> "foo"
+
+    name (ExposedType "Foo")
+    --> "Foo"
+
+    name (ExposedTypeAndAllConstructors "Foo")
+    --> "Foo"
+
+-}
+name : ExposedItem -> VarName
 name item =
     case item of
         ExposedValue name_ ->

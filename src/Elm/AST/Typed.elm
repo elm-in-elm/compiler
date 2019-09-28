@@ -20,10 +20,10 @@ import AssocList as Dict exposing (Dict)
 import Elm.AST.Canonical as Canonical
 import Elm.AST.Common.Literal exposing (Literal)
 import Elm.AST.Common.Located as Located exposing (Located)
-import Elm.AST.Common.Type exposing (Type)
 import Elm.AST.Typed.Unwrapped as Unwrapped
 import Elm.Data.Binding as Binding exposing (Binding)
 import Elm.Data.Module exposing (Modules)
+import Elm.Type exposing (Type)
 import Transform
 
 

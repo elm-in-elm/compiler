@@ -12,9 +12,9 @@ module Elm.Compiler.Error exposing
     , toString
     )
 
-import Elm.AST.Common.Type as Type exposing (Type)
 import Elm.Data.FilePath exposing (FilePath)
 import Elm.Data.ModuleName exposing (ModuleName)
+import Elm.Data.Type as Type exposing (Type)
 import Elm.Data.VarName exposing (VarName)
 import Json.Decode as JD
 import Parser.Advanced as P
@@ -194,10 +194,10 @@ toString error =
                     let
                         -- Share index between types
                         ( type1, state1 ) =
-                            Type.toString Type.emptyState t1
+                            Type.ToString.toString Type.ToString.emptyState t1
 
                         ( type2, _ ) =
-                            Type.toString state1 t2
+                            Type.ToString.toString state1 t2
                     in
                     "The types `"
                         ++ type1

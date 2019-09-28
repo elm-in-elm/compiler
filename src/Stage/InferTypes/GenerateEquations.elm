@@ -32,8 +32,8 @@ subexpression.
 import AssocList as Dict
 import Elm.AST.Common.Literal as Literal
 import Elm.AST.Common.Located as Located
-import Elm.AST.Common.Type as Type
 import Elm.AST.Typed as Typed
+import Elm.Type as Type
 import Stage.InferTypes.IdSource as IdSource exposing (IdSource)
 import Stage.InferTypes.TypeEquation exposing (TypeEquation, equals)
 import Transform
