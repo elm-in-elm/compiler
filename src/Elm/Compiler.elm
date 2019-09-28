@@ -143,7 +143,7 @@ a move backwards in the compiler phases:
 
 -}
 
-import AssocList as Dict exposing (Dict)
+import Dict exposing (Dict)
 import Elm.AST.Canonical as Canonical
 import Elm.AST.Canonical.Unwrapped as CanonicalUnwrapped
 import Elm.AST.Frontend as Frontend
@@ -163,7 +163,7 @@ import Elm.Data.FilePath exposing (FilePath)
 import Elm.Data.Import exposing (Import)
 import Elm.Data.Module as Module exposing (Module)
 import Elm.Data.ModuleName exposing (ModuleName)
-import OurExtras.AssocList as Dict
+import OurExtras.Dict as Dict
 import Parser.Advanced as P
 import Result.Extra as Result
 import Stage.Desugar

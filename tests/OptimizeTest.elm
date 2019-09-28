@@ -4,7 +4,6 @@ import AST.Common.Literal exposing (Literal(..))
 import AST.Common.Located as Located exposing (Located)
 import AST.Common.Type as Type
 import AST.Typed as Typed exposing (Expr_(..))
-import AssocList as Dict
 import Data.Declaration exposing (Declaration)
 import Data.ModuleName as ModuleName exposing (ModuleName)
 import Data.VarName as VarName exposing (VarName)

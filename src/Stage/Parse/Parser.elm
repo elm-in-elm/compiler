@@ -9,7 +9,7 @@ module Stage.Parse.Parser exposing
     , module_
     )
 
-import AssocList as Dict exposing (Dict)
+import Dict exposing (Dict)
 import Elm.AST.Common.Literal exposing (Literal(..))
 import Elm.AST.Common.Located as Located exposing (Located)
 import Elm.AST.Frontend as Frontend exposing (Expr(..), LocatedExpr)

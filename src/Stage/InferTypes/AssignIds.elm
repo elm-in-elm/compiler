@@ -39,7 +39,7 @@ Output:
 
 -}
 
-import AssocList as Dict
+import Dict
 import Elm.AST.Canonical as Canonical
 import Elm.AST.Common.Located as Located
 import Elm.AST.Typed as Typed

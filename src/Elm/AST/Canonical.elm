@@ -7,7 +7,7 @@ module Elm.AST.Canonical exposing
     , unwrap
     )
 
-import AssocList as Dict exposing (Dict)
+import Dict exposing (Dict)
 import Elm.AST.Canonical.Unwrapped as Unwrapped
 import Elm.AST.Common.Literal exposing (Literal)
 import Elm.AST.Common.Located as Located exposing (Located)

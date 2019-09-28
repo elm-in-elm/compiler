@@ -28,9 +28,10 @@ TODO we'll probably have to detect cycles and do something like IIFE
 
 -}
 
-import AssocList as Dict exposing (Dict)
-import AssocList.Extra as Dict
-import AssocSet as Set exposing (Set)
+import AssocList
+import AssocSet
+import Dict exposing (Dict)
+import Dict.Extra as Dict
 import Elm.AST.Typed as Typed exposing (Expr_(..))
 import Elm.Compiler.Error exposing (EmitError(..))
 import Elm.Data.Declaration exposing (Declaration, DeclarationBody(..))
@@ -42,6 +43,7 @@ import Elm.Data.Type as Type exposing (Type, TypeArgument(..))
 import Elm.Data.VarName exposing (VarName)
 import Graph
 import Result.Extra as Result
+import Set exposing (Set)
 
 
 projectToDeclarationList : Project Typed.ProjectFields -> Result EmitError (List (Declaration Typed.LocatedExpr))
@@ -80,8 +82,8 @@ findPathForEachModule project graph =
             project.modules
                 |> Dict.values
                 |> List.concatMap moduleToExposedDeclarations
+                |> List.map (\decl -> ( decl.module_, decl.name ))
                 |> Set.fromList
-                |> Set.map (\decl -> ( decl.module_, decl.name ))
 
         moduleToExposedDeclarations : Module Typed.LocatedExpr -> List (Declaration Typed.LocatedExpr)
         moduleToExposedDeclarations module_ =
@@ -180,7 +182,7 @@ modulesToGraph mainModuleName modules =
                 collectDependencies
                     modules
                     [ mainDeclaration ]
-                    Set.empty
+                    AssocSet.empty
                     []
             )
         |> Result.map
@@ -188,9 +190,9 @@ modulesToGraph mainModuleName modules =
                 let
                     declarationList : List (Declaration Typed.LocatedExpr)
                     declarationList =
-                        Set.toList declarations
+                        AssocSet.toList declarations
 
-                    declarationIndexes : Dict (Declaration Typed.LocatedExpr) Int
+                    declarationIndexes : AssocList.Dict (Declaration Typed.LocatedExpr) Int
                     declarationIndexes =
                         declarationList
                             |> List.indexedMap (\i declaration -> ( declaration, i ))
@@ -198,7 +200,7 @@ modulesToGraph mainModuleName modules =
                                doesn't change after we do this!
                                Graph.fromNodeLabelsAndEdgePairs depends on the indexes!
                             -}
-                            |> Dict.fromList
+                            |> AssocList.fromList
 
                     dependenciesList : List ( Int, Int )
                     dependenciesList =
@@ -210,8 +212,8 @@ modulesToGraph mainModuleName modules =
                                        direction though, so we switch them here:
                                     -}
                                     Maybe.map2 Tuple.pair
-                                        (Dict.get to declarationIndexes)
-                                        (Dict.get from declarationIndexes)
+                                        (AssocList.get to declarationIndexes)
+                                        (AssocList.get from declarationIndexes)
                                 )
                 in
                 Graph.fromNodeLabelsAndEdgePairs declarationList dependenciesList
@@ -221,9 +223,9 @@ modulesToGraph mainModuleName modules =
 collectDependencies :
     Modules Typed.LocatedExpr
     -> List (Declaration Typed.LocatedExpr)
-    -> Set (Declaration Typed.LocatedExpr)
+    -> AssocSet.Set (Declaration Typed.LocatedExpr)
     -> List Dependency
-    -> Result EmitError ( Set (Declaration Typed.LocatedExpr), List Dependency )
+    -> Result EmitError ( AssocSet.Set (Declaration Typed.LocatedExpr), List Dependency )
 collectDependencies modules remainingDeclarations doneDeclarations doneDependencies =
     -- TODO arguments in a record for better clarity... the usages of this function look weird
     {- TODO maybe keep a dict around so that we don't do the same work twice if
@@ -234,7 +236,7 @@ collectDependencies modules remainingDeclarations doneDeclarations doneDependenc
             Ok ( doneDeclarations, doneDependencies )
 
         currentDeclaration :: restOfDeclarations ->
-            if Set.member currentDeclaration doneDeclarations then
+            if AssocSet.member currentDeclaration doneDeclarations then
                 -- nothing new
                 collectDependencies
                     modules
@@ -262,7 +264,7 @@ collectDependencies modules remainingDeclarations doneDeclarations doneDependenc
                             collectDependencies
                                 modules
                                 (restOfDeclarations ++ newDeclarations)
-                                (Set.insert currentDeclaration doneDeclarations)
+                                (AssocSet.insert currentDeclaration doneDeclarations)
                                 (doneDependencies ++ newDependencies)
                         )
 

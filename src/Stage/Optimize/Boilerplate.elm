@@ -3,7 +3,7 @@ module Stage.Optimize.Boilerplate exposing
     , optimizeProject
     )
 
-import AssocList as Dict exposing (Dict)
+import Dict exposing (Dict)
 import Elm.AST.Typed as Typed
 import Elm.Data.Declaration as Declaration exposing (Declaration, DeclarationBody(..))
 import Elm.Data.Module exposing (Module, Modules)

@@ -1,8 +1,8 @@
 module Stage.Desugar exposing (desugar, desugarExpr)
 
-import AssocList as Dict
-import AssocList.Extra as Dict
 import Basics.Extra exposing (flip)
+import Dict
+import Dict.Extra as Dict
 import Elm.AST.Canonical as Canonical
 import Elm.AST.Common.Literal exposing (Literal)
 import Elm.AST.Common.Located as Located

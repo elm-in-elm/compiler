@@ -1,17 +1,3 @@
-stuff to expose:
-
-- Error
-- FilePath
-- FileContents
-- Frontend.LocatedExpr
-- Frontend.Unwrapped.Expr
-- Module
-
-- [ ] should we expose unwrap for the various exprs?
-- [ ] parseProject?
-- [ ] way from typed expr to canonical expr?
-
-
 - [ ] TODO move stuff not used by both cli/ and library/ into cli/ (eg. desugar : Project -> ... Project, etc.)
 - [ ] TODO in similar vein, don't let library/ use Boilerplate stuff - move it somewhere
 
@@ -23,3 +9,7 @@ stuff to expose:
   - [ ] library tests (should those even exist? it's a pretty thin wrapper over the shared thing...)
   - [ ] Makefile - building and running the CLI
   - [ ] publishing the library (is there a way to only simulate this?)
+
+- [ ] think about exposing Emit.JS, so that people can plug the library into some ports with eval() >:-)
+
+- [ ] README... one for the package manager, one for github? how to best do this?

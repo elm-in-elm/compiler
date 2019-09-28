@@ -7,8 +7,8 @@ module Elm.Data.Module exposing
     , unalias
     )
 
-import AssocList as Dict exposing (Dict)
-import AssocList.Extra as Dict
+import Dict exposing (Dict)
+import Dict.Extra as Dict
 import Elm.Data.Declaration as Declaration exposing (Declaration)
 import Elm.Data.Exposing exposing (ExposedItem(..), Exposing(..))
 import Elm.Data.FilePath exposing (FilePath)

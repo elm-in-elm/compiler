@@ -9,18 +9,17 @@ module ParserTest exposing
 import AST.Common.Literal exposing (Literal(..))
 import AST.Frontend as Frontend
 import AST.Frontend.Unwrapped exposing (Expr(..))
-import AssocList as Dict
 import Data.Exposing exposing (ExposedItem(..), Exposing(..))
 import Data.Module exposing (ModuleType(..))
 import Data.ModuleName as ModuleName exposing (ModuleName)
 import Data.VarName as VarName exposing (VarName)
+import Dict
 import Error exposing (ParseContext, ParseProblem)
 import Expect exposing (Expectation)
 import Parser.Advanced as P
 import Result.Extra
 import Stage.Parse.Parser
 import Test exposing (Test, describe, test)
-import TestHelpers exposing (module_, var)
 
 
 moduleDeclaration : Test

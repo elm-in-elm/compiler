@@ -3,7 +3,7 @@ module Stage.InferTypes.Boilerplate exposing
     , inferProject
     )
 
-import AssocList as Dict exposing (Dict)
+import Dict exposing (Dict)
 import Elm.AST.Canonical as Canonical
 import Elm.AST.Typed as Typed
 import Elm.Compiler.Error exposing (TypeError)
@@ -11,7 +11,7 @@ import Elm.Data.Declaration as Declaration exposing (Declaration, DeclarationBod
 import Elm.Data.Module exposing (Module, Modules)
 import Elm.Data.Project exposing (Project)
 import Elm.Data.VarName exposing (VarName)
-import OurExtras.AssocList as Dict
+import OurExtras.Dict as Dict
 
 
 inferProject : (Canonical.LocatedExpr -> Result TypeError Typed.LocatedExpr) -> Project Canonical.ProjectFields -> Result TypeError (Project Typed.ProjectFields)

@@ -17,7 +17,7 @@ testing purposes.
 
 -}
 
-import AssocList as Dict exposing (Dict)
+import Dict exposing (Dict)
 import Elm.AST.Common.Literal exposing (Literal(..))
 import Elm.AST.Typed as Typed exposing (Expr_(..))
 import Elm.Compiler.Error exposing (Error(..))
@@ -114,8 +114,10 @@ emitExpr located =
                 bindingsJS =
                     bindings
                         |> Dict.values
-                        |> {- AssocList reverses the list on creation:
-                              https://package.elm-lang.org/packages/pzp1997/assoc-list/latest/AssocList#fromList
+                        |> {- TODO does this still need the reversing after we
+                              removed assoc list from here and are using Dict
+                              again? If an emit test is failing and it looks
+                              weird, this is probably the cause.
                            -}
                            List.reverse
                         |> List.map (\binding -> "const " ++ mangleVarName binding.name ++ " = " ++ emitExpr binding.body)

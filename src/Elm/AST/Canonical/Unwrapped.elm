@@ -1,6 +1,6 @@
 module Elm.AST.Canonical.Unwrapped exposing (Expr(..))
 
-import AssocList exposing (Dict)
+import Dict exposing (Dict)
 import Elm.AST.Common.Literal exposing (Literal)
 import Elm.Data.Binding exposing (Binding)
 import Elm.Data.ModuleName exposing (ModuleName)

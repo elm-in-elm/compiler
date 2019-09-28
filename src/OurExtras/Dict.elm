@@ -1,11 +1,11 @@
-module OurExtras.AssocList exposing (combine)
+module OurExtras.Dict exposing (combine)
 
-import AssocList as Dict exposing (Dict)
+import Dict exposing (Dict)
 
 
 {-| Similar to Result.Extra.combine which works for Lists.
 -}
-combine : Dict k (Result err v) -> Result err (Dict k v)
+combine : Dict comparable (Result err v) -> Result err (Dict comparable v)
 combine dictOfResults =
     dictOfResults
         |> Dict.foldr

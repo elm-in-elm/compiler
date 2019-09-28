@@ -3,7 +3,7 @@ module Stage.Desugar.Boilerplate exposing
     , desugarProject
     )
 
-import AssocList as Dict exposing (Dict)
+import Dict exposing (Dict)
 import Elm.AST.Canonical as Canonical
 import Elm.AST.Frontend as Frontend
 import Elm.Compiler.Error exposing (DesugarError)
@@ -11,7 +11,7 @@ import Elm.Data.Declaration as Declaration exposing (Declaration, DeclarationBod
 import Elm.Data.Module exposing (Module, Modules)
 import Elm.Data.Project exposing (Project)
 import Elm.Data.VarName exposing (VarName)
-import OurExtras.AssocList as Dict
+import OurExtras.Dict as Dict
 
 
 desugarProject : (Module Frontend.LocatedExpr -> Frontend.LocatedExpr -> Result DesugarError Canonical.LocatedExpr) -> Project Frontend.ProjectFields -> Result DesugarError (Project Canonical.ProjectFields)

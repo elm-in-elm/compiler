@@ -40,8 +40,7 @@ about returning those.
 
 -}
 
-import AssocList as Dict exposing (Dict)
-import AssocSet as Set exposing (Set)
+import Dict exposing (Dict)
 import Elm.AST.Frontend as Frontend
 import Elm.Compiler.Error as Error
     exposing
@@ -60,6 +59,7 @@ import Elm.Project
 import Json.Decode as JD
 import Platform
 import Ports exposing (println, printlnStderr)
+import Set exposing (Set)
 import Stage.Desugar as Desugar
 import Stage.Emit.JavaScript as EmitJS
 import Stage.InferTypes as InferTypes
