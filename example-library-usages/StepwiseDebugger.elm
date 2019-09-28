@@ -24,7 +24,7 @@ inputFiles =
     Debug.todo "whatever"
 
 
-main_ : FileContents -> Result Error FileContents
+main_ : FileContents -> Result Error { js : FileContents, sourceMap : FileContents }
 main_ moduleSourceCode =
     inputFiles
         |> Elm.Compiler.parseModules
@@ -34,7 +34,9 @@ main_ moduleSourceCode =
         |> Result.map emitJSAndSourceMap
 
 
-emitJSAndSourceMap : Dict ModuleName (Module Typed.LocatedExpr) -> FileContents
+emitJSAndSourceMap :
+    Dict ModuleName (Module Typed.LocatedExpr)
+    -> { js : FileContents, sourceMap : FileContents }
 emitJSAndSourceMap =
     -- TODO flesh out this example
     Debug.todo "whatever"
