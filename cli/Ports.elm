@@ -28,7 +28,7 @@ port readSubscription : ({ filePath : FilePath, fileContents : FileContents } ->
 port readErrorSubscription : ({ filePath : FilePath, errorCode : String } -> msg) -> Sub msg
 
 
-port write : { filePath : String, contents : String } -> Cmd msg
+port writeToFile : { filePath : String, fileContents : String } -> Cmd msg
 
 
 print : String -> Cmd msg
@@ -62,11 +62,3 @@ waitForReadFile toErrorMsg toMsg =
         [ readSubscription toMsg
         , readErrorSubscription (toErrorMsg << Error.parseErrorCode)
         ]
-
-
-writeToFile : FilePath -> FileContents -> Cmd msg
-writeToFile filePath contents =
-    write
-        { filePath = filePath
-        , contents = contents
-        }

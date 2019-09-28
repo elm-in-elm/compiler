@@ -23,7 +23,7 @@ import Elm.AST.Common.Located as Located exposing (Located)
 import Elm.AST.Typed.Unwrapped as Unwrapped
 import Elm.Data.Binding as Binding exposing (Binding)
 import Elm.Data.Module exposing (Modules)
-import Elm.Type exposing (Type)
+import Elm.Data.Type exposing (Type)
 import Transform
 
 

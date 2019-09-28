@@ -363,7 +363,13 @@ writeToFSAndExit result =
                 outputCmds =
                     outputFiles
                         |> Dict.toList
-                        |> List.map (\( filePath, fileContents ) -> Ports.writeToFile filePath fileContents)
+                        |> List.map
+                            (\( filePath, fileContents ) ->
+                                Ports.writeToFile
+                                    { filePath = filePath
+                                    , fileContents = fileContents
+                                    }
+                            )
             in
             ( Finished
             , Cmd.batch

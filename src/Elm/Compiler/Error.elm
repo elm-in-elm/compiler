@@ -15,6 +15,7 @@ module Elm.Compiler.Error exposing
 import Elm.Data.FilePath exposing (FilePath)
 import Elm.Data.ModuleName exposing (ModuleName)
 import Elm.Data.Type as Type exposing (Type)
+import Elm.Data.Type.ToString as TypeToString
 import Elm.Data.VarName exposing (VarName)
 import Json.Decode as JD
 import Parser.Advanced as P
@@ -192,12 +193,12 @@ toString error =
             case typeError of
                 TypeMismatch t1 t2 ->
                     let
-                        -- Share index between types
+                        -- share index between types
                         ( type1, state1 ) =
-                            Type.ToString.toString Type.ToString.emptyState t1
+                            TypeToString.toString TypeToString.emptyState t1
 
                         ( type2, _ ) =
-                            Type.ToString.toString state1 t2
+                            TypeToString.toString state1 t2
                     in
                     "The types `"
                         ++ type1
@@ -207,11 +208,12 @@ toString error =
 
                 OccursCheckFailed varId type_ ->
                     let
+                        -- share index between types
                         ( type1, state1 ) =
-                            Type.toString Type.emptyState (Type.Var varId)
+                            TypeToString.toString TypeToString.emptyState (Type.Var varId)
 
                         ( type2, _ ) =
-                            Type.toString state1 type_
+                            TypeToString.toString state1 type_
                     in
                     "An \"occurs check\" failed while typechecking: "
                         ++ type1

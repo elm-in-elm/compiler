@@ -6,7 +6,7 @@ module Elm.Data.Type.ToString exposing
     )
 
 import Dict exposing (Dict)
-import Elm.Data.Type exposing (Type)
+import Elm.Data.Type exposing (Type(..))
 
 
 type State
@@ -164,3 +164,77 @@ letter int =
     (int + 97 {- `a` -})
         |> Char.fromCode
         |> String.fromChar
+
+
+{-|
+
+     maybeWrapParens (List Int) ( "List Int", state )
+     --> ( "(List Int)", state )
+
+     maybeWrapParens Int ( "Int", state )
+     --> ( "Int", state )
+
+-}
+maybeWrapParens : Type -> ( String, a ) -> ( String, a )
+maybeWrapParens type_ ( string, state ) =
+    let
+        wrapParens : String -> String
+        wrapParens x =
+            "(" ++ x ++ ")"
+    in
+    if shouldWrapParens type_ then
+        ( wrapParens string, state )
+
+    else
+        ( string, state )
+
+
+{-| "Is there a possibility this type would need to be surrounded by parentheses?
+
+Eg. function types: normally no need for parentheses:
+
+    fn : Int -> Bool
+
+but there are usecases that need parentheses:
+
+    task : Task (Int -> Bool) String
+
+-}
+shouldWrapParens : Type -> Bool
+shouldWrapParens type_ =
+    case type_ of
+        Var _ ->
+            False
+
+        Function _ _ ->
+            True
+
+        Int ->
+            False
+
+        Float ->
+            False
+
+        Char ->
+            False
+
+        String ->
+            False
+
+        Bool ->
+            False
+
+        List _ ->
+            True
+
+        Unit ->
+            False
+
+        Tuple _ _ ->
+            False
+
+        Tuple3 _ _ _ ->
+            False
+
+        UserDefinedType _ params ->
+            not (List.isEmpty params)

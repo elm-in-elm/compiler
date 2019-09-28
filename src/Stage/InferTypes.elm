@@ -5,7 +5,7 @@ import Elm.AST.Common.Located as Located
 import Elm.AST.Typed as Typed
 import Elm.Compiler.Error exposing (Error(..), TypeError(..))
 import Elm.Data.Project exposing (Project)
-import Elm.Type exposing (Type(..))
+import Elm.Data.Type exposing (Type(..))
 import Stage.InferTypes.AssignIds as AssignIds
 import Stage.InferTypes.Boilerplate as Boilerplate
 import Stage.InferTypes.GenerateEquations as GenerateEquations

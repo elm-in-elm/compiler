@@ -7,7 +7,7 @@ module Stage.InferTypes.SubstitutionMap exposing
     )
 
 import Dict exposing (Dict)
-import Elm.Type exposing (Type)
+import Elm.Data.Type exposing (Type)
 
 
 {-| A thin opaque wrapper around a dict from type variable IDs to inferred types.

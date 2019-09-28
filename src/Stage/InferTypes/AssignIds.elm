@@ -43,7 +43,7 @@ import AssocList as Dict
 import Elm.AST.Canonical as Canonical
 import Elm.AST.Common.Located as Located
 import Elm.AST.Typed as Typed
-import Elm.Type as Type
+import Elm.Data.Type as Type
 import Stage.InferTypes.IdSource as IdSource exposing (IdSource)
 
 

@@ -1,7 +1,7 @@
 module Stage.InferTypes.Unify exposing (unifyAllEquations)
 
 import Elm.Compiler.Error exposing (TypeError(..))
-import Elm.Type as Type exposing (Type)
+import Elm.Data.Type as Type exposing (Type(..))
 import Stage.InferTypes.SubstitutionMap as SubstitutionMap exposing (SubstitutionMap)
 import Stage.InferTypes.TypeEquation as TypeEquation exposing (TypeEquation)
 
@@ -29,25 +29,25 @@ unify t1 t2 substitutionMap =
 
     else
         case ( t1, t2 ) of
-            ( Type.Var id, _ ) ->
+            ( Var id, _ ) ->
                 unifyVariable id t2 substitutionMap
 
-            ( _, Type.Var id ) ->
+            ( _, Var id ) ->
                 unifyVariable id t1 substitutionMap
 
-            ( Type.Function arg1 result1, Type.Function arg2 result2 ) ->
+            ( Function arg1 result1, Function arg2 result2 ) ->
                 unify result1 result2 substitutionMap
                     |> Result.andThen (unify arg1 arg2)
 
-            ( Type.List list1, Type.List list2 ) ->
+            ( List list1, List list2 ) ->
                 unify list1 list2 substitutionMap
 
-            ( Type.Tuple t1e1 t1e2, Type.Tuple t2e1 t2e2 ) ->
+            ( Tuple t1e1 t1e2, Tuple t2e1 t2e2 ) ->
                 substitutionMap
                     |> unify t1e1 t2e1
                     |> Result.andThen (unify t1e2 t2e2)
 
-            ( Type.Tuple3 t1e1 t1e2 t1e3, Type.Tuple3 t2e1 t2e2 t2e3 ) ->
+            ( Tuple3 t1e1 t1e2 t1e3, Tuple3 t2e1 t2e2 t2e3 ) ->
                 substitutionMap
                     |> unify t1e1 t2e1
                     |> Result.andThen (unify t1e2 t2e2)
@@ -65,9 +65,9 @@ unifyVariable id type_ substitutionMap =
 
         Nothing ->
             case
-                Type.getVarId type_
+                Type.varId type_
                     |> Maybe.andThen (\id2 -> SubstitutionMap.get id2 substitutionMap)
-                    |> Maybe.map (\typeForId2 -> unify (Type.Var id) typeForId2 substitutionMap)
+                    |> Maybe.map (\typeForId2 -> unify (Var id) typeForId2 substitutionMap)
             of
                 Just newSubstitutionMap ->
                     newSubstitutionMap
@@ -82,12 +82,12 @@ unifyVariable id type_ substitutionMap =
 
 occurs : Int -> Type -> SubstitutionMap -> Bool
 occurs id type_ substitutionMap =
-    if type_ == Type.Var id then
+    if type_ == Var id then
         True
 
     else
         case
-            Type.getVarId type_
+            Type.varId type_
                 |> Maybe.andThen (\id2 -> SubstitutionMap.get id2 substitutionMap)
                 |> Maybe.map (\typeForId2 -> occurs id typeForId2 substitutionMap)
         of
@@ -96,7 +96,7 @@ occurs id type_ substitutionMap =
 
             Nothing ->
                 case type_ of
-                    Type.Function arg result ->
+                    Function arg result ->
                         occurs id result substitutionMap
                             || occurs id arg substitutionMap
 

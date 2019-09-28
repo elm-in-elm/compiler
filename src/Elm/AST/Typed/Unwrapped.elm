@@ -3,7 +3,7 @@ module Elm.AST.Typed.Unwrapped exposing (Expr, Expr_(..))
 import AssocList exposing (Dict)
 import Elm.AST.Common.Literal exposing (Literal)
 import Elm.Data.Binding exposing (Binding)
-import Elm.Type exposing (Type)
+import Elm.Data.Type exposing (Type)
 
 
 {-| This only differs from AST.Typed.Expr by recursing on itself instead of

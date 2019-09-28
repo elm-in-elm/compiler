@@ -31,7 +31,6 @@ TODO we'll probably have to detect cycles and do something like IIFE
 import AssocList as Dict exposing (Dict)
 import AssocList.Extra as Dict
 import AssocSet as Set exposing (Set)
-import Elm.AST.Common.Type as Type exposing (Type, TypeArgument(..))
 import Elm.AST.Typed as Typed exposing (Expr_(..))
 import Elm.Compiler.Error exposing (EmitError(..))
 import Elm.Data.Declaration exposing (Declaration, DeclarationBody(..))
@@ -39,6 +38,7 @@ import Elm.Data.Exposing as Exposing exposing (ExposedItem(..), Exposing(..))
 import Elm.Data.Module exposing (Module, Modules)
 import Elm.Data.ModuleName exposing (ModuleName)
 import Elm.Data.Project exposing (Project)
+import Elm.Data.Type as Type exposing (Type, TypeArgument(..))
 import Elm.Data.VarName exposing (VarName)
 import Graph
 import Result.Extra as Result
