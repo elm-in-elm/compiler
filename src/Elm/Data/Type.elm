@@ -7,6 +7,7 @@ module Elm.Data.Type exposing (Type(..), TypeArgument(..), isParametric, varId)
 -}
 
 import Dict exposing (Dict)
+import Elm.Data.VarName exposing (VarName)
 
 
 {-| -}
@@ -37,8 +38,12 @@ type Type
     | Unit
     | Tuple Type Type
     | Tuple3 Type Type Type
-    | {- The actual definitions of type aliases and custom types are elsewhere,
-         this is just a "pointer", "var".
+    | {- The actual definitions of type aliases and custom types are elsewhere
+         (in the Declaration module), this is just a "pointer", "var".
+
+         Also, this is the *usage* of a type! So while definition of Maybe
+         might be `Maybe a`, here you'll most likely see specific stuff
+         like `Maybe Int`.
 
          This constructor encompasses both type aliases and custom types:
       -}
@@ -56,7 +61,7 @@ type Type
 -}
 type TypeArgument
     = ConcreteType Type
-    | TypeVariable String
+    | TypeVariable VarName
 
 
 {-| Unwrap the ID of the type variable

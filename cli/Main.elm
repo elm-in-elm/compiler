@@ -337,7 +337,7 @@ compile project =
                                 (\decl ->
                                     decl.body
                                         |> Declaration.mapBody Frontend.unwrap
-                                        |> Debug.log (Declaration.toString decl)
+                                        |> Debug.log (\{ module_, name } -> module_ ++ "." ++ name)
                                 )
                     )
     in

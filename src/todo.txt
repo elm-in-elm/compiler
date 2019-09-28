@@ -13,3 +13,7 @@
 - [ ] think about exposing Emit.JS, so that people can plug the library into some ports with eval() >:-)
 
 - [ ] README... one for the package manager, one for github? how to best do this?
+
+
+- [ ] documentation: stop leaving (Int ...) around where it needs to be (Literal (Int ...))
+- [ ] Declaration.TypeAlias - it doesn't look right, see the TODO there

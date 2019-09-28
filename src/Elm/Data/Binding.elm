@@ -26,7 +26,7 @@ type alias Binding expr =
     }
 
 
-{-| Use a function on the expression inside the binding.
+{-| Apply a function to the expression inside the binding.
 -}
 map : (e1 -> e2) -> Binding e1 -> Binding e2
 map fn { name, body } =
