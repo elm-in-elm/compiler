@@ -9,8 +9,8 @@ module TestHelpers exposing
     )
 
 import Elm.AST.Common.Literal as Literal
-import Elm.AST.Common.Located as Located exposing (Located)
 import Elm.AST.Typed as Typed exposing (Expr_(..))
+import Elm.Data.Located as Located exposing (Located)
 import Elm.Data.Type as Type exposing (Type(..))
 import Elm.Data.Type.ToString as TypeToString
 

@@ -3,9 +3,9 @@ module InferTypesTest exposing (isParametric, niceVarName, typeInference, typeTo
 import Elm.AST.Canonical as Canonical
 import Elm.AST.Canonical.Unwrapped as CanonicalU
 import Elm.AST.Common.Literal as Literal
-import Elm.AST.Common.Located as Located
 import Elm.AST.Typed as Typed
 import Elm.Compiler.Error as Error exposing (Error(..), TypeError(..))
+import Elm.Data.Located as Located
 import Elm.Data.ModuleName as ModuleName exposing (ModuleName)
 import Elm.Data.Type as Type exposing (Type(..))
 import Elm.Data.Type.ToString as TypeToString

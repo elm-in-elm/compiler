@@ -13,6 +13,7 @@
         "Elm.Data.FileContents",
         "Elm.Data.FilePath",
         "Elm.Data.Import",
+        "Elm.Data.Located",
         "Elm.Data.Module",
         "Elm.Data.ModuleName",
         "Elm.Data.Project",
@@ -24,8 +25,7 @@
         "Elm.AST.Canonical",
         "Elm.AST.Canonical.Unwrapped",
         "Elm.AST.Typed",
-        "Elm.AST.Typed.Unwrapped",
-        "Elm.AST.Common.Located"
+        "Elm.AST.Typed.Unwrapped"
     ],
     "elm-version": "0.19.0 <= v < 0.20.0",
     "dependencies": {

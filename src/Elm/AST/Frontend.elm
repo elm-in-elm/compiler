@@ -8,9 +8,9 @@ module Elm.AST.Frontend exposing
     )
 
 import Dict exposing (Dict)
-import Elm.AST.Common.Located as Located exposing (Located)
 import Elm.AST.Frontend.Unwrapped as Unwrapped
 import Elm.Data.Binding as Binding exposing (Binding)
+import Elm.Data.Located as Located exposing (Located)
 import Elm.Data.Module exposing (Module)
 import Elm.Data.ModuleName exposing (ModuleName)
 import Elm.Data.VarName exposing (VarName)

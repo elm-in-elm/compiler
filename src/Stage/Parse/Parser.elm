@@ -10,7 +10,6 @@ module Stage.Parse.Parser exposing
     )
 
 import Dict exposing (Dict)
-import Elm.AST.Common.Located as Located exposing (Located)
 import Elm.AST.Frontend as Frontend exposing (Expr(..), LocatedExpr)
 import Elm.Compiler.Error
     exposing
@@ -24,6 +23,7 @@ import Elm.Data.Declaration as Declaration exposing (Declaration)
 import Elm.Data.Exposing exposing (ExposedItem(..), Exposing(..))
 import Elm.Data.FilePath exposing (FilePath)
 import Elm.Data.Import exposing (Import)
+import Elm.Data.Located as Located exposing (Located)
 import Elm.Data.Module exposing (Module, ModuleType(..))
 import Elm.Data.ModuleName exposing (ModuleName)
 import Elm.Data.VarName exposing (VarName)

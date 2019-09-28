@@ -3,9 +3,9 @@ module InferTypesFuzz exposing (typeInference)
 import Elm.AST.Canonical as Canonical
 import Elm.AST.Canonical.Unwrapped as CanonicalU
 import Elm.AST.Common.Literal as Literal exposing (Literal(..))
-import Elm.AST.Common.Located as Located
 import Elm.AST.Typed as Typed
 import Elm.Compiler.Error exposing (TypeError(..))
+import Elm.Data.Located as Located
 import Elm.Data.Type as Type exposing (Type)
 import Elm.Data.VarName as VarName exposing (VarName)
 import Expect exposing (Expectation)

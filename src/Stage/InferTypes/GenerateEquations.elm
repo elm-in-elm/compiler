@@ -30,8 +30,8 @@ subexpression.
 -}
 
 import Dict
-import Elm.AST.Common.Located as Located
 import Elm.AST.Typed as Typed
+import Elm.Data.Located as Located
 import Elm.Data.Type as Type
 import Elm.Data.VarName exposing (VarName)
 import Stage.InferTypes.IdSource as IdSource exposing (IdSource)

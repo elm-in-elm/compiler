@@ -4,10 +4,10 @@ import Basics.Extra exposing (flip)
 import Dict exposing (Dict)
 import Dict.Extra as Dict
 import Elm.AST.Canonical as Canonical
-import Elm.AST.Common.Located as Located
 import Elm.AST.Frontend as Frontend
 import Elm.Compiler.Error exposing (DesugarError(..), Error(..))
 import Elm.Data.Binding as Binding
+import Elm.Data.Located as Located
 import Elm.Data.Module as Module exposing (Module)
 import Elm.Data.ModuleName exposing (ModuleName)
 import Elm.Data.Project exposing (Project)

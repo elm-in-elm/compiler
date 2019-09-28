@@ -18,9 +18,9 @@ module Elm.AST.Typed exposing
 
 import Dict exposing (Dict)
 import Elm.AST.Canonical as Canonical
-import Elm.AST.Common.Located as Located exposing (Located)
 import Elm.AST.Typed.Unwrapped as Unwrapped
 import Elm.Data.Binding as Binding exposing (Binding)
+import Elm.Data.Located as Located exposing (Located)
 import Elm.Data.Module exposing (Module)
 import Elm.Data.ModuleName exposing (ModuleName)
 import Elm.Data.Type exposing (Type)

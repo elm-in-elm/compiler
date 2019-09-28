@@ -41,8 +41,8 @@ Output:
 
 import Dict
 import Elm.AST.Canonical as Canonical
-import Elm.AST.Common.Located as Located
 import Elm.AST.Typed as Typed
+import Elm.Data.Located as Located
 import Elm.Data.Type as Type
 import Stage.InferTypes.IdSource as IdSource exposing (IdSource)
 

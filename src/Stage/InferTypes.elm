@@ -1,9 +1,9 @@
 module Stage.InferTypes exposing (inferExpr, inferTypes)
 
 import Elm.AST.Canonical as Canonical
-import Elm.AST.Common.Located as Located
 import Elm.AST.Typed as Typed
 import Elm.Compiler.Error exposing (Error(..), TypeError(..))
+import Elm.Data.Located as Located
 import Elm.Data.Project exposing (Project)
 import Elm.Data.Type exposing (Type(..))
 import Stage.InferTypes.AssignIds as AssignIds
