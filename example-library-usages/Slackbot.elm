@@ -64,4 +64,5 @@ main_ snippet =
         expr =
             Elm.Compiler.parseExpr snippets.expr
     in
+    -- TODO flesh out this example
     Debug.todo "whatever"

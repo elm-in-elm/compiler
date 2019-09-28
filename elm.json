@@ -5,7 +5,27 @@
     "license": "BSD-3-Clause",
     "version": "1.0.0",
     "exposed-modules": [
-        "Elm.Compiler"
+        "Elm.Compiler",
+        "Elm.Compiler.Error",
+        "Elm.Data.Binding",
+        "Elm.Data.Declaration",
+        "Elm.Data.Exposing",
+        "Elm.Data.FileContents",
+        "Elm.Data.FilePath",
+        "Elm.Data.Import",
+        "Elm.Data.Module",
+        "Elm.Data.ModuleName",
+        "Elm.Data.Project",
+        "Elm.Data.VarName",
+        "Elm.AST.Frontend",
+        "Elm.AST.Frontend.Unwrapped",
+        "Elm.AST.Canonical",
+        "Elm.AST.Canonical.Unwrapped",
+        "Elm.AST.Typed",
+        "Elm.AST.Typed.Unwrapped",
+        "Elm.AST.Common.Literal",
+        "Elm.AST.Common.Located",
+        "Elm.AST.Common.Type"
     ],
     "elm-version": "0.19.0 <= v < 0.20.0",
     "dependencies": {
