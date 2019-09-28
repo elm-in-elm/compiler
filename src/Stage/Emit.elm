@@ -70,7 +70,7 @@ findPathToMain mainModuleName programGraph =
         (Set.singleton ( mainModuleName, "main" ))
 
 
-{-| In this case we don't have `main`s but
+{-| In this case we don't have `main`s but TODO finish writing this
 -}
 findPathForEachModule : Project Typed.ProjectFields -> Graph -> Dict ModuleName (List (Declaration Typed.LocatedExpr))
 findPathForEachModule project graph =
@@ -115,7 +115,7 @@ findPathForEachModule project graph =
 
 
 {-| Generic function to find a good ordering of values (so that all the
-dependencies are emitted before the
+dependencies are emitted before the TODO finish writing this
 -}
 findPath : Graph -> Set ( ModuleName, VarName ) -> List (Declaration Typed.LocatedExpr)
 findPath graph startingDeclarations =
@@ -194,8 +194,10 @@ modulesToGraph mainModuleName modules =
                     declarationIndexes =
                         declarationList
                             |> List.indexedMap (\i declaration -> ( declaration, i ))
-                            -- It's important that the order of declarationList doesn't change after we do this!
-                            -- Graph.fromNodeLabelsAndEdgePairs depends on the indexes!
+                            {- It's important that the order of declarationList
+                               doesn't change after we do this!
+                               Graph.fromNodeLabelsAndEdgePairs depends on the indexes!
+                            -}
                             |> Dict.fromList
 
                     dependenciesList : List ( Int, Int )
@@ -203,9 +205,10 @@ modulesToGraph mainModuleName modules =
                         dependencies
                             |> List.filterMap
                                 (\{ from, to } ->
-                                    -- {from,to} --> `from` depends on `to`
-                                    -- the Graph library needs the other direction though,
-                                    -- so we switch them here:
+                                    {- {from,to} --> `from` depends on `to`.
+                                       The Graph library needs the other
+                                       direction though, so we switch them here:
+                                    -}
                                     Maybe.map2 Tuple.pair
                                         (Dict.get to declarationIndexes)
                                         (Dict.get from declarationIndexes)
@@ -253,7 +256,9 @@ collectDependencies modules remainingDeclarations doneDeclarations doneDependenc
                                                 }
                                             )
                             in
-                            -- remember the found dependencies, but also remember to collect *their* dependencies!
+                            {- remember the found dependencies, but also remember
+                               to collect *their* dependencies!
+                            -}
                             collectDependencies
                                 modules
                                 (restOfDeclarations ++ newDeclarations)
