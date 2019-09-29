@@ -43,7 +43,14 @@ type alias ExprConfig =
 
 located : Parser_ p -> Parser_ (Located p)
 located p =
-    P.succeed Located.parsed
+    P.succeed
+        (\( startRow, startCol ) value ( endRow, endCol ) ->
+            Located.located
+                { start = { row = startRow, col = startCol }
+                , end = { row = endRow, col = endCol }
+                }
+                value
+        )
         |= P.getPosition
         |= p
         |= P.getPosition

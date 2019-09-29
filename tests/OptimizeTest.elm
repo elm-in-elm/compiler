@@ -1,6 +1,5 @@
 module OptimizeTest exposing (optimize)
 
-import Elm.AST.Common.Literal exposing (Literal(..))
 import Elm.AST.Typed as Typed exposing (Expr_(..))
 import Elm.Data.Declaration exposing (Declaration)
 import Elm.Data.Located as Located exposing (Located)

@@ -7,7 +7,6 @@ module ParserTest exposing
     )
 
 import Dict
-import Elm.AST.Common.Literal exposing (Literal(..))
 import Elm.AST.Frontend as Frontend
 import Elm.AST.Frontend.Unwrapped exposing (Expr(..))
 import Elm.Compiler.Error exposing (ParseContext, ParseProblem)
@@ -442,7 +441,7 @@ expr =
                             , body =
                                 Plus
                                     (Argument "x")
-                                    (Literal (Int 1))
+                                    (Int 1)
                             }
                         )
                   )
@@ -469,7 +468,7 @@ expr =
                   , Just
                         (Call
                             { fn = Var { name = "fn", module_ = Nothing }
-                            , argument = Literal (Int 1)
+                            , argument = Int 1
                             }
                         )
                   )
@@ -511,9 +510,9 @@ expr =
                   , "if 1 then 2 else 3"
                   , Just
                         (If
-                            { test = Literal (Int 1)
-                            , then_ = Literal (Int 2)
-                            , else_ = Literal (Int 3)
+                            { test = Int 1
+                            , then_ = Int 2
+                            , else_ = Int 3
                             }
                         )
                   )
@@ -521,9 +520,9 @@ expr =
                   , "if   1   then   2   else   3"
                   , Just
                         (If
-                            { test = Literal (Int 1)
-                            , then_ = Literal (Int 2)
-                            , else_ = Literal (Int 3)
+                            { test = Int 1
+                            , then_ = Int 2
+                            , else_ = Int 3
                             }
                         )
                   )
@@ -532,77 +531,77 @@ expr =
             , ( "literal int"
               , [ ( "positive"
                   , "123"
-                  , Just (Literal (Int 123))
+                  , Just (Int 123)
                   )
                 , ( "zero"
                   , "0"
-                  , Just (Literal (Int 0))
+                  , Just (Int 0)
                   )
                 , ( "negative zero"
                   , "-0"
-                  , Just (Literal (Int (negate 0)))
+                  , Just (Int (negate 0))
                   )
                 , ( "hexadecimal int"
                   , "0x123abc"
-                  , Just (Literal (Int 1194684))
+                  , Just (Int 1194684)
                   )
                 , ( "hexadecimal int - uppercase"
                   , "0x789DEF"
-                  , Just (Literal (Int 7904751))
+                  , Just (Int 7904751)
                   )
                 , ( "negative int"
                   , "-42"
-                  , Just (Literal (Int -42))
+                  , Just (Int -42)
                   )
                 , ( "negative hexadecimal"
                   , "-0x123abc"
-                  , Just (Literal (Int -1194684))
+                  , Just (Int -1194684)
                   )
                 ]
               )
             , ( "literal float"
               , [ ( "positive"
                   , "12.3"
-                  , Just (Literal (Float 12.3))
+                  , Just (Float 12.3)
                   )
                 , ( "zero"
                   , "0.0"
-                  , Just (Literal (Float 0))
+                  , Just (Float 0)
                   )
                 , ( "negative zero"
                   , "-0.0"
-                  , Just (Literal (Float (negate 0)))
+                  , Just (Float (negate 0))
                   )
                 , ( "negative float"
                   , "-4.2"
-                  , Just (Literal (Float -4.2))
+                  , Just (Float -4.2)
                   )
                 , ( "Scientific notation"
                   , "5.12e2"
-                  , Just (Literal (Float 512))
+                  , Just (Float 512)
                   )
                 , ( "Uppercase scientific notation"
                   , "5.12E2"
-                  , Just (Literal (Float 512))
+                  , Just (Float 512)
                   )
                 , ( "Negative scientific notation"
                   , "-5.12e2"
-                  , Just (Literal (Float -512))
+                  , Just (Float -512)
                   )
                 , ( "Negative exponent"
                   , "5e-2"
-                  , Just (Literal (Float 0.05))
+                  , Just (Float 0.05)
                   )
                 ]
               )
             , ( "literal char"
               , [ ( "number"
                   , "'1'"
-                  , Just (Literal (Char '1'))
+                  , Just (Char '1')
                   )
                 , ( "space"
                   , "' '"
-                  , Just (Literal (Char ' '))
+                  , Just (Char ' ')
                   )
                 , ( "newline shouldn't work"
                   , "'\n'"
@@ -610,57 +609,57 @@ expr =
                   )
                 , ( "letter lowercase"
                   , "'a'"
-                  , Just (Literal (Char 'a'))
+                  , Just (Char 'a')
                   )
                 , ( "letter uppercase"
                   , "'A'"
-                  , Just (Literal (Char 'A'))
+                  , Just (Char 'A')
                   )
 
                 -- https://github.com/elm/compiler/blob/dcbe51fa22879f83b5d94642e117440cb5249bb1/compiler/src/Parse/String.hs#L279-L285
                 , ( "escape backslash"
                   , singleQuote "\\\\"
-                  , Just (Literal (Char '\\'))
+                  , Just (Char '\\')
                   )
                 , ( "escape n"
                   , singleQuote "\\n"
-                  , Just (Literal (Char '\n'))
+                  , Just (Char '\n')
                   )
                 , ( "escape r"
                   , singleQuote "\\r"
-                  , Just (Literal (Char '\u{000D}'))
+                  , Just (Char '\u{000D}')
                   )
                 , ( "escape t"
                   , singleQuote "\\t"
-                  , Just (Literal (Char '\t'))
+                  , Just (Char '\t')
                   )
                 , ( "double quote"
                   , singleQuote "\""
-                  , Just (Literal (Char '"'))
+                  , Just (Char '"')
                     -- " (for vscode-elm bug)
                   )
                 , ( "single quote"
                   , singleQuote "\\'"
-                  , Just (Literal (Char '\''))
+                  , Just (Char '\'')
                   )
                 , ( "emoji"
                   , singleQuote "😃"
-                  , Just (Literal (Char '😃'))
+                  , Just (Char '😃')
                   )
                 , ( "escaped unicode code point"
                   , singleQuote "\\u{1F648}"
-                  , Just (Literal (Char '🙈'))
+                  , Just (Char '🙈')
                   )
                 ]
               )
             , ( "literal string"
               , [ ( "empty"
                   , doubleQuote ""
-                  , Just (Literal (String ""))
+                  , Just (String "")
                   )
                 , ( "one space"
                   , doubleQuote " "
-                  , Just (Literal (String " "))
+                  , Just (String " ")
                   )
                 , ( "newline shouldn't work"
                   , doubleQuote "\n"
@@ -668,109 +667,109 @@ expr =
                   )
                 , ( "two numbers"
                   , doubleQuote "42"
-                  , Just (Literal (String "42"))
+                  , Just (String "42")
                   )
                 , ( "single quote"
                   , doubleQuote "'"
-                  , Just (Literal (String "'"))
+                  , Just (String "'")
                   )
                 , ( "double quote"
                   , doubleQuote "\\\""
-                  , Just (Literal (String "\""))
+                  , Just (String "\"")
                   )
                 , ( "escape backslash"
                   , doubleQuote "\\\\"
-                  , Just (Literal (String "\\"))
+                  , Just (String "\\")
                   )
                 , ( "escape n"
                   , doubleQuote "\\n"
-                  , Just (Literal (String "\n"))
+                  , Just (String "\n")
                   )
                 , ( "escape r"
                   , doubleQuote "\\r"
-                  , Just (Literal (String "\u{000D}"))
+                  , Just (String "\u{000D}")
                   )
                 , ( "escape t"
                   , doubleQuote "\\t"
-                  , Just (Literal (String "\t"))
+                  , Just (String "\t")
                   )
                 , ( "emoji"
                   , doubleQuote "😃"
-                  , Just (Literal (String "😃"))
+                  , Just (String "😃")
                   )
                 , ( "escaped unicode code point"
                   , doubleQuote "\\u{1F648}"
-                  , Just (Literal (String "🙈"))
+                  , Just (String "🙈")
                   )
                 , ( "combo of escapes and chars"
                   , doubleQuote "\\u{1F648}\\n\\r\\t\\\\abc123"
-                  , Just (Literal (String "🙈\n\u{000D}\t\\abc123"))
+                  , Just (String "🙈\n\u{000D}\t\\abc123")
                   )
                 ]
               )
             , ( "literal multiline string"
               , [ ( "empty"
                   , tripleQuote ""
-                  , Just (Literal (String ""))
+                  , Just (String "")
                   )
                 , ( "one space"
                   , tripleQuote " "
-                  , Just (Literal (String " "))
+                  , Just (String " ")
                   )
                 , ( "newline"
                   , tripleQuote "\n"
-                  , Just (Literal (String "\n"))
+                  , Just (String "\n")
                   )
                 , ( "two numbers"
                   , tripleQuote "42"
-                  , Just (Literal (String "42"))
+                  , Just (String "42")
                   )
                 , ( "single quote"
                   , tripleQuote "'"
-                  , Just (Literal (String "'"))
+                  , Just (String "'")
                   )
                 , ( "double quote"
                   , tripleQuote " \" "
-                  , Just (Literal (String " \" "))
+                  , Just (String " \" ")
                   )
                 , ( "escape backslash"
                   , tripleQuote "\\\\"
-                  , Just (Literal (String "\\"))
+                  , Just (String "\\")
                   )
                 , ( "escape n"
                   , tripleQuote "\\n"
-                  , Just (Literal (String "\n"))
+                  , Just (String "\n")
                   )
                 , ( "escape r"
                   , tripleQuote "\\r"
-                  , Just (Literal (String "\u{000D}"))
+                  , Just (String "\u{000D}")
                   )
                 , ( "escape t"
                   , tripleQuote "\\t"
-                  , Just (Literal (String "\t"))
+                  , Just (String "\t")
                   )
                 , ( "emoji"
                   , tripleQuote "😃"
-                  , Just (Literal (String "😃"))
+                  , Just (String "😃")
                   )
                 , ( "escaped unicode code point"
                   , tripleQuote "\\u{1F648}"
-                  , Just (Literal (String "🙈"))
+                  , Just (String "🙈")
                   )
                 , ( "combo of escapes, newlines, and chars"
                   , tripleQuote "\\u{1F648}\\n\n\n\\r\\t\\\\abc123"
-                  , Just (Literal (String "🙈\n\n\n\u{000D}\t\\abc123"))
+                  , Just (String "🙈\n\n\n\u{000D}\t\\abc123")
                   )
                 ]
               )
             , ( "literal bool"
               , [ ( "True"
                   , "True"
-                  , Just (Literal (Bool True))
+                  , Just (Bool True)
                   )
                 , ( "False"
                   , "False"
-                  , Just (Literal (Bool False))
+                  , Just (Bool False)
                   )
                 ]
               )
@@ -781,10 +780,10 @@ expr =
                         (Let
                             { bindings =
                                 [ { name = "x"
-                                  , body = Literal (Int 1)
+                                  , body = Int 1
                                   }
                                 ]
-                            , body = Literal (Int 2)
+                            , body = Int 2
                             }
                         )
                   )
@@ -794,10 +793,10 @@ expr =
                         (Let
                             { bindings =
                                 [ { name = "x"
-                                  , body = Literal (Int 1)
+                                  , body = Int 1
                                   }
                                 ]
-                            , body = Literal (Int 2)
+                            , body = Int 2
                             }
                         )
                   )
@@ -814,19 +813,19 @@ expr =
                   )
                 , ( "single item in list"
                   , "[1]"
-                  , Just (List [ Literal (Int 1) ])
+                  , Just (List [ Int 1 ])
                   )
                 , ( "single item in list with inner spaces"
                   , "[ 1 ]"
-                  , Just (List [ Literal (Int 1) ])
+                  , Just (List [ Int 1 ])
                   )
                 , ( "simple list"
                   , "[1,2,3]"
                   , Just
                         (List
-                            [ Literal (Int 1)
-                            , Literal (Int 2)
-                            , Literal (Int 3)
+                            [ Int 1
+                            , Int 2
+                            , Int 3
                             ]
                         )
                   )
@@ -834,9 +833,9 @@ expr =
                   , "[ 1,  2  , 3 ]"
                   , Just
                         (List
-                            [ Literal (Int 1)
-                            , Literal (Int 2)
-                            , Literal (Int 3)
+                            [ Int 1
+                            , Int 2
+                            , Int 3
                             ]
                         )
                   )
@@ -846,7 +845,7 @@ expr =
                   )
                 , ( "list concat did not mess up the simple addition"
                   , "1 + 2"
-                  , Just (Plus (Literal <| Int 1) (Literal <| Int 2))
+                  , Just (Plus (Int 1) (Int 2))
                   )
                 ]
               )
@@ -862,25 +861,25 @@ expr =
                   , "(1,2)"
                   , Just
                         (Tuple
-                            (Literal (Int 1))
-                            (Literal (Int 2))
+                            (Int 1)
+                            (Int 2)
                         )
                   )
                 , ( "with inner spaces"
                   , "( 3 , 4 )"
                   , Just
                         (Tuple
-                            (Literal (Int 3))
-                            (Literal (Int 4))
+                            (Int 3)
+                            (Int 4)
                         )
                   )
                 , ( "nested tuple"
                   , "(5,(6,7))"
                   , Just
                         (Tuple
-                            (Literal (Int 5))
-                            (Tuple (Literal (Int 6))
-                                (Literal (Int 7))
+                            (Int 5)
+                            (Tuple (Int 6)
+                                (Int 7)
                             )
                         )
                   )
@@ -891,18 +890,18 @@ expr =
                   , "(1,2,3)"
                   , Just
                         (Tuple3
-                            (Literal (Int 1))
-                            (Literal (Int 2))
-                            (Literal (Int 3))
+                            (Int 1)
+                            (Int 2)
+                            (Int 3)
                         )
                   )
                 , ( "with inner spaces"
                   , "( 4 , 5 , 6 )"
                   , Just
                         (Tuple3
-                            (Literal (Int 4))
-                            (Literal (Int 5))
-                            (Literal (Int 6))
+                            (Int 4)
+                            (Int 5)
+                            (Int 6)
                         )
                   )
                 ]
@@ -912,7 +911,7 @@ expr =
                   , "1 :: []"
                   , Just
                         (Cons
-                            (Literal (Int 1))
+                            (Int 1)
                             (List [])
                         )
                   )
@@ -920,9 +919,9 @@ expr =
                   , "1 :: 2 :: []"
                   , Just
                         (Cons
-                            (Literal (Int 1))
+                            (Int 1)
                             (Cons
-                                (Literal (Int 2))
+                                (Int 2)
                                 (List [])
                             )
                         )
@@ -931,7 +930,7 @@ expr =
                   , "1::[]"
                   , Just
                         (Cons
-                            (Literal (Int 1))
+                            (Int 1)
                             (List [])
                         )
                   )
@@ -939,7 +938,7 @@ expr =
                   , "1    ::      []"
                   , Just
                         (Cons
-                            (Literal (Int 1))
+                            (Int 1)
                             (List [])
                         )
                   )

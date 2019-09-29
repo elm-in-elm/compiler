@@ -2,7 +2,6 @@ module InferTypesTest exposing (isParametric, niceVarName, typeInference, typeTo
 
 import Elm.AST.Canonical as Canonical
 import Elm.AST.Canonical.Unwrapped as CanonicalU
-import Elm.AST.Common.Literal as Literal
 import Elm.AST.Typed as Typed
 import Elm.Compiler.Error as Error exposing (Error(..), TypeError(..))
 import Elm.Data.Located as Located
@@ -42,43 +41,43 @@ typeInference =
               , Ok (List (Var 1))
               )
             , ( "one item"
-              , CanonicalU.List [ CanonicalU.Literal (Literal.Bool True) ]
+              , CanonicalU.List [ CanonicalU.Bool True ]
               , Ok (List Bool)
               )
             , ( "more items"
               , CanonicalU.List
-                    [ CanonicalU.Literal (Literal.Int 1)
-                    , CanonicalU.Literal (Literal.Int 2)
-                    , CanonicalU.Literal (Literal.Int 3)
+                    [ CanonicalU.Int 1
+                    , CanonicalU.Int 2
+                    , CanonicalU.Int 3
                     ]
               , Ok (List Int)
               )
             , ( "different types"
               , CanonicalU.List
-                    [ CanonicalU.Literal (Literal.Int 1)
-                    , CanonicalU.Literal (Literal.String "two")
+                    [ CanonicalU.Int 1
+                    , CanonicalU.String "two"
                     ]
               , Err (TypeMismatch Int String)
               )
             , ( "more items with different types"
               , CanonicalU.List
-                    [ CanonicalU.Literal (Literal.Bool True)
-                    , CanonicalU.Literal (Literal.String "two")
-                    , CanonicalU.Literal (Literal.Int 3)
+                    [ CanonicalU.Bool True
+                    , CanonicalU.String "two"
+                    , CanonicalU.Int 3
                     ]
               , Err (TypeMismatch Bool String)
               )
             , ( "List of List of Int"
               , CanonicalU.List
-                    [ CanonicalU.List [ CanonicalU.Literal (Literal.Int 1) ]
-                    , CanonicalU.List [ CanonicalU.Literal (Literal.Int 2) ]
+                    [ CanonicalU.List [ CanonicalU.Int 1 ]
+                    , CanonicalU.List [ CanonicalU.Int 2 ]
                     ]
               , Ok (List (List Int))
               )
             , ( "List of List of different types"
               , CanonicalU.List
-                    [ CanonicalU.List [ CanonicalU.Literal (Literal.Int 1) ]
-                    , CanonicalU.List [ CanonicalU.Literal (Literal.Bool False) ]
+                    [ CanonicalU.List [ CanonicalU.Int 1 ]
+                    , CanonicalU.List [ CanonicalU.Bool False ]
                     ]
               , Err (TypeMismatch Int Bool)
               )
@@ -86,30 +85,30 @@ typeInference =
         , runSection "tuple"
             [ ( "items with the same types"
               , CanonicalU.Tuple
-                    (CanonicalU.Literal (Literal.String "Hello"))
-                    (CanonicalU.Literal (Literal.String "Elm"))
+                    (CanonicalU.String "Hello")
+                    (CanonicalU.String "Elm")
               , Ok (Tuple String String)
               )
             , ( "items of different types"
               , CanonicalU.Tuple
-                    (CanonicalU.Literal (Literal.Bool True))
-                    (CanonicalU.Literal (Literal.Int 1))
+                    (CanonicalU.Bool True)
+                    (CanonicalU.Int 1)
               , Ok (Tuple Bool Int)
               )
             ]
         , runSection "tuple3"
             [ ( "same types"
               , CanonicalU.Tuple3
-                    (CanonicalU.Literal (Literal.String "FP"))
-                    (CanonicalU.Literal (Literal.String "is"))
-                    (CanonicalU.Literal (Literal.String "good"))
+                    (CanonicalU.String "FP")
+                    (CanonicalU.String "is")
+                    (CanonicalU.String "good")
               , Ok (Tuple3 String String String)
               )
             , ( "different types"
               , CanonicalU.Tuple3
-                    (CanonicalU.Literal (Literal.Bool True))
-                    (CanonicalU.Literal (Literal.Int 1))
-                    (CanonicalU.Literal (Literal.Char 'h'))
+                    (CanonicalU.Bool True)
+                    (CanonicalU.Int 1)
+                    (CanonicalU.Char 'h')
               , Ok (Tuple3 Bool Int Char)
               )
             ]
@@ -117,25 +116,25 @@ typeInference =
             [ ( "same types"
               , CanonicalU.Plus
                     (CanonicalU.Var { module_ = "Main", name = "age" })
-                    (CanonicalU.Literal (Literal.Int 1))
+                    (CanonicalU.Int 1)
               , Ok Int
               )
             ]
         , runSection "cons"
             [ ( "simple case"
               , CanonicalU.Cons
-                    (CanonicalU.Literal (Literal.Int 1))
+                    (CanonicalU.Int 1)
                     (CanonicalU.List [])
               , Ok (List Int)
               )
             , ( "advanced case"
               , CanonicalU.Cons
-                    (CanonicalU.Literal (Literal.Int 1))
+                    (CanonicalU.Int 1)
                     (CanonicalU.Cons
-                        (CanonicalU.Literal (Literal.Int 2))
+                        (CanonicalU.Int 2)
                         (CanonicalU.List
-                            [ CanonicalU.Literal (Literal.Int 3)
-                            , CanonicalU.Literal (Literal.Int 4)
+                            [ CanonicalU.Int 3
+                            , CanonicalU.Int 4
                             ]
                         )
                     )
@@ -144,13 +143,13 @@ typeInference =
             , ( "fail with wrong argument types"
               , CanonicalU.Cons
                     (CanonicalU.List
-                        [ CanonicalU.Literal (Literal.Int 1)
-                        , CanonicalU.Literal (Literal.Int 2)
+                        [ CanonicalU.Int 1
+                        , CanonicalU.Int 2
                         ]
                     )
                     (CanonicalU.List
-                        [ CanonicalU.Literal (Literal.Int 3)
-                        , CanonicalU.Literal (Literal.Int 4)
+                        [ CanonicalU.Int 3
+                        , CanonicalU.Int 4
                         ]
                     )
               , Err
@@ -162,7 +161,7 @@ typeInference =
             , ( "variable and list"
               , CanonicalU.Cons
                     (CanonicalU.Var { module_ = "Main", name = "age" })
-                    (CanonicalU.List [ CanonicalU.Literal (Literal.Int 1) ])
+                    (CanonicalU.List [ CanonicalU.Int 1 ])
               , Ok (List Int)
               )
             ]

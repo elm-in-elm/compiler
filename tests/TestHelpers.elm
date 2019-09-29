@@ -8,10 +8,9 @@ module TestHelpers exposing
     , typedString
     )
 
-import Elm.AST.Common.Literal as Literal
 import Elm.AST.Typed as Typed exposing (Expr_(..))
 import Elm.Data.Located as Located exposing (Located)
-import Elm.Data.Type as Type exposing (Type(..))
+import Elm.Data.Type as Type exposing (Type)
 import Elm.Data.Type.ToString as TypeToString
 
 
@@ -28,7 +27,7 @@ typed : Typed.Expr_ -> Typed.LocatedExpr
 typed expr_ =
     Located.located
         Located.dummyRegion
-        ( expr_, Int )
+        ( expr_, Type.Int )
 
 
 {-| For when the location doesn't matter
@@ -43,30 +42,30 @@ located expr =
 typedInt : Int -> Typed.LocatedExpr
 typedInt int =
     located
-        ( Literal (Literal.Int int)
-        , Int
+        ( Int int
+        , Type.Int
         )
 
 
 typedBool : Bool -> Typed.LocatedExpr
 typedBool bool =
     located
-        ( Literal (Literal.Bool bool)
-        , Bool
+        ( Bool bool
+        , Type.Bool
         )
 
 
 typedString : String -> Typed.LocatedExpr
 typedString str =
     located
-        ( Literal (Literal.String str)
-        , String
+        ( String str
+        , Type.String
         )
 
 
 typedIntList : List Int -> Typed.LocatedExpr
 typedIntList list =
     located
-        ( Typed.List (List.map typedInt list)
+        ( List (List.map typedInt list)
         , Type.List Type.Int
         )

@@ -2,7 +2,6 @@ module InferTypesFuzz exposing (typeInference)
 
 import Elm.AST.Canonical as Canonical
 import Elm.AST.Canonical.Unwrapped as CanonicalU
-import Elm.AST.Common.Literal as Literal exposing (Literal(..))
 import Elm.AST.Typed as Typed
 import Elm.Compiler.Error exposing (TypeError(..))
 import Elm.Data.Located as Located
@@ -178,27 +177,27 @@ ifExpr depth targetType =
 intExpr : Generator CanonicalU.Expr
 intExpr =
     Random.int Random.minInt Random.maxInt
-        |> Random.map (literal Int)
+        |> Random.map CanonicalU.Int
 
 
 floatExpr : Generator CanonicalU.Expr
 floatExpr =
     -- Does not produce NaNs, but that should not be an issue for us.
     Random.float (-1.0 / 0.0) (1.0 / 0.0)
-        |> Random.map (literal Float)
+        |> Random.map CanonicalU.Float
 
 
 boolExpr : Generator CanonicalU.Expr
 boolExpr =
     Random.bool
-        |> Random.map (literal Bool)
+        |> Random.map CanonicalU.Bool
 
 
 charExpr : Generator CanonicalU.Expr
 charExpr =
     Random.int 0 0x0010FFFF
         |> Random.map Char.fromCode
-        |> Random.map (literal Char)
+        |> Random.map CanonicalU.Char
 
 
 stringExpr : Generator CanonicalU.Expr
@@ -207,20 +206,13 @@ stringExpr =
         |> Random.list 10
         |> Random.map (List.map Char.fromCode)
         |> Random.map String.fromList
-        |> Random.map (literal String)
+        |> Random.map CanonicalU.String
 
 
 unitExpr : Generator CanonicalU.Expr
 unitExpr =
     CanonicalU.Unit
         |> Random.constant
-
-
-literal : (a -> Literal) -> a -> CanonicalU.Expr
-literal wrap value =
-    value
-        |> wrap
-        |> CanonicalU.Literal
 
 
 listExpr : Int -> Type -> Generator CanonicalU.Expr
@@ -297,10 +289,20 @@ randomVarName =
 shrinkExpr : Shrinker CanonicalU.Expr
 shrinkExpr expr =
     case expr |> Debug.log "\nshrinking... " of
-        CanonicalU.Literal lit ->
-            lit
-                |> shrinkLiteral
-                |> Shrink.map CanonicalU.Literal
+        CanonicalU.Int i ->
+            i |> Shrink.int |> Shrink.map CanonicalU.Int
+
+        CanonicalU.Float f ->
+            f |> Shrink.float |> Shrink.map CanonicalU.Float
+
+        CanonicalU.Char c ->
+            c |> Shrink.char |> Shrink.map CanonicalU.Char
+
+        CanonicalU.Bool b ->
+            b |> Shrink.bool |> Shrink.map CanonicalU.Bool
+
+        CanonicalU.String s ->
+            s |> Shrink.string |> Shrink.map CanonicalU.String
 
         CanonicalU.Plus left right ->
             shrinkPlus left right
@@ -327,25 +329,6 @@ shrinkExpr expr =
 
         _ ->
             Shrink.noShrink expr
-
-
-shrinkLiteral : Shrinker Literal
-shrinkLiteral lit =
-    case lit of
-        Int i ->
-            i |> Shrink.int |> Shrink.map Int
-
-        Float f ->
-            f |> Shrink.float |> Shrink.map Float
-
-        Char c ->
-            c |> Shrink.char |> Shrink.map Char
-
-        Bool b ->
-            b |> Shrink.bool |> Shrink.map Bool
-
-        String s ->
-            s |> Shrink.string |> Shrink.map String
 
 
 {-| Shrinks a plus expression.
