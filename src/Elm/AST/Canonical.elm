@@ -1,11 +1,17 @@
 module Elm.AST.Canonical exposing
-    ( Expr(..)
-    , LocatedExpr
-    , ProjectFields
-    , fromUnwrapped
+    ( ProjectFields
+    , Expr(..), LocatedExpr, unwrap, fromUnwrapped
     , lambda
-    , unwrap
     )
+
+{-| Canonical AST is stripped of useless information,
+and generally tries to make life a bit more easier for compiler developers.
+
+@docs ProjectFields
+@docs Expr, LocatedExpr, unwrap, fromUnwrapped
+@docs lambda
+
+-}
 
 import Dict exposing (Dict)
 import Elm.AST.Canonical.Unwrapped as Unwrapped
@@ -20,6 +26,7 @@ type alias ProjectFields =
     { modules : Dict ModuleName (Module LocatedExpr) }
 
 
+{-| -}
 type alias LocatedExpr =
     Located Expr
 
@@ -50,6 +57,8 @@ type Expr
     | Tuple3 LocatedExpr LocatedExpr LocatedExpr
 
 
+{-| A helper for creating the Lambda expression.
+-}
 lambda : VarName -> LocatedExpr -> Expr
 lambda argument body =
     Lambda
@@ -58,6 +67,8 @@ lambda argument body =
         }
 
 
+{-| Discard the location metadata.
+-}
 unwrap : LocatedExpr -> Unwrapped.Expr
 unwrap expr =
     case Located.unwrap expr of

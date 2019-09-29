@@ -1,11 +1,18 @@
 module Elm.AST.Frontend exposing
-    ( Expr(..)
-    , LocatedExpr
-    , ProjectFields
+    ( ProjectFields
+    , Expr(..), LocatedExpr, unwrap, transform
     , lambda
-    , transform
-    , unwrap
     )
+
+{-| Frontend AST is the first stage after parsing from source code, and has
+the closest resemblance to the Elm source code. Eg. all the comments etc. are
+still there.
+
+@docs ProjectFields
+@docs Expr, LocatedExpr, unwrap, transform
+@docs lambda
+
+-}
 
 import Dict exposing (Dict)
 import Elm.AST.Frontend.Unwrapped as Unwrapped
@@ -21,10 +28,12 @@ type alias ProjectFields =
     { modules : Dict ModuleName (Module LocatedExpr) }
 
 
+{-| -}
 type alias LocatedExpr =
     Located Expr
 
 
+{-| -}
 type Expr
     = Int Int
     | Float Float
@@ -46,6 +55,8 @@ type Expr
     | Tuple3 LocatedExpr LocatedExpr LocatedExpr
 
 
+{-| A helper for creating the Lambda expression.
+-}
 lambda : List VarName -> LocatedExpr -> Expr
 lambda arguments body =
     Lambda
@@ -143,6 +154,8 @@ transform pass expr =
         expr
 
 
+{-| Discard the location metadata.
+-}
 unwrap : LocatedExpr -> Unwrapped.Expr
 unwrap expr =
     case Located.unwrap expr of

@@ -1,20 +1,16 @@
 module Elm.AST.Typed exposing
-    ( Expr
-    , Expr_(..)
-    , LocatedExpr
-    , ProjectFields
-    , dropTypes
-    , getExpr
-    , getType
-    , isArgument
-    , lambda
-    , let_
-    , mapExpr
-    , recursiveChildren
-    , transformAll
-    , transformOnce
-    , unwrap
+    ( ProjectFields
+    , Expr, Expr_(..), LocatedExpr, getExpr, getType, unwrap, dropTypes, transformAll, transformOnce, recursiveChildren, mapExpr, isArgument
+    , lambda, let_
     )
+
+{-| Typed AST holds the inferred types for every expression.
+
+@docs ProjectFields
+@docs Expr, Expr_, LocatedExpr, getExpr, getType, unwrap, dropTypes, transformAll, transformOnce, recursiveChildren, mapExpr, isArgument
+@docs lambda, let_
+
+-}
 
 import Dict exposing (Dict)
 import Elm.AST.Canonical as Canonical
@@ -32,6 +28,7 @@ type alias ProjectFields =
     { modules : Dict ModuleName (Module LocatedExpr) }
 
 
+{-| -}
 type alias LocatedExpr =
     Located Expr
 
@@ -40,13 +37,12 @@ type alias LocatedExpr =
 
   - being a tuple of the underlying Expr\_ type and its type
 
-TODO make this opaque, add accessors etc.
-
 -}
 type alias Expr =
     ( Expr_, Type )
 
 
+{-| -}
 type Expr_
     = Int Int
     | Float Float
@@ -67,6 +63,8 @@ type Expr_
     | Tuple3 LocatedExpr LocatedExpr LocatedExpr
 
 
+{-| A helper for creating the Lambda expression.
+-}
 lambda : VarName -> LocatedExpr -> Expr_
 lambda argument body =
     Lambda
@@ -75,6 +73,8 @@ lambda argument body =
         }
 
 
+{-| A helper for creating the Let expression.
+-}
 let_ : Dict VarName (Binding LocatedExpr) -> LocatedExpr -> Expr_
 let_ bindings body =
     Let
