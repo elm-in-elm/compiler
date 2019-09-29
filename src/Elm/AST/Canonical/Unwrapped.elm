@@ -1,14 +1,20 @@
 module Elm.AST.Canonical.Unwrapped exposing (Expr(..))
 
+{-| Version of Canonical AST without the location info.
+
+Handy for type inference fuzzers, or when you don't need the location info.
+
+@docs Expr
+
+-}
+
 import Dict exposing (Dict)
 import Elm.Data.Binding exposing (Binding)
 import Elm.Data.ModuleName exposing (ModuleName)
 import Elm.Data.VarName exposing (VarName)
 
 
-{-| This only differs from AST.Canonical.Expr by recursing on itself instead of
-on LocatedExpr. Handy for type inference fuzzers!
--}
+{-| -}
 type Expr
     = Int Int
     | Float Float

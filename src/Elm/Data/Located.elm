@@ -1,8 +1,7 @@
 module Elm.Data.Located exposing
     ( Located, located, unwrap, getRegion, map, merge, replaceWith
-    , Region, dummyRegion, mergeRegions
-    , Position, positionToComparable
-    , comparePosition, regionToComparable
+    , Region, dummyRegion, mergeRegions, regionToComparable
+    , Position, positionToComparable, comparePosition
     )
 
 {-| Wrapper for location metadata. The location is essentially a pair of row,col
@@ -11,8 +10,8 @@ coordinates for some span of source code.
 Useful for error messages, but hopefully for stuff like source maps etc. too.
 
 @docs Located, located, unwrap, getRegion, map, merge, replaceWith
-@docs Region, dummyRegion, mergeRegions
-@docs Position, positionToComparable
+@docs Region, dummyRegion, mergeRegions, regionToComparable
+@docs Position, positionToComparable, comparePosition
 
 -}
 

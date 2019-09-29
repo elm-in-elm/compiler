@@ -1,13 +1,19 @@
 module Elm.AST.Frontend.Unwrapped exposing (Expr(..))
 
+{-| Version of Frontend AST without the location info.
+
+Handy for parser tests, or when you don't need the location info.
+
+@docs Expr
+
+-}
+
 import Elm.Data.Binding exposing (Binding)
 import Elm.Data.ModuleName exposing (ModuleName)
 import Elm.Data.VarName exposing (VarName)
 
 
-{-| This only differs from AST.Frontend.Expr by recursing on itself instead of
-on LocatedExpr. Handy for parser tests or when you don't need the location info!
--}
+{-| -}
 type Expr
     = Int Int
     | Float Float
