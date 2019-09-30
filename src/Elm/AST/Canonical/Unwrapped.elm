@@ -4,6 +4,9 @@ module Elm.AST.Canonical.Unwrapped exposing (Expr(..))
 
 Handy for type inference fuzzers, or when you don't need the location info.
 
+Convert to it using the `Elm.AST.Canonical.unwrap` and from it using
+`Elm.AST.Canonical.fromUnwrapped` (beware, uses dummy location data!).
+
 @docs Expr
 
 -}

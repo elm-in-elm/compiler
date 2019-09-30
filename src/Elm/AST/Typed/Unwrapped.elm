@@ -4,6 +4,8 @@ module Elm.AST.Typed.Unwrapped exposing (Expr, Expr_(..))
 
 Handy for type inference tests, or when you don't need the location info.
 
+Convert to it using the `Elm.AST.Typed.unwrap`.
+
 @docs Expr, Expr_
 
 -}

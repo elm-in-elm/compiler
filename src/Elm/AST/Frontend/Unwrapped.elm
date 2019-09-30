@@ -4,6 +4,8 @@ module Elm.AST.Frontend.Unwrapped exposing (Expr(..))
 
 Handy for parser tests, or when you don't need the location info.
 
+Convert to it using the `Elm.AST.Frontend.unwrap`.
+
 @docs Expr
 
 -}
