@@ -642,25 +642,27 @@ lambda : ExprConfig -> Parser_ LocatedExpr
 lambda config =
     P.succeed
         (\arguments body ->
-            Frontend.lambda
-                arguments
-                {- Run the promoting transformation on every subexpression,
-                   so that after parsing all the arguments aren't unqualified
-                   Vars but Arguments.
+            Frontend.Lambda
+                { arguments = arguments
+                , body =
+                    {- Run the promoting transformation on every subexpression,
+                       so that after parsing all the arguments aren't unqualified
+                       Vars but Arguments.
 
-                   Ie. the lambda parser can't return:
+                       Ie. the lambda parser can't return:
 
-                       -- \x -> x
-                       Lambda { argument = VarName "x", body = Var (Nothing, VarName "x") }
+                           -- \x -> x
+                           Lambda { argument = VarName "x", body = Var (Nothing, VarName "x") }
 
-                   And instead has to return:
+                       And instead has to return:
 
-                       -- \x -> x
-                       Lambda { argument = VarName "x", body = Argument (VarName "x") }
+                           -- \x -> x
+                           Lambda { argument = VarName "x", body = Argument (VarName "x") }
 
-                   TODO add a fuzz test for this invariant?
-                -}
-                (Located.map (Frontend.transform (promoteArguments arguments)) body)
+                       TODO add a fuzz test for this invariant?
+                    -}
+                    Located.map (Frontend.transform (promoteArguments arguments)) body
+                }
         )
         |. P.symbol (P.Token "\\" ExpectingBackslash)
         |= oneOrMoreWith spacesOnly varName

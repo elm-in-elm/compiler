@@ -17,3 +17,4 @@
 
 - [ ] documentation: stop leaving (Int ...) around where it needs to be (Literal (Int ...))
 - [ ] Declaration.TypeAlias - it doesn't look right, see the TODO there
+- [ ] docs: links to sibling functions - use `#foo` links?

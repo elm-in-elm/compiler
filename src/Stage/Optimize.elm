@@ -41,7 +41,7 @@ optimizePlus located =
         Typed.Plus l r ->
             case ( Typed.getExpr l, Typed.getExpr r ) of
                 ( Typed.Int left, Typed.Int right ) ->
-                    Just (Typed.mapExpr (\_ -> Typed.Int (left + right)) r)
+                    Just (Typed.setExpr (Typed.Int (left + right)) r)
 
                 _ ->
                     Nothing
@@ -56,7 +56,7 @@ optimizeCons located =
         Typed.Cons l r ->
             case Typed.getExpr r of
                 Typed.List list ->
-                    Just (Typed.mapExpr (\_ -> Typed.List (l :: list)) r)
+                    Just (Typed.setExpr (Typed.List (l :: list)) r)
 
                 _ ->
                     Nothing

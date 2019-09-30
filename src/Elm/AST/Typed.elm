@@ -1,14 +1,12 @@
 module Elm.AST.Typed exposing
     ( ProjectFields
-    , Expr, Expr_(..), LocatedExpr, getExpr, getType, unwrap, dropTypes, transformAll, transformOnce, recursiveChildren, mapExpr, isArgument
-    , lambda, let_
+    , LocatedExpr, Expr, Expr_(..), getExpr, getType, unwrap, dropTypes, transformAll, transformOnce, recursiveChildren, setExpr
     )
 
 {-| Typed AST holds the inferred types for every expression.
 
 @docs ProjectFields
-@docs Expr, Expr_, LocatedExpr, getExpr, getType, unwrap, dropTypes, transformAll, transformOnce, recursiveChildren, mapExpr, isArgument
-@docs lambda, let_
+@docs LocatedExpr, Expr, Expr_, getExpr, getType, unwrap, dropTypes, transformAll, transformOnce, recursiveChildren, setExpr
 
 -}
 
@@ -24,11 +22,26 @@ import Elm.Data.VarName exposing (VarName)
 import Transform
 
 
+{-| "What does this compiler stage need to store abotut the whole project?
+
+(See `Elm.Data.Project`.)
+
+In this case, a dict of all the compiled Elm modules,
+consisting of typed AST expressions.
+
+-}
 type alias ProjectFields =
     { modules : Dict ModuleName (Module LocatedExpr) }
 
 
-{-| -}
+{-| The main type of this module. Expression with location metadata.
+
+Note the underlying `Expr` custom type recurses on this `LocatedExpr` type,
+so that the children also each have their location metadata.
+
+If you want expressions without location metadata, look at `unwrap`.
+
+-}
 type alias LocatedExpr =
     Located Expr
 
@@ -61,26 +74,6 @@ type Expr_
     | Unit
     | Tuple LocatedExpr LocatedExpr
     | Tuple3 LocatedExpr LocatedExpr LocatedExpr
-
-
-{-| A helper for creating the Lambda expression.
--}
-lambda : VarName -> LocatedExpr -> Expr_
-lambda argument body =
-    Lambda
-        { argument = argument
-        , body = body
-        }
-
-
-{-| A helper for creating the Let expression.
--}
-let_ : Dict VarName (Binding LocatedExpr) -> LocatedExpr -> Expr_
-let_ bindings body =
-    Let
-        { bindings = bindings
-        , body = body
-        }
 
 
 {-| A helper for the Transform library.
@@ -166,6 +159,9 @@ recurse fn locatedExpr =
             )
 
 
+{-| Transform the expression once, using the provided function.
+Start at the children, apply once then go up.
+-}
 transformOnce : (LocatedExpr -> LocatedExpr) -> LocatedExpr -> LocatedExpr
 transformOnce pass locatedExpr =
     Transform.transformOnce
@@ -174,6 +170,10 @@ transformOnce pass locatedExpr =
         locatedExpr
 
 
+{-| Transform the expression, using the provided function.
+Start at the children, repeatedly apply on them until they stop changing,
+then go up.
+-}
 transformAll : List (LocatedExpr -> Maybe LocatedExpr) -> LocatedExpr -> LocatedExpr
 transformAll passes locatedExpr =
     Transform.transformAll
@@ -182,16 +182,8 @@ transformAll passes locatedExpr =
         locatedExpr
 
 
-isArgument : VarName -> LocatedExpr -> Bool
-isArgument name locatedExpr =
-    case getExpr locatedExpr of
-        Argument argName ->
-            argName == name
-
-        _ ->
-            False
-
-
+{-| Find all the children of this expression (and their children, etc...)
+-}
 recursiveChildren : (LocatedExpr -> List LocatedExpr) -> LocatedExpr -> List LocatedExpr
 recursiveChildren fn locatedExpr =
     case getExpr locatedExpr of
@@ -259,16 +251,29 @@ mapExpr fn locatedExpr =
         |> Located.map (Tuple.mapFirst fn)
 
 
+{-| Replace the existing expression with the provided one.
+-}
+setExpr : Expr_ -> LocatedExpr -> LocatedExpr
+setExpr expr locatedExpr =
+    mapExpr (always expr) locatedExpr
+
+
+{-| Extract the expression (remove the location and type information).
+-}
 getExpr : LocatedExpr -> Expr_
 getExpr locatedExpr =
     Tuple.first <| Located.unwrap locatedExpr
 
 
+{-| Extract the type (remove the location information and the expression).
+-}
 getType : LocatedExpr -> Type
 getType locatedExpr =
     Tuple.second <| Located.unwrap locatedExpr
 
 
+{-| Discard the location metadata.
+-}
 unwrap : LocatedExpr -> Unwrapped.Expr
 unwrap expr =
     let
@@ -356,6 +361,8 @@ unwrap expr =
     )
 
 
+{-| Go from AST.Typed to AST.Canonical.
+-}
 dropTypes : LocatedExpr -> Canonical.LocatedExpr
 dropTypes locatedExpr =
     locatedExpr

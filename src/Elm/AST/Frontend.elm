@@ -1,7 +1,6 @@
 module Elm.AST.Frontend exposing
     ( ProjectFields
-    , Expr(..), LocatedExpr, unwrap, transform
-    , lambda
+    , LocatedExpr, Expr(..), unwrap, transform
     )
 
 {-| Frontend AST is the first stage after parsing from source code, and has
@@ -9,8 +8,7 @@ the closest resemblance to the Elm source code. Eg. all the comments etc. are
 still there.
 
 @docs ProjectFields
-@docs Expr, LocatedExpr, unwrap, transform
-@docs lambda
+@docs LocatedExpr, Expr, unwrap, transform
 
 -}
 
@@ -24,11 +22,26 @@ import Elm.Data.VarName exposing (VarName)
 import Transform
 
 
+{-| "What does this compiler stage need to store abotut the whole project?
+
+(See `Elm.Data.Project`.)
+
+In this case, a dict of all the compiled Elm modules,
+consisting of frontend AST expressions.
+
+-}
 type alias ProjectFields =
     { modules : Dict ModuleName (Module LocatedExpr) }
 
 
-{-| -}
+{-| The main type of this module. Expression with location metadata.
+
+Note the underlying `Expr` custom type recurses on this `LocatedExpr` type,
+so that the children also each have their location metadata.
+
+If you want expressions without location metadata, look at `unwrap`.
+
+-}
 type alias LocatedExpr =
     Located Expr
 
@@ -53,16 +66,6 @@ type Expr
     | Unit
     | Tuple LocatedExpr LocatedExpr
     | Tuple3 LocatedExpr LocatedExpr LocatedExpr
-
-
-{-| A helper for creating the Lambda expression.
--}
-lambda : List VarName -> LocatedExpr -> Expr
-lambda arguments body =
-    Lambda
-        { arguments = arguments
-        , body = body
-        }
 
 
 {-| A helper for the Transform library.
@@ -143,6 +146,10 @@ recurse f expr =
             Tuple3 (f_ e1) (f_ e2) (f_ e3)
 
 
+{-| Transform the expression, using the provided function.
+Start at the children, repeatedly apply on them until they stop changing,
+then go up.
+-}
 transform : (Expr -> Expr) -> Expr -> Expr
 transform pass expr =
     {- If we do more than one at the same time, we should use the Transform

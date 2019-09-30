@@ -208,7 +208,11 @@ curryLambda located arguments body =
     List.foldr
         (\argument body_ ->
             Located.replaceWith
-                (Canonical.lambda argument body_)
+                (Canonical.Lambda
+                    { argument = argument
+                    , body = body_
+                    }
+                )
                 located
         )
         body

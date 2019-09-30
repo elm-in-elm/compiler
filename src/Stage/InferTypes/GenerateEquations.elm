@@ -331,7 +331,17 @@ findArgumentUsages : VarName -> Typed.LocatedExpr -> List Typed.LocatedExpr
 findArgumentUsages argument bodyExpr =
     bodyExpr
         |> Transform.children Typed.recursiveChildren
-        |> List.filter (Typed.isArgument argument)
+        |> List.filter (isArgument argument)
+
+
+isArgument : VarName -> Typed.LocatedExpr -> Bool
+isArgument name locatedExpr =
+    case Typed.getExpr locatedExpr of
+        Typed.Argument argName ->
+            argName == name
+
+        _ ->
+            False
 
 
 generateArgumentUsageEquations : Int -> List Typed.LocatedExpr -> List TypeEquation

@@ -123,7 +123,13 @@ assignIdsWithHelp idSource located =
                 ( body_, idSource1 ) =
                     assignIdsWith idSource body
             in
-            assignId idSource1 (Typed.lambda argument body_)
+            assignId idSource1
+                (Typed.Lambda
+                    { argument = argument
+                    , body =
+                        body_
+                    }
+                )
 
         Canonical.Call { fn, argument } ->
             let
@@ -188,15 +194,16 @@ assignIdsWithHelp idSource located =
                         bindingsList
             in
             assignId idSource2
-                (Typed.let_
-                    (Dict.fromList
-                        (List.map2
-                            (\( name, _ ) body__ -> ( name, { name = name, body = body__ } ))
-                            bindingsList
-                            bindingBodiesList
-                        )
-                    )
-                    body_
+                (Typed.Let
+                    { bindings =
+                        Dict.fromList
+                            (List.map2
+                                (\( name, _ ) body__ -> ( name, { name = name, body = body__ } ))
+                                bindingsList
+                                bindingBodiesList
+                            )
+                    , body = body_
+                    }
                 )
 
         Canonical.Unit ->
