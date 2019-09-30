@@ -1,19 +1,16 @@
-- [ ] TODO move stuff not used by both cli/ and library/ into cli/ (eg. desugar : Project -> ... Project, etc.)
-- [ ] TODO in similar vein, don't let library/ use Boilerplate stuff - move it somewhere
-
-
-
 - [ ] after moving of folders around stops, these should all work:
   - [ ] cli tests (end-to-end tests)
-  - [ ] shared tests (what we have now)
-  - [ ] library tests (should those even exist? it's a pretty thin wrapper over the shared thing...)
-  - [ ] Makefile - building and running the CLI
+  - [x] shared tests (what we have now)
+  - [x] Makefile - building and running the CLI
   - [ ] publishing the library (is there a way to only simulate this?)
 
 - [ ] think about exposing Emit.JS, so that people can plug the library into some ports with eval() >:-)
 
-- [ ] README... one for the package manager, one for github? how to best do this?
-
+- [ ] README - create a script (or target in `Makefile`) that will:
+  1. overwrite README.md with README-library.md
+  2. add and commit that
+  3. create a new tag
+  4. do all the elm-package stuff
 
 - [ ] Declaration.TypeAlias - it doesn't look right, see the TODO there
 - [ ] docs: links to sibling functions - use `#foo` links?
