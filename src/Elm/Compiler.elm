@@ -4,7 +4,6 @@ module Elm.Compiler exposing
     , inferExpr, inferModule, inferModules
     , defaultOptimizations
     , optimizeExpr, optimizeExprWith, optimizeModule, optimizeModuleWith, optimizeModules, optimizeModulesWith
-    , unwrapFrontendExpr, unwrapCanonicalExpr, unwrapTypedExpr
     , dropTypesExpr, dropTypesModule, dropTypesModules
     )
 
@@ -27,8 +26,8 @@ to
 
     \a -> \b -> \c -> a + b + c
 
-That is one of the things the Desugar phase does. So tools like `elm-format`
-probably don't want to touch that phase, and will want to only parse!
+That transformation is one of the things the Desugar phase does. So tools like
+`elm-format` probably don't want to touch that phase, and will only want to parse!
 
 @docs parseExpr, parseModule, parseModules, parseImport, parseDeclaration
 
@@ -118,19 +117,6 @@ that they take turns on the expression: for the list of three optimizations
 @docs optimizeExpr, optimizeExprWith, optimizeModule, optimizeModuleWith, optimizeModules, optimizeModulesWith
 
 
-# Unwrapping expressions
-
-During parsing all the expressions get the location info for where in the source
-string they were parsed, and during later phases the location info sticks around.
-This is handy for nice error messages, but not necessarily useful for all
-applications.
-
-If you don't need the location info, you can unwrap the underlying expressions
-to get rid of it!
-
-@docs unwrapFrontendExpr, unwrapCanonicalExpr, unwrapTypedExpr
-
-
 # Dropping types
 
 If you want to typecheck the code but then don't do anything with the types
@@ -203,16 +189,16 @@ into AST like
     Located
         {start = ..., end = ...}
         (Tuple
-            (Located ... (Literal (Int 12)))
-            (Located ... (Literal (String "Hello")))
+            (Located ... (Int 12))
+            (Located ... (String "Hello"))
         )
 
 If you don't need the location information and want to only keep the expressions,
-use `unwrapFrontendExpr` to get something like
+use `Elm.AST.Frontend.unwrap` to get something like
 
     Tuple
-        (Literal (Int 12))
-        (Literal (String "Hello"))
+        (Int 12)
+        (String "Hello")
 
 -}
 parseExpr : FileContents -> Result Error Frontend.LocatedExpr
@@ -250,7 +236,7 @@ will get parsed into
             [ ( "foo"
               , { module_ = "Foo"
                 , name = "foo"
-                , body = Value (AST.Frontend.Literal (Literal.Int 123))
+                , body = Value (AST.Frontend.Int 123)
                 }
               )
             ]
@@ -319,7 +305,7 @@ into
 
     { module_ = "Foo" -- what you pass into the function
     , name = "foo"
-    , body = Value (AST.Frontend.Literal (Literal.Int 123))
+    , body = Value (AST.Frontend.Int 123)
     }
 
 -}
@@ -337,7 +323,7 @@ parseDeclaration { moduleName, declaration } =
 
     Lambda
         { arguments = [ "x", "y" ]
-        , body = AST.Frontend.Literal (Literal.Int 42)
+        , body = AST.Frontend.Int 42
         }
 
 into AST like
@@ -347,7 +333,7 @@ into AST like
         , body =
             Lambda
                 { argument = "y"
-                , body = AST.Frontend.Literal (Literal.Int 42)
+                , body = AST.Frontend.Int 42
                 }
         }
 
@@ -538,76 +524,6 @@ optimizeModulesWith optimizations modules =
 
 
 
--- UNWRAPPING
-
-
-{-| Removes all the location info from the Frontend expressions, so eg.
-
-    Located
-        {start = ..., end = ...}
-        (Tuple
-            (Located ... (Literal (Int 12)))
-            (Located ... (Literal (String "Hello")))
-        )
-
-becomes
-
-    Tuple
-        (Literal (Int 12))
-        (Literal (String "Hello"))
-
--}
-unwrapFrontendExpr : Frontend.LocatedExpr -> FrontendUnwrapped.Expr
-unwrapFrontendExpr locatedExpr =
-    Frontend.unwrap locatedExpr
-
-
-{-| Removes all the location info from the Canonical expressions, so eg.
-
-    Located
-        {start = ..., end = ...}
-        (Tuple
-            (Located ... (Literal (Int 12)))
-            (Located ... (Literal (String "Hello")))
-        )
-
-becomes
-
-    Tuple
-        (Literal (Int 12))
-        (Literal (String "Hello"))
-
--}
-unwrapCanonicalExpr : Canonical.LocatedExpr -> CanonicalUnwrapped.Expr
-unwrapCanonicalExpr locatedExpr =
-    Canonical.unwrap locatedExpr
-
-
-{-| Removes all the location info from the Typed expressions, so eg.
-
-    Located
-        { start = ..., end = ... }
-        ( Tuple
-            (Located ... ( Literal (Int 12), Type.Int ))
-            (Located ... ( Literal (String "Hello"), Type.String ))
-        , Type.Tuple Type.Int Type.String
-        )
-
-becomes
-
-    ( Tuple
-        ( Literal (Int 12), Type.Int )
-        ( Literal (String "Hello"), Type.String )
-    , Type.Tuple Type.Int Type.String
-    )
-
--}
-unwrapTypedExpr : Typed.LocatedExpr -> TypedUnwrapped.Expr
-unwrapTypedExpr locatedExpr =
-    Typed.unwrap locatedExpr
-
-
-
 -- DROP TYPES
 
 
@@ -622,8 +538,8 @@ Example usage:
     Located
         { start = ..., end = ... }
         ( Tuple
-            (Located ... ( Literal (Int 12), Type.Int ))
-            (Located ... ( Literal (String "Hello"), Type.String ))
+            (Located ... ( Int 12, Type.Int ))
+            (Located ... ( String "Hello", Type.String ))
         , Type.Tuple Type.Int Type.String
         )
 
@@ -632,11 +548,12 @@ becomes
     Located
         { start = ..., end = ... }
         (Tuple
-            (Located ... (Literal (Int 12))
-            (Located ... (Literal (String "Hello"))
+            (Located ... (Int 12)
+            (Located ... (String "Hello")
         )
 
-If location info is not useful to you either, look for `unwrap*` functions above.
+If location info is not useful to you either, look for the `unwrap` functions
+in `Elm.AST.*` modules.
 
 -}
 dropTypesExpr : Typed.LocatedExpr -> Canonical.LocatedExpr

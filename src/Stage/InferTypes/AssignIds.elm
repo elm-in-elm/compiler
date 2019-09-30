@@ -12,10 +12,10 @@ Input (forgive the nonsense AST):
     Canonical.If
         { test =
             Canonical.Plus
-                (Canonical.Literal (Int 1))
-                (Canonical.Literal (Int 2))
+                (Canonical.Int 1)
+                (Canonical.Int 2)
         , then_ = Canonical.Unit
-        , else_ = Canonical.Literal (Bool True)
+        , else_ = Canonical.Bool True
         }
 
 Output:
@@ -23,16 +23,16 @@ Output:
     ( Typed.If
         { test =
             ( Typed.Plus
-                ( Typed.Literal (Int 1)
+                ( Typed.Int 1
                 , Var 0
                 )
-                ( Typed.Literal (Int 2)
+                ( Typed.Int 2
                 , Var 1
                 )
             , Var 2
             )
         , then_ = ( Typed.Unit, Var 3 )
-        , else_ = ( Typed.Literal (Bool True), Var 4 )
+        , else_ = ( Typed.Bool True, Var 4 )
         }
     , Var 5
     )

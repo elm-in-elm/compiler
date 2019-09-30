@@ -50,8 +50,7 @@ type ParseError
 the error. Was it trying to parse an `if` expression? A list? etc.
 -}
 type ParseContext
-    = InLiteral
-    | InNumber
+    = InNumber
     | InChar
     | InCharEscapeMode
     | InUnicodeCharacter
