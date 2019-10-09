@@ -11,7 +11,7 @@ module Elm.Compiler exposing
 
 The compiler phases in general look like this:
 
-![Stages of the compiler](https://github.com/elm-in-elm/compiler/raw/add-library/assets/stages.png)
+![Stages of the compiler](https://github.com/elm-in-elm/compiler/raw/master/assets/stages.png)
 
 
 # Parsing
@@ -115,7 +115,7 @@ If you want to typecheck the code but then don't do anything with the types
 afterwards, you can drop them from the expressions you have. This is essentially
 a move backwards in the compiler phases:
 
-![Stages of the compiler](https://github.com/elm-in-elm/compiler/raw/add-library/assets/stages.png)
+![Stages of the compiler](https://github.com/elm-in-elm/compiler/raw/master/assets/stages.png)
 
 @docs dropTypesExpr, dropTypesModule, dropTypesModules
 

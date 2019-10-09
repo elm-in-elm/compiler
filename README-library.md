@@ -8,7 +8,7 @@ The entrypoint of this library is the [`Elm.Compiler`](/packages/elm-in-elm/comp
 
 The typical flow of functions inside this library looks like this:
 
-![Stages of the compiler](https://github.com/elm-in-elm/compiler/raw/add-library/assets/stages.png)
+![Stages of the compiler](https://github.com/elm-in-elm/compiler/raw/master/assets/stages.png)
 
 ## Example usage - Elm to Elixir
 
