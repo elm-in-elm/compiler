@@ -15,7 +15,7 @@ To accomplish this, we pass a state around as an argument.
 This is how the simple case would look:
 
     toString emptyState (List Int)
-    --> ("List Int", ...)
+    --> ("List Int", <state>)
 
 And for cases where you're printing multiple types and they have to make sense
 together, you pass the state returned from first call to the second call:
@@ -35,7 +35,7 @@ If you didn't do that and passed `emptyState` to both cases, you'd get:
 
     "(a -> b) is not the same as (Int -> a)"
 
-Which would be misleading!
+Which would be wrong and misleading!
 
 @docs toString
 @docs State, emptyState
@@ -47,7 +47,7 @@ import Dict exposing (Dict)
 import Elm.Data.Type exposing (Type(..))
 
 
-{-| State for keeping track of the type variables' chosen names
+{-| State for keeping track of the type variables' chosen names.
 -}
 type State
     = State
@@ -56,7 +56,7 @@ type State
         }
 
 
-{-| Initial state to start with
+{-| Initial state to start with.
 -}
 emptyState : State
 emptyState =
@@ -189,7 +189,7 @@ It follows this sequence:
     0  1       25 | 26  27       51  | 52  53       77  |
 
 Note the number passed into this function isn't the number inside `Var`
-but the counter inside `State`.
+but the counter inside [`State`](#State).
 
 -}
 niceVarName : Int -> String

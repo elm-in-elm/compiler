@@ -10,7 +10,7 @@ module Elm.Data.ModuleName exposing (ModuleName, expectedModuleName)
 -}
 
 
-{-| Just a String alias, instead of a `type` wrapper. We generally use records
+{-| Just a `String` alias, instead of a `type` wrapper. We generally use records
 with explanatory field names where two Strings would be next to each other,
 to protect against swapping them accidentally.
 -}
@@ -19,9 +19,9 @@ type alias ModuleName =
 
 
 {-| Converts from file path to its expected module name.
-Additionally needs the source directory from elm.json.
+Additionally needs the source directory from `elm.json`.
 
-Returns Nothing if the source directory doesn't agree with the file path.
+Returns `Nothing` if the source directory doesn't agree with the file path.
 
     expectedModuleName { sourceDirectory = "src", filePath = "src/Foo.elm" }
     --> Just "Foo"

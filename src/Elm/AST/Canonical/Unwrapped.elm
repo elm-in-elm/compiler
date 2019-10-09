@@ -1,11 +1,12 @@
 module Elm.AST.Canonical.Unwrapped exposing (Expr(..))
 
-{-| Version of Canonical AST without the location info.
+{-| Version of [Canonical AST](Elm.AST.Canonical) without the location info.
 
 Handy for type inference fuzzers, or when you don't need the location info.
 
-Convert to it using the `Elm.AST.Canonical.unwrap` and from it using
-`Elm.AST.Canonical.fromUnwrapped` (beware, uses dummy location data!).
+Convert to it using the [`Elm.AST.Canonical.unwrap`](Elm.AST.Canonical#unwrap)
+and from it using [`Elm.AST.Canonical.fromUnwrapped`](Elm.AST.Canonical#fromUnwrapped)
+(beware, uses [dummy location data!](Elm.Data.Located#dummyRegion)).
 
 @docs Expr
 

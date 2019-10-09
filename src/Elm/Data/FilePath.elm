@@ -9,7 +9,7 @@ module Elm.Data.FilePath exposing (FilePath, expectedFilePath, removeTrailingSla
 import Elm.Data.ModuleName exposing (ModuleName)
 
 
-{-| Just a String alias, instead of a `type` wrapper. We generally use records
+{-| Just a `String` alias, instead of a `type` wrapper. We generally use records
 with explanatory field names where two Strings would be next to each other,
 to protect against swapping them accidentally.
 -}
@@ -18,7 +18,7 @@ type alias FilePath =
 
 
 {-| Converts from module name to its expected file path.
-Additionally needs the source directory from elm.json.
+Additionally needs the source directory from `elm.json`.
 
 The source directory can be passed both with and without the trailing slash.
 

@@ -61,12 +61,12 @@ Examples of real desugarings include:
 
 # Inferring types
 
-These functions compute the types of the given expressions, as well as check them
+These functions compute the [types](Elm.Data.Type) of the given expressions, as well as check them
 against the user-defined type annotations.
 
 Note that the more of your code you'll give these functions at once, the better
-the type inference will be. So it's advisable to eg. run `inferModules` once
-instead of running `inferModule` on each of your modules.
+the type inference will be. So it's advisable to eg. run [`inferModules`](#inferModules)
+once instead of running [`inferModule`](#inferModule) on each of your modules.
 
 @docs inferExpr, inferModule, inferModules
 
@@ -74,8 +74,8 @@ instead of running `inferModule` on each of your modules.
 # Optimizing
 
 After typechecking the expressions are ready to be optimized. (The inferred types
-are available to you inside the optimizations! (Unfortunately, the location
-information is also available to you inside the optimization. Sorry.))
+are available to you inside the optimizations! (Unfortunately, the [location
+information](Elm.Data.Located) is also available to you inside the optimization. Sorry.))
 
 @docs defaultOptimizations
 
@@ -104,15 +104,7 @@ parent expression, and so on until it reaches and optimizes the topmost
 expression.
 
 Note the optimizations in the list of optimizations are combined in such a way
-that they take turns on the expression: for the list of three optimizations
-`[plus, cons, myCustomOne]` it might behave something like this:
-
-    plus -> plus -> plus -> (plus starts returning Nothing)
-    -> cons -> plus (still Nothing) -> cons
-    -> plus (the last cons allowed plus to do something again!)
-    -> plus (Nothing again) -> cons (Nothing here too)
-    -> myCustomOne (Nothing)
-    -> END (go to parent expression or end if you're at the topmost one).
+that they take turns on the expression.
 
 @docs optimizeExpr, optimizeExprWith, optimizeModule, optimizeModuleWith, optimizeModules, optimizeModulesWith
 
@@ -194,7 +186,7 @@ into AST like
         )
 
 If you don't need the location information and want to only keep the expressions,
-use `Elm.AST.Frontend.unwrap` to get something like
+use [`Elm.AST.Frontend.unwrap`](Elm.AST.Frontend#unwrap) to get something like
 
     Tuple
         (Int 12)
@@ -206,7 +198,7 @@ parseExpr sourceCode =
     parse Stage.Parse.Parser.expr sourceCode
 
 
-{-| Parse a module (one `*.elm` file). Get a `Module` datastructure back, holding
+{-| Parse a module (one `*.elm` file). Get a [`Module`](Elm.Data.Module#Module) datastructure back, holding
 the information about its exposed values, imports, declarations and more.
 
 A file like
@@ -253,7 +245,7 @@ parseModule { filePath, sourceCode } =
     parse (Stage.Parse.Parser.module_ filePath) sourceCode
 
 
-{-| Parse multiple modules (`*.elm` files) - see `parseModule` for details.
+{-| Parse multiple modules (`*.elm` files) - see [`parseModule`](#parseModule) for details.
 -}
 parseModules :
     List { filePath : FilePath, sourceCode : FileContents }
@@ -359,7 +351,7 @@ desugarModule modules thisModule =
         |> Result.mapError DesugarError
 
 
-{-| Desugar multiple modules (`*.elm` files) - see `desugarModule` for details.
+{-| Desugar multiple modules (`*.elm` files) - see [`desugarModule`](#desugarModule) for details.
 -}
 desugarModules :
     Dict ModuleName (Module Frontend.LocatedExpr)
@@ -450,7 +442,7 @@ defaultOptimizations =
 {-| Optimize a given (typed) expression using the default set of optimizations.
 
 For using your own optimizations instead of or in addition to the default ones,
-look at the `optimizeExprWith` function.
+look at the [`optimizeExprWith`](#optimizeExprWith) function.
 
 -}
 optimizeExpr : Typed.LocatedExpr -> Typed.LocatedExpr
@@ -475,7 +467,7 @@ Note there is currently no inter-definition optimizations (inlining etc.) -
 only the optimizations on each separate expression.
 
 For using your own optimizations instead of or in addition to the default ones,
-look at the `optimizeModuleWith` function.
+look at the [`optimizeModuleWith`](#optimizeModuleWith) function.
 
 -}
 optimizeModule : Module Typed.LocatedExpr -> Module Typed.LocatedExpr
@@ -502,7 +494,7 @@ optimizeModuleWith optimizations thisModule =
 optimizations.
 
 For using your own optimizations instead of or in addition to the default ones,
-look at the `optimizeModulesWith` function.
+look at the [`optimizeModulesWith`](#optimizeModulesWith) function.
 
 -}
 optimizeModules :
@@ -529,7 +521,8 @@ optimizeModulesWith optimizations modules =
 
 {-| Drop types from a single expression.
 
-The real type is
+We're hitting limitations of the Elm Packages website, and the type shown isn't
+very descriptive. **The real type of this function is:**
 
     Typed.LocatedExpr -> Canonical.LocatedExpr
 
@@ -553,7 +546,7 @@ becomes
         )
 
 If location info is not useful to you either, look for the `unwrap` functions
-in `Elm.AST.*` modules.
+in the various `Elm.AST.*` modules.
 
 -}
 dropTypesExpr : Typed.LocatedExpr -> Canonical.LocatedExpr
@@ -563,7 +556,8 @@ dropTypesExpr locatedExpr =
 
 {-| Drop types from all expressions in the module.
 
-The real type is
+We're hitting limitations of the Elm Packages website, and the type shown isn't
+very descriptive. **The real type of this function is:**
 
     Module Typed.LocatedExpr
     -> Module Canonical.LocatedExpr
@@ -576,7 +570,8 @@ dropTypesModule module_ =
 
 {-| Drop types from all expressions in all the modules.
 
-The real type is
+We're hitting limitations of the Elm Packages website, and the type shown isn't
+very descriptive. **The real type of this function is:**
 
     Dict ModuleName (Module Typed.LocatedExpr)
     -> Dict ModuleName (Module Canonical.LocatedExpr)

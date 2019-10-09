@@ -1,17 +1,34 @@
 module Elm.Data.Located exposing
-    ( Located, located, unwrap, getRegion, map, merge, replaceWith
-    , Region, dummyRegion, mergeRegions, regionToComparable
-    , Position, positionToComparable, comparePosition
+    ( Located, Region, Position
+    , located, unwrap, getRegion, map, merge, replaceWith
+    , dummyRegion, mergeRegions, regionToComparable
+    , positionToComparable, comparePosition
     )
 
-{-| Wrapper for location metadata. The location is essentially a pair of row,col
-coordinates for some span of source code.
+{-| Wrapper for location metadata. The location is essentially a pair of
+`(row,col)` coordinates for some span of source code.
 
 Useful for error messages, but hopefully for stuff like source maps etc. too.
 
-@docs Located, located, unwrap, getRegion, map, merge, replaceWith
-@docs Region, dummyRegion, mergeRegions, regionToComparable
-@docs Position, positionToComparable, comparePosition
+
+# Types
+
+@docs Located, Region, Position
+
+
+# Located
+
+@docs located, unwrap, getRegion, map, merge, replaceWith
+
+
+# Region
+
+@docs dummyRegion, mergeRegions, regionToComparable
+
+
+# Position
+
+@docs positionToComparable, comparePosition
 
 -}
 
@@ -83,35 +100,23 @@ merge fn l1 l2 =
 {-| Merge the regions: the resulting region is always bigger or equal than the
 input regions.
 
-    mergeRegions
-        { start = { row = 1, col = 1 }, end = { row = 4, col = 4 } }
-        { start = { row = 2, col = 2 }, end = { row = 3, col = 3 } }
-        -->
-        { start = { row = 1, col = 1 }, end = { row = 4, col = 4 } }
+    mergeRegions <1:1 - 4:4> <2:2 - 3:3>
+        --> <1:1 - 4:4>
 
 The order doesn't matter:
 
-    mergeRegions
-        { start = { row = 2, col = 2 }, end = { row = 3, col = 3 } }
-        { start = { row = 1, col = 1 }, end = { row = 4, col = 4 } }
-        -->
-        { start = { row = 1, col = 1 }, end = { row = 4, col = 4 } }
+    mergeRegions <2:2 - 3:3> <1:1 - 4:4>
+        --> <1:1 - 4:4>
 
 One doesn't have to be a subset of the other:
 
-    mergeRegions
-        { start = { row = 1, col = 1 }, end = { row = 3, col = 3 } }
-        { start = { row = 2, col = 2 }, end = { row = 4, col = 4 } }
-        -->
-        { start = { row = 1, col = 1 }, end = { row = 4, col = 4 } }
+    mergeRegions <1:1 - 3:3> <2:2 - 4:4>
+        --> <1:1 - 4:4>
 
 There can be gaps in between
 
-    mergeRegions
-        { start = { row = 1, col = 1 }, end = { row = 2, col = 2 } }
-        { start = { row = 4, col = 4 }, end = { row = 5, col = 5 } }
-        -->
-        { start = { row = 1, col = 1 }, end = { row = 5, col = 5 } }
+    mergeRegions <1:1 - 2:2> <4:4 - 5:5>
+        --> <1:1 - 5:5>
 
 -}
 mergeRegions : Region -> Region -> Region
@@ -179,7 +184,7 @@ positionToComparable { row, col } =
     ( row, col )
 
 
-{-| Compare using `positionToComparable`
+{-| Compare using [`positionToComparable`](#positionToComparable)
 -}
 comparePosition : Position -> Position -> Order
 comparePosition p1 p2 =

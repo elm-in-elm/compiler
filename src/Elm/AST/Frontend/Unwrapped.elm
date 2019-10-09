@@ -1,10 +1,10 @@
 module Elm.AST.Frontend.Unwrapped exposing (Expr(..))
 
-{-| Version of Frontend AST without the location info.
+{-| Version of [Frontend AST](Elm.AST.Frontend) without the location info.
 
 Handy for parser tests, or when you don't need the location info.
 
-Convert to it using the `Elm.AST.Frontend.unwrap`.
+Convert to it using the [`Elm.AST.Frontend.unwrap`](Elm.AST.Frontend#unwrap).
 
 @docs Expr
 

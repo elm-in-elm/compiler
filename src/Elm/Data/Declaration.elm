@@ -97,7 +97,7 @@ mapBody fn body =
 
 
 {-| Switch the Result and the expression inside the declaration body.
-Similar to Result.Extra.combine.
+Similar to [`Result.Extra.combine`](/packages/elm-community/result-extra/latest/Result-Extra#combine).
 
     combine (Value (Ok (Int 5)))
     --> Ok (Value (Int 5))

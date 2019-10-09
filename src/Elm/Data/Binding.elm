@@ -36,7 +36,7 @@ map fn { name, body } =
 
 
 {-| Switch the Result and the expression inside the binding.
-Similar to Result.Extra.combine.
+Similar to [`Result.Extra.combine`](/packages/elm-community/result-extra/latest/Result-Extra#combine).
 
     combine { name = "foo", body = Ok (Int 5) }
     --> Ok { name = "foo", body = Int 5 }

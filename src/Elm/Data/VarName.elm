@@ -10,7 +10,7 @@ module Elm.Data.VarName exposing (VarName)
 -}
 
 
-{-| Just a String alias, instead of a `type` wrapper. We generally use records
+{-| Just a `String` alias, instead of a `type` wrapper. We generally use records
 with explanatory field names where two Strings would be next to each other,
 to protect against swapping them accidentally.
 -}

@@ -3,7 +3,7 @@ module Elm.AST.Typed exposing
     , LocatedExpr, Expr, Expr_(..), getExpr, getType, unwrap, dropTypes, transformAll, transformOnce, recursiveChildren, setExpr
     )
 
-{-| Typed AST holds the inferred types for every expression.
+{-| Typed AST holds the inferred [types](Elm.Data.Type) for every expression.
 
 @docs ProjectFields
 @docs LocatedExpr, Expr, Expr_, getExpr, getType, unwrap, dropTypes, transformAll, transformOnce, recursiveChildren, setExpr
@@ -24,31 +24,31 @@ import Transform
 
 {-| "What does this compiler stage need to store abotut the whole project?
 
-(See `Elm.Data.Project`.)
+(See [`Elm.Data.Project`](Elm.Data.Project).)
 
-In this case, a dict of all the compiled Elm modules,
-consisting of typed AST expressions.
+In this case, a dict of all the compiled Elm [modules](Elm.Data.Module#Module)
+that hold [typed AST expressions](#LocatedExpr).
 
 -}
 type alias ProjectFields =
     { modules : Dict ModuleName (Module LocatedExpr) }
 
 
-{-| The main type of this module. Expression with location metadata.
+{-| The main type of this module. Expression with [location metadata](Elm.Data.Located).
 
-Note the underlying `Expr` custom type recurses on this `LocatedExpr` type,
+Note the underlying [`Expr`](#Expr) custom type recurses on this [`LocatedExpr`](#LocatedExpr) type,
 so that the children also each have their location metadata.
 
-If you want expressions without location metadata, look at `unwrap`.
+If you want expressions without location metadata, look at [`unwrap`](#unwrap).
 
 -}
 type alias LocatedExpr =
     Located Expr
 
 
-{-| Differs from Canonical.Expr by:
+{-| Differs from [Canonical.Expr](Elm.AST.Canonical#Expr) by:
 
-  - being a tuple of the underlying Expr\_ type and its type
+  - being a tuple of the underlying Expr\_ and its inferred type
 
 -}
 type alias Expr =
@@ -76,7 +76,8 @@ type Expr_
     | Tuple3 LocatedExpr LocatedExpr LocatedExpr
 
 
-{-| A helper for the Transform library.
+{-| A helper for the [Transform](/packages/Janiczek/transform/latest/) library.
+Runs the given function recursively on all children.
 -}
 recurse : (LocatedExpr -> LocatedExpr) -> LocatedExpr -> LocatedExpr
 recurse fn locatedExpr =
@@ -159,7 +160,7 @@ recurse fn locatedExpr =
             )
 
 
-{-| Transform the expression once, using the provided function.
+{-| Transform the expression once using the provided function.
 Start at the children, apply once then go up.
 -}
 transformOnce : (LocatedExpr -> LocatedExpr) -> LocatedExpr -> LocatedExpr
@@ -170,7 +171,7 @@ transformOnce pass locatedExpr =
         locatedExpr
 
 
-{-| Transform the expression, using the provided function.
+{-| Transform the expression using the provided function.
 Start at the children, repeatedly apply on them until they stop changing,
 then go up.
 -}
@@ -272,7 +273,7 @@ getType locatedExpr =
     Tuple.second <| Located.unwrap locatedExpr
 
 
-{-| Discard the location metadata.
+{-| Discard the [location metadata](Elm.Data.Located#Located).
 -}
 unwrap : LocatedExpr -> Unwrapped.Expr
 unwrap expr =
@@ -361,7 +362,7 @@ unwrap expr =
     )
 
 
-{-| Go from AST.Typed to AST.Canonical.
+{-| Go from `AST.Typed` to [`AST.Canonical`](Elm.AST.Canonical).
 -}
 dropTypes : LocatedExpr -> Canonical.LocatedExpr
 dropTypes locatedExpr =

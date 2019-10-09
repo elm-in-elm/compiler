@@ -1,10 +1,10 @@
 module Elm.AST.Typed.Unwrapped exposing (Expr, Expr_(..))
 
-{-| Version of Typed AST without the location info.
+{-| Version of [Typed AST](Elm.AST.Typed) without the location info.
 
 Handy for type inference tests, or when you don't need the location info.
 
-Convert to it using the `Elm.AST.Typed.unwrap`.
+Convert to it using the [`Elm.AST.Typed.unwrap`](Elm.AST.Typed#unwrap).
 
 @docs Expr, Expr_
 

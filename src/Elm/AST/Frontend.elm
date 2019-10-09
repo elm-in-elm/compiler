@@ -1,6 +1,6 @@
 module Elm.AST.Frontend exposing
     ( ProjectFields
-    , LocatedExpr, Expr(..), unwrap, transform
+    , LocatedExpr, Expr(..), unwrap, transform, recurse
     )
 
 {-| Frontend AST is the first stage after parsing from source code, and has
@@ -8,7 +8,7 @@ the closest resemblance to the Elm source code. Eg. all the comments etc. are
 still there.
 
 @docs ProjectFields
-@docs LocatedExpr, Expr, unwrap, transform
+@docs LocatedExpr, Expr, unwrap, transform, recurse
 
 -}
 
@@ -24,22 +24,22 @@ import Transform
 
 {-| "What does this compiler stage need to store abotut the whole project?
 
-(See `Elm.Data.Project`.)
+(See [`Elm.Data.Project`](Elm.Data.Project).)
 
-In this case, a dict of all the compiled Elm modules,
-consisting of frontend AST expressions.
+In this case, a dict of all the compiled Elm [modules](Elm.Data.Module#Module)
+that hold [frontend AST expressions](#LocatedExpr).
 
 -}
 type alias ProjectFields =
     { modules : Dict ModuleName (Module LocatedExpr) }
 
 
-{-| The main type of this module. Expression with location metadata.
+{-| The main type of this module. Expression with [location metadata](Elm.Data.Located).
 
-Note the underlying `Expr` custom type recurses on this `LocatedExpr` type,
+Note the underlying [`Expr`](#Expr) custom type recurses on this [`LocatedExpr`](#LocatedExpr) type,
 so that the children also each have their location metadata.
 
-If you want expressions without location metadata, look at `unwrap`.
+If you want expressions without location metadata, look at [`unwrap`](#unwrap).
 
 -}
 type alias LocatedExpr =
@@ -68,7 +68,8 @@ type Expr
     | Tuple3 LocatedExpr LocatedExpr LocatedExpr
 
 
-{-| A helper for the Transform library.
+{-| A helper for the [Transform](/packages/Janiczek/transform/latest/) library.
+Runs the given function recursively on all children.
 -}
 recurse : (Expr -> Expr) -> Expr -> Expr
 recurse f expr =
@@ -146,9 +147,12 @@ recurse f expr =
             Tuple3 (f_ e1) (f_ e2) (f_ e3)
 
 
-{-| Transform the expression, using the provided function.
+{-| [Transform](/packages/Janiczek/transform/latest/Transform#transformAll)
+the expression using the provided function.
+
 Start at the children, repeatedly apply on them until they stop changing,
 then go up.
+
 -}
 transform : (Expr -> Expr) -> Expr -> Expr
 transform pass expr =
@@ -161,7 +165,7 @@ transform pass expr =
         expr
 
 
-{-| Discard the location metadata.
+{-| Discard the [location metadata](Elm.Data.Located#Located).
 -}
 unwrap : LocatedExpr -> Unwrapped.Expr
 unwrap expr =

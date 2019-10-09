@@ -34,7 +34,7 @@ type ExposedItem
     | ExposedTypeAndAllConstructors VarName -- exposing (Foo(..))
 
 
-{-| Unwraps the variable or type name from the ExposedItem.
+{-| Unwraps the variable or type name from the [`ExposedItem`](#ExposedItem).
 
     name (ExposedValue "foo")
     --> "foo"

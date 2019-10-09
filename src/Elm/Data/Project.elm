@@ -2,7 +2,7 @@ module Elm.Data.Project exposing (Project)
 
 {-| The project information (corresponds to a single elm.json file).
 Holds more information though - the data in the type parameter holds all the
-parsed modules etc. - what every stage needs. See ProjectFields of the various
+parsed modules etc. - what every stage needs. See `ProjectFields` of the various
 AST stages.
 
 @docs Project

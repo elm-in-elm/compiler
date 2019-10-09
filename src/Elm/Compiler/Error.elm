@@ -34,7 +34,10 @@ type Error
     | EmitError EmitError
 
 
-{-| Errors encountered during parsing from String to AST.
+{-| Errors encountered during [parsing](Elm.Compiler#parseExpr) from String to [AST](Elm.AST.Frontend).
+
+The `DeadEnd` type in this definition is [the one from `elm/parser`](/packages/elm/parser/latest/Parser-Advanced#DeadEnd).
+
 -}
 type ParseError
     = ModuleNameDoesntMatchFilePath
@@ -68,8 +71,8 @@ type ParseContext
     | InTuple3
 
 
-{-| The specific problem the parser encountered. Together with ParseContext and
-the location info this should give you enough info about what's wrong.
+{-| The specific problem the parser encountered. Together with [`ParseContext`](#ParseContext)
+and the [location info](Elm.Data.Located) this should give you enough info about what's wrong.
 -}
 type ParseProblem
     = ExpectingPortKeyword -- `>port< module ...`
@@ -128,7 +131,7 @@ type ParseProblem
     | CompilerBug String
 
 
-{-| Errors encountered during desugaring from the Frontend AST to Canonical AST.
+{-| Errors encountered during [desugaring](Elm.Compiler#desugarExpr) from the [Frontend AST](Elm.AST.Frontend) to [Canonical AST](Elm.AST.Canonical).
 -}
 type DesugarError
     = VarNotInEnvOfModule
@@ -137,16 +140,19 @@ type DesugarError
         }
 
 
-{-| Errors encountered during typechecking.
+{-| Errors encountered during [typechecking](Elm.Compiler#inferExpr).
 -}
 type TypeError
     = TypeMismatch Type Type
     | OccursCheckFailed Int Type
 
 
-{-| Errors encountered during emit. As you're free to do the emit phase however
-you want, this is only returned from the helpers in Stage.Emit, should you choose
-to use them :)
+{-| Errors encountered during emitting. As you're free to do the emit phase however
+you want, this is only returned from the helpers in Stage.Emit in the compiler CLI.
+
+  - **TODO:** maybe expose Stage.Emit in this library (probably under the name
+    `Elm.Compiler.Emit` or something similar)
+
 -}
 type EmitError
     = MainDeclarationNotFound
@@ -155,7 +161,7 @@ type EmitError
     | DeclarationNotFound { module_ : ModuleName, name : VarName }
 
 
-{-| English description of the error. Feel free to write your own!
+{-| An English description of the error. Feel free to write your own though!
 -}
 toString : Error -> String
 toString error =

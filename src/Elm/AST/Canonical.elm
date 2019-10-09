@@ -22,29 +22,29 @@ import Elm.Data.VarName exposing (VarName)
 
 {-| "What does this compiler stage need to store abotut the whole project?
 
-(See `Elm.Data.Project`.)
+(See [`Elm.Data.Project`](Elm.Data.Project).)
 
-In this case, a dict of all the compiled Elm modules,
-consisting of canonical AST expressions.
+In this case, a dict of all the compiled Elm [modules](Elm.Data.Module#Module)
+that hold [canonical AST expressions](#LocatedExpr).
 
 -}
 type alias ProjectFields =
     { modules : Dict ModuleName (Module LocatedExpr) }
 
 
-{-| The main type of this module. Expression with location metadata.
+{-| The main type of this module. Expression with [location metadata](Elm.Data.Located).
 
-Note the underlying `Expr` custom type recurses on this `LocatedExpr` type,
+Note the underlying [`Expr`](#Expr) custom type recurses on this [`LocatedExpr`](#LocatedExpr) type,
 so that the children also each have their location metadata.
 
-If you want expressions without location metadata, look at `unwrap`.
+If you want expressions without location metadata, look at [`unwrap`](#unwrap).
 
 -}
 type alias LocatedExpr =
     Located Expr
 
 
-{-| Differs from Frontend.Expr by:
+{-| Differs from [Frontend.Expr](Elm.AST.Frontend#Expr) by:
 
   - having fully qualified variables
   - having only single argument lambdas
@@ -70,7 +70,7 @@ type Expr
     | Tuple3 LocatedExpr LocatedExpr LocatedExpr
 
 
-{-| Discard the location metadata.
+{-| Discard the [location metadata](Elm.Data.Located#Located).
 -}
 unwrap : LocatedExpr -> Unwrapped.Expr
 unwrap expr =
@@ -153,7 +153,7 @@ unwrap expr =
                 (unwrap e3)
 
 
-{-| Adds **dummy** locations to the Unwrapped.Expr.
+{-| Adds [**dummy** locations](Elm.Data.Located#dummyRegion) to the [Unwrapped.Expr](Elm.AST.Canonical.Unwrapped#Expr).
 -}
 fromUnwrapped : Unwrapped.Expr -> LocatedExpr
 fromUnwrapped expr =
