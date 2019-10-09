@@ -2,9 +2,13 @@
 
 Elm compiler written in Elm!
 
+_For more information on the `elm-in-elm` projet in general read the [comprehensive documentation](http://github.com/elm-in-elm/compiler/tree/master/README.md)._
+
 The entrypoint of this library is the [`Elm.Compiler`](/packages/elm-in-elm/compiler/latest/Elm-Compiler) module.
 
-_For more information on `elm-in-elm` read the [comprehensive documentation](http://github.com/elm-in-elm/compiler/tree/master/README.md)._
+The typical flow of functions inside this library looks like this:
+
+![Stages of the compiler](https://github.com/elm-in-elm/compiler/raw/add-library/assets/stages.png)
 
 ## Example usage - Elm to Elixir
 

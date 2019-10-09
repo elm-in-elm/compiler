@@ -21,3 +21,13 @@ format:
 .PHONY: lint
 lint:
 	elm-format . --validate
+
+.PHONY: readme_lib
+readme_lib:
+	mv README.md README-github.md
+	mv README-library.md README.md
+
+.PHONY: readme_gh
+readme_gh:
+	mv README.md README-library.md
+	mv README-github.md README.md
