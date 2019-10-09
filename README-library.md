@@ -2,7 +2,7 @@
 
 Elm compiler written in Elm!
 
-_For more information on the `elm-in-elm` projet in general read the [comprehensive documentation](http://github.com/elm-in-elm/compiler/tree/master/README.md)._
+_For more information on the `elm-in-elm` project in general read the [comprehensive documentation](http://github.com/elm-in-elm/compiler/tree/master/README.md)._
 
 The entrypoint of this library is the [`Elm.Compiler`](/packages/elm-in-elm/compiler/latest/Elm-Compiler) module.
 
