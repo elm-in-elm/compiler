@@ -185,7 +185,7 @@ toString error =
                 ParseProblem problems ->
                     String.join "\n"
                         ("Parse problems: "
-                            :: List.map (\problem -> "  " ++ Debug.toString problem) problems
+                            :: List.map (\problem -> "  " ++ parseProblemToString problem) problems
                         )
 
         DesugarError desugarError ->
@@ -260,3 +260,169 @@ fullVarName { module_, name } =
     module_
         |> Maybe.map (\moduleAlias -> moduleAlias ++ "." ++ name)
         |> Maybe.withDefault name
+
+
+parseProblemToString : ParseProblem -> String
+parseProblemToString problem =
+    case problem of
+        ExpectingPortKeyword ->
+            "ExpectingPortKeyword"
+
+        ExpectingEffectKeyword ->
+            "ExpectingEffectKeyword"
+
+        ExpectingModuleKeyword ->
+            "ExpectingModuleKeyword"
+
+        ExpectingModuleName ->
+            "ExpectingModuleName"
+
+        ExpectingExposingKeyword ->
+            "ExpectingExposingKeyword"
+
+        ExpectingExposingAllSymbol ->
+            "ExpectingExposingAllSymbol"
+
+        ExpectingExposingListLeftParen ->
+            "ExpectingExposingListLeftParen"
+
+        ExpectingExposingListRightParen ->
+            "ExpectingExposingListRightParen"
+
+        ExpectingExposingListSeparatorComma ->
+            "ExpectingExposingListSeparatorComma"
+
+        ExpectingExposedTypeDoublePeriod ->
+            "ExpectingExposedTypeDoublePeriod"
+
+        ExpectingVarName ->
+            "ExpectingVarName"
+
+        ExpectingTypeOrConstructorName ->
+            "ExpectingTypeOrConstructorName"
+
+        ExposingListCantBeEmpty ->
+            "ExposingListCantBeEmpty"
+
+        ExpectingImportKeyword ->
+            "ExpectingImportKeyword"
+
+        ExpectingAsKeyword ->
+            "ExpectingAsKeyword"
+
+        ExpectingModuleNameWithoutDots ->
+            "ExpectingModuleNameWithoutDots"
+
+        ExpectingModuleNamePart ->
+            "ExpectingModuleNamePart"
+
+        ExpectingQualifiedVarNameDot ->
+            "ExpectingQualifiedVarNameDot"
+
+        ExpectingEqualsSign ->
+            "ExpectingEqualsSign"
+
+        ExpectingMinusSign ->
+            "ExpectingMinusSign"
+
+        ExpectingNumber ->
+            "ExpectingNumber"
+
+        ExpectingSingleQuote ->
+            "ExpectingSingleQuote"
+
+        ExpectingChar ->
+            "ExpectingChar"
+
+        ExpectingEscapeBackslash ->
+            "ExpectingEscapeBackslash"
+
+        ExpectingEscapeCharacter Char ->
+            "ExpectingEscapeCharacter Char"
+
+        ExpectingUnicodeEscapeLeftBrace ->
+            "ExpectingUnicodeEscapeLeftBrace"
+
+        ExpectingUnicodeEscapeRightBrace ->
+            "ExpectingUnicodeEscapeRightBrace"
+
+        InvalidUnicodeCodePoint ->
+            "InvalidUnicodeCodePoint"
+
+        ExpectingDoubleQuote ->
+            "ExpectingDoubleQuote"
+
+        ExpectingTripleQuote ->
+            "ExpectingTripleQuote"
+
+        ExpectingPlusOperator ->
+            "ExpectingPlusOperator"
+
+        ExpectingConsOperator ->
+            "ExpectingConsOperator"
+
+        ExpectingConcatOperator ->
+            "ExpectingConcatOperator"
+
+        ExpectingModuleDot ->
+            "ExpectingModuleDot"
+
+        ExpectingBackslash ->
+            "ExpectingBackslash"
+
+        ExpectingRightArrow ->
+            "ExpectingRightArrow"
+
+        ExpectingLeftParen ->
+            "ExpectingLeftParen"
+
+        ExpectingRightParen ->
+            "ExpectingRightParen"
+
+        ExpectingLeftBracket ->
+            "ExpectingLeftBracket"
+
+        ExpectingRightBracket ->
+            "ExpectingRightBracket"
+
+        ExpectingListSeparator ->
+            "ExpectingListSeparator"
+
+        ExpectingTupleSeparator ->
+            "ExpectingTupleSeparator"
+
+        ExpectingNotBeginningOfLine ->
+            "ExpectingNotBeginningOfLine"
+
+        ExpectingIf ->
+            "ExpectingIf"
+
+        ExpectingThen ->
+            "ExpectingThen"
+
+        ExpectingElse ->
+            "ExpectingElse"
+
+        ExpectingTrue ->
+            "ExpectingTrue"
+
+        ExpectingFalse ->
+            "ExpectingFalse"
+
+        ExpectingLet ->
+            "ExpectingLet"
+
+        ExpectingIn ->
+            "ExpectingIn"
+
+        ExpectingUnit ->
+            "ExpectingUnit"
+
+        InvalidNumber ->
+            "InvalidNumber"
+
+        TriedToParseCharacterStoppingDelimiter ->
+            "TriedToParseCharacterStoppingDelimiter"
+
+        CompilerBug bug ->
+            "CompilerBug " ++ bug

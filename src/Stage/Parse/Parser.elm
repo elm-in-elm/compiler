@@ -868,36 +868,3 @@ oneOrMoreHelp spaces p vs =
         , P.succeed ()
             |> P.map (always (P.Done (List.reverse vs)))
         ]
-
-
-log : String -> Parser_ a -> Parser_ a
-log message parser =
-    P.succeed ()
-        |> P.andThen
-            (\() ->
-                let
-                    _ =
-                        Debug.log "starting" message
-                in
-                P.succeed
-                    (\source offsetBefore parseResult offsetAfter ->
-                        let
-                            _ =
-                                Debug.log "-----------------------------------------------" message
-
-                            _ =
-                                Debug.log "source         " source
-
-                            _ =
-                                Debug.log "chomped string " (String.slice offsetBefore offsetAfter source)
-
-                            _ =
-                                Debug.log "parsed result  " parseResult
-                        in
-                        parseResult
-                    )
-                    |= P.getSource
-                    |= P.getOffset
-                    |= parser
-                    |= P.getOffset
-            )
