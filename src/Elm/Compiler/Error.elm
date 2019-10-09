@@ -185,7 +185,7 @@ toString error =
                 ParseProblem problems ->
                     String.join "\n"
                         ("Parse problems: "
-                            :: List.map (\problem -> "  " ++ parseProblemToString problem) problems
+                            :: List.map (\{ problem } -> "  " ++ parseProblemToString problem) problems
                         )
 
         DesugarError desugarError ->
@@ -337,8 +337,8 @@ parseProblemToString problem =
         ExpectingEscapeBackslash ->
             "ExpectingEscapeBackslash"
 
-        ExpectingEscapeCharacter Char ->
-            "ExpectingEscapeCharacter Char"
+        ExpectingEscapeCharacter char ->
+            "ExpectingEscapeCharacter " ++ String.fromChar char
 
         ExpectingUnicodeEscapeLeftBrace ->
             "ExpectingUnicodeEscapeLeftBrace"
