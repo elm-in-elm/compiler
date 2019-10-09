@@ -1,0 +1,14 @@
+graph TD;
+
+A[String];
+B[Frontend AST];
+C[Canonical AST];
+D[Typed AST];
+E[String / Bytes];
+
+A-- parse      -->B;
+B-- desugar    -->C;
+C-- inferTypes -->D;
+D-- optimize   -->D;
+D-- emit       -->E;
+D-- dropTypes  -->C;

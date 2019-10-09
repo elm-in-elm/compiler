@@ -11,7 +11,7 @@ function run {
   date -R;
   echo -en "${COLOR_OFF}";
 
-  elm-test;
+  cd src/cli && elm-test && cd ../library && elm-test && cd ../..;
 }
 
 run;

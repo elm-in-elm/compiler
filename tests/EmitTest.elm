@@ -1,25 +1,22 @@
 module EmitTest exposing (javascript)
 
-import AST.Common.Literal exposing (Literal(..))
-import AST.Common.Located as Located exposing (Located)
-import AST.Common.Type as Type
-import AST.Typed as Typed exposing (Expr_(..), LocatedExpr)
-import AssocList as Dict
-import Data.Declaration exposing (Declaration)
-import Data.ModuleName as ModuleName exposing (ModuleName)
-import Data.VarName as VarName exposing (VarName)
+import Dict
+import Elm.AST.Typed as Typed exposing (Expr_(..), LocatedExpr)
+import Elm.Data.Declaration exposing (Declaration, DeclarationBody(..))
+import Elm.Data.Located as Located exposing (Located)
+import Elm.Data.ModuleName as ModuleName exposing (ModuleName)
+import Elm.Data.Type as Type
+import Elm.Data.VarName as VarName exposing (VarName)
 import Expect exposing (Expectation)
 import Stage.Emit.JavaScript as JS
 import Test exposing (Test, describe, test, todo)
 import TestHelpers
     exposing
-        ( module_
-        , typed
+        ( typed
         , typedBool
         , typedInt
         , typedIntList
         , typedString
-        , var
         )
 
 
@@ -40,52 +37,52 @@ javascript =
           describe "emitExpr"
             [ describe "Int"
                 (List.map runTest
-                    [ ( "positive int", Literal (Int 42), "42" )
-                    , ( "negative int", Literal (Int -998), "-998" )
+                    [ ( "positive int", Int 42, "42" )
+                    , ( "negative int", Int -998, "-998" )
                     , -- Elm wat
-                      ( "negative zero int", Literal (Int (negate 0)), "0" )
+                      ( "negative zero int", Int (negate 0), "0" )
                     ]
                 )
 
             -- See https://ellie-app.com/62Ydd5JYgxca1
             , describe "Float"
                 (List.map runTest
-                    [ ( "positive float", Literal (Float 12.3), "12.3" )
-                    , ( "negative float", Literal (Float -12.3), "-12.3" )
-                    , ( "positive zero float", Literal (Float 0.0), "0" )
+                    [ ( "positive float", Float 12.3, "12.3" )
+                    , ( "negative float", Float -12.3, "-12.3" )
+                    , ( "positive zero float", Float 0.0, "0" )
                     , -- Elm wat
-                      ( "negative zero float", Literal (Float -0.0), "0" )
-                    , ( "positive infitiny", Literal (Float (1 / 0.0)), "Infinity" )
-                    , ( "negative infitiny", Literal (Float (1 / -0.0)), "-Infinity" )
+                      ( "negative zero float", Float -0.0, "0" )
+                    , ( "positive infitiny", Float (1 / 0.0), "Infinity" )
+                    , ( "negative infitiny", Float (1 / -0.0), "-Infinity" )
                     ]
                 )
             , describe "Char"
                 (List.map runTest
-                    [ ( "simple ASCII", Literal (Char 'x'), "\"x\"" )
-                    , ( "Unicode", Literal (Char '😊'), "\"😊\"" )
+                    [ ( "simple ASCII", Char 'x', "\"x\"" )
+                    , ( "Unicode", Char '😊', "\"😊\"" )
                     ]
                 )
             , describe "String"
                 (List.map runTest
-                    [ ( "simple string", Literal (String "hello world"), "\"hello world\"" )
-                    , ( "string with newlines", Literal (String "abc\ndef"), "\"abc\ndef\"" )
+                    [ ( "simple string", String "hello world", "\"hello world\"" )
+                    , ( "string with newlines", String "abc\ndef", "\"abc\ndef\"" )
                     ]
                 )
             , describe "Bool"
                 (List.map runTest
-                    [ ( "true", Literal (Bool True), "true" )
-                    , ( "false", Literal (Bool False), "false" )
+                    [ ( "true", Bool True, "true" )
+                    , ( "false", Bool False, "false" )
                     ]
                 )
             , describe "Var"
                 (List.map runTest
-                    [ ( "simple", Var { qualifier = module_ "Foo", name = var "bar" }, "Foo$bar" )
-                    , ( "nested", Var { qualifier = module_ "Foo.Bar", name = var "baz" }, "Foo$Bar$baz" )
+                    [ ( "simple", Var { module_ = "Foo", name = "bar" }, "Foo$bar" )
+                    , ( "nested", Var { module_ = "Foo.Bar", name = "baz" }, "Foo$Bar$baz" )
                     ]
                 )
             , describe "Argument"
                 (List.map runTest
-                    [ ( "simple", Argument (var "foo"), "foo" )
+                    [ ( "simple", Argument "foo", "foo" )
                     ]
                 )
             , describe "Plus"
@@ -113,7 +110,7 @@ javascript =
                 (List.map runTest
                     [ ( "simple"
                       , Lambda
-                            { argument = var "x"
+                            { argument = "x"
                             , body = typedInt 1
                             }
                       , "((x) => 1)"
@@ -124,7 +121,7 @@ javascript =
                 (List.map runTest
                     [ ( "simple"
                       , Call
-                            { fn = typed (Var { qualifier = module_ "Basics", name = var "negate" })
+                            { fn = typed (Var { module_ = "Basics", name = "negate" })
                             , argument = typedInt 1
                             }
                       , "(Basics$negate(1))"
@@ -134,7 +131,7 @@ javascript =
                             { fn =
                                 typed
                                     (Lambda
-                                        { argument = var "x"
+                                        { argument = "x"
                                         , body = typedInt 2
                                         }
                                     )
@@ -148,7 +145,7 @@ javascript =
                 (List.map runTest
                     [ ( "simple - true"
                       , If
-                            { test = typed (Literal (Bool True))
+                            { test = typed (Bool True)
                             , then_ = typedInt 1
                             , else_ = typedInt 2
                             }
@@ -156,7 +153,7 @@ javascript =
                       )
                     , ( "simple - false"
                       , If
-                            { test = typed (Literal (Bool False))
+                            { test = typed (Bool False)
                             , then_ = typedInt 1
                             , else_ = typedInt 2
                             }
@@ -167,8 +164,8 @@ javascript =
                             { test =
                                 typed
                                     (Call
-                                        { fn = typed (Var { qualifier = module_ "String", name = var "isEmpty" })
-                                        , argument = typed (Literal (String "foo"))
+                                        { fn = typed (Var { module_ = "String", name = "isEmpty" })
+                                        , argument = typed (String "foo")
                                         }
                                     )
                             , then_ = typedInt 1
@@ -207,8 +204,8 @@ javascript =
                       , Let
                             { bindings =
                                 Dict.singleton
-                                    (var "x")
-                                    { name = var "x"
+                                    "x"
+                                    { name = "x"
                                     , body = typedInt 2
                                     }
                             , body = typedInt 1
@@ -219,13 +216,13 @@ javascript =
                       , Let
                             { bindings =
                                 Dict.fromList
-                                    [ ( var "x"
-                                      , { name = var "x"
+                                    [ ( "x"
+                                      , { name = "x"
                                         , body = typedInt 2
                                         }
                                       )
-                                    , ( var "y"
-                                      , { name = var "y"
+                                    , ( "y"
+                                      , { name = "y"
                                         , body = typedInt 3
                                         }
                                       )
@@ -266,9 +263,9 @@ javascript =
           describe "emitDeclaration"
             (List.map runTest
                 [ ( "simple"
-                  , { module_ = module_ "Foo"
-                    , name = var "bar"
-                    , body = typedInt 1
+                  , { module_ = "Foo"
+                    , name = "bar"
+                    , body = Value <| typedInt 1
                     }
                   , "const Foo$bar = 1;"
                   )
