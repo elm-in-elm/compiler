@@ -2,4 +2,6 @@
 - [ ] desugarExpr is needlessly complicated... try creating some dummy throwaway module for that one expr? Does that change behaviour ("can't find variable x")?
 - [ ] Emit helpers
 - [ ] Emit.JavaScript
-- [ ] Elm.Compiler.compileToJS - do the whole pipeline with default settings. Show how it's written in doc comment
+- [ ] Elm.Compiler.compileToJS - do the whole pipeline with default settings. Show how it's written in doc comment. Also show it in library README.
+- [ ] maybe show the Ellie demo/playground in library README?
+
