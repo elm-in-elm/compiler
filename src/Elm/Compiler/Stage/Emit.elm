@@ -22,11 +22,11 @@ There are two emit usecases we know of:
 
 There _might_ be usecases for not eliminating dead code? We don't do that
 currently because we don't know of any, but if there are, please raise an issue
-in the GitHub repo!
-
-TODO we'll probably have to detect cycles and do something like IIFE
+in the [GitHub repo](https://github.com/elm-in-elm/compiler) or on [Discord](https://is.gd/elmdiscord)!
 
 -}
+
+-- TODO we'll probably have to detect cycles and do something like IIFE
 
 import AssocList
 import AssocSet
@@ -46,13 +46,31 @@ import Result.Extra as Result
 import Set exposing (Set)
 
 
-projectToDeclarationList : Project Typed.ProjectFields -> Result EmitError (List (Declaration Typed.LocatedExpr))
+{-| Find the shortest path through the declarations to `main`.
+
+Return the ordered list of these dependencies (`main` goes last).
+
+Automatically removes unused top-level declarations.
+
+-}
+projectToDeclarationList :
+    Project Typed.ProjectFields
+    -> Result EmitError (List (Declaration Typed.LocatedExpr))
 projectToDeclarationList { mainModuleName, modules } =
     modulesToGraph mainModuleName modules
         |> Result.map (findPathToMain mainModuleName)
 
 
-modulesToDeclarationLists : Project Typed.ProjectFields -> Result EmitError (Dict ModuleName (List (Declaration Typed.LocatedExpr)))
+{-| Find the shortest path through the declarations to all the exposed declarations.
+
+Return the ordered list of these dependencies (`main` goes last).
+
+Automatically removes unused top-level declarations.
+
+-}
+modulesToDeclarationLists :
+    Project Typed.ProjectFields
+    -> Result EmitError (Dict ModuleName (List (Declaration Typed.LocatedExpr)))
 modulesToDeclarationLists ({ mainModuleName, modules } as project) =
     modulesToGraph mainModuleName modules
         |> Result.map (findPathForEachModule project)
@@ -72,9 +90,13 @@ findPathToMain mainModuleName programGraph =
         (Set.singleton ( mainModuleName, "main" ))
 
 
-{-| In this case we don't have `main`s but TODO finish writing this
+{-| In this case we don't have `main`s but we'll use the exposed declarations in
+each of the modules.
 -}
-findPathForEachModule : Project Typed.ProjectFields -> Graph -> Dict ModuleName (List (Declaration Typed.LocatedExpr))
+findPathForEachModule :
+    Project Typed.ProjectFields
+    -> Graph
+    -> Dict ModuleName (List (Declaration Typed.LocatedExpr))
 findPathForEachModule project graph =
     let
         exposedDeclarations : Set ( ModuleName, VarName )
@@ -117,7 +139,7 @@ findPathForEachModule project graph =
 
 
 {-| Generic function to find a good ordering of values (so that all the
-dependencies are emitted before the TODO finish writing this
+dependencies are emitted before the `startingDeclarations`).
 -}
 findPath : Graph -> Set ( ModuleName, VarName ) -> List (Declaration Typed.LocatedExpr)
 findPath graph startingDeclarations =

@@ -44,7 +44,7 @@ import Dict exposing (Dict)
 import Elm.AST.Frontend as Frontend
 import Elm.Compiler.Error as Error exposing (Error(..), ParseError(..))
 import Elm.Compiler.Stage.Desugar as Desugar
-import Elm.Compiler.Stage.Emit.JavaScript as EmitJS
+import Elm.Compiler.Stage.Emit.JS as EmitJS
 import Elm.Compiler.Stage.InferTypes as InferTypes
 import Elm.Compiler.Stage.Optimize as Optimize
 import Elm.Compiler.Stage.Parse as Parse

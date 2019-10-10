@@ -8,7 +8,7 @@
         "Elm.Compiler",
         "Elm.Compiler.Error",
         "Elm.Compiler.Stage.Emit",
-        "Elm.Compiler.Stage.Emit.JavaScript",
+        "Elm.Compiler.Stage.Emit.JS",
         "Elm.Data.Binding",
         "Elm.Data.Declaration",
         "Elm.Data.Exposing",
