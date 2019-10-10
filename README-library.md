@@ -22,6 +22,7 @@ import Elm.AST.Typed.Unwrapped as TypedU
 import Elm.Compiler
 import Elm.Compiler.Error exposing (Error)
 import Elm.Data.FileContents exposing (FileContents)
+import Elm.Data.FilePath exposing (FilePath)
 import Elm.Data.Module as Module exposing (Module)
 
 

@@ -325,9 +325,17 @@ into AST like
         , body =
             Lambda
                 { argument = "y"
-                , body = AST.Frontend.Int 42
+                , body = AST.Canonical.Int 42
                 }
         }
+
+We're hitting limitations of the Elm Packages website, and the type shown isn't
+very descriptive. **The real type of this function is:**
+
+    Dict ModuleName (Module Frontend.LocatedExpr)
+    -> Module Frontend.LocatedExpr
+    -> Frontend.LocatedExpr
+    -> Result Error Canonical.LocatedExpr
 
 -}
 desugarExpr :
@@ -341,6 +349,14 @@ desugarExpr modules thisModule locatedExpr =
 
 
 {-| Desugar a module (one `*.elm` file).
+
+We're hitting limitations of the Elm Packages website, and the type shown isn't
+very descriptive. **The real type of this function is:**
+
+    Dict ModuleName (Module Frontend.LocatedExpr)
+    -> Module Frontend.LocatedExpr
+    -> Result Error (Module Canonical.LocatedExpr)
+
 -}
 desugarModule :
     Dict ModuleName (Module Frontend.LocatedExpr)
@@ -352,6 +368,13 @@ desugarModule modules thisModule =
 
 
 {-| Desugar multiple modules (`*.elm` files) - see [`desugarModule`](#desugarModule) for details.
+
+We're hitting limitations of the Elm Packages website, and the type shown isn't
+very descriptive. **The real type of this function is:**
+
+    Dict ModuleName (Module Frontend.LocatedExpr)
+    -> Result Error (Dict ModuleName (Module Canonical.LocatedExpr))
+
 -}
 desugarModules :
     Dict ModuleName (Module Frontend.LocatedExpr)
@@ -365,6 +388,13 @@ desugarModules modules =
 
 {-| Desugar a module (one `*.elm` file), without the intention of desugaring
 another one.
+
+We're hitting limitations of the Elm Packages website, and the type shown isn't
+very descriptive. **The real type of this function is:**
+
+    Module Frontend.LocatedExpr
+    -> Result Error (Module Canonical.LocatedExpr)
+
 -}
 desugarOnlyModule :
     Module Frontend.LocatedExpr
@@ -380,6 +410,12 @@ desugarOnlyModule module_ =
 
 
 {-| Infer the types of a single expression.
+
+We're hitting limitations of the Elm Packages website, and the type shown isn't
+very descriptive. **The real type of this function is:**
+
+    Canonical.LocatedExpr -> Result Error Typed.LocatedExpr
+
 -}
 inferExpr : Canonical.LocatedExpr -> Result Error Typed.LocatedExpr
 inferExpr locatedExpr =
@@ -388,6 +424,13 @@ inferExpr locatedExpr =
 
 
 {-| Infer the types of expressions in a module (a single `*.elm` file).
+
+We're hitting limitations of the Elm Packages website, and the type shown isn't
+very descriptive. **The real type of this function is:**
+
+    Module Canonical.LocatedExpr
+    -> Result Error (Module Typed.LocatedExpr)
+
 -}
 inferModule :
     Module Canonical.LocatedExpr
@@ -398,6 +441,13 @@ inferModule thisModule =
 
 
 {-| Infer the types of expressions in multiple modules (`*.elm` files).
+
+We're hitting limitations of the Elm Packages website, and the type shown isn't
+very descriptive. **The real type of this function is:**
+
+    Dict ModuleName (Module Canonical.LocatedExpr)
+    -> Result Error (Dict ModuleName (Module Typed.LocatedExpr))
+
 -}
 inferModules :
     Dict ModuleName (Module Canonical.LocatedExpr)
