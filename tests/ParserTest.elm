@@ -10,6 +10,7 @@ import Dict
 import Elm.AST.Frontend as Frontend
 import Elm.AST.Frontend.Unwrapped exposing (Expr(..))
 import Elm.Compiler.Error exposing (ParseContext, ParseProblem)
+import Elm.Compiler.Stage.Parse.Parser as Parser
 import Elm.Data.Exposing exposing (ExposedItem(..), Exposing(..))
 import Elm.Data.Module exposing (ModuleType(..))
 import Elm.Data.ModuleName as ModuleName exposing (ModuleName)
@@ -17,7 +18,6 @@ import Elm.Data.VarName as VarName exposing (VarName)
 import Expect exposing (Expectation)
 import Parser.Advanced as P
 import Result.Extra
-import Stage.Parse.Parser
 import Test exposing (Test, describe, test)
 
 
@@ -28,7 +28,7 @@ moduleDeclaration =
             test description <|
                 \() ->
                     input
-                        |> P.run Stage.Parse.Parser.moduleDeclaration
+                        |> P.run Parser.moduleDeclaration
                         |> Result.toMaybe
                         |> Expect.equal output
     in
@@ -99,7 +99,7 @@ exposingList =
             test description <|
                 \() ->
                     input
-                        |> P.run Stage.Parse.Parser.exposingList
+                        |> P.run Parser.exposingList
                         |> Result.toMaybe
                         |> Expect.equal output
     in
@@ -209,7 +209,7 @@ imports =
             test description <|
                 \() ->
                     input
-                        |> P.run Stage.Parse.Parser.imports
+                        |> P.run Parser.imports
                         |> Result.toMaybe
                         |> Expect.equal output
     in
@@ -366,7 +366,7 @@ moduleName =
             test description <|
                 \() ->
                     input
-                        |> P.run Stage.Parse.Parser.moduleName
+                        |> P.run Parser.moduleName
                         |> Result.toMaybe
                         |> Expect.equal output
     in
@@ -426,7 +426,7 @@ expr =
             test description <|
                 \() ->
                     input
-                        |> P.run Stage.Parse.Parser.expr
+                        |> P.run Parser.expr
                         |> Result.map Frontend.unwrap
                         |> expectEqualParseResult input output
     in

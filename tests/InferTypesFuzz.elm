@@ -4,6 +4,7 @@ import Elm.AST.Canonical as Canonical
 import Elm.AST.Canonical.Unwrapped as CanonicalU
 import Elm.AST.Typed as Typed
 import Elm.Compiler.Error exposing (TypeError(..))
+import Elm.Compiler.Stage.InferTypes as InferTypes
 import Elm.Data.Located as Located
 import Elm.Data.Type as Type exposing (Type)
 import Elm.Data.VarName as VarName exposing (VarName)
@@ -13,7 +14,6 @@ import Random exposing (Generator)
 import Random.Extra as Random
 import Shrink exposing (Shrinker)
 import Shrink.Extra as Shrink
-import Stage.InferTypes
 import Test exposing (Test, describe, fuzz, test)
 import TestHelpers exposing (dumpType)
 
@@ -27,7 +27,7 @@ typeInference =
                 \input ->
                     input
                         |> Canonical.fromUnwrapped
-                        |> Stage.InferTypes.inferExpr
+                        |> InferTypes.inferExpr
                         |> Result.map Located.unwrap
                         |> Result.map Tuple.second
                         |> Expect.equal (Ok typeWanted)

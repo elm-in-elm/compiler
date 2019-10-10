@@ -1,13 +1,13 @@
 module OptimizeTest exposing (optimize)
 
 import Elm.AST.Typed as Typed exposing (Expr_(..))
+import Elm.Compiler.Stage.Optimize as Optimize
 import Elm.Data.Declaration exposing (Declaration)
 import Elm.Data.Located as Located exposing (Located)
 import Elm.Data.ModuleName as ModuleName exposing (ModuleName)
 import Elm.Data.Type as Type
 import Elm.Data.VarName as VarName exposing (VarName)
 import Expect exposing (Expectation)
-import Stage.Optimize
 import Test exposing (Test, describe, test, todo)
 import TestHelpers
     exposing
@@ -27,7 +27,7 @@ optimize =
                 test description <|
                     \() ->
                         input
-                            |> Stage.Optimize.optimizeExpr
+                            |> Optimize.optimizeExpr
                             |> Expect.equal output
           in
           describe "optimizeExpr"

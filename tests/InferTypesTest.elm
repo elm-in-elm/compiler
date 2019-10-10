@@ -4,6 +4,7 @@ import Elm.AST.Canonical as Canonical
 import Elm.AST.Canonical.Unwrapped as CanonicalU
 import Elm.AST.Typed as Typed
 import Elm.Compiler.Error as Error exposing (Error(..), TypeError(..))
+import Elm.Compiler.Stage.InferTypes as InferTypes
 import Elm.Data.Located as Located
 import Elm.Data.ModuleName as ModuleName exposing (ModuleName)
 import Elm.Data.Type as Type exposing (Type(..))
@@ -11,7 +12,6 @@ import Elm.Data.Type.ToString as TypeToString
 import Elm.Data.VarName as VarName exposing (VarName)
 import Expect exposing (Expectation)
 import Fuzz exposing (Fuzzer)
-import Stage.InferTypes
 import Test exposing (Test, describe, fuzz, test)
 import TestHelpers exposing (dumpType, located)
 
@@ -30,7 +30,7 @@ typeInference =
                 \() ->
                     input
                         |> Canonical.fromUnwrapped
-                        |> Stage.InferTypes.inferExpr
+                        |> InferTypes.inferExpr
                         |> Result.map Typed.getType
                         |> Expect.equal output
     in
