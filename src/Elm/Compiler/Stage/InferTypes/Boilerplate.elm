@@ -1,4 +1,4 @@
-module Stage.InferTypes.Boilerplate exposing
+module Elm.Compiler.Stage.InferTypes.Boilerplate exposing
     ( inferModule
     , inferProject
     )

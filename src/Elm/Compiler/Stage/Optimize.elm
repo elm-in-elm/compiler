@@ -1,4 +1,4 @@
-module Stage.Optimize exposing
+module Elm.Compiler.Stage.Optimize exposing
     ( defaultOptimizations
     , optimize
     , optimizeExpr
@@ -6,8 +6,8 @@ module Stage.Optimize exposing
     )
 
 import Elm.AST.Typed as Typed
+import Elm.Compiler.Stage.Optimize.Boilerplate as Boilerplate
 import Elm.Data.Project exposing (Project)
-import Stage.Optimize.Boilerplate as Boilerplate
 
 
 optimize : Project Typed.ProjectFields -> Project Typed.ProjectFields

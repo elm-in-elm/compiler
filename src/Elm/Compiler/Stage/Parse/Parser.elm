@@ -1,4 +1,4 @@
-module Stage.Parse.Parser exposing
+module Elm.Compiler.Stage.Parse.Parser exposing
     ( declaration
     , exposingList
     , expr

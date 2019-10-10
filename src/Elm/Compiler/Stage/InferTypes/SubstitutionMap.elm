@@ -1,4 +1,4 @@
-module Stage.InferTypes.SubstitutionMap exposing
+module Elm.Compiler.Stage.InferTypes.SubstitutionMap exposing
     ( SubstitutionMap
     , empty
     , get

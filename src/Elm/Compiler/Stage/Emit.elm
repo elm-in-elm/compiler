@@ -1,4 +1,4 @@
-module Stage.Emit exposing
+module Elm.Compiler.Stage.Emit exposing
     ( projectToDeclarationList
     , modulesToDeclarationLists
     )

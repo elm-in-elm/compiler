@@ -1,4 +1,4 @@
-module Stage.InferTypes.IdSource exposing
+module Elm.Compiler.Stage.InferTypes.IdSource exposing
     ( IdSource
     , empty
     , increment

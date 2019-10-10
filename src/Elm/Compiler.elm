@@ -139,6 +139,13 @@ import Elm.Compiler.Error
         , ParseError(..)
         , ParseProblem
         )
+import Elm.Compiler.Stage.Desugar as Desugar
+import Elm.Compiler.Stage.Desugar.Boilerplate as DesugarB
+import Elm.Compiler.Stage.InferTypes as InferTypes
+import Elm.Compiler.Stage.InferTypes.Boilerplate as InferTypesB
+import Elm.Compiler.Stage.Optimize as Optimize
+import Elm.Compiler.Stage.Optimize.Boilerplate as OptimizeB
+import Elm.Compiler.Stage.Parse.Parser as Parser
 import Elm.Data.Declaration exposing (Declaration)
 import Elm.Data.FileContents exposing (FileContents)
 import Elm.Data.FilePath exposing (FilePath)
@@ -148,13 +155,6 @@ import Elm.Data.ModuleName exposing (ModuleName)
 import OurExtras.Dict as Dict
 import Parser.Advanced as P
 import Result.Extra as Result
-import Stage.Desugar
-import Stage.Desugar.Boilerplate
-import Stage.InferTypes
-import Stage.InferTypes.Boilerplate
-import Stage.Optimize
-import Stage.Optimize.Boilerplate
-import Stage.Parse.Parser
 
 
 
@@ -199,7 +199,7 @@ use [`Elm.AST.Frontend.unwrap`](Elm.AST.Frontend#unwrap) to get something like
 -}
 parseExpr : FileContents -> Result Error FrontendLocatedExpr
 parseExpr sourceCode =
-    parse Stage.Parse.Parser.expr sourceCode
+    parse Parser.expr sourceCode
 
 
 {-| Parse a module (one `*.elm` file). Get a [`Module`](Elm.Data.Module#Module) datastructure back, holding
@@ -246,7 +246,7 @@ parseModule :
     -> Result Error (Module FrontendLocatedExpr)
 parseModule { filePath, sourceCode } =
     -- TODO maybe we can think of a way to not force the user to give us `filePath`?
-    parse (Stage.Parse.Parser.module_ filePath) sourceCode
+    parse (Parser.module_ filePath) sourceCode
 
 
 {-| Parse multiple modules (`*.elm` files) - see [`parseModule`](#parseModule) for details.
@@ -289,7 +289,7 @@ into
 -}
 parseImport : FileContents -> Result Error Import
 parseImport sourceCode =
-    parse Stage.Parse.Parser.import_ sourceCode
+    parse Parser.import_ sourceCode
 
 
 {-| Parse a single declaration, like
@@ -307,7 +307,7 @@ into
 -}
 parseDeclaration : { moduleName : ModuleName, declaration : FileContents } -> Result Error (Declaration FrontendLocatedExpr)
 parseDeclaration { moduleName, declaration } =
-    parse Stage.Parse.Parser.declaration declaration
+    parse Parser.declaration declaration
         |> Result.map (\toDeclaration -> toDeclaration moduleName)
 
 
@@ -340,7 +340,7 @@ desugarExpr :
     -> FrontendLocatedExpr
     -> Result Error CanonicalLocatedExpr
 desugarExpr modules thisModule locatedExpr =
-    Stage.Desugar.desugarExpr modules thisModule locatedExpr
+    Desugar.desugarExpr modules thisModule locatedExpr
         |> Result.mapError DesugarError
 
 
@@ -351,7 +351,7 @@ desugarModule :
     -> Module FrontendLocatedExpr
     -> Result Error (Module CanonicalLocatedExpr)
 desugarModule modules thisModule =
-    Stage.Desugar.Boilerplate.desugarModule (Stage.Desugar.desugarExpr modules) thisModule
+    DesugarB.desugarModule (Desugar.desugarExpr modules) thisModule
         |> Result.mapError DesugarError
 
 
@@ -362,7 +362,7 @@ desugarModules :
     -> Result Error (Dict ModuleName (Module CanonicalLocatedExpr))
 desugarModules modules =
     modules
-        |> Dict.map (always (Stage.Desugar.Boilerplate.desugarModule (Stage.Desugar.desugarExpr modules)))
+        |> Dict.map (always (DesugarB.desugarModule (Desugar.desugarExpr modules)))
         |> Dict.combine
         |> Result.mapError DesugarError
 
@@ -387,7 +387,7 @@ desugarOnlyModule module_ =
 -}
 inferExpr : CanonicalLocatedExpr -> Result Error TypedLocatedExpr
 inferExpr locatedExpr =
-    Stage.InferTypes.inferExpr locatedExpr
+    InferTypes.inferExpr locatedExpr
         |> Result.mapError TypeError
 
 
@@ -397,7 +397,7 @@ inferModule :
     Module CanonicalLocatedExpr
     -> Result Error (Module TypedLocatedExpr)
 inferModule thisModule =
-    Stage.InferTypes.Boilerplate.inferModule Stage.InferTypes.inferExpr thisModule
+    InferTypesB.inferModule InferTypes.inferExpr thisModule
         |> Result.mapError TypeError
 
 
@@ -440,7 +440,7 @@ inferModules modules =
 -}
 defaultOptimizations : List ( String, TypedLocatedExpr -> Maybe TypedLocatedExpr )
 defaultOptimizations =
-    Stage.Optimize.defaultOptimizations
+    Optimize.defaultOptimizations
 
 
 {-| Optimize a given (typed) expression using the default set of optimizations.
@@ -451,7 +451,7 @@ look at the [`optimizeExprWith`](#optimizeExprWith) function.
 -}
 optimizeExpr : TypedLocatedExpr -> TypedLocatedExpr
 optimizeExpr locatedExpr =
-    Stage.Optimize.optimizeExpr locatedExpr
+    Optimize.optimizeExpr locatedExpr
 
 
 {-| Optimize a given (typed) expression using a custom set of optimizations.
@@ -461,7 +461,7 @@ optimizeExprWith :
     -> TypedLocatedExpr
     -> TypedLocatedExpr
 optimizeExprWith optimizations locatedExpr =
-    Stage.Optimize.optimizeExprWith optimizations locatedExpr
+    Optimize.optimizeExprWith optimizations locatedExpr
 
 
 {-| Optimize all expressions in a given module using the default set of
@@ -476,7 +476,7 @@ look at the [`optimizeModuleWith`](#optimizeModuleWith) function.
 -}
 optimizeModule : Module TypedLocatedExpr -> Module TypedLocatedExpr
 optimizeModule thisModule =
-    Stage.Optimize.Boilerplate.optimizeModule optimizeExpr thisModule
+    OptimizeB.optimizeModule optimizeExpr thisModule
 
 
 {-| Optimize all expressions in a given module using a custom set of
@@ -491,7 +491,7 @@ optimizeModuleWith :
     -> Module TypedLocatedExpr
     -> Module TypedLocatedExpr
 optimizeModuleWith optimizations thisModule =
-    Stage.Optimize.Boilerplate.optimizeModule (optimizeExprWith optimizations) thisModule
+    OptimizeB.optimizeModule (optimizeExprWith optimizations) thisModule
 
 
 {-| Optimize all expressions in multiple modules using the default set of

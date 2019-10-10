@@ -1,4 +1,4 @@
-module Stage.Emit.JavaScript exposing
+module Elm.Compiler.Stage.Emit.JavaScript exposing
     ( emitProject
     , emitDeclaration, emitExpr
     )
@@ -20,13 +20,13 @@ testing purposes.
 import Dict exposing (Dict)
 import Elm.AST.Typed as Typed exposing (Expr_(..))
 import Elm.Compiler.Error exposing (Error(..))
+import Elm.Compiler.Stage.Emit as Emit
 import Elm.Data.Declaration exposing (Declaration, DeclarationBody(..))
 import Elm.Data.FileContents as FileContents exposing (FileContents)
 import Elm.Data.FilePath as FilePath exposing (FilePath)
 import Elm.Data.ModuleName as ModuleName exposing (ModuleName)
 import Elm.Data.Project exposing (Project)
 import Elm.Data.VarName as VarName exposing (VarName)
-import Stage.Emit as Emit
 
 
 type alias ProjectFields =

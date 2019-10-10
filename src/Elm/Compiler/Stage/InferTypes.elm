@@ -1,16 +1,16 @@
-module Stage.InferTypes exposing (inferExpr, inferTypes)
+module Elm.Compiler.Stage.InferTypes exposing (inferExpr, inferTypes)
 
 import Elm.AST.Canonical as Canonical
 import Elm.AST.Typed as Typed
 import Elm.Compiler.Error exposing (Error(..), TypeError(..))
+import Elm.Compiler.Stage.InferTypes.AssignIds as AssignIds
+import Elm.Compiler.Stage.InferTypes.Boilerplate as Boilerplate
+import Elm.Compiler.Stage.InferTypes.GenerateEquations as GenerateEquations
+import Elm.Compiler.Stage.InferTypes.SubstitutionMap as SubstitutionMap exposing (SubstitutionMap)
+import Elm.Compiler.Stage.InferTypes.Unify as Unify
 import Elm.Data.Located as Located
 import Elm.Data.Project exposing (Project)
 import Elm.Data.Type exposing (Type(..))
-import Stage.InferTypes.AssignIds as AssignIds
-import Stage.InferTypes.Boilerplate as Boilerplate
-import Stage.InferTypes.GenerateEquations as GenerateEquations
-import Stage.InferTypes.SubstitutionMap as SubstitutionMap exposing (SubstitutionMap)
-import Stage.InferTypes.Unify as Unify
 
 
 {-| We're using Hindley-Milner algorithm (Algorithm W). It has essentially

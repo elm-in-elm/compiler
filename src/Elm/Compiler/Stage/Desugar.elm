@@ -1,4 +1,4 @@
-module Stage.Desugar exposing (desugar, desugarExpr)
+module Elm.Compiler.Stage.Desugar exposing (desugar, desugarExpr)
 
 import Basics.Extra exposing (flip)
 import Dict exposing (Dict)
@@ -6,6 +6,7 @@ import Dict.Extra as Dict
 import Elm.AST.Canonical as Canonical
 import Elm.AST.Frontend as Frontend
 import Elm.Compiler.Error exposing (DesugarError(..), Error(..))
+import Elm.Compiler.Stage.Desugar.Boilerplate as Boilerplate
 import Elm.Data.Binding as Binding
 import Elm.Data.Located as Located
 import Elm.Data.Module as Module exposing (Module)
@@ -14,7 +15,6 @@ import Elm.Data.Project exposing (Project)
 import Elm.Data.VarName exposing (VarName)
 import Maybe.Extra
 import Result.Extra as Result
-import Stage.Desugar.Boilerplate as Boilerplate
 
 
 desugar : Project Frontend.ProjectFields -> Result Error (Project Canonical.ProjectFields)

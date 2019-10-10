@@ -1,13 +1,13 @@
-module Stage.Parse exposing (parse)
+module Elm.Compiler.Stage.Parse exposing (parse)
 
 import Elm.AST.Frontend as Frontend
 import Elm.Compiler.Error exposing (Error(..), ParseError(..))
+import Elm.Compiler.Stage.Parse.Parser as Parser
 import Elm.Data.FileContents exposing (FileContents)
 import Elm.Data.FilePath exposing (FilePath)
 import Elm.Data.Module exposing (Module)
 import Elm.Data.ModuleName as ModuleName exposing (ModuleName)
 import Parser.Advanced as P
-import Stage.Parse.Parser as Parser
 
 
 {-| This `parse` function is used only by cli/, not by library/.

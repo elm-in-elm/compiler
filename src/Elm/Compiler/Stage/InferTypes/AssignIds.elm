@@ -1,4 +1,4 @@
-module Stage.InferTypes.AssignIds exposing (assignIds)
+module Elm.Compiler.Stage.InferTypes.AssignIds exposing (assignIds)
 
 {-| Stage 1
 
@@ -42,9 +42,9 @@ Output:
 import Dict
 import Elm.AST.Canonical as Canonical
 import Elm.AST.Typed as Typed
+import Elm.Compiler.Stage.InferTypes.IdSource as IdSource exposing (IdSource)
 import Elm.Data.Located as Located
 import Elm.Data.Type as Type
-import Stage.InferTypes.IdSource as IdSource exposing (IdSource)
 
 
 assignIds : Canonical.LocatedExpr -> ( Typed.LocatedExpr, IdSource )
