@@ -1,4 +1,4 @@
-module Stage.InferTypes.TypeEquation exposing
+module Elm.Compiler.Stage.InferTypes.TypeEquation exposing
     ( TypeEquation
     , equals
     , unwrap

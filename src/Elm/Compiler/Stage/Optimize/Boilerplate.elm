@@ -1,4 +1,4 @@
-module Stage.Optimize.Boilerplate exposing
+module Elm.Compiler.Stage.Optimize.Boilerplate exposing
     ( optimizeModule
     , optimizeProject
     )

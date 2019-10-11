@@ -1,17 +1,19 @@
-module Stage.Emit.JavaScript exposing
+module Elm.Compiler.Stage.Emit.JS exposing
     ( emitProject
     , emitDeclaration, emitExpr
     )
 
-{-| The `emitProject` function is the main entrypoint in this module, ie. every
+{-| Emit JavaScript code from the [typed AST](Elm.AST.Typed).
+
+The `emitProject` function is the main entrypoint in this module, ie. every
 `Stage.Emit.<INSERT LANGUAGE HERE>` module has to expose this function to fit
-well with the APIs of the other stages. See src/cli/Main.elm and its `compile`
+well with the APIs of the other stages. See `src/cli/Main.elm` and its `compile`
 function for example usage.
 
 @docs emitProject
 
 All the other exposed functions are (as of time of writing) exposed only for
-testing purposes.
+testing purposes:
 
 @docs emitDeclaration, emitExpr
 
@@ -20,19 +22,21 @@ testing purposes.
 import Dict exposing (Dict)
 import Elm.AST.Typed as Typed exposing (Expr_(..))
 import Elm.Compiler.Error exposing (Error(..))
+import Elm.Compiler.Stage.Emit as Emit
 import Elm.Data.Declaration exposing (Declaration, DeclarationBody(..))
 import Elm.Data.FileContents as FileContents exposing (FileContents)
 import Elm.Data.FilePath as FilePath exposing (FilePath)
 import Elm.Data.ModuleName as ModuleName exposing (ModuleName)
 import Elm.Data.Project exposing (Project)
 import Elm.Data.VarName as VarName exposing (VarName)
-import Stage.Emit as Emit
 
 
 type alias ProjectFields =
     { declarationList : List (Declaration Typed.LocatedExpr) }
 
 
+{-| Return a dict with a single `out.js` file with the compiled JavaScript code.
+-}
 emitProject : Project Typed.ProjectFields -> Result Error (Dict FilePath FileContents)
 emitProject project =
     Ok project
@@ -63,6 +67,7 @@ emitProject_ { declarationList } =
         |> Dict.singleton "out.js"
 
 
+{-| -}
 emitExpr : Typed.LocatedExpr -> String
 emitExpr located =
     case Typed.getExpr located of
@@ -136,6 +141,7 @@ emitExpr located =
             "[" ++ emitExpr e1 ++ "," ++ emitExpr e2 ++ "," ++ emitExpr e3 ++ "]"
 
 
+{-| -}
 emitDeclaration : Declaration Typed.LocatedExpr -> String
 emitDeclaration { module_, name, body } =
     case body of

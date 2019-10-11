@@ -1,9 +1,9 @@
-module Stage.InferTypes.Unify exposing (unifyAllEquations)
+module Elm.Compiler.Stage.InferTypes.Unify exposing (unifyAllEquations)
 
 import Elm.Compiler.Error exposing (TypeError(..))
+import Elm.Compiler.Stage.InferTypes.SubstitutionMap as SubstitutionMap exposing (SubstitutionMap)
+import Elm.Compiler.Stage.InferTypes.TypeEquation as TypeEquation exposing (TypeEquation)
 import Elm.Data.Type as Type exposing (Type(..))
-import Stage.InferTypes.SubstitutionMap as SubstitutionMap exposing (SubstitutionMap)
-import Stage.InferTypes.TypeEquation as TypeEquation exposing (TypeEquation)
 
 
 {-| TODO document

@@ -1,4 +1,4 @@
-module Stage.Desugar.Boilerplate exposing
+module Elm.Compiler.Stage.Desugar.Boilerplate exposing
     ( desugarModule
     , desugarProject
     )

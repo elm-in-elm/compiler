@@ -1,4 +1,4 @@
-module Stage.InferTypes.GenerateEquations exposing (generateEquations)
+module Elm.Compiler.Stage.InferTypes.GenerateEquations exposing (generateEquations)
 
 {-| Stage 2
 
@@ -31,11 +31,11 @@ subexpression.
 
 import Dict
 import Elm.AST.Typed as Typed
+import Elm.Compiler.Stage.InferTypes.IdSource as IdSource exposing (IdSource)
+import Elm.Compiler.Stage.InferTypes.TypeEquation exposing (TypeEquation, equals)
 import Elm.Data.Located as Located
 import Elm.Data.Type as Type
 import Elm.Data.VarName exposing (VarName)
-import Stage.InferTypes.IdSource as IdSource exposing (IdSource)
-import Stage.InferTypes.TypeEquation exposing (TypeEquation, equals)
 import Transform
 
 
