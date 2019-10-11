@@ -1,5 +1,6 @@
 module Elm.Compiler exposing
-    ( parseExpr, parseModule, parseModules, parseImport, parseDeclaration
+    ( compileModuleToJS, compileModulesToJS
+    , parseExpr, parseModule, parseModules, parseImport, parseDeclaration
     , desugarExpr, desugarModule, desugarModules, desugarOnlyModule
     , inferExpr, inferModule, inferModules
     , defaultOptimizations
@@ -13,9 +14,17 @@ module Elm.Compiler exposing
 > annotations, we're forced to use aliases for the various `Elm.AST.*` types.
 > So when you see `FrontendLocatedExpr`, look at [`Elm.AST.Frontend.LocatedExpr`](Elm.AST.Frontend#LocatedExpr).
 
-The compiler phases in general look like this:
+The compiler stages in general look like this:
 
 ![Stages of the compiler](https://github.com/elm-in-elm/compiler/raw/master/assets/stages.png)
+
+
+# Shortcut through the whole pipeline
+
+A shortcut from the input Elm code to the output JavaScript code. Going through
+all the stages with default settings.
+
+@docs compileModuleToJS, compileModulesToJS
 
 
 # Parsing
@@ -30,8 +39,8 @@ to
 
     \a -> \b -> \c -> a + b + c
 
-That transformation is one of the things the Desugar phase does. So tools like
-`elm-format` probably don't want to touch that phase, and will only want to parse!
+That transformation is one of the things the Desugar stage does. So tools like
+`elm-format` probably don't want to touch that stage, and will only want to parse!
 
 @docs parseExpr, parseModule, parseModules, parseImport, parseDeclaration
 
@@ -39,7 +48,7 @@ That transformation is one of the things the Desugar phase does. So tools like
 # Desugaring
 
 After we parse the source code from a `String` to the AST, we desugar it -
-simplify the AST type as much as possible to make later phases simpler and easier.
+simplify the AST type as much as possible to make later stages simpler and easier.
 
 The best example to illustrate this (it doesn't actually happen though!) is
 `let` vs `where`. Imagine if Elm allowed for `where` constructs in its syntax,
@@ -51,7 +60,7 @@ like Haskell does:
             y = x + 2
 
 Then we'd like to convert these to `let` constructs (or the other way round)
-as soon as possible, so that the other phases don't need to handle two
+as soon as possible, so that the other stages don't need to handle two
 almost identical scenarios all over the place.
 
 Examples of real desugarings include:
@@ -117,7 +126,7 @@ that they take turns on the expression.
 
 If you want to typecheck the code but then don't do anything with the types
 afterwards, you can drop them from the expressions you have. This is essentially
-a move backwards in the compiler phases:
+a move backwards in the compiler stages:
 
 ![Stages of the compiler](https://github.com/elm-in-elm/compiler/raw/master/assets/stages.png)
 
@@ -141,6 +150,7 @@ import Elm.Compiler.Error
         )
 import Elm.Compiler.Stage.Desugar as Desugar
 import Elm.Compiler.Stage.Desugar.Boilerplate as DesugarB
+import Elm.Compiler.Stage.Emit.JS as EmitJS
 import Elm.Compiler.Stage.InferTypes as InferTypes
 import Elm.Compiler.Stage.InferTypes.Boilerplate as InferTypesB
 import Elm.Compiler.Stage.Optimize as Optimize
@@ -155,6 +165,40 @@ import Elm.Data.ModuleName exposing (ModuleName)
 import OurExtras.Dict as Dict
 import Parser.Advanced as P
 import Result.Extra as Result
+
+
+
+-- SHORTCUT
+
+
+{-| TODO
+-}
+compileModuleToJS : { filePath : FilePath, sourceCode : FileContents } -> Result Error String
+compileModuleToJS file =
+    let
+        toProject : Module Typed.LocatedExpr -> Project Typed.ProjectFields
+        toProject typedModule =
+            {}
+    in
+    file
+        |> parseModule
+        |> Result.andThen desugarModule
+        |> Result.andThen inferModule
+        |> Result.map optimizeModule
+        |> Result.map toProject
+        |> Result.andThen EmitJS.emitProject
+
+
+{-| TODO
+-}
+compileModulesToJS : List { filePath : FilePath, sourceCode : FileContents } -> Result Error String
+compileModulesToJS files =
+    files
+        |> parseModules
+        |> Result.andThen desugarModules
+        |> Result.andThen inferModules
+        |> Result.map optimizeModules
+        |> Result.andThen EmitJS.emitProject
 
 
 
