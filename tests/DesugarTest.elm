@@ -6,15 +6,9 @@ import Dict
 import Elm.AST.Canonical as Canonical
 import Elm.AST.Canonical.Unwrapped as CanonicalU
 import Elm.AST.Frontend as Frontend
-import Elm.AST.Typed as Typed
-import Elm.Compiler.Error as Error exposing (Error(..), TypeError(..))
 import Elm.Data.Exposing as Exposing
-import Elm.Data.Located as Located
 import Elm.Data.Module as Module
-import Elm.Data.ModuleName as ModuleName exposing (ModuleName)
-import Elm.Data.Type.ToString as TypeToString
-import Elm.Data.VarName as VarName exposing (VarName)
-import Expect exposing (Expectation)
+import Expect
 import Stage.Desugar as Desugar
 import Test exposing (Test, describe, test)
 import TestHelpers exposing (located)
