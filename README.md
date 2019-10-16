@@ -14,6 +14,8 @@ Elm compiler written in Elm!
   <img src="https://badgen.net/github/last-commit/elm-in-elm/compiler" /></a>
 <a href="https://github.com/elm-in-elm/compiler/pulse" alt="Activity">
   <img src="https://img.shields.io/github/commit-activity/m/elm-in-elm/compiler.svg" /></a>
+<a href="https://package.elm-lang.org/packages/elm-in-elm/compiler/latest/" alt="Elm package">
+  <img src="https://img.shields.io/elm-package/v/elm-in-elm/compiler.svg" /></a>
 <br/>
 <a href="https://github.com/elm-in-elm/compiler/issues" alt="Contributions welcome!">
   <img src="https://img.shields.io/badge/contributions-welcome-brightgreen.svg" /></a>
@@ -28,7 +30,7 @@ Elm compiler written in Elm!
 
 ## Goals
 
-1. :book: **compiler as Elm library:** so that we can publish it on https://package.elm-lang.org/ and unlock new kinds of Elm applications (like Slack bots, Klipse integration, stepping debuggers, ...)!
+1. :book: **compiler as Elm library:** so that we can publish it on https://package.elm-lang.org/ and unlock new kinds of Elm applications (like Slack bots, [Klipse](https://github.com/viebel/klipse) integration, stepping debuggers, ...)!
 2. :children_crossing: **learning friendly:** so that folks can learn how to write a compiler in Elm (similarly to Richard Feldman's [elm-spa-example](https://github.com/rtfeldman/elm-spa-example)). This means `elm-in-elm` is focused on readability, beauty, approachability, simplicity, great docs and great tests first, and only then completeness and speed.
 3. :bulb: **exploration ready:** the first two points enable folks to hack on the compiler (as it's written in Elm, which they know, and the code is new-people-friendly) and answer some questions! (For example, what's the best order of optimizations? How would emitting to JavaScript have to look like to make it extra amenable to Google Closure Compiler's advanced optimizations?)
 4. :wrench: **extensible:** again, the first two (three?) points make it easy and invite extending the compiler in various ways, eg. a native binary target, different type inference algorithm, new optimizations, `where` syntax, etc.
@@ -48,13 +50,13 @@ This is :negative_squared_cross_mark::negative_squared_cross_mark::negative_squa
 `elm-in-elm` consists of:
 
 * [a compiler implementation](src/)
-* [a library](src/Elm/Compiler.elm) :construction: `TODO` :construction:
-* [a CLI tool](cli/) :construction: `TODO` :construction:
+* [a library](src/Elm/Compiler.elm)
+* [a CLI tool](cli/index.js)
 * and [a test suite](tests/).
 
 It is written in Elm, and compiles Elm to JavaScript, but lays the foundation to be able to compile to different targets in the future.
 
->  :warning: **Warning!**  `elm-in-elm` is definitely not ready for usage yet. A good indicator of usability will be whether its library is published already. Current status: **NOT YET**
+>  :warning: **Warning!**  `elm-in-elm` is definitely not ready for usage yet, even though its library is published already. The main blocker is the parsers for expressions not being all implemented yet. See the `parse` column in the table below.
 
 
 ## Contributing
@@ -166,10 +168,6 @@ Make sure to format code before submitting a pull request!
 - [ ] [@janiczek](https://twitter.com/janiczek/): Share your Firefox bookmarks relevant to `elm-in-elm` (ie. talks about Haskell hierarchical optimizations etc.)
 - [ ] After Elm Europe 2019 videos are out, add a link to the talk to the README
 - [ ] Add tests for stages other than parsing and emit into the matrix above
-
-#### Library
-
-- [ ] After publishing, add a shields.io badge :wink: `/elm-package/v/:user/:packageName.svg`
 
 #### General
 

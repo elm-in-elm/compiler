@@ -10,12 +10,8 @@ digraph G {
     
     {
         node[style=filled,fillcolor="#84f4ff"]
-        F[label="make a draft of library API"]
-        G[label="implement the library"]
-        H[label="publish the library"]
-        L[label="dogfeed library on a toy project locally"]
+        L[label="dogfeed library on a toy project\nto check the API is OK"]
     }
-    
     
     {
         node[style=filled,fillcolor="#ff6663"]
@@ -25,9 +21,6 @@ digraph G {
     }
 
     A -> B -> L
-
-    F -> G -> L -> H
-
     K -> I -> J
 
 }
