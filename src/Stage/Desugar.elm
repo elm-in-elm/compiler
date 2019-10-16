@@ -82,12 +82,6 @@ desugarExpr modules thisModule located =
 
         Frontend.Var var ->
             findModuleOfVar modules thisModule var
-                |> Result.fromMaybe
-                    (VarNotInEnvOfModule
-                        { var = var
-                        , module_ = thisModule.name
-                        }
-                    )
                 |> map (\moduleName -> Canonical.Var { module_ = moduleName, name = var.name })
 
         Frontend.Argument varName ->
@@ -228,29 +222,35 @@ curryLambda located arguments body =
 
 In all these cases we need to find the full unaliased module name of the var.
 
+There are two possible errors here:
+
+  - VarNameNotFound: you used var name that can't be found
+  - AmbiguousName: you used a name that is imported/defined more than once
+
+TODO "module name not found" somewhere... maybe here, maybe parsing? dunno yet...
+
 -}
 findModuleOfVar :
     Dict ModuleName (Module Frontend.LocatedExpr)
     -> Module Frontend.LocatedExpr
     -> { module_ : Maybe ModuleName, name : VarName }
-    -> Maybe ModuleName
+    -> Result DesugarError ModuleName
 findModuleOfVar modules thisModule var =
-    {- TODO does this allow for some collisions by "returning early"?
-       Should we check that exactly one is Just and the others are Nothing?
-    -}
     unqualifiedVarInThisModule thisModule var
         |> Maybe.Extra.orElseLazy (\() -> unqualifiedVarInImportedModule modules thisModule var)
-        |> Maybe.Extra.orElseLazy (\() -> qualifiedVarInImportedModule modules var)
+        |> Maybe.Extra.orElseLazy (\() -> qualifiedVarInImportedModule modules thisModule var)
         |> Maybe.Extra.orElseLazy (\() -> qualifiedVarInAliasedModule modules thisModule var)
+        |> Result.fromMaybe (VarNameNotFound { var = var, insideModule = thisModule.name })
+        |> Result.andThen identity
 
 
 unqualifiedVarInThisModule :
     Module Frontend.LocatedExpr
     -> { module_ : Maybe ModuleName, name : VarName }
-    -> Maybe ModuleName
+    -> Maybe (Result DesugarError ModuleName)
 unqualifiedVarInThisModule thisModule { module_, name } =
     if module_ == Nothing && Dict.member name thisModule.declarations then
-        Just thisModule.name
+        Just (Ok thisModule.name)
 
     else
         Nothing
@@ -260,50 +260,74 @@ unqualifiedVarInImportedModule :
     Dict ModuleName (Module Frontend.LocatedExpr)
     -> Module Frontend.LocatedExpr
     -> { module_ : Maybe ModuleName, name : VarName }
-    -> Maybe ModuleName
+    -> Maybe (Result DesugarError ModuleName)
 unqualifiedVarInImportedModule modules thisModule { module_, name } =
     if module_ == Nothing then
         -- find a module which exposes that var
-        thisModule.imports
-            |> Dict.find
-                (\_ import_ ->
-                    Dict.get import_.moduleName modules
-                        |> Maybe.map (Module.exposes name)
-                        |> Maybe.withDefault False
-                )
-            |> Maybe.map (\( _, import_ ) -> import_.moduleName)
+        let
+            acceptableImports =
+                thisModule.imports
+                    |> Dict.values
+                    |> List.filter
+                        (\import_ ->
+                            Dict.get import_.moduleName modules
+                                |> Maybe.map (Module.exposes name)
+                                |> Maybe.withDefault False
+                        )
+        in
+        case acceptableImports of
+            [] ->
+                Nothing
+
+            [ acceptableImport ] ->
+                Just (Ok acceptableImport.moduleName)
+
+            _ ->
+                Just
+                    (Err
+                        (AmbiguousName
+                            { name = name
+                            , insideModule = thisModule.name
+                            , possibleModules = List.map .moduleName acceptableImports
+                            }
+                        )
+                    )
 
     else
         Nothing
 
 
+{-| We don't think about module `as` aliasing here.
+-}
 qualifiedVarInImportedModule :
     Dict ModuleName (Module Frontend.LocatedExpr)
+    -> Module Frontend.LocatedExpr
     -> { module_ : Maybe ModuleName, name : VarName }
-    -> Maybe ModuleName
-qualifiedVarInImportedModule modules { module_, name } =
+    -> Maybe (Result DesugarError ModuleName)
+qualifiedVarInImportedModule modules thisModule { module_, name } =
     module_
         |> Maybe.andThen (flip Dict.get modules)
         |> Maybe.andThen
             (\module__ ->
                 if Dict.member name module__.declarations then
-                    Just module_
+                    Just (Ok module__.name)
 
                 else
                     Nothing
             )
-        |> Maybe.withDefault Nothing
 
 
 qualifiedVarInAliasedModule :
     Dict ModuleName (Module Frontend.LocatedExpr)
     -> Module Frontend.LocatedExpr
     -> { module_ : Maybe ModuleName, name : VarName }
-    -> Maybe ModuleName
+    -> Maybe (Result DesugarError ModuleName)
 qualifiedVarInAliasedModule modules thisModule { module_, name } =
     let
         unaliasedModuleName =
             Maybe.andThen (Module.unalias thisModule) module_
     in
-    -- Reusing the existing functionality. TODO is this a good idea?
-    qualifiedVarInImportedModule modules { module_ = unaliasedModuleName, name = name }
+    qualifiedVarInImportedModule
+        modules
+        thisModule
+        { module_ = unaliasedModuleName, name = name }

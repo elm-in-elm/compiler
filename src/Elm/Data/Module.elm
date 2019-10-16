@@ -1,7 +1,7 @@
 module Elm.Data.Module exposing
     ( Module, ModuleType(..)
     , map
-    , unalias, exposes
+    , unalias, exposes, imports
     )
 
 {-| Module information (corresponds to a single .elm file).
@@ -9,7 +9,7 @@ Name, imports, contents, etc.
 
 @docs Module, ModuleType
 @docs map
-@docs unalias, exposes
+@docs unalias, exposes, imports
 
 -}
 
@@ -52,6 +52,14 @@ type ModuleType
     = PlainModule
     | PortModule
     | EffectModule
+
+
+{-| Does this module import this module name?
+(This doesn't take the `as ...` part of the import line into consideration.)
+-}
+imports : ModuleName -> Module a -> Bool
+imports moduleName module_ =
+    Dict.member moduleName module_.imports
 
 
 {-| Does this module expose this variable name?

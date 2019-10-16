@@ -134,9 +134,14 @@ type ParseProblem
 {-| Errors encountered during [desugaring](Elm.Compiler#desugarExpr) from the [Frontend AST](Elm.AST.Frontend) to [Canonical AST](Elm.AST.Canonical).
 -}
 type DesugarError
-    = VarNotInEnvOfModule
+    = VarNameNotFound
         { var : { module_ : Maybe ModuleName, name : VarName }
-        , module_ : ModuleName
+        , insideModule : ModuleName
+        }
+    | AmbiguousName
+        { name : VarName
+        , insideModule : ModuleName
+        , possibleModules : List ModuleName
         }
 
 
@@ -190,12 +195,31 @@ toString error =
 
         DesugarError desugarError ->
             case desugarError of
-                VarNotInEnvOfModule { var, module_ } ->
+                VarNameNotFound { var, insideModule } ->
                     "The variable `"
                         ++ fullVarName var
                         ++ "` is not visible from the module `"
-                        ++ module_
+                        ++ insideModule
                         ++ "`. Have you imported it? Does it exist?"
+
+                AmbiguousName { name, insideModule, possibleModules } ->
+                    "It's not clear which `"
+                        ++ name
+                        ++ "` you want, as there are multiple visible from within module `"
+                        ++ insideModule
+                        ++ "`:\n\n"
+                        ++ String.join "\n"
+                            (List.map
+                                (\possibleModule ->
+                                    " - "
+                                        ++ fullVarName
+                                            { module_ = Just possibleModule
+                                            , name = name
+                                            }
+                                )
+                                possibleModules
+                            )
+                        ++ "\n\nChange your imports to resolve this ambiguity!"
 
         TypeError typeError ->
             case typeError of

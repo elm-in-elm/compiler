@@ -47,12 +47,12 @@ const {registerPort} = require('./utils.js');
       }
     }
   });
-  registerPort(app, 'write', async function({filePath,contents}) {
+  registerPort(app, 'writeToFile', async function({filePath,fileContents}) {
     console.log('---------------------------');
     console.log('-- WRITING TO FS ----------');
     console.log('---------------------------');
-    console.log(contents);
-    await fs.writeFile(`${exampleProjectPath}/${filePath}`, contents);
+    console.log(fileContents);
+    await fs.writeFile(`${exampleProjectPath}/${filePath}`, fileContents);
   });
 
 })();
