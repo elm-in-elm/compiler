@@ -1,7 +1,5 @@
 module DesugarTest exposing (desugarTest)
 
---import Elm.Data.Type as Type exposing (Type(..))
-
 import Dict exposing (Dict)
 import Elm.AST.Canonical as Canonical
 import Elm.AST.Canonical.Unwrapped as CanonicalU
