@@ -1,6 +1,6 @@
 module DesugarTest exposing (desugarTest)
 
-import Dict exposing (Dict)
+import Dict
 import Elm.AST.Canonical as Canonical
 import Elm.AST.Canonical.Unwrapped as CanonicalU
 import Elm.AST.Frontend as Frontend
@@ -23,80 +23,102 @@ desugarTest =
         [ test "desugar \\a b -> a + b into \\a -> \\b -> a + b " <|
             \_ ->
                 frontendLambda "a" "b"
-                    |> Desugar.desugarExpr Dict.empty dummyModule
+                    |> Desugar.desugarExpr Dict.empty (moduleFromName "A")
                     |> mapUnwrap
                     |> Expect.equal (Ok <| canonicalLambda "a" "b")
-        , test "desugar variable name in module" <|
-            \_ ->
-                Desugar.desugarExpr Dict.empty moduleWithVarA varANotPrefixed
-                    |> mapUnwrap
-                    |> Expect.equal (Ok <| CanonicalU.Var { module_ = moduleWithVarA.name, name = "a" })
-        , test "desugar variable  name NOT in this module" <|
-            \_ ->
-                Desugar.desugarExpr Dict.empty dummyModule varANotPrefixed
-                    |> Expect.equal
-                        (Err
-                            (CompilerError.VarNameNotFound
-                                { insideModule = dummyModule.name, var = { module_ = Nothing, name = "a" } }
-                            )
-                        )
-        , test "desugar prefixed variable name: import A ; A.a" <|
-            \_ ->
-                Desugar.desugarExpr
-                    moduleWithVarAInDict
-                    (dummyModule |> addImport moduleWithVarA.name importModuleWithVarA)
-                    (varAPrefixedBy moduleWithVarA.name)
-                    |> mapUnwrap
-                    |> Expect.equal
-                        (Ok <| CanonicalU.Var { module_ = moduleWithVarA.name, name = "a" })
-        , test "desugar prefixed aliased variable name: import A as B; B.a" <|
-            \_ ->
-                Desugar.desugarExpr
-                    moduleWithVarAInDict
-                    (dummyModule |> addImport moduleWithVarA.name importModuleWithVarAAsB)
-                    (varAPrefixedBy "B")
-                    |> mapUnwrap
-                    |> Expect.equal
-                        (Ok <| CanonicalU.Var { module_ = moduleWithVarA.name, name = "a" })
-        , test "desugar exposed variable name: import A exposing (a); a" <|
-            \_ ->
-                Desugar.desugarExpr
-                    moduleWithVarAInDict
-                    (dummyModule |> addImport moduleWithVarA.name importModuleWithVarAExposingA)
-                    varANotPrefixed
-                    |> mapUnwrap
-                    |> Expect.equal
-                        (Ok <| CanonicalU.Var { module_ = moduleWithVarA.name, name = "a" })
-        , test "desugar declare already imported variable: import A exposing (a); a = 42" <|
-            \_ ->
-                Desugar.desugarExpr
-                    moduleWithVarAInDict
-                    (dummyModule
-                        |> addImport moduleWithVarA.name importModuleWithVarAExposingA
-                        |> addDeclarationA
+        , toTest
+            { description = "desugar variable name in module"
+            , thisModuleName = "A"
+            , thisModuleVars = [ "a" ]
+            , thisModuleImports = []
+            , availableModules = []
+            , inputVar = ( Nothing, "a" )
+            , expectedResult = Ok ( "A", "a" )
+            }
+        , toTest
+            { description = "desugar variable name NOT in this module"
+            , thisModuleName = "A"
+            , thisModuleVars = [ "a" ]
+            , thisModuleImports = []
+            , availableModules = []
+            , inputVar = ( Nothing, "b" )
+            , expectedResult =
+                Err
+                    (CompilerError.VarNameNotFound
+                        { insideModule = "A", var = { module_ = Nothing, name = "b" } }
                     )
-                    varANotPrefixed
-                    |> mapUnwrap
-                    |> Expect.equal
-                        (Ok <| CanonicalU.Var { module_ = dummyModule.name, name = "a" })
-        , test "desugar ambiguous variable names: import A as exposing (a); import B exposing (a) " <|
-            \_ ->
-                Desugar.desugarExpr
-                    modulesAAndABisInDict
-                    (dummyModule
-                        |> addImport moduleWithVarA.name importModuleWithVarAExposingA
-                        |> addImport moduleWithVarABis.name importModuleWithVarABisExposingA
-                    )
-                    varANotPrefixed
-                    |> mapUnwrap
-                    |> Expect.equal
-                        (Err <|
-                            CompilerError.AmbiguousName
-                                { name = "a"
-                                , insideModule = dummyModule.name
-                                , possibleModules = [ moduleWithVarA.name, moduleWithVarABis.name ]
-                                }
-                        )
+            }
+        , toTest
+            { description = "desugar prefixed variable name:  import B ; B.a"
+            , thisModuleName = "A"
+            , thisModuleVars = [ "a" ]
+            , thisModuleImports = [ importFromName "B" ]
+            , availableModules = [ { name = "B", exposedVars = [ "a" ] } ]
+            , inputVar = ( Just "B", "a" )
+            , expectedResult = Ok ( "B", "a" )
+            }
+        , toTest
+            { description = "desugar prefixed variable name with aliased module:  import B as C; C.a"
+            , thisModuleName = "A"
+            , thisModuleVars = [ "a" ]
+            , thisModuleImports = [ importFromName "B" |> as_ "C" ]
+            , availableModules = [ { name = "B", exposedVars = [ "a" ] } ]
+            , inputVar = ( Just "C", "a" )
+            , expectedResult = Ok ( "B", "a" )
+            }
+        , toTest
+            { description = "desugar exposed variable name: import B exposing (b); b"
+            , thisModuleName = "A"
+            , thisModuleVars = [ "a" ]
+            , thisModuleImports = [ importFromName "B" |> exposingValuesInImport [ "b" ] ]
+            , availableModules = [ { name = "B", exposedVars = [ "b" ] } ]
+            , inputVar = ( Nothing, "b" )
+            , expectedResult = Ok ( "B", "b" )
+            }
+        , toTest
+            { description = "desugar variable name when exposed from import and defined in module: import B exposing (a); a = 42; a"
+            , thisModuleName = "A"
+            , thisModuleVars = [ "a" ]
+            , thisModuleImports = [ importFromName "B" |> exposingValuesInImport [ "a" ] ]
+            , availableModules = [ { name = "B", exposedVars = [ "a" ] } ]
+            , inputVar = ( Nothing, "a" )
+            , expectedResult = Ok ( "A", "a" )
+            }
+        , toTest
+            { description = "desugar ambiguous variable names: import A as exposing (a); import B exposing (a) ; a"
+            , thisModuleName = "A"
+            , thisModuleVars = []
+            , thisModuleImports =
+                [ importFromName "B" |> exposingValuesInImport [ "a" ]
+                , importFromName "C" |> exposingValuesInImport [ "a" ]
+                ]
+            , availableModules =
+                [ { name = "B", exposedVars = [ "a" ] }
+                , { name = "C", exposedVars = [ "a" ] }
+                ]
+            , inputVar = ( Nothing, "a" )
+            , expectedResult =
+                Err <|
+                    CompilerError.AmbiguousName
+                        { name = "a"
+                        , insideModule = "A"
+                        , possibleModules = [ "B", "C" ]
+                        }
+            }
+        , toTest
+            { description = "referencing unknown variable"
+            , thisModuleName = "A"
+            , thisModuleVars = []
+            , thisModuleImports = []
+            , availableModules = []
+            , inputVar = ( Nothing, "a" )
+            , expectedResult =
+                Err <|
+                    CompilerError.VarNameNotFound
+                        { var = { module_ = Nothing, name = "a" }
+                        , insideModule = "A"
+                        }
+            }
         ]
 
 
@@ -132,27 +154,50 @@ canonicalLambda arg1 arg2 =
         }
 
 
-moduleWithVarAInDict : Dict ModuleName (Module Frontend.LocatedExpr)
-moduleWithVarAInDict =
-    Dict.fromList [ ( moduleWithVarA.name, moduleWithVarA ) ]
+type alias NameResolutionTestCase =
+    { description : String
+    , thisModuleName : ModuleName
+    , thisModuleVars : List VarName
+    , thisModuleImports : List ( ModuleName, Import )
+    , availableModules : List { name : ModuleName, exposedVars : List VarName }
+    , inputVar : ( Maybe ModuleName, VarName )
+    , expectedResult : Result CompilerError.DesugarError ( ModuleName, VarName )
+    }
 
 
-modulesAAndABisInDict : Dict ModuleName (Module Frontend.LocatedExpr)
-modulesAAndABisInDict =
-    Dict.fromList
-        [ ( moduleWithVarA.name, moduleWithVarA )
-        , ( moduleWithVarABis.name, moduleWithVarABis )
-        ]
+toTest : NameResolutionTestCase -> Test
+toTest r =
+    test r.description <|
+        \_ ->
+            Desugar.desugarExpr
+                (r.availableModules
+                    |> List.map
+                        (\m ->
+                            ( m.name
+                            , moduleFromName m.name
+                                |> addDeclarations m.exposedVars
+                                |> exposingValuesInModule m.exposedVars
+                            )
+                        )
+                    |> Dict.fromList
+                )
+                (moduleFromName r.thisModuleName
+                    |> addDeclarations r.thisModuleVars
+                    |> addImports r.thisModuleImports
+                )
+                (var r.inputVar)
+                |> mapUnwrap
+                |> Expect.equal (r.expectedResult |> Result.map buildExpectedResult)
 
 
-varANotPrefixed : Frontend.LocatedExpr
-varANotPrefixed =
-    located <| Frontend.Var { module_ = Nothing, name = "a" }
+var : ( Maybe ModuleName, VarName ) -> Frontend.LocatedExpr
+var ( maybeModuleName, varName ) =
+    located <| Frontend.Var { module_ = maybeModuleName, name = varName }
 
 
-varAPrefixedBy : String -> Frontend.LocatedExpr
-varAPrefixedBy moduleName =
-    located <| Frontend.Var { module_ = Just moduleName, name = "a" }
+buildExpectedResult : ( ModuleName, VarName ) -> CanonicalU.Expr
+buildExpectedResult ( moduleName, varName ) =
+    CanonicalU.Var { module_ = moduleName, name = varName }
 
 
 
@@ -163,84 +208,32 @@ varAPrefixedBy moduleName =
 -}
 
 
-moduleWithVarA : Module Frontend.LocatedExpr
-moduleWithVarA =
-    dummyModule
-        |> withName "ModuleWithVarA"
-        |> addDeclarationA
-        |> withExposingSomeValues [ "a" ]
+importFromName : ModuleName -> ( ModuleName, Import )
+importFromName moduleName =
+    ( moduleName
+    , { moduleName = moduleName
+      , as_ = Nothing
+      , exposing_ = Nothing
+      }
+    )
 
 
-
-{- |
-   module ModuleWithVarABis exposing (a)
-
-   a = 42
--}
-
-
-moduleWithVarABis : Module Frontend.LocatedExpr
-moduleWithVarABis =
-    dummyModule
-        |> withName "ModuleWithVarABis"
-        |> addDeclarationA
-        |> withExposingSomeValues [ "a" ]
+exposingValuesInImport : List VarName -> ( ModuleName, Import ) -> ( ModuleName, Import )
+exposingValuesInImport vars ( moduleName, import_ ) =
+    ( moduleName
+    , { import_ | exposing_ = Just <| Exposing.ExposingSome <| List.map Exposing.ExposedValue vars }
+    )
 
 
-
-{- | import ModuleWithVarA -}
-
-
-importModuleWithVarA : Import
-importModuleWithVarA =
-    { moduleName = moduleWithVarA.name
-    , as_ = Nothing
-    , exposing_ = Nothing
-    }
+as_ : ModuleName -> ( ModuleName, Import ) -> ( ModuleName, Import )
+as_ alias_ ( moduleName, import_ ) =
+    ( moduleName, { import_ | as_ = Just alias_ } )
 
 
-
-{- | import ModuleWithVarA  exposing (a) -}
-
-
-importModuleWithVarAExposingA : Import
-importModuleWithVarAExposingA =
-    { importModuleWithVarA
-        | exposing_ = Just <| Exposing.ExposingSome [ Exposing.ExposedValue "a" ]
-    }
-
-
-
-{- | import ModuleWithVarABis  exposing (a) -}
-
-
-importModuleWithVarABisExposingA : Import
-importModuleWithVarABisExposingA =
-    { moduleName = moduleWithVarABis.name
-    , as_ = Nothing
-    , exposing_ = Just <| Exposing.ExposingSome [ Exposing.ExposedValue "a" ]
-    }
-
-
-
-{- | import ModuleWithVarA as B  exposing (a) -}
-
-
-importModuleWithVarAAsB : Import
-importModuleWithVarAAsB =
-    { importModuleWithVarA | as_ = Just "B" }
-
-
-
-{- |
-   module DummyModule
--}
-
-
-dummyModule : Module a
-dummyModule =
+moduleFromName : ModuleName -> Module a
+moduleFromName name =
     { imports = Dict.empty
-    , name = "DummyModule"
+    , name = name
     , filePath = "/"
     , declarations = Dict.empty
     , type_ = Module.PlainModule
@@ -249,39 +242,35 @@ dummyModule =
 
 
 
-{- | change the name of a module -}
-
-
-withName : String -> Module a -> Module a
-withName name module_ =
-    { module_ | name = name }
-
-
-
 {- | add the following declaration to a module:
    a = 42
 -}
 
 
-addDeclarationA : Module Frontend.LocatedExpr -> Module Frontend.LocatedExpr
-addDeclarationA module_ =
+addDeclaration : String -> Module Frontend.LocatedExpr -> Module Frontend.LocatedExpr
+addDeclaration varName module_ =
     let
         decl : Declaration Frontend.LocatedExpr
         decl =
             { module_ = module_.name
-            , name = "a"
+            , name = varName
             , body = Declaration.Value (located <| Frontend.Int 42)
             }
     in
-    { module_ | declarations = Dict.insert "a" decl module_.declarations }
+    { module_ | declarations = Dict.insert varName decl module_.declarations }
+
+
+addDeclarations : List String -> Module Frontend.LocatedExpr -> Module Frontend.LocatedExpr
+addDeclarations varNames module_ =
+    List.foldr addDeclaration module_ varNames
 
 
 
 {- | add a list of exposed values to a module -}
 
 
-withExposingSomeValues : List VarName -> Module a -> Module a
-withExposingSomeValues varNames exposable =
+exposingValuesInModule : List VarName -> Module a -> Module a
+exposingValuesInModule varNames exposable =
     { exposable | exposing_ = Exposing.ExposingSome (List.map Exposing.ExposedValue varNames) }
 
 
@@ -289,9 +278,14 @@ withExposingSomeValues varNames exposable =
 {- | add an import to a module -}
 
 
-addImport : ModuleName -> Import -> Module a -> Module a
-addImport moduleName import_ module_ =
+addImport : ( ModuleName, Import ) -> Module a -> Module a
+addImport ( moduleName, import_ ) module_ =
     { module_ | imports = Dict.insert moduleName import_ module_.imports }
+
+
+addImports : List ( ModuleName, Import ) -> Module a -> Module a
+addImports imports module_ =
+    List.foldr addImport module_ imports
 
 
 mapUnwrap : Result x Canonical.LocatedExpr -> Result x CanonicalU.Expr
