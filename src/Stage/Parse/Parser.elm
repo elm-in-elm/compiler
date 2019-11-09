@@ -325,12 +325,22 @@ declarations =
 declaration : Parser_ (ModuleName -> Declaration LocatedExpr)
 declaration =
     P.succeed
-        (\name body module__ ->
+        (\typeAnnotation_ name body module__ ->
             { module_ = module__
+            , typeAnnotation = typeAnnotation_
             , name = name
             , body = body
             }
         )
+        |= P.oneOf
+            -- TODO refactor the `backtrackable` away
+            -- TODO is it even working correctly?
+            [ P.succeed Just
+                |= typeAnnotation
+                |. P.spaces
+                |> P.backtrackable
+            , P.succeed Nothing
+            ]
         |= varName
         |. P.spaces
         |. P.symbol (P.Token "=" ExpectingEqualsSign)

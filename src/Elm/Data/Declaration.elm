@@ -11,12 +11,14 @@ module Elm.Data.Declaration exposing
 -}
 
 import Elm.Data.Type exposing (Type, TypeArgument)
+import Elm.Data.TypeAnnotation exposing (TypeAnnotation)
 import Elm.Data.VarName exposing (VarName)
 
 
 {-| -}
 type alias Declaration expr =
     { module_ : String
+    , typeAnnotation : Maybe TypeAnnotation -- TODO desugar from Maybe TypeAnnotation to Maybe Type
     , name : String
     , body : DeclarationBody expr
     }
@@ -76,6 +78,7 @@ type alias Constructor =
 map : (a -> b) -> Declaration a -> Declaration b
 map fn declaration =
     { module_ = declaration.module_
+    , typeAnnotation = declaration.typeAnnotation
     , name = declaration.name
     , body = mapBody fn declaration.body
     }

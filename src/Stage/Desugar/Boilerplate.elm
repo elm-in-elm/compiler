@@ -68,6 +68,7 @@ declarationOfNewType : Declaration Frontend.LocatedExpr -> DeclarationBody Canon
 declarationOfNewType old newBody =
     { name = old.name
     , module_ = old.module_
+    , typeAnnotation = old.typeAnnotation
 
     -- all that code because of this:
     , body = newBody
