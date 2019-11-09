@@ -207,12 +207,7 @@ desugarTypeAnnotation decl =
         |> Maybe.map
             (\{ varName, type_ } ->
                 if varName == decl.name then
-                    Ok
-                        { module_ = decl.module_
-                        , typeAnnotation = Just type_
-                        , name = decl.name
-                        , body = decl.body
-                        }
+                    Ok <| throwAwayTypeAnnotationName decl
 
                 else
                     Err <|
@@ -221,14 +216,16 @@ desugarTypeAnnotation decl =
                             , varName = decl.name
                             }
             )
-        |> Maybe.withDefault
-            (Ok
-                { module_ = decl.module_
-                , typeAnnotation = Maybe.map .type_ decl.typeAnnotation
-                , name = decl.name
-                , body = decl.body
-                }
-            )
+        |> Maybe.withDefault (Ok <| throwAwayTypeAnnotationName decl)
+
+
+throwAwayTypeAnnotationName : Declaration a TypeAnnotation -> Declaration a Type
+throwAwayTypeAnnotationName decl =
+    { module_ = decl.module_
+    , typeAnnotation = Maybe.map .type_ decl.typeAnnotation
+    , name = decl.name
+    , body = decl.body
+    }
 
 
 
