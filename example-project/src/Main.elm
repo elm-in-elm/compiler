@@ -1,6 +1,8 @@
 module Main exposing (main)
 
 
-main : Int
+man : Int
+
+
 main =
     123

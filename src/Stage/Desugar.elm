@@ -194,10 +194,11 @@ desugarExpr modules thisModule located =
 
 If they don't match, throw an error:
 
-    x : Int
+     x : Int
+     y =
+         123
 
-    y =
-        123
+TODO test
 
 -}
 desugarTypeAnnotation : Declaration a TypeAnnotation -> Result DesugarError (Declaration a Type)

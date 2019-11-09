@@ -228,11 +228,12 @@ toString error =
                         ++ "\n\nChange your imports to resolve this ambiguity!"
 
                 VarNameAndTypeAnnotationDontMatch { typeAnnotation, varName } ->
-                    "The annotation: "
+                    "The annotation and the definition below it don't match!\n\n"
+                        ++ "  Annotation: "
                         ++ typeAnnotation
-                        ++ " and definition below it: "
+                        ++ "\n"
+                        ++ "  Definition: "
                         ++ varName
-                        ++ " don't match!"
 
         TypeError typeError ->
             case typeError of
