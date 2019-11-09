@@ -10,6 +10,7 @@ module Elm.Data.Declaration exposing
 
 -}
 
+import Elm.Data.ModuleName exposing (ModuleName)
 import Elm.Data.Type exposing (Type, TypeArgument)
 import Elm.Data.TypeAnnotation exposing (TypeAnnotation)
 import Elm.Data.VarName exposing (VarName)
@@ -17,9 +18,9 @@ import Elm.Data.VarName exposing (VarName)
 
 {-| -}
 type alias Declaration expr annotation =
-    { module_ : String
+    { module_ : ModuleName
     , typeAnnotation : Maybe annotation
-    , name : String
+    , name : VarName
     , body : DeclarationBody expr
     }
 

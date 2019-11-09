@@ -145,6 +145,10 @@ type DesugarError
         , insideModule : ModuleName
         , possibleModules : List ModuleName
         }
+    | VarNameAndTypeAnnotationDontMatch
+        { typeAnnotation : VarName
+        , varName : VarName
+        }
 
 
 {-| Errors encountered during [typechecking](Elm.Compiler#inferExpr).
@@ -222,6 +226,13 @@ toString error =
                                 possibleModules
                             )
                         ++ "\n\nChange your imports to resolve this ambiguity!"
+
+                VarNameAndTypeAnnotationDontMatch { typeAnnotation, varName } ->
+                    "The annotation: "
+                        ++ typeAnnotation
+                        ++ " and definition below it: "
+                        ++ varName
+                        ++ " don't match!"
 
         TypeError typeError ->
             case typeError of

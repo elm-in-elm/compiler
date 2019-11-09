@@ -17,15 +17,28 @@ import Elm.Data.VarName exposing (VarName)
 import OurExtras.Dict as Dict
 
 
-desugarProject : (Module Frontend.LocatedExpr TypeAnnotation -> Frontend.LocatedExpr -> Result DesugarError Canonical.LocatedExpr) -> Project Frontend.ProjectFields -> Result DesugarError (Project Canonical.ProjectFields)
-desugarProject desugarExpr project =
+desugarProject :
+    (Module Frontend.LocatedExpr TypeAnnotation
+     -> Frontend.LocatedExpr
+     -> Result DesugarError Canonical.LocatedExpr
+    )
+    ->
+        (Declaration Canonical.LocatedExpr TypeAnnotation
+         -> Result DesugarError (Declaration Canonical.LocatedExpr Type)
+        )
+    -> Project Frontend.ProjectFields
+    -> Result DesugarError (Project Canonical.ProjectFields)
+desugarProject desugarExpr desugarTypeAnnotation project =
     project.modules
-        |> Dict.map (always (desugarModule desugarExpr))
+        |> Dict.map (always (desugarModule desugarExpr desugarTypeAnnotation))
         |> Dict.combine
         |> Result.map (projectOfNewType project)
 
 
-projectOfNewType : Project Frontend.ProjectFields -> Dict ModuleName (Module Canonical.LocatedExpr Type) -> Project Canonical.ProjectFields
+projectOfNewType :
+    Project Frontend.ProjectFields
+    -> Dict ModuleName (Module Canonical.LocatedExpr Type)
+    -> Project Canonical.ProjectFields
 projectOfNewType old modules =
     { elmJson = old.elmJson
     , mainFilePath = old.mainFilePath
@@ -37,15 +50,33 @@ projectOfNewType old modules =
     }
 
 
-desugarModule : (Module Frontend.LocatedExpr TypeAnnotation -> Frontend.LocatedExpr -> Result DesugarError Canonical.LocatedExpr) -> Module Frontend.LocatedExpr TypeAnnotation -> Result DesugarError (Module Canonical.LocatedExpr Type)
-desugarModule desugarExpr module_ =
+desugarModule :
+    (Module Frontend.LocatedExpr TypeAnnotation
+     -> Frontend.LocatedExpr
+     -> Result DesugarError Canonical.LocatedExpr
+    )
+    ->
+        (Declaration Canonical.LocatedExpr TypeAnnotation
+         -> Result DesugarError (Declaration Canonical.LocatedExpr Type)
+        )
+    -> Module Frontend.LocatedExpr TypeAnnotation
+    -> Result DesugarError (Module Canonical.LocatedExpr Type)
+desugarModule desugarExpr desugarTypeAnnotation module_ =
     module_.declarations
-        |> Dict.map (always (desugarDeclaration (desugarExpr module_)))
+        |> Dict.map
+            (always
+                (desugarDeclaration (desugarExpr module_)
+                    desugarTypeAnnotation
+                )
+            )
         |> Dict.combine
         |> Result.map (moduleOfNewType module_)
 
 
-moduleOfNewType : Module Frontend.LocatedExpr TypeAnnotation -> Dict VarName (Declaration Canonical.LocatedExpr Type) -> Module Canonical.LocatedExpr Type
+moduleOfNewType :
+    Module Frontend.LocatedExpr TypeAnnotation
+    -> Dict VarName (Declaration Canonical.LocatedExpr Type)
+    -> Module Canonical.LocatedExpr Type
 moduleOfNewType old newDecls =
     { imports = old.imports
     , name = old.name
@@ -58,19 +89,30 @@ moduleOfNewType old newDecls =
     }
 
 
-desugarDeclaration : (Frontend.LocatedExpr -> Result DesugarError Canonical.LocatedExpr) -> Declaration Frontend.LocatedExpr TypeAnnotation -> Result DesugarError (Declaration Canonical.LocatedExpr Type)
-desugarDeclaration desugarExpr decl =
+desugarDeclaration :
+    (Frontend.LocatedExpr -> Result DesugarError Canonical.LocatedExpr)
+    ->
+        (Declaration Canonical.LocatedExpr TypeAnnotation
+         -> Result DesugarError (Declaration Canonical.LocatedExpr Type)
+        )
+    -> Declaration Frontend.LocatedExpr TypeAnnotation
+    -> Result DesugarError (Declaration Canonical.LocatedExpr Type)
+desugarDeclaration desugarExpr desugarTypeAnnotation decl =
     decl.body
         |> Declaration.mapBody desugarExpr
         |> Declaration.combine
         |> Result.map (declarationOfNewType decl)
+        |> Result.andThen desugarTypeAnnotation
 
 
-declarationOfNewType : Declaration Frontend.LocatedExpr TypeAnnotation -> DeclarationBody Canonical.LocatedExpr -> Declaration Canonical.LocatedExpr Type
+declarationOfNewType :
+    Declaration exprA annotation
+    -> DeclarationBody exprB
+    -> Declaration exprB annotation
 declarationOfNewType old newBody =
     { name = old.name
     , module_ = old.module_
-    , typeAnnotation = Maybe.map .type_ old.typeAnnotation
+    , typeAnnotation = old.typeAnnotation
 
     -- all that code because of this:
     , body = newBody

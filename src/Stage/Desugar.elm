@@ -7,10 +7,12 @@ import Elm.AST.Canonical as Canonical
 import Elm.AST.Frontend as Frontend
 import Elm.Compiler.Error exposing (DesugarError(..), Error(..))
 import Elm.Data.Binding as Binding
+import Elm.Data.Declaration exposing (Declaration)
 import Elm.Data.Located as Located
 import Elm.Data.Module as Module exposing (Module)
 import Elm.Data.ModuleName exposing (ModuleName)
 import Elm.Data.Project exposing (Project)
+import Elm.Data.Type exposing (Type)
 import Elm.Data.TypeAnnotation exposing (TypeAnnotation)
 import Elm.Data.VarName exposing (VarName)
 import Maybe.Extra
@@ -20,7 +22,10 @@ import Stage.Desugar.Boilerplate as Boilerplate
 
 desugar : Project Frontend.ProjectFields -> Result Error (Project Canonical.ProjectFields)
 desugar project =
-    Boilerplate.desugarProject (desugarExpr project.modules) project
+    project
+        |> Boilerplate.desugarProject
+            (desugarExpr project.modules)
+            desugarTypeAnnotation
         |> Result.mapError DesugarError
 
 
@@ -179,6 +184,50 @@ desugarExpr modules thisModule located =
 
         Frontend.Unit ->
             return Canonical.Unit
+
+
+{-| Check the var name in the type annotation is the same as the one in the declaration:
+
+    x : Int
+    x =
+        123
+
+If they don't match, throw an error:
+
+    x : Int
+
+    y =
+        123
+
+-}
+desugarTypeAnnotation : Declaration a TypeAnnotation -> Result DesugarError (Declaration a Type)
+desugarTypeAnnotation decl =
+    decl.typeAnnotation
+        |> Maybe.map
+            (\{ varName, type_ } ->
+                if varName == decl.name then
+                    Ok
+                        { module_ = decl.module_
+                        , typeAnnotation = Just type_
+                        , name = decl.name
+                        , body = decl.body
+                        }
+
+                else
+                    Err <|
+                        VarNameAndTypeAnnotationDontMatch
+                            { typeAnnotation = varName
+                            , varName = decl.name
+                            }
+            )
+        |> Maybe.withDefault
+            (Ok
+                { module_ = decl.module_
+                , typeAnnotation = Maybe.map .type_ decl.typeAnnotation
+                , name = decl.name
+                , body = decl.body
+                }
+            )
 
 
 
