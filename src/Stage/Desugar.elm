@@ -25,7 +25,7 @@ desugar project =
     project
         |> Boilerplate.desugarProject
             (desugarExpr project.modules)
-            desugarTypeAnnotation
+            checkAndDesugarTypeAnnotation
         |> Result.mapError DesugarError
 
 
@@ -201,8 +201,10 @@ If they don't match, throw an error:
 TODO test
 
 -}
-desugarTypeAnnotation : Declaration a TypeAnnotation -> Result DesugarError (Declaration a Type)
-desugarTypeAnnotation decl =
+checkAndDesugarTypeAnnotation :
+    Declaration a TypeAnnotation
+    -> Result DesugarError (Declaration a Type)
+checkAndDesugarTypeAnnotation decl =
     decl.typeAnnotation
         |> Maybe.map
             (\{ varName, type_ } ->

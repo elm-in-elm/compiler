@@ -181,3 +181,26 @@ getBetterType substitutionMap type_ =
                 UserDefinedType
                     name
                     (List.map (getBetterType substitutionMap) params)
+
+
+unifyWithTypeAnnotation :
+    SubstitutionMap
+    -> Declaration a Type
+    -> Result ( TypeError, SubstitutionMap ) ( Declaration a Never, SubstitutionMap )
+unifyWithTypeAnnotation substitutionMap decl =
+    decl.typeAnnotation
+        |> Maybe.map
+            (\type_ ->
+                unify type_ realDeclarationType substitutionMap
+                    |> Result.map foo
+            )
+        |> Maybe.withDefault (Ok <| throwAwayType decl)
+
+
+throwAwayType : Declaration a Type -> Declaration a Never
+throwAwayType decl =
+    { module_ = decl.module_
+    , typeAnnotation = Nothing
+    , name = decl.name
+    , body = decl.body
+    }

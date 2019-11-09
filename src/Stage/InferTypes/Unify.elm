@@ -1,4 +1,7 @@
-module Stage.InferTypes.Unify exposing (unifyAllEquations)
+module Stage.InferTypes.Unify exposing
+    ( unify
+    , unifyAllEquations
+    )
 
 import Elm.Compiler.Error exposing (TypeError(..))
 import Elm.Data.Type as Type exposing (Type(..))
