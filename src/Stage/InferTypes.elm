@@ -146,6 +146,7 @@ getBetterType substitutionMap type_ =
 
             Var id ->
                 -- walk one extra level
+                -- TODO: why? explain
                 SubstitutionMap.get id substitutionMap
                     |> Maybe.map (\typeForId -> getBetterType substitutionMap typeForId)
                     |> Maybe.withDefault type_
