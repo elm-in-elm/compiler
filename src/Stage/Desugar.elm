@@ -11,6 +11,7 @@ import Elm.Data.Located as Located
 import Elm.Data.Module as Module exposing (Module)
 import Elm.Data.ModuleName exposing (ModuleName)
 import Elm.Data.Project exposing (Project)
+import Elm.Data.TypeAnnotation exposing (TypeAnnotation)
 import Elm.Data.VarName exposing (VarName)
 import Maybe.Extra
 import Result.Extra as Result
@@ -28,8 +29,8 @@ of them. Thus, we get some separation of concerns - each pass only cares about
 a small subset of the whole process!
 -}
 desugarExpr :
-    Dict ModuleName (Module Frontend.LocatedExpr)
-    -> Module Frontend.LocatedExpr
+    Dict ModuleName (Module Frontend.LocatedExpr TypeAnnotation)
+    -> Module Frontend.LocatedExpr TypeAnnotation
     -> Frontend.LocatedExpr
     -> Result DesugarError Canonical.LocatedExpr
 desugarExpr modules thisModule located =
@@ -231,8 +232,8 @@ TODO "module name not found" somewhere... maybe here, maybe parsing? dunno yet..
 
 -}
 findModuleOfVar :
-    Dict ModuleName (Module Frontend.LocatedExpr)
-    -> Module Frontend.LocatedExpr
+    Dict ModuleName (Module Frontend.LocatedExpr TypeAnnotation)
+    -> Module Frontend.LocatedExpr TypeAnnotation
     -> { module_ : Maybe ModuleName, name : VarName }
     -> Result DesugarError ModuleName
 findModuleOfVar modules thisModule var =
@@ -245,7 +246,7 @@ findModuleOfVar modules thisModule var =
 
 
 unqualifiedVarInThisModule :
-    Module Frontend.LocatedExpr
+    Module Frontend.LocatedExpr TypeAnnotation
     -> { module_ : Maybe ModuleName, name : VarName }
     -> Maybe (Result DesugarError ModuleName)
 unqualifiedVarInThisModule thisModule { module_, name } =
@@ -257,8 +258,8 @@ unqualifiedVarInThisModule thisModule { module_, name } =
 
 
 unqualifiedVarInImportedModule :
-    Dict ModuleName (Module Frontend.LocatedExpr)
-    -> Module Frontend.LocatedExpr
+    Dict ModuleName (Module Frontend.LocatedExpr TypeAnnotation)
+    -> Module Frontend.LocatedExpr TypeAnnotation
     -> { module_ : Maybe ModuleName, name : VarName }
     -> Maybe (Result DesugarError ModuleName)
 unqualifiedVarInImportedModule modules thisModule { module_, name } =
@@ -300,8 +301,8 @@ unqualifiedVarInImportedModule modules thisModule { module_, name } =
 {-| We don't think about module `as` aliasing here.
 -}
 qualifiedVarInImportedModule :
-    Dict ModuleName (Module Frontend.LocatedExpr)
-    -> Module Frontend.LocatedExpr
+    Dict ModuleName (Module Frontend.LocatedExpr TypeAnnotation)
+    -> Module Frontend.LocatedExpr TypeAnnotation
     -> { module_ : Maybe ModuleName, name : VarName }
     -> Maybe (Result DesugarError ModuleName)
 qualifiedVarInImportedModule modules thisModule { module_, name } =
@@ -318,8 +319,8 @@ qualifiedVarInImportedModule modules thisModule { module_, name } =
 
 
 qualifiedVarInAliasedModule :
-    Dict ModuleName (Module Frontend.LocatedExpr)
-    -> Module Frontend.LocatedExpr
+    Dict ModuleName (Module Frontend.LocatedExpr TypeAnnotation)
+    -> Module Frontend.LocatedExpr TypeAnnotation
     -> { module_ : Maybe ModuleName, name : VarName }
     -> Maybe (Result DesugarError ModuleName)
 qualifiedVarInAliasedModule modules thisModule { module_, name } =

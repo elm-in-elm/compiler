@@ -49,6 +49,7 @@ import Elm.Data.FilePath as FilePath exposing (FilePath)
 import Elm.Data.Module exposing (Module)
 import Elm.Data.ModuleName as ModuleName exposing (ModuleName)
 import Elm.Data.Project exposing (Project)
+import Elm.Data.TypeAnnotation exposing (TypeAnnotation)
 import Elm.Project
 import Json.Decode as JD
 import Platform
@@ -278,7 +279,7 @@ handleReadFileSuccess ({ filePath } as file) ({ project } as model) =
                             )
                         |> Set.fromList
 
-                newModules : Dict ModuleName (Module Frontend.LocatedExpr)
+                newModules : Dict ModuleName (Module Frontend.LocatedExpr TypeAnnotation)
                 newModules =
                     Dict.update name
                         (always (Just parsedModule))
@@ -459,7 +460,7 @@ parseErrorCode { errorCode, filePath } =
 
 {-| TODO maybe there should be a "Checks" module for checks across phases?
 -}
-checkModuleNameAndFilePath : { sourceDirectory : FilePath, filePath : FilePath } -> Module Frontend.LocatedExpr -> Result Error (Module Frontend.LocatedExpr)
+checkModuleNameAndFilePath : { sourceDirectory : FilePath, filePath : FilePath } -> Module Frontend.LocatedExpr TypeAnnotation -> Result Error (Module Frontend.LocatedExpr TypeAnnotation)
 checkModuleNameAndFilePath { sourceDirectory, filePath } ({ name } as parsedModule) =
     let
         expectedName : Result CLIError ModuleName

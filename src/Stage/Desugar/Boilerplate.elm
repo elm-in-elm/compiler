@@ -70,7 +70,7 @@ declarationOfNewType : Declaration Frontend.LocatedExpr TypeAnnotation -> Declar
 declarationOfNewType old newBody =
     { name = old.name
     , module_ = old.module_
-    , typeAnnotation = old.typeAnnotation
+    , typeAnnotation = Maybe.map .type_ old.typeAnnotation
 
     -- all that code because of this:
     , body = newBody
