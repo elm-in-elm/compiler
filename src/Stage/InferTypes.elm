@@ -30,7 +30,10 @@ We also have a fourth part:
 -}
 inferTypes : Project Canonical.ProjectFields -> Result Error (Project Typed.ProjectFields)
 inferTypes project =
-    Boilerplate.inferProject inferExpr project
+    project
+        |> Boilerplate.inferProject
+            inferExpr
+            unifyWithTypeAnnotation
         |> Result.mapError TypeError
 
 
