@@ -46,26 +46,26 @@ import Result.Extra as Result
 import Set exposing (Set)
 
 
-projectToDeclarationList : Project Typed.ProjectFields -> Result EmitError (List (Declaration Typed.LocatedExpr))
+projectToDeclarationList : Project Typed.ProjectFields -> Result EmitError (List (Declaration Typed.LocatedExpr Never))
 projectToDeclarationList { mainModuleName, modules } =
     modulesToGraph mainModuleName modules
         |> Result.map (findPathToMain mainModuleName)
 
 
-modulesToDeclarationLists : Project Typed.ProjectFields -> Result EmitError (Dict ModuleName (List (Declaration Typed.LocatedExpr)))
+modulesToDeclarationLists : Project Typed.ProjectFields -> Result EmitError (Dict ModuleName (List (Declaration Typed.LocatedExpr Never)))
 modulesToDeclarationLists ({ mainModuleName, modules } as project) =
     modulesToGraph mainModuleName modules
         |> Result.map (findPathForEachModule project)
 
 
 type alias Graph =
-    Graph.Graph (Declaration Typed.LocatedExpr) ()
+    Graph.Graph (Declaration Typed.LocatedExpr Never) ()
 
 
 {-| We want to be able to emit `main`. We only emit what's needed for that.
 Taken from the example in elm-community/graph README :sweat\_smile:
 -}
-findPathToMain : ModuleName -> Graph -> List (Declaration Typed.LocatedExpr)
+findPathToMain : ModuleName -> Graph -> List (Declaration Typed.LocatedExpr Never)
 findPathToMain mainModuleName programGraph =
     findPath
         programGraph
@@ -74,7 +74,7 @@ findPathToMain mainModuleName programGraph =
 
 {-| In this case we don't have `main`s but TODO finish writing this
 -}
-findPathForEachModule : Project Typed.ProjectFields -> Graph -> Dict ModuleName (List (Declaration Typed.LocatedExpr))
+findPathForEachModule : Project Typed.ProjectFields -> Graph -> Dict ModuleName (List (Declaration Typed.LocatedExpr Never))
 findPathForEachModule project graph =
     let
         exposedDeclarations : Set ( ModuleName, VarName )
@@ -85,7 +85,7 @@ findPathForEachModule project graph =
                 |> List.map (\decl -> ( decl.module_, decl.name ))
                 |> Set.fromList
 
-        moduleToExposedDeclarations : Module Typed.LocatedExpr -> List (Declaration Typed.LocatedExpr)
+        moduleToExposedDeclarations : Module Typed.LocatedExpr Never -> List (Declaration Typed.LocatedExpr Never)
         moduleToExposedDeclarations module_ =
             case module_.exposing_ of
                 ExposingAll ->
@@ -102,11 +102,11 @@ findPathForEachModule project graph =
            Maybe we should return a Result here (Err (DeclarationExposedButNotDefined ...))
            and thread it through and report it?
         -}
-        exposedItemToDeclaration : Module Typed.LocatedExpr -> ExposedItem -> Maybe (Declaration Typed.LocatedExpr)
+        exposedItemToDeclaration : Module Typed.LocatedExpr Never -> ExposedItem -> Maybe (Declaration Typed.LocatedExpr Never)
         exposedItemToDeclaration module_ item =
             Dict.get (Exposing.name item) module_.declarations
 
-        globalPath : List (Declaration Typed.LocatedExpr)
+        globalPath : List (Declaration Typed.LocatedExpr Never)
         globalPath =
             findPath
                 graph
@@ -119,7 +119,7 @@ findPathForEachModule project graph =
 {-| Generic function to find a good ordering of values (so that all the
 dependencies are emitted before the TODO finish writing this
 -}
-findPath : Graph -> Set ( ModuleName, VarName ) -> List (Declaration Typed.LocatedExpr)
+findPath : Graph -> Set ( ModuleName, VarName ) -> List (Declaration Typed.LocatedExpr Never)
 findPath graph startingDeclarations =
     let
         edgesToFollow =
@@ -159,21 +159,21 @@ findDeclarations graph declarations =
 
 
 type alias Dependency =
-    { from : Declaration Typed.LocatedExpr
-    , to : Declaration Typed.LocatedExpr
+    { from : Declaration Typed.LocatedExpr Never
+    , to : Declaration Typed.LocatedExpr Never
     }
 
 
 modulesToGraph :
     ModuleName
-    -> Dict ModuleName (Module Typed.LocatedExpr)
+    -> Dict ModuleName (Module Typed.LocatedExpr Never)
     -> Result EmitError Graph
 modulesToGraph mainModuleName modules =
     {- TODO this is probably a bit far off, but... how to allow for cyclic
        dependencies in lambdas but not in exposed expressions?
     -}
     let
-        maybeMainDeclaration : Maybe (Declaration Typed.LocatedExpr)
+        maybeMainDeclaration : Maybe (Declaration Typed.LocatedExpr Never)
         maybeMainDeclaration =
             Dict.get mainModuleName modules
                 |> Maybe.andThen (.declarations >> Dict.get "main")
@@ -191,11 +191,11 @@ modulesToGraph mainModuleName modules =
         |> Result.map
             (\( declarations, dependencies ) ->
                 let
-                    declarationList : List (Declaration Typed.LocatedExpr)
+                    declarationList : List (Declaration Typed.LocatedExpr Never)
                     declarationList =
                         AssocSet.toList declarations
 
-                    declarationIndexes : AssocList.Dict (Declaration Typed.LocatedExpr) Int
+                    declarationIndexes : AssocList.Dict (Declaration Typed.LocatedExpr Never) Int
                     declarationIndexes =
                         declarationList
                             |> List.indexedMap (\i declaration -> ( declaration, i ))
@@ -224,11 +224,11 @@ modulesToGraph mainModuleName modules =
 
 
 collectDependencies :
-    Dict ModuleName (Module Typed.LocatedExpr)
-    -> List (Declaration Typed.LocatedExpr)
-    -> AssocSet.Set (Declaration Typed.LocatedExpr)
+    Dict ModuleName (Module Typed.LocatedExpr Never)
+    -> List (Declaration Typed.LocatedExpr Never)
+    -> AssocSet.Set (Declaration Typed.LocatedExpr Never)
     -> List Dependency
-    -> Result EmitError ( AssocSet.Set (Declaration Typed.LocatedExpr), List Dependency )
+    -> Result EmitError ( AssocSet.Set (Declaration Typed.LocatedExpr Never), List Dependency )
 collectDependencies modules remainingDeclarations doneDeclarations doneDependencies =
     -- TODO arguments in a record for better clarity... the usages of this function look weird
     {- TODO maybe keep a dict around so that we don't do the same work twice if
@@ -273,9 +273,9 @@ collectDependencies modules remainingDeclarations doneDeclarations doneDependenc
 
 
 findDependencies :
-    Dict ModuleName (Module Typed.LocatedExpr)
+    Dict ModuleName (Module Typed.LocatedExpr Never)
     -> DeclarationBody Typed.LocatedExpr
-    -> Result EmitError (List (Declaration Typed.LocatedExpr))
+    -> Result EmitError (List (Declaration Typed.LocatedExpr Never))
 findDependencies modules declarationBody =
     case declarationBody of
         Value locatedExpr ->
@@ -292,9 +292,9 @@ findDependencies modules declarationBody =
 
 
 findDependenciesOfTypeArgument :
-    Dict ModuleName (Module Typed.LocatedExpr)
+    Dict ModuleName (Module Typed.LocatedExpr Never)
     -> TypeArgument
-    -> Result EmitError (List (Declaration Typed.LocatedExpr))
+    -> Result EmitError (List (Declaration Typed.LocatedExpr Never))
 findDependenciesOfTypeArgument modules typeArgument =
     case typeArgument of
         ConcreteType type_ ->
@@ -305,9 +305,9 @@ findDependenciesOfTypeArgument modules typeArgument =
 
 
 findDependenciesOfType :
-    Dict ModuleName (Module Typed.LocatedExpr)
+    Dict ModuleName (Module Typed.LocatedExpr Never)
     -> Type
-    -> Result EmitError (List (Declaration Typed.LocatedExpr))
+    -> Result EmitError (List (Declaration Typed.LocatedExpr Never))
 findDependenciesOfType modules type_ =
     let
         findDependencies_ =
@@ -379,9 +379,9 @@ findDependenciesOfType modules type_ =
 
 
 findDependenciesOfExpr :
-    Dict ModuleName (Module Typed.LocatedExpr)
+    Dict ModuleName (Module Typed.LocatedExpr Never)
     -> Typed.LocatedExpr
-    -> Result EmitError (List (Declaration Typed.LocatedExpr))
+    -> Result EmitError (List (Declaration Typed.LocatedExpr Never))
 findDependenciesOfExpr modules locatedExpr =
     let
         findDependencies_ =

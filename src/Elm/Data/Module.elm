@@ -24,13 +24,13 @@ import Elm.Data.VarName exposing (VarName)
 
 
 {-| -}
-type alias Module expr =
+type alias Module expr annotation =
     -- TODO comments? doc comments?
     { -- TODO somewhere check that dependencies' exposing lists contain only what's in that module's exposing list
       imports : Dict ModuleName Import
     , name : ModuleName
     , filePath : FilePath
-    , declarations : Dict VarName (Declaration expr)
+    , declarations : Dict VarName (Declaration expr annotation)
     , type_ : ModuleType
     , exposing_ : Exposing
     }
@@ -57,14 +57,14 @@ type ModuleType
 {-| Does this module import this module name?
 (This doesn't take the `as ...` part of the import line into consideration.)
 -}
-imports : ModuleName -> Module a -> Bool
+imports : ModuleName -> Module expr annotation -> Bool
 imports moduleName module_ =
     Dict.member moduleName module_.imports
 
 
 {-| Does this module expose this variable name?
 -}
-exposes : VarName -> Module a -> Bool
+exposes : VarName -> Module expr annotation -> Bool
 exposes varName module_ =
     let
         isInDeclarations =
@@ -109,7 +109,7 @@ Given `import Foo as F`:
     --> Nothing
 
 -}
-unalias : Module a -> ModuleName -> Maybe ModuleName
+unalias : Module expr annotation -> ModuleName -> Maybe ModuleName
 unalias thisModule moduleName =
     thisModule.imports
         |> Dict.find (\_ dep -> dep.as_ == Just moduleName)
@@ -118,7 +118,7 @@ unalias thisModule moduleName =
 
 {-| Apply a function to all the expressions inside the module.
 -}
-map : (a -> b) -> Module a -> Module b
+map : (exprA -> exprB) -> Module exprA annotation -> Module exprB annotation
 map fn module_ =
     { imports = module_.imports
     , name = module_.name

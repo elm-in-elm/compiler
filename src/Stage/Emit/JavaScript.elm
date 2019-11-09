@@ -30,7 +30,7 @@ import Stage.Emit as Emit
 
 
 type alias ProjectFields =
-    { declarationList : List (Declaration Typed.LocatedExpr) }
+    { declarationList : List (Declaration Typed.LocatedExpr Never) }
 
 
 emitProject : Project Typed.ProjectFields -> Result Error (Dict FilePath FileContents)
@@ -136,7 +136,7 @@ emitExpr located =
             "[" ++ emitExpr e1 ++ "," ++ emitExpr e2 ++ "," ++ emitExpr e3 ++ "]"
 
 
-emitDeclaration : Declaration Typed.LocatedExpr -> String
+emitDeclaration : Declaration Typed.LocatedExpr Never -> String
 emitDeclaration { module_, name, body } =
     case body of
         Value expr ->

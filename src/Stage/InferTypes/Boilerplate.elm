@@ -11,6 +11,7 @@ import Elm.Data.Declaration as Declaration exposing (Declaration, DeclarationBod
 import Elm.Data.Module exposing (Module)
 import Elm.Data.ModuleName exposing (ModuleName)
 import Elm.Data.Project exposing (Project)
+import Elm.Data.Type exposing (Type)
 import Elm.Data.VarName exposing (VarName)
 import OurExtras.Dict as Dict
 
@@ -28,7 +29,7 @@ inferProject inferExpr project =
 
 projectOfNewType :
     Project Canonical.ProjectFields
-    -> Dict ModuleName (Module Typed.LocatedExpr)
+    -> Dict ModuleName (Module Typed.LocatedExpr Never)
     -> Project Typed.ProjectFields
 projectOfNewType old modules =
     { elmJson = old.elmJson
@@ -43,8 +44,8 @@ projectOfNewType old modules =
 
 inferModule :
     (Canonical.LocatedExpr -> Result TypeError Typed.LocatedExpr)
-    -> Module Canonical.LocatedExpr
-    -> Result TypeError (Module Typed.LocatedExpr)
+    -> Module Canonical.LocatedExpr Type
+    -> Result TypeError (Module Typed.LocatedExpr Never)
 inferModule inferExpr module_ =
     module_.declarations
         |> Dict.map (always (inferDeclaration inferExpr))
@@ -53,9 +54,9 @@ inferModule inferExpr module_ =
 
 
 moduleOfNewType :
-    Module Canonical.LocatedExpr
-    -> Dict VarName (Declaration Typed.LocatedExpr)
-    -> Module Typed.LocatedExpr
+    Module Canonical.LocatedExpr Type
+    -> Dict VarName (Declaration Typed.LocatedExpr Never)
+    -> Module Typed.LocatedExpr Never
 moduleOfNewType old newDecls =
     { imports = old.imports
     , name = old.name
@@ -70,8 +71,8 @@ moduleOfNewType old newDecls =
 
 inferDeclaration :
     (Canonical.LocatedExpr -> Result TypeError Typed.LocatedExpr)
-    -> Declaration Canonical.LocatedExpr
-    -> Result TypeError (Declaration Typed.LocatedExpr)
+    -> Declaration Canonical.LocatedExpr Type
+    -> Result TypeError (Declaration Typed.LocatedExpr Never)
 inferDeclaration inferExpr decl =
     decl.body
         |> Declaration.mapBody inferExpr
@@ -80,13 +81,13 @@ inferDeclaration inferExpr decl =
 
 
 declarationOfNewType :
-    Declaration Canonical.LocatedExpr
+    Declaration Canonical.LocatedExpr Type
     -> DeclarationBody Typed.LocatedExpr
-    -> Declaration Typed.LocatedExpr
+    -> Declaration Typed.LocatedExpr Never
 declarationOfNewType old newBody =
     { name = old.name
     , module_ = old.module_
-    , typeAnnotation = old.typeAnnotation
+    , typeAnnotation = Nothing
 
     -- all that code because of this:
     , body = newBody

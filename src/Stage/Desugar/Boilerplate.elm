@@ -11,11 +11,13 @@ import Elm.Data.Declaration as Declaration exposing (Declaration, DeclarationBod
 import Elm.Data.Module exposing (Module)
 import Elm.Data.ModuleName exposing (ModuleName)
 import Elm.Data.Project exposing (Project)
+import Elm.Data.Type exposing (Type)
+import Elm.Data.TypeAnnotation exposing (TypeAnnotation)
 import Elm.Data.VarName exposing (VarName)
 import OurExtras.Dict as Dict
 
 
-desugarProject : (Module Frontend.LocatedExpr -> Frontend.LocatedExpr -> Result DesugarError Canonical.LocatedExpr) -> Project Frontend.ProjectFields -> Result DesugarError (Project Canonical.ProjectFields)
+desugarProject : (Module Frontend.LocatedExpr TypeAnnotation -> Frontend.LocatedExpr -> Result DesugarError Canonical.LocatedExpr) -> Project Frontend.ProjectFields -> Result DesugarError (Project Canonical.ProjectFields)
 desugarProject desugarExpr project =
     project.modules
         |> Dict.map (always (desugarModule desugarExpr))
@@ -23,7 +25,7 @@ desugarProject desugarExpr project =
         |> Result.map (projectOfNewType project)
 
 
-projectOfNewType : Project Frontend.ProjectFields -> Dict ModuleName (Module Canonical.LocatedExpr) -> Project Canonical.ProjectFields
+projectOfNewType : Project Frontend.ProjectFields -> Dict ModuleName (Module Canonical.LocatedExpr Type) -> Project Canonical.ProjectFields
 projectOfNewType old modules =
     { elmJson = old.elmJson
     , mainFilePath = old.mainFilePath
@@ -35,7 +37,7 @@ projectOfNewType old modules =
     }
 
 
-desugarModule : (Module Frontend.LocatedExpr -> Frontend.LocatedExpr -> Result DesugarError Canonical.LocatedExpr) -> Module Frontend.LocatedExpr -> Result DesugarError (Module Canonical.LocatedExpr)
+desugarModule : (Module Frontend.LocatedExpr TypeAnnotation -> Frontend.LocatedExpr -> Result DesugarError Canonical.LocatedExpr) -> Module Frontend.LocatedExpr TypeAnnotation -> Result DesugarError (Module Canonical.LocatedExpr Type)
 desugarModule desugarExpr module_ =
     module_.declarations
         |> Dict.map (always (desugarDeclaration (desugarExpr module_)))
@@ -43,7 +45,7 @@ desugarModule desugarExpr module_ =
         |> Result.map (moduleOfNewType module_)
 
 
-moduleOfNewType : Module Frontend.LocatedExpr -> Dict VarName (Declaration Canonical.LocatedExpr) -> Module Canonical.LocatedExpr
+moduleOfNewType : Module Frontend.LocatedExpr TypeAnnotation -> Dict VarName (Declaration Canonical.LocatedExpr Type) -> Module Canonical.LocatedExpr Type
 moduleOfNewType old newDecls =
     { imports = old.imports
     , name = old.name
@@ -56,7 +58,7 @@ moduleOfNewType old newDecls =
     }
 
 
-desugarDeclaration : (Frontend.LocatedExpr -> Result DesugarError Canonical.LocatedExpr) -> Declaration Frontend.LocatedExpr -> Result DesugarError (Declaration Canonical.LocatedExpr)
+desugarDeclaration : (Frontend.LocatedExpr -> Result DesugarError Canonical.LocatedExpr) -> Declaration Frontend.LocatedExpr TypeAnnotation -> Result DesugarError (Declaration Canonical.LocatedExpr Type)
 desugarDeclaration desugarExpr decl =
     decl.body
         |> Declaration.mapBody desugarExpr
@@ -64,7 +66,7 @@ desugarDeclaration desugarExpr decl =
         |> Result.map (declarationOfNewType decl)
 
 
-declarationOfNewType : Declaration Frontend.LocatedExpr -> DeclarationBody Canonical.LocatedExpr -> Declaration Canonical.LocatedExpr
+declarationOfNewType : Declaration Frontend.LocatedExpr TypeAnnotation -> DeclarationBody Canonical.LocatedExpr -> Declaration Canonical.LocatedExpr Type
 declarationOfNewType old newBody =
     { name = old.name
     , module_ = old.module_

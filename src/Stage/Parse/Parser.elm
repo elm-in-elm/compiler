@@ -60,7 +60,7 @@ located p =
         |= P.getPosition
 
 
-module_ : FilePath -> Parser_ (Module LocatedExpr)
+module_ : FilePath -> Parser_ (Module LocatedExpr TypeAnnotation)
 module_ filePath =
     P.succeed
         (\( moduleType_, moduleName_, exposing_ ) imports_ declarations_ ->
@@ -313,7 +313,7 @@ reservedWords =
         ]
 
 
-declarations : Parser_ (List (ModuleName -> Declaration LocatedExpr))
+declarations : Parser_ (List (ModuleName -> Declaration LocatedExpr TypeAnnotation))
 declarations =
     oneOrMoreWith P.spaces
         (P.succeed identity
@@ -322,7 +322,7 @@ declarations =
         )
 
 
-declaration : Parser_ (ModuleName -> Declaration LocatedExpr)
+declaration : Parser_ (ModuleName -> Declaration LocatedExpr TypeAnnotation)
 declaration =
     P.succeed
         (\typeAnnotation_ name body module__ ->

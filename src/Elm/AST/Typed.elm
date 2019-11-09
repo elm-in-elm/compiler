@@ -31,7 +31,7 @@ that hold [typed AST expressions](#LocatedExpr).
 
 -}
 type alias ProjectFields =
-    { modules : Dict ModuleName (Module LocatedExpr) }
+    { modules : Dict ModuleName (Module LocatedExpr Never) }
 
 
 {-| The main type of this module. Expression with [location metadata](Elm.Data.Located).

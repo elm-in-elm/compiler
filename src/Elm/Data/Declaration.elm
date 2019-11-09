@@ -16,9 +16,9 @@ import Elm.Data.VarName exposing (VarName)
 
 
 {-| -}
-type alias Declaration expr =
+type alias Declaration expr annotation =
     { module_ : String
-    , typeAnnotation : Maybe TypeAnnotation -- TODO desugar from Maybe TypeAnnotation to Maybe Type
+    , typeAnnotation : Maybe annotation
     , name : String
     , body : DeclarationBody expr
     }
@@ -75,7 +75,7 @@ type alias Constructor =
 
 {-| Apply a function to the expression inside the declaration.
 -}
-map : (a -> b) -> Declaration a -> Declaration b
+map : (exprA -> exprB) -> Declaration exprA annotation -> Declaration exprB annotation
 map fn declaration =
     { module_ = declaration.module_
     , typeAnnotation = declaration.typeAnnotation
@@ -86,7 +86,7 @@ map fn declaration =
 
 {-| Apply a function to the expression inside the declaration body.
 -}
-mapBody : (a -> b) -> DeclarationBody a -> DeclarationBody b
+mapBody : (exprA -> exprB) -> DeclarationBody exprA -> DeclarationBody exprB
 mapBody fn body =
     case body of
         Value expr ->
