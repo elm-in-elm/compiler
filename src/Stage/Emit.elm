@@ -317,10 +317,10 @@ findDependenciesOfType modules type_ =
         Type.Var id ->
             Ok []
 
-        Type.Function t1 t2 ->
+        Type.Function { from, to } ->
             Result.map2 (++)
-                (findDependencies_ t1)
-                (findDependencies_ t2)
+                (findDependencies_ from)
+                (findDependencies_ to)
 
         Type.Int ->
             Ok []

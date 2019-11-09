@@ -4,6 +4,8 @@ module ParserTest exposing
     , imports
     , moduleDeclaration
     , moduleName
+    , typeAnnotation
+    , type_
     )
 
 import Dict
@@ -13,6 +15,8 @@ import Elm.Compiler.Error exposing (ParseContext, ParseProblem)
 import Elm.Data.Exposing exposing (ExposedItem(..), Exposing(..))
 import Elm.Data.Module exposing (ModuleType(..))
 import Elm.Data.ModuleName as ModuleName exposing (ModuleName)
+import Elm.Data.Type as Type exposing (Type)
+import Elm.Data.TypeAnnotation exposing (TypeAnnotation)
 import Elm.Data.VarName as VarName exposing (VarName)
 import Expect exposing (Expectation)
 import Parser.Advanced as P
@@ -1010,3 +1014,92 @@ contextToString context =
         ++ String.fromInt (context.col - 1)
         ++ ") "
         ++ Debug.toString context.context
+
+
+type_ : Test
+type_ =
+    let
+        runTest : ( String, String, Type ) -> Test
+        runTest ( description, input, output ) =
+            test description <|
+                \() ->
+                    input
+                        |> P.run Stage.Parse.Parser.type_
+                        |> Result.toMaybe
+                        |> Expect.equal (Just output)
+    in
+    describe "Stage.Parse.Parser.type_"
+        (List.map runTest
+            [ ( "int", "Int", Type.Int )
+            , ( "unit", "()", Type.Unit )
+
+            --, ("var a", "a", Type.Var ) -- TODO constructor for Var type that has the letter instead of the var ID?
+            --, ( "function"
+            --  , "Int -> Unit"
+            --  , Type.Function
+            --        { from = Type.Int
+            --        , to = Type.Unit
+            --        }
+            --  )
+            --, ( "multiple-arg function"
+            --  , "Int -> Unit -> Char"
+            --  , Type.Function
+            --        { from = Type.Int
+            --        , to =
+            --            Type.Function
+            --                { from = Type.Unit
+            --                , to = Type.Char
+            --                }
+            --        }
+            --  )
+            -- , ("float", "Float", Type.Float)
+            -- , ("char", "Char", Type.Char)
+            -- , ("string", "String", Type.String)
+            -- , ("bool", "Bool", Type.Bool)
+            -- TODO list
+            -- TODO tuple
+            -- TODO tuple3
+            -- TODO parametric type
+            -- TODO record type and all the rest of the possible types...
+            ]
+        )
+
+
+typeAnnotation : Test
+typeAnnotation =
+    let
+        runTest : ( String, String, Maybe TypeAnnotation ) -> Test
+        runTest ( description, input, output ) =
+            test description <|
+                \() ->
+                    input
+                        |> P.run Stage.Parse.Parser.typeAnnotation
+                        |> Result.toMaybe
+                        |> Expect.equal output
+
+        example : TypeAnnotation
+        example =
+            { varName = "x", type_ = Type.Int }
+    in
+    describe "Stage.Parse.Parser.typeAnnotation"
+        [ describe "various cases"
+            [ runTest
+                ( "x int"
+                , "x : Int"
+                , Just example
+                )
+            ]
+        , describe "whitespace behaviour"
+            (List.map runTest
+                [ ( "canonical format", "x : Int", Just example )
+                , ( "no spaces", "x:Int", Just example )
+                , ( "multiple spaces before", "x   : Int", Just example )
+                , ( "multiple spaces after", "x :   Int", Just example )
+                , ( "newline and space before", "x\n  : Int", Just example )
+                , ( "newline and space after", "x :\n Int", Just example )
+
+                --, ( "newline before", "x\n: Int", Nothing )
+                --, ( "newline after", "x :\nInt", Nothing )
+                ]
+            )
+        ]

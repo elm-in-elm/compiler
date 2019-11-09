@@ -75,8 +75,14 @@ toString state type_ =
         Var int ->
             getName state int
 
-        Function t1 t2 ->
+        Function args ->
             let
+                t1 =
+                    args.from
+
+                t2 =
+                    args.to
+
                 ( t1String, state1 ) =
                     toString state t1
                         |> maybeWrapParens t1
@@ -255,7 +261,7 @@ shouldWrapParens type_ =
         Var _ ->
             False
 
-        Function _ _ ->
+        Function _ ->
             True
 
         Int ->

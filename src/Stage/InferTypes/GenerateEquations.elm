@@ -149,7 +149,7 @@ generateEquations idSource located =
                     generateArgumentUsageEquations argumentId usages
             in
             ( -- type of `\arg -> body` is (arg -> body)
-              equals type_ (Type.Function (Type.Var argumentId) bodyType)
+              equals type_ (Type.Function { from = Type.Var argumentId, to = bodyType })
                 -- type of the argument is the same as the type of all the children usages of that argument
                 :: usageEquations
                 ++ bodyEquations
@@ -172,7 +172,7 @@ generateEquations idSource located =
             in
             ( -- for expression `a b`:
               -- type of `a` is (argumentType -> resultType)
-              equals fnType (Type.Function argumentType type_)
+              equals fnType (Type.Function { from = argumentType, to = type_ })
                 :: fnEquations
                 ++ argumentEquations
             , idSource2

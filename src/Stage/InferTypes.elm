@@ -150,10 +150,11 @@ getBetterType substitutionMap type_ =
                     |> Maybe.map (\typeForId -> getBetterType substitutionMap typeForId)
                     |> Maybe.withDefault type_
 
-            Function arg result ->
+            Function { from, to } ->
                 Function
-                    (getBetterType substitutionMap arg)
-                    (getBetterType substitutionMap result)
+                    { from = getBetterType substitutionMap from
+                    , to = getBetterType substitutionMap to
+                    }
 
             List param ->
                 List <| getBetterType substitutionMap param

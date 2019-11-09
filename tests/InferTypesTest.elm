@@ -209,22 +209,44 @@ typeToString =
         , describe "lambda"
             [ runTest
                 ( "function with one param"
-                , Function (Var 99) Int
+                , Function
+                    { from = Var 99
+                    , to = Int
+                    }
                 , "a -> Int"
                 )
             , runTest
                 ( "function with two params"
-                , Function (Var 0) (Function (Var 1) (Var 1))
+                , Function
+                    { from = Var 0
+                    , to =
+                        Function
+                            { from = Var 1
+                            , to = Var 1
+                            }
+                    }
                 , "a -> b -> b"
                 )
             , runTest
                 ( "function as param"
-                , Function (Function (Var 9) (Var 9)) (Var 0)
+                , Function
+                    { from =
+                        Function
+                            { from = Var 9
+                            , to = Var 9
+                            }
+                    , to = Var 0
+                    }
                 , "(a -> a) -> b"
                 )
             , runTest
                 ( "list of functions"
-                , List (Function (Var 0) (Var 0))
+                , List
+                    (Function
+                        { from = Var 0
+                        , to = Var 0
+                        }
+                    )
                 , "List (a -> a)"
                 )
             ]
@@ -239,8 +261,16 @@ typeToString =
                 , Error.toString
                     (TypeError
                         (TypeMismatch
-                            (Function (List (Var 0)) (Var 1))
-                            (Function (List (Var 1)) (Var 0))
+                            (Function
+                                { from = List (Var 0)
+                                , to = Var 1
+                                }
+                            )
+                            (Function
+                                { from = List (Var 1)
+                                , to = Var 0
+                                }
+                            )
                         )
                     )
                 , "The types `(List a) -> b` and `(List b) -> a` don't match."
@@ -340,10 +370,10 @@ isParametric =
             , ( Int, False )
             , ( String, False )
             , ( Var 0, True )
-            , ( Function Int String, False )
-            , ( Function (Var 0) Int, True )
-            , ( Function String (Var 0), True )
-            , ( Function Int (Function (Var 0) (Var 0)), True )
+            , ( Function { from = Int, to = String }, False )
+            , ( Function { from = Var 0, to = Int }, True )
+            , ( Function { from = String, to = Var 0 }, True )
+            , ( Function { from = Int, to = Function { from = Var 0, to = Var 0 } }, True )
             , ( List Int, False )
             , ( List (Var 0), True )
             , ( List (List Int), False )
@@ -358,6 +388,6 @@ isParametric =
             , ( Tuple3 String (Var 0) Unit, True )
             , ( Tuple3 Bool Unit (Var 0), True )
             , ( Tuple3 (List (Var 0)) Int Char, True )
-            , ( Tuple3 String (Function (Var 0) Int) Unit, True )
+            , ( Tuple3 String (Function { from = Var 0, to = Int }) Unit, True )
             , ( Tuple3 Bool Unit (Tuple (Var 0) Int), True )
             ]

@@ -126,6 +126,8 @@ type ParseProblem
     | ExpectingLet
     | ExpectingIn
     | ExpectingUnit
+    | ExpectingColon
+    | ExpectingSimpleType String
     | InvalidNumber
     | TriedToParseCharacterStoppingDelimiter
     | CompilerBug String
@@ -441,6 +443,12 @@ parseProblemToString problem =
 
         ExpectingUnit ->
             "ExpectingUnit"
+
+        ExpectingColon ->
+            "ExpectingColon"
+
+        ExpectingSimpleType type_ ->
+            "ExpectingSimpleType " ++ type_
 
         InvalidNumber ->
             "InvalidNumber"

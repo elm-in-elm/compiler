@@ -7,6 +7,8 @@ module Stage.Parse.Parser exposing
     , moduleDeclaration
     , moduleName
     , module_
+    , typeAnnotation
+    , type_
     )
 
 import Dict exposing (Dict)
@@ -26,6 +28,8 @@ import Elm.Data.Import exposing (Import)
 import Elm.Data.Located as Located exposing (Located)
 import Elm.Data.Module exposing (Module, ModuleType(..))
 import Elm.Data.ModuleName exposing (ModuleName)
+import Elm.Data.Type as Type exposing (Type)
+import Elm.Data.TypeAnnotation exposing (TypeAnnotation)
 import Elm.Data.VarName exposing (VarName)
 import Hex
 import Parser.Advanced as P exposing ((|.), (|=), Parser)
@@ -868,3 +872,28 @@ oneOrMoreHelp spaces p vs =
         , P.succeed ()
             |> P.map (always (P.Done (List.reverse vs)))
         ]
+
+
+typeAnnotation : Parser_ TypeAnnotation
+typeAnnotation =
+    -- TODO don't support newline without a space afterward... see the commented out tests
+    P.succeed TypeAnnotation
+        |= varName
+        |. P.spaces
+        |. P.symbol (P.Token ":" ExpectingColon)
+        |. P.spaces
+        |= type_
+
+
+type_ : Parser_ Type
+type_ =
+    P.oneOf
+        [ simpleType "Int" Type.Int
+        , simpleType "()" Type.Unit
+        ]
+
+
+simpleType : String -> Type -> Parser_ Type
+simpleType name parsedType =
+    P.succeed parsedType
+        |. P.keyword (P.Token name (ExpectingSimpleType name))

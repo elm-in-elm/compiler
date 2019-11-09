@@ -54,7 +54,7 @@ typeInference =
                 , Type.List (Type.List Type.String)
                 ]
             , fuzzExpressions "fuzz functions"
-                [ Type.Function Type.Int Type.Int
+                [ Type.Function { from = Type.Int, to = Type.Int }
                 ]
             , fuzzExpressions "fuzz tuples"
                 [ Type.Tuple Type.Int Type.String
@@ -139,11 +139,13 @@ basicExprOfType depthLeft targetType =
             else
                 elementType |> listExpr depthLeft
 
-        Type.Function Type.Int Type.Int ->
-            intToIntFunctionExpr
+        Type.Function { from, to } ->
+            case ( from, to ) of
+                ( Type.Int, Type.Int ) ->
+                    intToIntFunctionExpr
 
-        Type.Function _ _ ->
-            cannotFuzz "Only `Int -> Int` functions are supported."
+                _ ->
+                    cannotFuzz "Only `Int -> Int` functions are supported."
 
         Type.Tuple firstType secondType ->
             ( firstType, secondType ) |> tupleExpr depthLeft

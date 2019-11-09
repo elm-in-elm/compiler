@@ -28,7 +28,7 @@ type Type
 
       -}
       Var Int
-    | Function Type Type
+    | Function { from : Type, to : Type }
     | Int
     | Float
     | Char
@@ -84,8 +84,8 @@ isParametric type_ =
         Var _ ->
             True
 
-        Function input output ->
-            [ input, output ]
+        Function { from, to } ->
+            [ from, to ]
                 |> List.any isParametric
 
         List element ->

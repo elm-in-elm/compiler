@@ -35,9 +35,9 @@ unify t1 t2 substitutionMap =
             ( _, Var id ) ->
                 unifyVariable id t1 substitutionMap
 
-            ( Function arg1 result1, Function arg2 result2 ) ->
-                unify result1 result2 substitutionMap
-                    |> Result.andThen (unify arg1 arg2)
+            ( Function a, Function b ) ->
+                unify a.to b.to substitutionMap
+                    |> Result.andThen (unify a.from b.from)
 
             ( List list1, List list2 ) ->
                 unify list1 list2 substitutionMap
@@ -96,9 +96,9 @@ occurs id type_ substitutionMap =
 
             Nothing ->
                 case type_ of
-                    Function arg result ->
-                        occurs id result substitutionMap
-                            || occurs id arg substitutionMap
+                    Function { from, to } ->
+                        occurs id to substitutionMap
+                            || occurs id from substitutionMap
 
                     -- TODO potentially dangerous wildcard?
                     _ ->
