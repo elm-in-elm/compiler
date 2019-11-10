@@ -181,12 +181,15 @@ assignIdsWithHelp idSource located =
 
                 ( bindingBodiesList, idSource2 ) =
                     List.foldl
-                        (\( _, binding ) ( acc, currentIdSource ) ->
+                        (\( name, binding ) ( acc, currentIdSource ) ->
                             let
                                 ( body__, nextIdSource ) =
                                     assignIdsWith currentIdSource binding.body
+
+                                newElt =
+                                    ( name, { name = name, body = body__ } )
                             in
-                            ( body__ :: acc
+                            ( newElt :: acc
                             , nextIdSource
                             )
                         )
@@ -196,12 +199,7 @@ assignIdsWithHelp idSource located =
             assignId idSource2
                 (Typed.Let
                     { bindings =
-                        Dict.fromList
-                            (List.map2
-                                (\( name, _ ) body__ -> ( name, { name = name, body = body__ } ))
-                                bindingsList
-                                bindingBodiesList
-                            )
+                        Dict.fromList bindingBodiesList
                     , body = body_
                     }
                 )
