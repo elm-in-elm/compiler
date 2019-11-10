@@ -38,6 +38,7 @@ type Type
     | Unit
     | Tuple Type Type
     | Tuple3 Type Type Type
+    | Record (Dict VarName Type)
     | {- The actual definitions of type aliases and custom types are elsewhere
          (in the Declaration module), this is just a "pointer", "var".
 
@@ -98,6 +99,9 @@ isParametric type_ =
         Tuple3 left middle right ->
             [ left, middle, right ]
                 |> List.any isParametric
+
+        Record bindings ->
+            List.any isParametric (Dict.values bindings)
 
         _ ->
             False

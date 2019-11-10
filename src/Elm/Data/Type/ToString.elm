@@ -162,6 +162,23 @@ toString state type_ =
             , state1
             )
 
+        Record bindings ->
+            let
+                ( bindingsStr, state1 ) =
+                    List.foldr
+                        (\param ( acc, state2 ) ->
+                            let
+                                ( string, state3 ) =
+                                    niceRecordBinding state2 param
+                            in
+                            ( string :: acc, state3 )
+                        )
+                        ( [], state )
+                        (Dict.toList bindings)
+                        |> Tuple.mapFirst (String.join ", ")
+            in
+            ( "{ " ++ bindingsStr ++ " }", state1 )
+
 
 getName : State -> Int -> ( String, State )
 getName ((State { counter, mapping }) as state) varId =
@@ -213,6 +230,17 @@ letter int =
     (int + 97 {- `a` -})
         |> Char.fromCode
         |> String.fromChar
+
+
+niceRecordBinding : State -> ( String, Type ) -> ( String, State )
+niceRecordBinding state ( varName, type_ ) =
+    let
+        ( typeStr, state1 ) =
+            toString
+                state
+                type_
+    in
+    ( varName ++ " : " ++ typeStr, state1 )
 
 
 {-|
@@ -287,3 +315,6 @@ shouldWrapParens type_ =
 
         UserDefinedType _ params ->
             not (List.isEmpty params)
+
+        Record _ ->
+            False
