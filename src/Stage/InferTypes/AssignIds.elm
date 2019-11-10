@@ -247,3 +247,28 @@ assignIdsWithHelp idSource located =
                     assignIdsWith idSource2 e3
             in
             assignId idSource3 (Typed.Tuple3 e1_ e2_ e3_)
+
+        Canonical.Record bindings ->
+            let
+                bindingsList =
+                    Dict.toList bindings
+
+                ( bindingBodiesList, idSource1 ) =
+                    List.foldl
+                        (\( name, binding ) ( acc, currentIdSource ) ->
+                            let
+                                ( body__, nextIdSource ) =
+                                    assignIdsWith currentIdSource binding.body
+
+                                newElt =
+                                    ( name, { name = name, body = body__ } )
+                            in
+                            ( newElt :: acc
+                            , nextIdSource
+                            )
+                        )
+                        ( [], idSource )
+                        bindingsList
+            in
+            assignId idSource1 <|
+                Typed.Record (Dict.fromList bindingBodiesList)
