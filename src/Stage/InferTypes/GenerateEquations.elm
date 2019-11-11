@@ -326,6 +326,34 @@ generateEquations idSource located =
             , idSource3
             )
 
+        Typed.Record bindings ->
+            let
+                bindingTypes =
+                    Dict.map
+                        (\_ binding ->
+                            Located.unwrap binding.body |> Tuple.second
+                        )
+                        bindings
+
+                ( bindingEquations, idSource1 ) =
+                    List.foldl
+                        (\binding ( acc, currentIdSource ) ->
+                            let
+                                ( equations, nextIdSource ) =
+                                    generateEquations currentIdSource binding.body
+                            in
+                            ( equations ++ acc
+                            , nextIdSource
+                            )
+                        )
+                        ( [], idSource )
+                        (Dict.values bindings)
+            in
+            ( equals type_ (Type.Record bindingTypes)
+                :: bindingEquations
+            , idSource1
+            )
+
 
 findArgumentUsages : VarName -> Typed.LocatedExpr -> List Typed.LocatedExpr
 findArgumentUsages argument bodyExpr =
