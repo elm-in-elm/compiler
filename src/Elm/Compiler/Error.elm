@@ -69,6 +69,7 @@ type ParseContext
     | InUnit
     | InTuple
     | InTuple3
+    | InRecord
 
 
 {-| The specific problem the parser encountered. Together with [`ParseContext`](#ParseContext)
@@ -126,6 +127,9 @@ type ParseProblem
     | ExpectingLet
     | ExpectingIn
     | ExpectingUnit
+    | ExpectingRecordLeftBrace
+    | ExpectingRecordSeparator
+    | ExpectingRecordRightBrace
     | InvalidNumber
     | TriedToParseCharacterStoppingDelimiter
     | CompilerBug String
@@ -441,6 +445,15 @@ parseProblemToString problem =
 
         ExpectingUnit ->
             "ExpectingUnit"
+
+        ExpectingRecordLeftBrace ->
+            "ExpectingRecordLeftBrace"
+
+        ExpectingRecordSeparator ->
+            "ExpectingRecordSeparator"
+
+        ExpectingRecordRightBrace ->
+            "ExpectingRecordRightBrace"
 
         InvalidNumber ->
             "InvalidNumber"
