@@ -250,6 +250,64 @@ javascript =
                       )
                     ]
                 )
+            , describe "Record"
+                (List.map runTest
+                    [ ( "record single field"
+                      , Record
+                            (Dict.fromList
+                                [ ( "a", { name = "a", body = typedInt 42 } )
+                                ]
+                            )
+                      , "{a : 42}"
+                      )
+                    , ( "void record"
+                      , Record Dict.empty
+                      , "{}"
+                      )
+                    , ( "record two fields"
+                      , Record
+                            (Dict.fromList
+                                [ ( "a", { name = "a", body = typedInt 42 } )
+                                , ( "b", { name = "b", body = typedString "Hello" } )
+                                ]
+                            )
+                      , """{a : 42, b : "Hello"}"""
+                      )
+                    , ( "mixed"
+                      , Record
+                            (Dict.fromList
+                                [ ( "a"
+                                  , { name = "a"
+                                    , body =
+                                        typed
+                                            (Record
+                                                (Dict.fromList [ ( "a", { name = "a", body = typedInt 42 } ) ])
+                                            )
+                                    }
+                                  )
+                                ]
+                            )
+                      , "{a : {a : 42}}"
+                      )
+                    ]
+                )
+            , describe "Mixed expressions"
+                (List.map runTest
+                    [ ( "plus in tuple"
+                      , Tuple (typed (Plus (typedInt 1) (typedInt 41))) (typedString "Hello")
+                      , """[(1 + 41),"Hello"]"""
+                      )
+                    , ( "tuple and cons in record"
+                      , Record
+                            (Dict.fromList
+                                [ ( "a", { name = "a", body = typed (Tuple (typedInt 2) (typedInt 3)) } )
+                                , ( "b", { name = "b", body = typed (Cons (typedInt 2) (typedIntList [ 3, 4 ])) } )
+                                ]
+                            )
+                      , """{a : [2,3], b : [2].concat([3, 4])}"""
+                      )
+                    ]
+                )
             ]
         , let
             runTest : ( String, Declaration Typed.LocatedExpr, String ) -> Test
