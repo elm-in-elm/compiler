@@ -170,7 +170,7 @@ assignIdsWithHelp idSource located =
                as that would bloat the type signatures of IdGenerator too much.
 
                We unwrap the exprs from the bindings and then carefully put them
-               back together in the same order (see the List.map2 below).
+               back together in the same order.
             -}
             let
                 bindingsList =
