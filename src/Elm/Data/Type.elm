@@ -12,22 +12,7 @@ import Elm.Data.VarName exposing (VarName)
 
 {-| -}
 type Type
-    = {- READ THIS!
-
-         When adding a case that recurs on Type, you'll have to add a case to
-         `InferTypes.Unify.unify`:
-
-             | MyNewType Type Type
-
-         will have to get a case:
-
-             (MyNewType m1e1 m1e2, MyNewType m2e1 m2e2) ->
-                 substitutionMap
-                     |> unify m1e1 m2e1
-                     |> Result.andThen (unify m1e2 m2e2)
-
-      -}
-      Var Int
+    = Var Int
     | Function Type Type
     | Int
     | Float
