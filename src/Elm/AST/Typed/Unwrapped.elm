@@ -43,3 +43,4 @@ type Expr_
     | Unit
     | Tuple Expr Expr
     | Tuple3 Expr Expr Expr
+    | Record (Dict VarName (Binding Expr))

@@ -170,7 +170,7 @@ assignIdsWithHelp idSource located =
                as that would bloat the type signatures of IdGenerator too much.
 
                We unwrap the exprs from the bindings and then carefully put them
-               back together in the same order (see the List.map2 below).
+               back together in the same order.
             -}
             let
                 bindingsList =
@@ -181,12 +181,15 @@ assignIdsWithHelp idSource located =
 
                 ( bindingBodiesList, idSource2 ) =
                     List.foldl
-                        (\( _, binding ) ( acc, currentIdSource ) ->
+                        (\( name, binding ) ( acc, currentIdSource ) ->
                             let
                                 ( body__, nextIdSource ) =
                                     assignIdsWith currentIdSource binding.body
+
+                                newElt =
+                                    ( name, { name = name, body = body__ } )
                             in
-                            ( body__ :: acc
+                            ( newElt :: acc
                             , nextIdSource
                             )
                         )
@@ -196,12 +199,7 @@ assignIdsWithHelp idSource located =
             assignId idSource2
                 (Typed.Let
                     { bindings =
-                        Dict.fromList
-                            (List.map2
-                                (\( name, _ ) body__ -> ( name, { name = name, body = body__ } ))
-                                bindingsList
-                                bindingBodiesList
-                            )
+                        Dict.fromList bindingBodiesList
                     , body = body_
                     }
                 )
@@ -249,3 +247,28 @@ assignIdsWithHelp idSource located =
                     assignIdsWith idSource2 e3
             in
             assignId idSource3 (Typed.Tuple3 e1_ e2_ e3_)
+
+        Canonical.Record bindings ->
+            let
+                bindingsList =
+                    Dict.toList bindings
+
+                ( bindingBodiesList, idSource1 ) =
+                    List.foldl
+                        (\( name, binding ) ( acc, currentIdSource ) ->
+                            let
+                                ( body__, nextIdSource ) =
+                                    assignIdsWith currentIdSource binding.body
+
+                                newElt =
+                                    ( name, { name = name, body = body__ } )
+                            in
+                            ( newElt :: acc
+                            , nextIdSource
+                            )
+                        )
+                        ( [], idSource )
+                        bindingsList
+            in
+            assignId idSource1 <|
+                Typed.Record (Dict.fromList bindingBodiesList)

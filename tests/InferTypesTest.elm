@@ -1,19 +1,16 @@
 module InferTypesTest exposing (isParametric, niceVarName, typeInference, typeToString)
 
+import Dict
 import Elm.AST.Canonical as Canonical
 import Elm.AST.Canonical.Unwrapped as CanonicalU
 import Elm.AST.Typed as Typed
 import Elm.Compiler.Error as Error exposing (Error(..), TypeError(..))
-import Elm.Data.Located as Located
-import Elm.Data.ModuleName as ModuleName exposing (ModuleName)
 import Elm.Data.Type as Type exposing (Type(..))
 import Elm.Data.Type.ToString as TypeToString
-import Elm.Data.VarName as VarName exposing (VarName)
-import Expect exposing (Expectation)
-import Fuzz exposing (Fuzzer)
+import Expect
 import Stage.InferTypes
-import Test exposing (Test, describe, fuzz, test)
-import TestHelpers exposing (dumpType, located)
+import Test exposing (Test, describe, test)
+import TestHelpers exposing (dumpType)
 
 
 typeInference : Test
@@ -165,6 +162,25 @@ typeInference =
               , Ok (List Int)
               )
             ]
+        , runSection "record"
+            [ ( "empty case"
+              , CanonicalU.Record Dict.empty
+              , Ok (Record Dict.empty)
+              )
+            , ( "one field"
+              , CanonicalU.Record (Dict.fromList [ ( "a", { name = "a", body = CanonicalU.Int 42 } ) ])
+              , Ok (Record <| Dict.fromList [ ( "a", Int ) ])
+              )
+            , ( "two fields"
+              , CanonicalU.Record
+                    (Dict.fromList
+                        [ ( "a", { name = "a", body = CanonicalU.Int 42 } )
+                        , ( "b", { name = "b", body = CanonicalU.String "hello" } )
+                        ]
+                    )
+              , Ok (Record <| Dict.fromList [ ( "a", Int ), ( "b", String ) ])
+              )
+            ]
         ]
 
 
@@ -286,6 +302,28 @@ typeToString =
                 , "Maybe.Maybe a"
                 )
             ]
+        , describe "records"
+            [ runTest
+                ( "empty record"
+                , Record Dict.empty
+                , "{}"
+                )
+            , runTest
+                ( "one field record"
+                , Record <| Dict.fromList [ ( "a", Int ) ]
+                , "{ a : Int }"
+                )
+            , runTest
+                ( "two fields record"
+                , Record <| Dict.fromList [ ( "a", Int ), ( "b", String ) ]
+                , "{ a : Int, b : String }"
+                )
+            , runTest
+                ( "parametric field in record"
+                , Record <| Dict.fromList [ ( "foo", Var 0 ) ]
+                , "{ foo : a }"
+                )
+            ]
         ]
 
 
@@ -360,4 +398,7 @@ isParametric =
             , ( Tuple3 (List (Var 0)) Int Char, True )
             , ( Tuple3 String (Function (Var 0) Int) Unit, True )
             , ( Tuple3 Bool Unit (Tuple (Var 0) Int), True )
+            , ( Record Dict.empty, False )
+            , ( Record <| Dict.fromList [ ( "a", Var 0 ), ( "b", String ) ], True )
+            , ( Record <| Dict.fromList [ ( "a", Int ), ( "b", String ) ], False )
             ]

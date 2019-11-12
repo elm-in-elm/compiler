@@ -12,11 +12,8 @@ import Elm.AST.Frontend.Unwrapped exposing (Expr(..))
 import Elm.Compiler.Error exposing (ParseContext, ParseProblem)
 import Elm.Data.Exposing exposing (ExposedItem(..), Exposing(..))
 import Elm.Data.Module exposing (ModuleType(..))
-import Elm.Data.ModuleName as ModuleName exposing (ModuleName)
-import Elm.Data.VarName as VarName exposing (VarName)
 import Expect exposing (Expectation)
 import Parser.Advanced as P
-import Result.Extra
 import Stage.Parse.Parser
 import Test exposing (Test, describe, test)
 
@@ -944,6 +941,29 @@ expr =
                   )
                 ]
               )
+            , ( "record"
+              , [ ( "empty record"
+                  , "{}"
+                  , Just (Record [])
+                  )
+                , ( "empty record with spaces"
+                  , "{   }"
+                  , Just (Record [])
+                  )
+                , ( "one field record"
+                  , "{ a = 42 }"
+                  , Just (Record [ { name = "a", body = Int 42 } ])
+                  )
+                , ( "one field record without spaces"
+                  , "{a=42}"
+                  , Just (Record [ { name = "a", body = Int 42 } ])
+                  )
+                , ( "two fields record"
+                  , """{ a = 42, b = "hello" }"""
+                  , Just (Record [ { name = "a", body = Int 42 }, { name = "b", body = String "hello" } ])
+                  )
+                ]
+              )
             ]
         )
 
@@ -971,11 +991,7 @@ expectEqualParseResult input expected actual =
         ( Ok actual_, Nothing ) ->
             Expect.fail
                 (String.join "\n"
-                    (input
-                        :: "===> should have failed but parsed into ==>"
-                        :: "Ok"
-                        :: [ "    " ++ Debug.toString actual_ ]
-                    )
+                    [ input, "===> should have failed but parsed into ==>", "Ok", "    " ++ Debug.toString actual_ ]
                 )
 
         ( Ok actual_, Just expected_ ) ->

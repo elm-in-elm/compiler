@@ -68,6 +68,7 @@ type Expr
     | Unit
     | Tuple LocatedExpr LocatedExpr
     | Tuple3 LocatedExpr LocatedExpr LocatedExpr
+    | Record (Dict VarName (Binding LocatedExpr))
 
 
 {-| Discard the [location metadata](Elm.Data.Located#Located).
@@ -152,6 +153,12 @@ unwrap expr =
                 (unwrap e2)
                 (unwrap e3)
 
+        Record bindings ->
+            Unwrapped.Record <|
+                Dict.map
+                    (always (Binding.map unwrap))
+                    bindings
+
 
 {-| Adds [**dummy** locations](Elm.Data.Located#dummyRegion) to the [Unwrapped.Expr](Elm.AST.Canonical.Unwrapped#Expr).
 -}
@@ -235,3 +242,9 @@ fromUnwrapped expr =
                     (fromUnwrapped e1)
                     (fromUnwrapped e2)
                     (fromUnwrapped e3)
+
+            Unwrapped.Record bindings ->
+                Record <|
+                    Dict.map
+                        (always (Binding.map fromUnwrapped))
+                        bindings

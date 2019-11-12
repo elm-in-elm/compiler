@@ -1,20 +1,20 @@
 module InferTypesFuzz exposing (typeInference)
 
+import Dict exposing (Dict)
 import Elm.AST.Canonical as Canonical
 import Elm.AST.Canonical.Unwrapped as CanonicalU
-import Elm.AST.Typed as Typed
 import Elm.Compiler.Error exposing (TypeError(..))
 import Elm.Data.Located as Located
 import Elm.Data.Type as Type exposing (Type)
-import Elm.Data.VarName as VarName exposing (VarName)
-import Expect exposing (Expectation)
+import Elm.Data.VarName exposing (VarName)
+import Expect
 import Fuzz exposing (Fuzzer)
 import Random exposing (Generator)
 import Random.Extra as Random
 import Shrink exposing (Shrinker)
 import Shrink.Extra as Shrink
 import Stage.InferTypes
-import Test exposing (Test, describe, fuzz, test)
+import Test exposing (Test, describe, fuzz)
 import TestHelpers exposing (dumpType)
 
 
@@ -61,6 +61,11 @@ typeInference =
                 , Type.Tuple Type.Bool Type.Char
                 , Type.Tuple3 Type.Int Type.String Type.Bool
                 , Type.Tuple3 Type.Unit Type.Char Type.Float
+                ]
+            , fuzzExpressions "fuzz records"
+                [ Type.Record Dict.empty
+                , Type.Record (Dict.fromList [ ( "a", Type.Int ) ])
+                , Type.Record (Dict.fromList [ ( "a", Type.Int ), ( "b", Type.String ) ])
                 ]
             ]
         ]
@@ -150,6 +155,9 @@ basicExprOfType depthLeft targetType =
 
         Type.Tuple3 firstType secondType thirdType ->
             ( firstType, secondType, thirdType ) |> tuple3Expr depthLeft
+
+        Type.Record bindings ->
+            recordExpr depthLeft bindings
 
         _ ->
             cannotFuzz ""
@@ -254,6 +262,33 @@ tuple3Expr depthLeft ( firstType, secondType, thirdType ) =
         (firstType |> exprOfTypeWithDepth depthLeft)
         (secondType |> exprOfTypeWithDepth depthLeft)
         (thirdType |> exprOfTypeWithDepth depthLeft)
+
+
+recordExpr : Int -> Dict VarName Type -> Generator CanonicalU.Expr
+recordExpr depthLeft bindings =
+    let
+        typesGenerator =
+            bindings
+                |> Dict.values
+                |> List.map (exprOfTypeWithDepth (depthLeft - 1))
+                |> Random.combine
+
+        namesGenerator =
+            Dict.keys bindings |> Random.constant
+    in
+    Random.map2
+        (\names exprs ->
+            List.map2
+                (\name expr ->
+                    ( name, { name = name, body = expr } )
+                )
+                names
+                exprs
+                |> Dict.fromList
+                |> CanonicalU.Record
+        )
+        namesGenerator
+        typesGenerator
 
 
 randomVarName : Generator VarName

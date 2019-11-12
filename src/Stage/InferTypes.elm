@@ -1,5 +1,6 @@
 module Stage.InferTypes exposing (inferExpr, inferTypes)
 
+import Dict
 import Elm.AST.Canonical as Canonical
 import Elm.AST.Typed as Typed
 import Elm.Compiler.Error exposing (Error(..), TypeError(..))
@@ -176,3 +177,7 @@ getBetterType substitutionMap type_ =
                 UserDefinedType
                     name
                     (List.map (getBetterType substitutionMap) params)
+
+            Record bindings ->
+                Record <|
+                    Dict.map (\_ binding -> getBetterType substitutionMap binding) bindings

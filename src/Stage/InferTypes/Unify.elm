@@ -1,5 +1,6 @@
 module Stage.InferTypes.Unify exposing (unifyAllEquations)
 
+import Dict
 import Elm.Compiler.Error exposing (TypeError(..))
 import Elm.Data.Type as Type exposing (Type(..))
 import Stage.InferTypes.SubstitutionMap as SubstitutionMap exposing (SubstitutionMap)
@@ -52,6 +53,19 @@ unify t1 t2 substitutionMap =
                     |> unify t1e1 t2e1
                     |> Result.andThen (unify t1e2 t2e2)
                     |> Result.andThen (unify t1e3 t2e3)
+
+            ( Record bindings1, Record bindings2 ) ->
+                if Dict.keys bindings1 /= Dict.keys bindings2 then
+                    Err ( TypeMismatch t1 t2, substitutionMap )
+
+                else
+                    List.map2 Tuple.pair (Dict.values bindings1) (Dict.values bindings2)
+                        |> List.foldl
+                            (\( type1, type2 ) resultSubstitutionMap ->
+                                resultSubstitutionMap
+                                    |> Result.andThen (unify type1 type2)
+                            )
+                            (Ok substitutionMap)
 
             _ ->
                 Err ( TypeMismatch t1 t2, substitutionMap )
