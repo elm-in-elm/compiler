@@ -39,8 +39,8 @@ unify t1 t2 substitutionMap =
                  ( T _ _, _) ->
                      Err ( TypeMismatch t1 t2, substitutionMap )
 
-               It is definitively verbose but prevent the developer to skip this important
-               function: the compiler will throw an "MISSING PATTERNS" in this case.
+               It is definitively verbose but prevents the developer to skip this important
+               function: the compiler will throw a "MISSING PATTERNS" error in this case.
             -}
             ( Var id, _ ) ->
                 unifyVariable id t2 substitutionMap
