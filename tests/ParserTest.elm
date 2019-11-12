@@ -941,6 +941,29 @@ expr =
                   )
                 ]
               )
+            , ( "record"
+              , [ ( "empty record"
+                  , "{}"
+                  , Just (Record [])
+                  )
+                , ( "empty record with spaces"
+                  , "{   }"
+                  , Just (Record [])
+                  )
+                , ( "one field record"
+                  , "{ a = 42 }"
+                  , Just (Record [ { name = "a", body = Int 42 } ])
+                  )
+                , ( "one field record without spaces"
+                  , "{a=42}"
+                  , Just (Record [ { name = "a", body = Int 42 } ])
+                  )
+                , ( "two fields record"
+                  , """{ a = 42, b = "hello" }"""
+                  , Just (Record [ { name = "a", body = Int 42 }, { name = "b", body = String "hello" } ])
+                  )
+                ]
+              )
             ]
         )
 
