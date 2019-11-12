@@ -269,7 +269,7 @@ javascript =
                             )
                       , """{a: 42, b: "Hello"}"""
                       )
-                    , ( "mixed"
+                    , ( "nested"
                       , Record
                             (Dict.fromList
                                 [ ( "a"
