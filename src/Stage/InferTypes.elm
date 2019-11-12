@@ -3,6 +3,7 @@ module Stage.InferTypes exposing (inferExpr, inferTypes)
 import Elm.AST.Canonical as Canonical
 import Elm.AST.Typed as Typed
 import Elm.Compiler.Error exposing (Error(..), TypeError(..))
+import Elm.Data.Declaration as Declaration exposing (Declaration)
 import Elm.Data.Located as Located
 import Elm.Data.Project exposing (Project)
 import Elm.Data.Type exposing (Type(..))
@@ -37,7 +38,7 @@ inferTypes project =
         |> Result.mapError TypeError
 
 
-inferExpr : Canonical.LocatedExpr -> Result TypeError Typed.LocatedExpr
+inferExpr : Canonical.LocatedExpr -> Result TypeError ( Typed.LocatedExpr, SubstitutionMap )
 inferExpr located =
     let
         ( exprWithIds, idSource ) =
@@ -73,7 +74,7 @@ inferExpr located =
             Unify.unifyAllEquations typeEquations
     in
     substitutionMap
-        |> Result.map (substituteAllInExpr exprWithIds)
+        |> Result.map (\map -> ( substituteAllInExpr exprWithIds map, map ))
         |> Result.mapError substituteAllInError
 
 
@@ -104,6 +105,9 @@ substituteAllInError ( error, substitutionMap ) =
 
         OccursCheckFailed id type_ ->
             OccursCheckFailed id (getBetterType substitutionMap type_)
+
+        AnnotationForNonExprDeclaration ->
+            AnnotationForNonExprDeclaration
 
 
 {-| Only care about this level, don't recurse
@@ -185,16 +189,37 @@ getBetterType substitutionMap type_ =
 
 unifyWithTypeAnnotation :
     SubstitutionMap
-    -> Declaration a Type
-    -> Result ( TypeError, SubstitutionMap ) ( Declaration a Never, SubstitutionMap )
+    -> Declaration Typed.LocatedExpr Type
+    -> Result ( TypeError, SubstitutionMap ) ( Declaration Typed.LocatedExpr Never, SubstitutionMap )
 unifyWithTypeAnnotation substitutionMap decl =
-    decl.typeAnnotation
-        |> Maybe.map
-            (\type_ ->
-                unify type_ realDeclarationType substitutionMap
-                    |> Result.map foo
-            )
-        |> Maybe.withDefault (Ok <| throwAwayType decl)
+    case ( decl.body, decl.typeAnnotation ) of
+        ( Declaration.Value expr, Just annotationType ) ->
+            let
+                realDeclarationType =
+                    Typed.getType expr
+
+                unifyResult =
+                    Unify.unify annotationType realDeclarationType substitutionMap
+            in
+            unifyResult
+                |> Result.map
+                    (\newSubstitutionMap ->
+                        ( throwAwayType decl
+                        , newSubstitutionMap
+                        )
+                    )
+
+        ( _, Nothing ) ->
+            Ok
+                ( throwAwayType decl
+                , substitutionMap
+                )
+
+        ( _, Just annotationType ) ->
+            Err
+                ( AnnotationForNonExprDeclaration
+                , substitutionMap
+                )
 
 
 throwAwayType : Declaration a Type -> Declaration a Never

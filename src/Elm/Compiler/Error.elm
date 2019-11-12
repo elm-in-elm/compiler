@@ -156,6 +156,8 @@ type DesugarError
 type TypeError
     = TypeMismatch Type Type
     | OccursCheckFailed Int Type
+    | -- TODO should this be a parse error instead?
+      AnnotationForNonExprDeclaration
 
 
 {-| Errors encountered during emitting. As you're free to do the emit phase however
@@ -265,6 +267,10 @@ toString error =
                         ++ type1
                         ++ " occurs in "
                         ++ type2
+
+                AnnotationForNonExprDeclaration ->
+                    -- TODO more information
+                    "You tried to add a type annotation to a type definition. Only values can have types!"
 
         EmitError emitError ->
             case emitError of

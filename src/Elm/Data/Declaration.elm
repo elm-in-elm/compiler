@@ -1,12 +1,14 @@
 module Elm.Data.Declaration exposing
     ( Declaration, DeclarationBody(..), Constructor
     , map, mapBody, combine
+    , getExpr
     )
 
 {-| Top-level declaration, be it a function, constant or a type definition.
 
 @docs Declaration, DeclarationBody, Constructor
 @docs map, mapBody, combine
+@docs getExpr
 
 -}
 
@@ -118,3 +120,13 @@ combine body =
 
         CustomType r ->
             Ok <| CustomType r
+
+
+getExpr : Declaration expr annotation -> Maybe expr
+getExpr decl =
+    case decl.body of
+        Value expr ->
+            Just expr
+
+        _ ->
+            Nothing

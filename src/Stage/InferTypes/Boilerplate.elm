@@ -14,16 +14,27 @@ import Elm.Data.Project exposing (Project)
 import Elm.Data.Type exposing (Type)
 import Elm.Data.VarName exposing (VarName)
 import OurExtras.Dict as Dict
+import Stage.InferTypes.SubstitutionMap exposing (SubstitutionMap)
 
 
 inferProject :
     (Canonical.LocatedExpr -> Result TypeError Typed.LocatedExpr)
+    ->
+        (SubstitutionMap
+         -> Declaration Typed.LocatedExpr Type
+         -> Result ( TypeError, SubstitutionMap ) ( Declaration Typed.LocatedExpr Never, SubstitutionMap )
+        )
     -> Project Canonical.ProjectFields
     -> Result TypeError (Project Typed.ProjectFields)
-inferProject inferExpr project =
+inferProject inferExpr unifyWithTypeAnnotation project =
     project.modules
         |> Dict.map (always (inferModule inferExpr))
         |> Dict.combine
+        |> Result.andThen
+            (\( stuff, substitutionMap ) ->
+                -- TODO start here
+                unifyWithTypeAnnotation substitutionMap stuff
+            )
         |> Result.map (projectOfNewType project)
 
 
