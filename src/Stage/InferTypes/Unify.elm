@@ -30,29 +30,89 @@ unify t1 t2 substitutionMap =
 
     else
         case ( t1, t2 ) of
+            {- Do not use joker pattern "_" at the end of this case and
+                pattern match all the types couples with
+
+                 ( T a b, T c d) ->
+                     ...
+
+                 ( T _ _, _) ->
+                     Err ( TypeMismatch t1 t2, substitutionMap )
+
+               It is definitively verbose but prevent the developer to skip this important
+               function: the compiler will throw an "MISSING PATTERNS" in this case.
+            -}
             ( Var id, _ ) ->
                 unifyVariable id t2 substitutionMap
 
             ( _, Var id ) ->
                 unifyVariable id t1 substitutionMap
 
+            ( Int, Int ) ->
+                Ok substitutionMap
+
+            ( Int, _ ) ->
+                Err ( TypeMismatch t1 t2, substitutionMap )
+
+            ( Float, Float ) ->
+                Ok substitutionMap
+
+            ( Float, _ ) ->
+                Err ( TypeMismatch t1 t2, substitutionMap )
+
+            ( String, String ) ->
+                Ok substitutionMap
+
+            ( String, _ ) ->
+                Err ( TypeMismatch t1 t2, substitutionMap )
+
+            ( Char, Char ) ->
+                Ok substitutionMap
+
+            ( Char, _ ) ->
+                Err ( TypeMismatch t1 t2, substitutionMap )
+
+            ( Bool, Bool ) ->
+                Ok substitutionMap
+
+            ( Bool, _ ) ->
+                Err ( TypeMismatch t1 t2, substitutionMap )
+
+            ( Unit, Unit ) ->
+                Ok substitutionMap
+
+            ( Unit, _ ) ->
+                Err ( TypeMismatch t1 t2, substitutionMap )
+
             ( Function arg1 result1, Function arg2 result2 ) ->
                 unify result1 result2 substitutionMap
                     |> Result.andThen (unify arg1 arg2)
 
+            ( Function _ _, _ ) ->
+                Err ( TypeMismatch t1 t2, substitutionMap )
+
             ( List list1, List list2 ) ->
                 unify list1 list2 substitutionMap
+
+            ( List _, _ ) ->
+                Err ( TypeMismatch t1 t2, substitutionMap )
 
             ( Tuple t1e1 t1e2, Tuple t2e1 t2e2 ) ->
                 substitutionMap
                     |> unify t1e1 t2e1
                     |> Result.andThen (unify t1e2 t2e2)
 
+            ( Tuple _ _, _ ) ->
+                Err ( TypeMismatch t1 t2, substitutionMap )
+
             ( Tuple3 t1e1 t1e2 t1e3, Tuple3 t2e1 t2e2 t2e3 ) ->
                 substitutionMap
                     |> unify t1e1 t2e1
                     |> Result.andThen (unify t1e2 t2e2)
                     |> Result.andThen (unify t1e3 t2e3)
+
+            ( Tuple3 _ _ _, _ ) ->
+                Err ( TypeMismatch t1 t2, substitutionMap )
 
             ( Record bindings1, Record bindings2 ) ->
                 if Dict.keys bindings1 /= Dict.keys bindings2 then
@@ -67,7 +127,23 @@ unify t1 t2 substitutionMap =
                             )
                             (Ok substitutionMap)
 
-            _ ->
+            ( Record _, _ ) ->
+                Err ( TypeMismatch t1 t2, substitutionMap )
+
+            ( UserDefinedType typeName1 typeParameters1, UserDefinedType typeName2 typeParameters2 ) ->
+                if typeName1 /= typeName2 || List.length typeParameters1 /= List.length typeParameters2 then
+                    Err ( TypeMismatch t1 t2, substitutionMap )
+
+                else
+                    List.map2 Tuple.pair typeParameters1 typeParameters2
+                        |> List.foldl
+                            (\( type1, type2 ) resultSubstitutionMap ->
+                                resultSubstitutionMap
+                                    |> Result.andThen (unify type1 type2)
+                            )
+                            (Ok substitutionMap)
+
+            ( UserDefinedType _ _, _ ) ->
                 Err ( TypeMismatch t1 t2, substitutionMap )
 
 
