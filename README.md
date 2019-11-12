@@ -85,11 +85,11 @@ Oh God please yes! :heart: Feel free to look around the [<kbd>help wanted</kbd>]
 | if...then...else  | :warning: [[3]](#3)  | :heavy_check_mark:   | :heavy_check_mark:   | :warning: [[3]](#3)  | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark:   | :heavy_check_mark:   |
 | let..in           | :warning: [[3]](#3)  | :heavy_check_mark:   | :heavy_check_mark:   | :warning: [[3]](#3)  | :heavy_check_mark: | :warning:          | :heavy_check_mark:   | :warning:            |
 | case...of         | :x:                  | :x:                  | :x:                  | :x:                  | :x:                | :x:                | :x:                  | :x:                  |
-| records           | :warning: [[3]](#3)  | :heavy_check_mark:   | heavy_check_mark:    | :warning: [[3]](#3)  | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark:   | :heavy_check_mark:   |
+| records           | :warning: [[3]](#3)  | :heavy_check_mark:   | :heavy_check_mark:    | :warning: [[3]](#3)  | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark:   | :heavy_check_mark:   |
 | record accessors  | :x:                  | :x:                  | :x:                  | :x:                  | :x:                | :x:                | :x:                  | :x:                  |
 | record updates    | :x:                  | :x:                  | :x:                  | :x:                  | :x:                | :x:                | :x:                  | :x:                  |
 | unit type         | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark:   | :heavy_check_mark:   |
-| tuples, 3-tuples  | :heavy_check_mark:    | :heavy_check_mark:   | :heavy_check_mark:  | :heavy_check_mark:     | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark:   | :heavy_check_mark:  |
+| tuples, 3-tuples  | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark:  | :heavy_check_mark:     | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark:   | :heavy_check_mark:  |
 | type annotations  | :x:                  | :x:                  | :x:                  | :x:                  | :x:                | :x:                | :x:                  | :x:                  |
 | type aliases      | :x:                  | :x:                  | :x:                  | :x:                  | :x:                | :x:                | :x:                  | :x:                  |
 | custom types      | :x:                  | :x:                  | :x:                  | :x:                  | :x:                | :x:                | :x:                  | :x:                  |
