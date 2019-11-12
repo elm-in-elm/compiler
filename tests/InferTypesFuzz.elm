@@ -64,7 +64,9 @@ typeInference =
                 , Type.Tuple3 Type.Unit Type.Char Type.Float
                 ]
             , fuzzExpressions "fuzz records"
-                [ Type.Record (Dict.fromList [ ( "a", Type.Int ) ])
+                [ Type.Record Dict.empty
+                , Type.Record (Dict.fromList [ ( "a", Type.Int ) ])
+                , Type.Record (Dict.fromList [ ( "a", Type.Int ), ( "b", Type.String ) ])
                 ]
             ]
         ]
