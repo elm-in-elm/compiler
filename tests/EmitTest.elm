@@ -1,15 +1,11 @@
 module EmitTest exposing (javascript)
 
 import Dict
-import Elm.AST.Typed as Typed exposing (Expr_(..), LocatedExpr)
+import Elm.AST.Typed as Typed exposing (Expr_(..))
 import Elm.Data.Declaration exposing (Declaration, DeclarationBody(..))
-import Elm.Data.Located as Located exposing (Located)
-import Elm.Data.ModuleName as ModuleName exposing (ModuleName)
-import Elm.Data.Type as Type
-import Elm.Data.VarName as VarName exposing (VarName)
-import Expect exposing (Expectation)
+import Expect
 import Stage.Emit.JavaScript as JS
-import Test exposing (Test, describe, test, todo)
+import Test exposing (Test, describe, test)
 import TestHelpers
     exposing
         ( typed

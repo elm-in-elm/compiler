@@ -3,19 +3,18 @@ module InferTypesFuzz exposing (typeInference)
 import Dict exposing (Dict)
 import Elm.AST.Canonical as Canonical
 import Elm.AST.Canonical.Unwrapped as CanonicalU
-import Elm.AST.Typed as Typed
 import Elm.Compiler.Error exposing (TypeError(..))
 import Elm.Data.Located as Located
 import Elm.Data.Type as Type exposing (Type)
-import Elm.Data.VarName as VarName exposing (VarName)
-import Expect exposing (Expectation)
+import Elm.Data.VarName exposing (VarName)
+import Expect
 import Fuzz exposing (Fuzzer)
 import Random exposing (Generator)
 import Random.Extra as Random
 import Shrink exposing (Shrinker)
 import Shrink.Extra as Shrink
 import Stage.InferTypes
-import Test exposing (Test, describe, fuzz, test)
+import Test exposing (Test, describe, fuzz)
 import TestHelpers exposing (dumpType)
 
 

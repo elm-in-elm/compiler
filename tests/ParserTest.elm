@@ -12,11 +12,8 @@ import Elm.AST.Frontend.Unwrapped exposing (Expr(..))
 import Elm.Compiler.Error exposing (ParseContext, ParseProblem)
 import Elm.Data.Exposing exposing (ExposedItem(..), Exposing(..))
 import Elm.Data.Module exposing (ModuleType(..))
-import Elm.Data.ModuleName as ModuleName exposing (ModuleName)
-import Elm.Data.VarName as VarName exposing (VarName)
 import Expect exposing (Expectation)
 import Parser.Advanced as P
-import Result.Extra
 import Stage.Parse.Parser
 import Test exposing (Test, describe, test)
 
@@ -971,11 +968,7 @@ expectEqualParseResult input expected actual =
         ( Ok actual_, Nothing ) ->
             Expect.fail
                 (String.join "\n"
-                    (input
-                        :: "===> should have failed but parsed into ==>"
-                        :: "Ok"
-                        :: [ "    " ++ Debug.toString actual_ ]
-                    )
+                    [ input, "===> should have failed but parsed into ==>", "Ok", "    " ++ Debug.toString actual_ ]
                 )
 
         ( Ok actual_, Just expected_ ) ->
