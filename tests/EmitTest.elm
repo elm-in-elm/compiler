@@ -254,7 +254,7 @@ javascript =
                                 [ ( "a", { name = "a", body = typedInt 42 } )
                                 ]
                             )
-                      , "{a : 42}"
+                      , "{a: 42}"
                       )
                     , ( "void record"
                       , Record Dict.empty
@@ -267,7 +267,7 @@ javascript =
                                 , ( "b", { name = "b", body = typedString "Hello" } )
                                 ]
                             )
-                      , """{a : 42, b : "Hello"}"""
+                      , """{a: 42, b: "Hello"}"""
                       )
                     , ( "mixed"
                       , Record
@@ -283,7 +283,7 @@ javascript =
                                   )
                                 ]
                             )
-                      , "{a : {a : 42}}"
+                      , "{a: {a: 42}}"
                       )
                     ]
                 )
@@ -300,7 +300,7 @@ javascript =
                                 , ( "b", { name = "b", body = typed (Cons (typedInt 2) (typedIntList [ 3, 4 ])) } )
                                 ]
                             )
-                      , """{a : [2,3], b : [2].concat([3, 4])}"""
+                      , """{a: [2,3], b: [2].concat([3, 4])}"""
                       )
                     ]
                 )

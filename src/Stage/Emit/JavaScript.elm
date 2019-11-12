@@ -140,7 +140,7 @@ emitExpr located =
                 bindingsJS =
                     bindings
                         |> Dict.values
-                        |> List.map (\binding -> mangleVarName binding.name ++ " : " ++ emitExpr binding.body)
+                        |> List.map (\binding -> mangleVarName binding.name ++ ": " ++ emitExpr binding.body)
                         |> String.join ", "
             in
             "{" ++ bindingsJS ++ "}"
