@@ -318,6 +318,11 @@ typeToString =
                 , Record <| Dict.fromList [ ( "a", Int ), ( "b", String ) ]
                 , "{ a : Int, b : String }"
                 )
+            , runTest
+                ( "parametric field in record"
+                , Record <| Dict.fromList [ ( "foo", Var 0 ) ]
+                , "{ foo : a }"
+                )
             ]
         ]
 
