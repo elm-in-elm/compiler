@@ -177,7 +177,11 @@ toString state type_ =
                         (Dict.toList bindings)
                         |> Tuple.mapFirst (String.join ", ")
             in
-            ( "{ " ++ bindingsStr ++ " }", state1 )
+            if bindingsStr == "" then
+                ( "{}", state1 )
+
+            else
+                ( "{ " ++ bindingsStr ++ " }", state1 )
 
 
 getName : State -> Int -> ( String, State )
