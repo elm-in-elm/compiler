@@ -374,23 +374,6 @@ handleError error =
     )
 
 
-log : Msg -> Msg
-log msg =
-    let
-        string =
-            case msg of
-                ReadFileSuccess { filePath } ->
-                    "ReadFileSuccess: " ++ filePath
-
-                ReadFileError error ->
-                    "ReadFileError: " ++ errorToString (IOError error)
-
-        _ =
-            Debug.log string ()
-    in
-    msg
-
-
 
 -- ERRORS
 
