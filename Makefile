@@ -1,3 +1,12 @@
+.PHONY: test-perf
+test-perf:
+	@rm -rf build/elm.js elm-stuff
+	@echo "COMPILING THE COMPILER IF NEEDED"
+	@cd cli && elm make Main.elm --output ../build/elm.js >/dev/null 2>&1
+	@echo "MEASURING!"
+	@bash -c "time node cli/index.js"
+	
+
 .PHONY: run
 run: build
 	tput reset
