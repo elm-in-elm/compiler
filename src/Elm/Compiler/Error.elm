@@ -17,6 +17,7 @@ module Elm.Compiler.Error exposing
 -}
 
 import Elm.Data.FilePath exposing (FilePath)
+import Elm.Data.Located exposing (Located)
 import Elm.Data.ModuleName exposing (ModuleName)
 import Elm.Data.Type as Type exposing (Type)
 import Elm.Data.Type.ToString as TypeToString
@@ -147,6 +148,11 @@ type DesugarError
         , insideModule : ModuleName
         , possibleModules : List ModuleName
         }
+    | DuplicateRecordField
+        { name : VarName
+        , firstOccurrence : Located ()
+        , secondOccurrence : Located ()
+        }
 
 
 {-| Errors encountered during [typechecking](Elm.Compiler#inferExpr).
@@ -224,6 +230,16 @@ toString error =
                                 possibleModules
                             )
                         ++ "\n\nChange your imports to resolve this ambiguity!"
+
+                DuplicateRecordField { name, firstOccurrence, secondOccurrence } ->
+                    "This record has multiple `"
+                        ++ name
+                        ++ "` fields. One here:\n\n"
+                        --TODO toString for Located
+                        ++ "TODO\n\n"
+                        ++ "And another one here:\n\n"
+                        ++ "TODO\n\n"
+                        ++ "How can I know which one you want? Rename one of them!"
 
         TypeError typeError ->
             case typeError of

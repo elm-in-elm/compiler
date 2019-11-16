@@ -40,6 +40,12 @@ desugarExpr modules thisModule located =
         return expr =
             Ok (Located.replaceWith expr located)
 
+        andThen fn =
+            Result.andThen
+                (\expr ->
+                    fn expr |> map identity
+                )
+
         map fn =
             Result.map
                 (\expr ->
@@ -183,12 +189,28 @@ desugarExpr modules thisModule located =
             bindings
                 |> List.map (Binding.map recurse >> Binding.combine)
                 |> Result.combine
-                |> map
+                |> andThen
                     (\canonicalBindings ->
                         canonicalBindings
-                            |> List.map (\canonicalBinding -> ( canonicalBinding.name, canonicalBinding ))
-                            |> Dict.fromList
-                            |> Canonical.Record
+                            |> List.foldr
+                                (\canonicalBinding ->
+                                    Result.andThen
+                                        (\dict ->
+                                            case Dict.get canonicalBinding.name dict of
+                                                Just existing ->
+                                                    Err <|
+                                                        DuplicateRecordField
+                                                            { name = canonicalBinding.name
+                                                            , firstOccurrence = Located.replaceWith () existing.body
+                                                            , secondOccurrence = Located.replaceWith () canonicalBinding.body
+                                                            }
+
+                                                Nothing ->
+                                                    Ok <| Dict.insert canonicalBinding.name canonicalBinding dict
+                                        )
+                                )
+                                (Ok Dict.empty)
+                            |> Result.map Canonical.Record
                     )
 
 
