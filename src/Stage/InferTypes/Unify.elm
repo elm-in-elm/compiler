@@ -91,7 +91,7 @@ unify t1 t2 substitutionMap =
                 unify a.to b.to substitutionMap
                     |> Result.andThen (unify a.from b.from)
 
-            ( Function _ _, _ ) ->
+            ( Function _, _ ) ->
                 Err ( TypeMismatch t1 t2, substitutionMap )
 
             ( List list1, List list2 ) ->
