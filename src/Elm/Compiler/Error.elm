@@ -466,15 +466,12 @@ parseProblemToString problem =
         ExpectingUnit ->
             "ExpectingUnit"
 
-<<<<<<< HEAD
         ExpectingColon ->
             "ExpectingColon"
 
         ExpectingSimpleType type_ ->
             "ExpectingSimpleType " ++ type_
 
-||||||| 46113d4
-=======
         ExpectingRecordLeftBrace ->
             "ExpectingRecordLeftBrace"
 
@@ -484,7 +481,6 @@ parseProblemToString problem =
         ExpectingRecordRightBrace ->
             "ExpectingRecordRightBrace"
 
->>>>>>> master
         InvalidNumber ->
             "InvalidNumber"
 
