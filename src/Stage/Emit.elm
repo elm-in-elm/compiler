@@ -377,6 +377,13 @@ findDependenciesOfType modules type_ =
                 typeDependencies
                 paramsDependencies
 
+        Type.Record bindings ->
+            bindings
+                |> Dict.values
+                |> List.map findDependencies_
+                |> Result.combine
+                |> Result.map List.concat
+
 
 findDependenciesOfExpr :
     Dict ModuleName (Module Typed.LocatedExpr Never)
@@ -473,3 +480,10 @@ findDependenciesOfExpr modules locatedExpr =
                 (findDependencies_ e1)
                 (findDependencies_ e2)
                 (findDependencies_ e3)
+
+        Record bindings ->
+            bindings
+                |> Dict.values
+                |> List.map (.body >> findDependencies_)
+                |> Result.combine
+                |> Result.map List.concat

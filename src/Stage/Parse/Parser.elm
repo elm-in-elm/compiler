@@ -365,6 +365,7 @@ expr =
             , tuple
             , tuple3
             , parenthesizedExpr
+            , record
             ]
         , andThenOneOf =
             -- TODO test this: does `x =\n  call 1\n+ something` work? (it shouldn't: no space before '+')
@@ -815,6 +816,21 @@ tuple3 config =
             |. P.symbol (P.Token ")" ExpectingRightParen)
             |> P.inContext InTuple3
         )
+        |> located
+
+
+record : ExprConfig -> Parser_ LocatedExpr
+record config =
+    P.succeed Frontend.Record
+        |= P.sequence
+            { start = P.Token "{" ExpectingRecordLeftBrace
+            , separator = P.Token "," ExpectingRecordSeparator
+            , end = P.Token "}" ExpectingRecordRightBrace
+            , spaces = spacesOnly
+            , item = binding config
+            , trailing = P.Forbidden
+            }
+        |> P.inContext InRecord
         |> located
 
 

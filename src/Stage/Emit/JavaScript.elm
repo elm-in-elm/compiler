@@ -135,6 +135,16 @@ emitExpr located =
         Tuple3 e1 e2 e3 ->
             "[" ++ emitExpr e1 ++ "," ++ emitExpr e2 ++ "," ++ emitExpr e3 ++ "]"
 
+        Record bindings ->
+            let
+                bindingsJS =
+                    bindings
+                        |> Dict.values
+                        |> List.map (\binding -> mangleVarName binding.name ++ ": " ++ emitExpr binding.body)
+                        |> String.join ", "
+            in
+            "{" ++ bindingsJS ++ "}"
+
 
 emitDeclaration : Declaration Typed.LocatedExpr Never -> String
 emitDeclaration { module_, name, body } =

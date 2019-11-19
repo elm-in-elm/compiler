@@ -67,6 +67,7 @@ type Expr
     | Unit
     | Tuple LocatedExpr LocatedExpr
     | Tuple3 LocatedExpr LocatedExpr LocatedExpr
+    | Record (List (Binding LocatedExpr))
 
 
 {-| A helper for the [Transform](/packages/Janiczek/transform/latest/) library.
@@ -146,6 +147,9 @@ recurse f expr =
 
         Tuple3 e1 e2 e3 ->
             Tuple3 (f_ e1) (f_ e2) (f_ e3)
+
+        Record bindings ->
+            Record <| List.map (Binding.map f_) bindings
 
 
 {-| [Transform](/packages/Janiczek/transform/latest/Transform#transformAll)
@@ -249,3 +253,7 @@ unwrap expr =
                 (unwrap e1)
                 (unwrap e2)
                 (unwrap e3)
+
+        Record bindings ->
+            Unwrapped.Record <|
+                List.map (Binding.map unwrap) bindings

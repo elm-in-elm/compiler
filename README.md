@@ -85,11 +85,11 @@ Oh God please yes! :heart: Feel free to look around the [<kbd>help wanted</kbd>]
 | if...then...else  | :warning: [[3]](#3)  | :heavy_check_mark:   | :heavy_check_mark:   | :warning: [[3]](#3)  | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark:   | :heavy_check_mark:   |
 | let..in           | :warning: [[3]](#3)  | :heavy_check_mark:   | :heavy_check_mark:   | :warning: [[3]](#3)  | :heavy_check_mark: | :warning:          | :heavy_check_mark:   | :warning:            |
 | case...of         | :x:                  | :x:                  | :x:                  | :x:                  | :x:                | :x:                | :x:                  | :x:                  |
-| records           | :x:                  | :x:                  | :x:                  | :x:                  | :x:                | :x:                | :x:                  | :x:                  |
+| records           | :warning: [[3]](#3)  | :heavy_check_mark:   | :heavy_check_mark:    | :warning: [[3]](#3)  | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark:   | :heavy_check_mark:   |
 | record accessors  | :x:                  | :x:                  | :x:                  | :x:                  | :x:                | :x:                | :x:                  | :x:                  |
 | record updates    | :x:                  | :x:                  | :x:                  | :x:                  | :x:                | :x:                | :x:                  | :x:                  |
 | unit type         | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark:   | :heavy_check_mark:   |
-| tuples, 3-tuples  | :heavy_check_mark:    | :heavy_check_mark:   | :heavy_check_mark:  | :heavy_check_mark:     | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark:   | :heavy_check_mark:  |
+| tuples, 3-tuples  | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark:  | :heavy_check_mark:     | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark:   | :heavy_check_mark:  |
 | type annotations  | :x:                  | :x:                  | :x:                  | :x:                  | :x:                | :x:                | :x:                  | :x:                  |
 | type aliases      | :x:                  | :x:                  | :x:                  | :x:                  | :x:                | :x:                | :x:                  | :x:                  |
 | custom types      | :x:                  | :x:                  | :x:                  | :x:                  | :x:                | :x:                | :x:                  | :x:                  |
@@ -184,7 +184,7 @@ Make sure to format code before submitting a pull request!
 
 - [ ] Try the [Complete and Easy Bidirectional Typechecking for Higher-Rank Polymorphism](https://arxiv.org/abs/1306.6032) and see where that leads
 - [ ] Let polymorphism :no_mouth:: `Stage.InferTypes.generateEquations`, the `Typed.Let` case. [This paper](http://gallium.inria.fr/~fpottier/publis/fpottier-elaboration.pdf) might have a parable written well enough that we might actually understand type schemes from this. Otherwise, ["Write you a Haskell"](http://dev.stephendiehl.com/fun/006_hindley_milner.html) for the rescue! There is also the [Damas and Milner paper](https://web.cs.wpi.edu/~cs4536/c12/milner-damas_principal_types.pdf) proving the inferred type is the most general one.
-- [ ] Extensible records: `D. Leijen, “Extensible records with scoped labels,” in Revised Selected Papersfrom the Sixth Symposium on Trends in Functional Programming, TFP 2005,Tallinn, Estonia, 23-24 September 2005.(M. C. J. D. van Eekelen, ed.), vol. 6 of Trends in Functional Programming, pp. 179–194, Intellect, 2005.`
+- [ ] Extensible records [(link)](http://www.cs.ioc.ee/tfp-icfp-gpce05/tfp-proc/21num.pdf): `D. Leijen, “Extensible records with scoped labels,” in Revised Selected Papersfrom the Sixth Symposium on Trends in Functional Programming, TFP 2005,Tallinn, Estonia, 23-24 September 2005.(M. C. J. D. van Eekelen, ed.), vol. 6 of Trends in Functional Programming, pp. 179–194, Intellect, 2005.`
 - [ ] Typecheck across modules, not each module separately. This will probably be clearer after we try and implement the library.
 - [ ] Annotate type errors with position in source code (for better error messages)
 - [ ] Try to find a better name for "occurs check" and make the error message easier to understand
@@ -262,6 +262,12 @@ Make sure to format code before submitting a pull request!
         src="https://avatars1.githubusercontent.com/u/3983879">
         </br>
         <a href="https://github.com/halfzebra">Eduard Kyvenko</a>
+      </td>
+      <td align="center">
+        <img width="150" height="150"
+        src="https://avatars3.githubusercontent.com/u/6839698">
+        </br>
+        <a href="https://github.com/sebsheep">Sébastien Besnier</a>
       </td>
       <td align="center">
         <img width="150" height="150"

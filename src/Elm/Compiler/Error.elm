@@ -69,6 +69,7 @@ type ParseContext
     | InUnit
     | InTuple
     | InTuple3
+    | InRecord
 
 
 {-| The specific problem the parser encountered. Together with [`ParseContext`](#ParseContext)
@@ -128,6 +129,9 @@ type ParseProblem
     | ExpectingUnit
     | ExpectingColon
     | ExpectingSimpleType String
+    | ExpectingRecordLeftBrace
+    | ExpectingRecordSeparator
+    | ExpectingRecordRightBrace
     | InvalidNumber
     | TriedToParseCharacterStoppingDelimiter
     | CompilerBug String
@@ -462,12 +466,25 @@ parseProblemToString problem =
         ExpectingUnit ->
             "ExpectingUnit"
 
+<<<<<<< HEAD
         ExpectingColon ->
             "ExpectingColon"
 
         ExpectingSimpleType type_ ->
             "ExpectingSimpleType " ++ type_
 
+||||||| 46113d4
+=======
+        ExpectingRecordLeftBrace ->
+            "ExpectingRecordLeftBrace"
+
+        ExpectingRecordSeparator ->
+            "ExpectingRecordSeparator"
+
+        ExpectingRecordRightBrace ->
+            "ExpectingRecordRightBrace"
+
+>>>>>>> master
         InvalidNumber ->
             "InvalidNumber"
 

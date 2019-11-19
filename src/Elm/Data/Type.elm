@@ -12,22 +12,7 @@ import Elm.Data.VarName exposing (VarName)
 
 {-| -}
 type Type
-    = {- READ THIS!
-
-         When adding a case that recurs on Type, you'll have to add a case to
-         `InferTypes.Unify.unify`:
-
-             | MyNewType Type Type
-
-         will have to get a case:
-
-             (MyNewType m1e1 m1e2, MyNewType m2e1 m2e2) ->
-                 substitutionMap
-                     |> unify m1e1 m2e1
-                     |> Result.andThen (unify m1e2 m2e2)
-
-      -}
-      Var Int
+    = Var Int
     | Function { from : Type, to : Type }
     | Int
     | Float
@@ -38,6 +23,7 @@ type Type
     | Unit
     | Tuple Type Type
     | Tuple3 Type Type Type
+    | Record (Dict VarName Type)
     | {- The actual definitions of type aliases and custom types are elsewhere
          (in the Declaration module), this is just a "pointer", "var".
 
@@ -98,6 +84,9 @@ isParametric type_ =
         Tuple3 left middle right ->
             [ left, middle, right ]
                 |> List.any isParametric
+
+        Record bindings ->
+            List.any isParametric (Dict.values bindings)
 
         _ ->
             False

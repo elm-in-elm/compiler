@@ -74,6 +74,7 @@ type Expr_
     | Unit
     | Tuple LocatedExpr LocatedExpr
     | Tuple3 LocatedExpr LocatedExpr LocatedExpr
+    | Record (Dict VarName (Binding LocatedExpr))
 
 
 {-| A helper for the [Transform](/packages/Janiczek/transform/latest/) library.
@@ -157,6 +158,13 @@ recurse fn locatedExpr =
 
                     Unit ->
                         expr
+
+                    Record bindings ->
+                        Record
+                            (Dict.map
+                                (always (Binding.map fn))
+                                bindings
+                            )
             )
 
 
@@ -244,6 +252,9 @@ recursiveChildren fn locatedExpr =
 
         Tuple3 e1 e2 e3 ->
             fn e1 ++ fn e2 ++ fn e3
+
+        Record bindings ->
+            List.concatMap (.body >> fn) (Dict.values bindings)
 
 
 mapExpr : (Expr_ -> Expr_) -> LocatedExpr -> LocatedExpr
@@ -358,6 +369,12 @@ unwrap expr =
                 (unwrap e1)
                 (unwrap e2)
                 (unwrap e3)
+
+        Record bindings ->
+            Unwrapped.Record <|
+                Dict.map
+                    (always (Binding.map unwrap))
+                    bindings
     , type_
     )
 
@@ -442,4 +459,8 @@ dropTypes locatedExpr =
                             (dropTypes e1)
                             (dropTypes e2)
                             (dropTypes e3)
+
+                    Record bindings ->
+                        Canonical.Record <|
+                            Dict.map (always (Binding.map dropTypes)) bindings
             )

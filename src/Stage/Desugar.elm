@@ -185,6 +185,18 @@ desugarExpr modules thisModule located =
         Frontend.Unit ->
             return Canonical.Unit
 
+        Frontend.Record bindings ->
+            bindings
+                |> List.map (Binding.map recurse >> Binding.combine)
+                |> Result.combine
+                |> map
+                    (\canonicalBindings ->
+                        canonicalBindings
+                            |> List.map (\canonicalBinding -> ( canonicalBinding.name, canonicalBinding ))
+                            |> Dict.fromList
+                            |> Canonical.Record
+                    )
+
 
 {-| Check the var name in the type annotation is the same as the one in the declaration:
 

@@ -1,15 +1,11 @@
 module EmitTest exposing (javascript)
 
 import Dict
-import Elm.AST.Typed as Typed exposing (Expr_(..), LocatedExpr)
+import Elm.AST.Typed as Typed exposing (Expr_(..))
 import Elm.Data.Declaration exposing (Declaration, DeclarationBody(..))
-import Elm.Data.Located as Located exposing (Located)
-import Elm.Data.ModuleName as ModuleName exposing (ModuleName)
-import Elm.Data.Type as Type
-import Elm.Data.VarName as VarName exposing (VarName)
-import Expect exposing (Expectation)
+import Expect
 import Stage.Emit.JavaScript as JS
-import Test exposing (Test, describe, test, todo)
+import Test exposing (Test, describe, test)
 import TestHelpers
     exposing
         ( typed
@@ -247,6 +243,64 @@ javascript =
                     , ( "nested tuple3"
                       , Tuple3 (typedInt 1) (typedInt 2) (typed (Tuple3 (typedInt 3) (typedInt 4) (typedInt 5)))
                       , "[1,2,[3,4,5]]"
+                      )
+                    ]
+                )
+            , describe "Record"
+                (List.map runTest
+                    [ ( "record single field"
+                      , Record
+                            (Dict.fromList
+                                [ ( "a", { name = "a", body = typedInt 42 } )
+                                ]
+                            )
+                      , "{a: 42}"
+                      )
+                    , ( "void record"
+                      , Record Dict.empty
+                      , "{}"
+                      )
+                    , ( "record two fields"
+                      , Record
+                            (Dict.fromList
+                                [ ( "a", { name = "a", body = typedInt 42 } )
+                                , ( "b", { name = "b", body = typedString "Hello" } )
+                                ]
+                            )
+                      , """{a: 42, b: "Hello"}"""
+                      )
+                    , ( "nested"
+                      , Record
+                            (Dict.fromList
+                                [ ( "a"
+                                  , { name = "a"
+                                    , body =
+                                        typed
+                                            (Record
+                                                (Dict.fromList [ ( "a", { name = "a", body = typedInt 42 } ) ])
+                                            )
+                                    }
+                                  )
+                                ]
+                            )
+                      , "{a: {a: 42}}"
+                      )
+                    ]
+                )
+            , describe "Mixed expressions"
+                (List.map runTest
+                    [ ( "plus in tuple"
+                      , Tuple (typed (Plus (typedInt 1) (typedInt 41))) (typedString "Hello")
+                      , """[(1 + 41),"Hello"]"""
+                      )
+                    , ( "tuple and cons in record"
+                      , Record
+                            (Dict.fromList
+                                [ ( "a", { name = "a", body = typed (Tuple (typedInt 2) (typedInt 3)) } )
+                                , ( "b", { name = "b", body = typed (Cons (typedInt 2) (typedIntList [ 3, 4 ])) } )
+                                ]
+                            )
+                      , """{a: [2,3], b: [2].concat([3, 4])}"""
                       )
                     ]
                 )

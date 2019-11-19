@@ -1,14 +1,10 @@
 module OptimizeTest exposing (optimize)
 
 import Elm.AST.Typed as Typed exposing (Expr_(..))
-import Elm.Data.Declaration exposing (Declaration)
-import Elm.Data.Located as Located exposing (Located)
-import Elm.Data.ModuleName as ModuleName exposing (ModuleName)
 import Elm.Data.Type as Type
-import Elm.Data.VarName as VarName exposing (VarName)
-import Expect exposing (Expectation)
+import Expect
 import Stage.Optimize
-import Test exposing (Test, describe, test, todo)
+import Test exposing (Test, describe, test)
 import TestHelpers
     exposing
         ( located
