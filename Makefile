@@ -8,6 +8,10 @@ build:
 	rm -rf build/elm.js elm-stuff
 	cd cli && elm make Main.elm --output ../build/elm.js
 
+.PHONY: watch
+watch:
+	npx elm-live --no-server
+
 .PHONY: test
 test:
 	elm make --output /dev/null # build the library just to test it compiles
