@@ -37,7 +37,7 @@ Elm compiler written in Elm!
 
 **In short, `elm-in-elm` aims to unblock and encourage people to play with compilers and the Elm language itself, explore new frontiers and have fun!**
 
-:tv: For more context and information, you can watch [Martin Janiczek's talk from Elm Europe 2019](#todo) (:construction: `TODO` :construction:) which served as an unveiling of `elm-in-elm` to public. Here are :bar_chart: [the slides.](assets/talk.pdf)
+:tv: For more context and information, you can watch [Martin Janiczek's talk from Elm Europe 2019](https://www.youtube.com/watch?v=62khGXfh8zg&list=PL-cYi7I913S_oRLJEpsVbSTq_OOMSXlPD&index=21) which served as an unveiling of `elm-in-elm` to public. Here are :bar_chart: [the slides.](assets/talk.pdf)
 
 ## Non-goals :negative_squared_cross_mark:
 
@@ -166,7 +166,6 @@ Make sure to format code before submitting a pull request!
 #### Project management
 
 - [ ] [@janiczek](https://twitter.com/janiczek/): Share your Firefox bookmarks relevant to `elm-in-elm` (ie. talks about Haskell hierarchical optimizations etc.)
-- [ ] After Elm Europe 2019 videos are out, add a link to the talk to the README
 - [ ] Add tests for stages other than parsing and emit into the matrix above
 
 #### General
