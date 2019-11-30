@@ -38,6 +38,7 @@
         "elm-community/basics-extra": "4.0.0 <= v < 5.0.0",
         "elm-community/dict-extra": "2.4.0 <= v < 3.0.0",
         "elm-community/graph": "6.0.0 <= v < 7.0.0",
+        "elm-community/list-extra": "8.2.2 <= v < 9.0.0",
         "elm-community/maybe-extra": "5.0.0 <= v < 6.0.0",
         "elm-community/result-extra": "2.2.1 <= v < 3.0.0",
         "erlandsona/assoc-set": "1.0.0 <= v < 2.0.0",

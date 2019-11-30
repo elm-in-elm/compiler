@@ -6,12 +6,13 @@ import Dict.Extra as Dict
 import Elm.AST.Canonical as Canonical
 import Elm.AST.Frontend as Frontend
 import Elm.Compiler.Error exposing (DesugarError(..), Error(..))
-import Elm.Data.Binding as Binding
+import Elm.Data.Binding as Binding exposing (Binding)
 import Elm.Data.Located as Located
 import Elm.Data.Module as Module exposing (Module)
 import Elm.Data.ModuleName exposing (ModuleName)
 import Elm.Data.Project exposing (Project)
 import Elm.Data.VarName exposing (VarName)
+import List.Extra
 import Maybe.Extra
 import Result.Extra as Result
 import Stage.Desugar.Boilerplate as Boilerplate
@@ -39,12 +40,6 @@ desugarExpr modules thisModule located =
 
         return expr =
             Ok (Located.replaceWith expr located)
-
-        andThen fn =
-            Result.andThen
-                (\expr ->
-                    fn expr |> map identity
-                )
 
         map fn =
             Result.map
@@ -186,36 +181,65 @@ desugarExpr modules thisModule located =
             return Canonical.Unit
 
         Frontend.Record bindings ->
-            bindings
-                |> List.map (Binding.map recurse >> Binding.combine)
-                |> Result.combine
-                |> andThen
-                    (\canonicalBindings ->
-                        canonicalBindings
-                            |> List.foldr
-                                (\canonicalBinding ->
-                                    Result.andThen
-                                        (\dict ->
-                                            case Dict.get canonicalBinding.name dict of
-                                                Just existing ->
-                                                    Err <|
-                                                        DuplicateRecordField
-                                                            { name = canonicalBinding.name
-                                                            , firstOccurrence = Located.replaceWith () existing.body
-                                                            , secondOccurrence = Located.replaceWith () canonicalBinding.body
-                                                            }
+            case maybeDuplicateBindingsError bindings of
+                Just error ->
+                    Err error
 
-                                                Nothing ->
-                                                    Ok <| Dict.insert canonicalBinding.name canonicalBinding dict
-                                        )
-                                )
-                                (Ok Dict.empty)
-                            |> Result.map Canonical.Record
-                    )
+                Nothing ->
+                    bindings
+                        |> List.map (Binding.map recurse >> Binding.combine)
+                        |> Result.combine
+                        |> map
+                            (\canonicalBindings ->
+                                canonicalBindings
+                                    |> List.map (\canonicalBinding -> ( canonicalBinding.name, canonicalBinding ))
+                                    |> Dict.fromList
+                                    |> Canonical.Record
+                            )
 
 
 
 -- HELPERS
+
+
+{-| Ensure that there are no two bindings with the same name.
+
+NOTE: The function will produce an error only for the _first_ duplicate pair.
+Subsequent duplicate pairs are ignored.
+
+-}
+maybeDuplicateBindingsError : List (Binding Frontend.LocatedExpr) -> Maybe DesugarError
+maybeDuplicateBindingsError bindings =
+    bindings
+        |> findDuplicatesBy .name
+        |> Maybe.map
+            (\( first, second ) ->
+                DuplicateRecordField
+                    { name = first.name
+                    , firstOccurrence = Located.replaceWith () first.body
+                    , secondOccurrence = Located.replaceWith () second.body
+                    }
+            )
+
+
+{-| Find the first two elements in a list that duplicate a given property.
+
+Implemented to avoid allocations.
+
+-}
+findDuplicatesBy : (a -> comparable) -> List a -> Maybe ( a, a )
+findDuplicatesBy property list =
+    case list of
+        [] ->
+            Nothing
+
+        head :: tail ->
+            case List.Extra.find (\item -> property item == property head) tail of
+                Just duplicate ->
+                    Just ( head, duplicate )
+
+                Nothing ->
+                    findDuplicatesBy property tail
 
 
 {-| Convert a multi-arg lambda into multiple single-arg lambdas.

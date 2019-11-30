@@ -232,14 +232,18 @@ toString error =
                         ++ "\n\nChange your imports to resolve this ambiguity!"
 
                 DuplicateRecordField { name, firstOccurrence, secondOccurrence } ->
-                    "This record has multiple `"
-                        ++ name
-                        ++ "` fields. One here:\n\n"
-                        --TODO toString for Located
-                        ++ "TODO\n\n"
-                        ++ "And another one here:\n\n"
-                        ++ "TODO\n\n"
-                        ++ "How can I know which one you want? Rename one of them!"
+                    {- TODO
+                       This record has multiple `a` fields. One here:
+
+                       12|     { a = 123
+                                 ^
+                       And another one here:
+
+                       13|     , a = ()
+                                 ^
+                       How can I know which one you want? Rename one of them!
+                    -}
+                    "This record has multiple `" ++ name ++ "` fields."
 
         TypeError typeError ->
             case typeError of
