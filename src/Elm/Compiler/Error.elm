@@ -150,6 +150,7 @@ type DesugarError
         }
     | DuplicateRecordField
         { name : VarName
+        , insideModule : ModuleName
         , firstOccurrence : Located ()
         , secondOccurrence : Located ()
         }

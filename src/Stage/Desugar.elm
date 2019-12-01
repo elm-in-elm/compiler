@@ -181,7 +181,7 @@ desugarExpr modules thisModule located =
             return Canonical.Unit
 
         Frontend.Record bindings ->
-            case maybeDuplicateBindingsError bindings of
+            case maybeDuplicateBindingsError thisModule.name bindings of
                 Just error ->
                     Err error
 
@@ -208,14 +208,15 @@ NOTE: The function will produce an error only for the _first_ duplicate pair.
 Subsequent duplicate pairs are ignored.
 
 -}
-maybeDuplicateBindingsError : List (Binding Frontend.LocatedExpr) -> Maybe DesugarError
-maybeDuplicateBindingsError bindings =
+maybeDuplicateBindingsError : ModuleName -> List (Binding Frontend.LocatedExpr) -> Maybe DesugarError
+maybeDuplicateBindingsError moduleName bindings =
     bindings
         |> findDuplicatesBy .name
         |> Maybe.map
             (\( first, second ) ->
                 DuplicateRecordField
                     { name = first.name
+                    , insideModule = moduleName
                     , firstOccurrence = Located.replaceWith () first.body
                     , secondOccurrence = Located.replaceWith () second.body
                     }

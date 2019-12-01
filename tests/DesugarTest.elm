@@ -124,28 +124,27 @@ desugarTest =
         , test "desugar duplicate record field" <|
             \_ ->
                 let
-                    x : Frontend.LocatedExpr
-                    x =
-                        frontendLambda "x" "x"
+                    aRegion =
+                        { start = { row = 1, col = 1 }, end = { row = 2, col = 2 } }
 
-                    field : Binding Frontend.LocatedExpr
-                    field =
-                        { name = "a", body = x }
-
-                    fields : List (Binding Frontend.LocatedExpr)
-                    fields =
-                        [ field, field ]
+                    bRegion =
+                        { start = { row = 3, col = 3 }, end = { row = 4, col = 4 } }
                 in
-                located (Frontend.Record fields)
+                [ { name = "aaa", body = Located.located aRegion Frontend.Unit }
+                , { name = "aaa", body = Located.located bRegion Frontend.Unit }
+                ]
+                    |> Frontend.Record
+                    |> located
                     |> Desugar.desugarExpr Dict.empty (moduleFromName "A")
                     |> mapUnwrap
                     |> Expect.equal
-                        (Err <|
-                            CompilerError.DuplicateRecordField
-                                { name = "a"
-                                , firstOccurrence = x |> Located.replaceWith ()
-                                , secondOccurrence = x |> Located.replaceWith ()
-                                }
+                        ({ name = "aaa"
+                         , insideModule = "A"
+                         , firstOccurrence = Located.located aRegion ()
+                         , secondOccurrence = Located.located bRegion ()
+                         }
+                            |> CompilerError.DuplicateRecordField
+                            |> Err
                         )
         ]
 
