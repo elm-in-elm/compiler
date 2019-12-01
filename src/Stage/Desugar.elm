@@ -12,7 +12,6 @@ import Elm.Data.Module as Module exposing (Module)
 import Elm.Data.ModuleName exposing (ModuleName)
 import Elm.Data.Project exposing (Project)
 import Elm.Data.VarName exposing (VarName)
-import List.Extra
 import Maybe.Extra
 import Result.Extra as Result
 import Stage.Desugar.Boilerplate as Boilerplate
@@ -225,22 +224,27 @@ maybeDuplicateBindingsError moduleName bindings =
 
 {-| Find the first two elements in a list that duplicate a given property.
 
-Implemented to avoid allocations.
+Benchmarks were made <https://gist.github.com/xarvh/2e3ddf2e3f0f2c6e1f84505e1bff1f1b>
 
 -}
 findDuplicatesBy : (a -> comparable) -> List a -> Maybe ( a, a )
 findDuplicatesBy property list =
-    case list of
-        [] ->
-            Nothing
+    let
+        recurse li =
+            case li of
+                a :: b :: tail ->
+                    if property a == property b then
+                        Just ( a, b )
 
-        head :: tail ->
-            case List.Extra.find (\item -> property item == property head) tail of
-                Just duplicate ->
-                    Just ( head, duplicate )
+                    else
+                        recurse (b :: tail)
 
-                Nothing ->
-                    findDuplicatesBy property tail
+                _ ->
+                    Nothing
+    in
+    list
+        |> List.sortBy property
+        |> recurse
 
 
 {-| Convert a multi-arg lambda into multiple single-arg lambdas.
