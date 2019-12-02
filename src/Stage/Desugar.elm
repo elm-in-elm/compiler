@@ -224,7 +224,7 @@ maybeDuplicateBindingsError moduleName bindings =
 
 {-| Find the first two elements in a list that duplicate a given property.
 
-Benchmarks were made <https://gist.github.com/xarvh/2e3ddf2e3f0f2c6e1f84505e1bff1f1b>
+Benchmarks in benchmarks/findDuplicatesBy/
 
 -}
 findDuplicatesBy : (a -> comparable) -> List a -> Maybe ( a, a )
