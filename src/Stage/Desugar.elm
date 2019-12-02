@@ -6,7 +6,7 @@ import Dict.Extra as Dict
 import Elm.AST.Canonical as Canonical
 import Elm.AST.Frontend as Frontend
 import Elm.Compiler.Error exposing (DesugarError(..), Error(..))
-import Elm.Data.Binding as Binding
+import Elm.Data.Binding as Binding exposing (Binding)
 import Elm.Data.Located as Located
 import Elm.Data.Module as Module exposing (Module)
 import Elm.Data.ModuleName exposing (ModuleName)
@@ -180,20 +180,71 @@ desugarExpr modules thisModule located =
             return Canonical.Unit
 
         Frontend.Record bindings ->
-            bindings
-                |> List.map (Binding.map recurse >> Binding.combine)
-                |> Result.combine
-                |> map
-                    (\canonicalBindings ->
-                        canonicalBindings
-                            |> List.map (\canonicalBinding -> ( canonicalBinding.name, canonicalBinding ))
-                            |> Dict.fromList
-                            |> Canonical.Record
-                    )
+            case maybeDuplicateBindingsError thisModule.name bindings of
+                Just error ->
+                    Err error
+
+                Nothing ->
+                    bindings
+                        |> List.map (Binding.map recurse >> Binding.combine)
+                        |> Result.combine
+                        |> map
+                            (\canonicalBindings ->
+                                canonicalBindings
+                                    |> List.map (\canonicalBinding -> ( canonicalBinding.name, canonicalBinding ))
+                                    |> Dict.fromList
+                                    |> Canonical.Record
+                            )
 
 
 
 -- HELPERS
+
+
+{-| Ensure that there are no two bindings with the same name.
+
+NOTE: The function will produce an error only for the _first_ duplicate pair.
+Subsequent duplicate pairs are ignored.
+
+-}
+maybeDuplicateBindingsError : ModuleName -> List (Binding Frontend.LocatedExpr) -> Maybe DesugarError
+maybeDuplicateBindingsError moduleName bindings =
+    bindings
+        |> findDuplicatesBy .name
+        |> Maybe.map
+            (\( first, second ) ->
+                DuplicateRecordField
+                    { name = first.name
+                    , insideModule = moduleName
+                    , firstOccurrence = Located.replaceWith () first.body
+                    , secondOccurrence = Located.replaceWith () second.body
+                    }
+            )
+
+
+{-| Find the first two elements in a list that duplicate a given property.
+
+Benchmarks in benchmarks/findDuplicatesBy/
+
+-}
+findDuplicatesBy : (a -> comparable) -> List a -> Maybe ( a, a )
+findDuplicatesBy property list =
+    let
+        recurse li =
+            case li of
+                a :: b :: tail ->
+                    if property a == property b then
+                        Just ( a, b )
+
+                    else
+                        recurse (b :: tail)
+
+                _ ->
+                    Nothing
+    in
+    list
+        |> List.sortBy property
+        |> recurse
 
 
 {-| Convert a multi-arg lambda into multiple single-arg lambdas.

@@ -17,6 +17,7 @@ module Elm.Compiler.Error exposing
 -}
 
 import Elm.Data.FilePath exposing (FilePath)
+import Elm.Data.Located exposing (Located)
 import Elm.Data.ModuleName exposing (ModuleName)
 import Elm.Data.Type as Type exposing (Type)
 import Elm.Data.Type.ToString as TypeToString
@@ -147,6 +148,12 @@ type DesugarError
         , insideModule : ModuleName
         , possibleModules : List ModuleName
         }
+    | DuplicateRecordField
+        { name : VarName
+        , insideModule : ModuleName
+        , firstOccurrence : Located ()
+        , secondOccurrence : Located ()
+        }
 
 
 {-| Errors encountered during [typechecking](Elm.Compiler#inferExpr).
@@ -224,6 +231,20 @@ toString error =
                                 possibleModules
                             )
                         ++ "\n\nChange your imports to resolve this ambiguity!"
+
+                DuplicateRecordField { name, firstOccurrence, secondOccurrence } ->
+                    {- TODO
+                       This record has multiple `a` fields. One here:
+
+                       12|     { a = 123
+                                 ^
+                       And another one here:
+
+                       13|     , a = ()
+                                 ^
+                       How can I know which one you want? Rename one of them!
+                    -}
+                    "This record has multiple `" ++ name ++ "` fields."
 
         TypeError typeError ->
             case typeError of

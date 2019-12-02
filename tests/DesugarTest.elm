@@ -5,9 +5,11 @@ import Elm.AST.Canonical as Canonical
 import Elm.AST.Canonical.Unwrapped as CanonicalU
 import Elm.AST.Frontend as Frontend
 import Elm.Compiler.Error as CompilerError
+import Elm.Data.Binding exposing (Binding)
 import Elm.Data.Declaration as Declaration exposing (Declaration)
 import Elm.Data.Exposing as Exposing
 import Elm.Data.Import exposing (Import)
+import Elm.Data.Located as Located exposing (Located)
 import Elm.Data.Module as Module exposing (Module)
 import Elm.Data.ModuleName exposing (ModuleName)
 import Elm.Data.VarName exposing (VarName)
@@ -119,6 +121,31 @@ desugarTest =
                         , insideModule = "A"
                         }
             }
+        , test "desugar duplicate record field" <|
+            \_ ->
+                let
+                    aRegion =
+                        { start = { row = 1, col = 1 }, end = { row = 2, col = 2 } }
+
+                    bRegion =
+                        { start = { row = 3, col = 3 }, end = { row = 4, col = 4 } }
+                in
+                [ { name = "aaa", body = Located.located aRegion Frontend.Unit }
+                , { name = "aaa", body = Located.located bRegion Frontend.Unit }
+                ]
+                    |> Frontend.Record
+                    |> located
+                    |> Desugar.desugarExpr Dict.empty (moduleFromName "A")
+                    |> mapUnwrap
+                    |> Expect.equal
+                        ({ name = "aaa"
+                         , insideModule = "A"
+                         , firstOccurrence = Located.located aRegion ()
+                         , secondOccurrence = Located.located bRegion ()
+                         }
+                            |> CompilerError.DuplicateRecordField
+                            |> Err
+                        )
         ]
 
 
