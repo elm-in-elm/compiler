@@ -74,6 +74,10 @@ assignId currentId located =
 
 assignIdsWithHelp : Id -> Canonical.Expr -> ( Typed.Expr, Id )
 assignIdsWithHelp currentId located =
+    {- Be careful when dealing with the ids, they all have to be distinct.
+       Enable the "unused variable" warning from elm-analyze may help you
+       to detect created but unused ids.
+    -}
     case located of
         {- With literals, we could plug their final type in right here
            (no solving needed!) but let's be uniform and do everything through
