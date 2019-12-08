@@ -1,4 +1,4 @@
-module Stage.InferTypes.AssignIds exposing (assignIds)
+module Stage.InferTypes.AssignIds exposing (Id, assignIds)
 
 {-| Stage 1
 
@@ -44,86 +44,89 @@ import Elm.AST.Canonical as Canonical
 import Elm.AST.Typed as Typed
 import Elm.Data.Located as Located
 import Elm.Data.Type as Type
-import Stage.InferTypes.IdSource as IdSource exposing (IdSource)
 
 
-assignIds : Canonical.LocatedExpr -> ( Typed.LocatedExpr, IdSource )
+type alias Id =
+    Int
+
+
+assignIds : Canonical.LocatedExpr -> ( Typed.LocatedExpr, Id )
 assignIds located =
-    assignIdsWith IdSource.empty located
+    assignIdsWith 0 located
 
 
-assignIdsWith : IdSource -> Canonical.LocatedExpr -> ( Typed.LocatedExpr, IdSource )
-assignIdsWith idSource locatedCanonicalExpr =
+assignIdsWith : Id -> Canonical.LocatedExpr -> ( Typed.LocatedExpr, Id )
+assignIdsWith currentId locatedCanonicalExpr =
     let
-        ( typedExpr, idSource_ ) =
-            assignIdsWithHelp idSource (Located.unwrap locatedCanonicalExpr)
+        ( typedExpr, newId ) =
+            assignIdsWithHelp currentId (Located.unwrap locatedCanonicalExpr)
     in
     {- Keep location, for error context -}
     ( Located.replaceWith typedExpr locatedCanonicalExpr
-    , idSource_
+    , newId
     )
 
 
-assignId : IdSource -> Typed.Expr_ -> ( Typed.Expr, IdSource )
-assignId idSource located =
-    IdSource.one idSource (\id -> ( located, Type.Var id ))
+assignId : Id -> Typed.Expr_ -> ( Typed.Expr, Id )
+assignId currentId located =
+    ( ( located, Type.Var currentId ), currentId + 1 )
 
 
-assignIdsWithHelp : IdSource -> Canonical.Expr -> ( Typed.Expr, IdSource )
-assignIdsWithHelp idSource located =
+assignIdsWithHelp : Id -> Canonical.Expr -> ( Typed.Expr, Id )
+assignIdsWithHelp currentId located =
     case located of
         {- With literals, we could plug their final type in right here
            (no solving needed!) but let's be uniform and do everything through
            the constraint solver in stages 2 and 3.
         -}
         Canonical.Int int ->
-            assignId idSource (Typed.Int int)
+            assignId currentId (Typed.Int int)
 
         Canonical.Float float ->
-            assignId idSource (Typed.Float float)
+            assignId currentId (Typed.Float float)
 
         Canonical.Char char ->
-            assignId idSource (Typed.Char char)
+            assignId currentId (Typed.Char char)
 
         Canonical.String string ->
-            assignId idSource (Typed.String string)
+            assignId currentId (Typed.String string)
 
         Canonical.Bool bool ->
-            assignId idSource (Typed.Bool bool)
+            assignId currentId (Typed.Bool bool)
 
         -- We remember argument's IDs so that we can later use them in Lambda
         Canonical.Argument name ->
-            assignId idSource (Typed.Argument name)
+            assignId currentId (Typed.Argument name)
 
         Canonical.Var name ->
-            assignId idSource (Typed.Var name)
+            assignId currentId (Typed.Var name)
 
         Canonical.Plus e1 e2 ->
             let
-                ( e1_, idSource1 ) =
-                    assignIdsWith idSource e1
+                ( e1_, id1 ) =
+                    assignIdsWith currentId e1
 
-                ( e2_, idSource2 ) =
-                    assignIdsWith idSource1 e2
+                ( e2_, id2 ) =
+                    assignIdsWith id1 e2
             in
-            assignId idSource2 (Typed.Plus e1_ e2_)
+            assignId id2 (Typed.Plus e1_ e2_)
 
         Canonical.Cons e1 e2 ->
             let
-                ( e1_, idSource1 ) =
-                    assignIdsWith idSource e1
+                ( e1_, id1 ) =
+                    assignIdsWith currentId e1
 
-                ( e2_, idSource2 ) =
-                    assignIdsWith idSource1 e2
+                ( e2_, id2 ) =
+                    assignIdsWith id1 e2
             in
-            assignId idSource2 (Typed.Cons e1_ e2_)
+            assignId id2 (Typed.Cons e1_ e2_)
 
         Canonical.Lambda { argument, body } ->
             let
-                ( body_, idSource1 ) =
-                    assignIdsWith idSource body
+                ( body_, id1 ) =
+                    assignIdsWith currentId body
             in
-            assignId idSource1
+            assignId id1
                 (Typed.Lambda
                     { argument = argument
                     , body =
@@ -133,13 +136,13 @@ assignIdsWithHelp idSource located =
 
         Canonical.Call { fn, argument } ->
             let
-                ( fn_, idSource1 ) =
-                    assignIdsWith idSource fn
+                ( fn_, id1 ) =
+                    assignIdsWith currentId fn
 
-                ( argument_, idSource2 ) =
-                    assignIdsWith idSource1 argument
+                ( argument_, id2 ) =
+                    assignIdsWith id1 argument
             in
-            assignId idSource2
+            assignId id2
                 (Typed.Call
                     { fn = fn_
                     , argument = argument_
@@ -148,16 +151,16 @@ assignIdsWithHelp idSource located =
 
         Canonical.If { test, then_, else_ } ->
             let
-                ( test_, idSource1 ) =
-                    assignIdsWith idSource test
+                ( test_, id1 ) =
+                    assignIdsWith currentId test
 
-                ( then__, idSource2 ) =
-                    assignIdsWith idSource1 then_
+                ( then__, id2 ) =
+                    assignIdsWith id1 then_
 
-                ( else__, idSource3 ) =
-                    assignIdsWith idSource2 else_
+                ( else__, id3 ) =
+                    assignIdsWith id2 else_
             in
-            assignId idSource3
+            assignId id3
                 (Typed.If
                     { test = test_
                     , then_ = then__
@@ -166,7 +169,7 @@ assignIdsWithHelp idSource located =
                 )
 
         Canonical.Let { bindings, body } ->
-            {- We don't thread the full (VarName, Binding) thing to IdSource
+            {- We don't thread the full (VarName, Binding) thing to Id
                as that would bloat the type signatures of IdGenerator too much.
 
                We unwrap the exprs from the bindings and then carefully put them
@@ -176,27 +179,27 @@ assignIdsWithHelp idSource located =
                 bindingsList =
                     Dict.toList bindings
 
-                ( body_, idSource1 ) =
-                    assignIdsWith idSource body
+                ( body_, id1 ) =
+                    assignIdsWith currentId body
 
-                ( bindingBodiesList, idSource2 ) =
+                ( bindingBodiesList, id2 ) =
                     List.foldl
-                        (\( name, binding ) ( acc, currentIdSource ) ->
+                        (\( name, binding ) ( acc, runningId ) ->
                             let
-                                ( body__, nextIdSource ) =
-                                    assignIdsWith currentIdSource binding.body
+                                ( body__, nextId ) =
+                                    assignIdsWith runningId binding.body
 
                                 newElt =
                                     ( name, { name = name, body = body__ } )
                             in
                             ( newElt :: acc
-                            , nextIdSource
+                            , nextId
                             )
                         )
-                        ( [], idSource1 )
+                        ( [], id1 )
                         bindingsList
             in
-            assignId idSource2
+            assignId id2
                 (Typed.Let
                     { bindings =
                         Dict.fromList bindingBodiesList
@@ -205,70 +208,70 @@ assignIdsWithHelp idSource located =
                 )
 
         Canonical.Unit ->
-            assignId idSource Typed.Unit
+            assignId currentId Typed.Unit
 
         Canonical.List items ->
             let
-                ( items_, idSource1 ) =
+                ( items_, newId ) =
                     List.foldr
-                        (\item ( acc, currentIdSource ) ->
+                        (\item ( acc, runningId ) ->
                             let
-                                ( item_, nextIdSource ) =
-                                    assignIdsWith currentIdSource item
+                                ( item_, nextId ) =
+                                    assignIdsWith runningId item
                             in
                             ( item_ :: acc
-                            , nextIdSource
+                            , nextId
                             )
                         )
-                        ( [], idSource )
+                        ( [], currentId )
                         items
             in
-            assignId idSource1 (Typed.List items_)
+            assignId newId (Typed.List items_)
 
         Canonical.Tuple e1 e2 ->
             let
-                ( e1_, idSource1 ) =
-                    assignIdsWith idSource e1
+                ( e1_, id1 ) =
+                    assignIdsWith currentId e1
 
-                ( e2_, idSource2 ) =
-                    assignIdsWith idSource1 e2
+                ( e2_, id2 ) =
+                    assignIdsWith id1 e2
             in
-            assignId idSource2 (Typed.Tuple e1_ e2_)
+            assignId id2 (Typed.Tuple e1_ e2_)
 
         Canonical.Tuple3 e1 e2 e3 ->
             let
-                ( e1_, idSource1 ) =
-                    assignIdsWith idSource e1
+                ( e1_, id1 ) =
+                    assignIdsWith currentId e1
 
-                ( e2_, idSource2 ) =
-                    assignIdsWith idSource1 e2
+                ( e2_, id2 ) =
+                    assignIdsWith id1 e2
 
-                ( e3_, idSource3 ) =
-                    assignIdsWith idSource2 e3
+                ( e3_, id3 ) =
+                    assignIdsWith id2 e3
             in
-            assignId idSource3 (Typed.Tuple3 e1_ e2_ e3_)
+            assignId id3 (Typed.Tuple3 e1_ e2_ e3_)
 
         Canonical.Record bindings ->
             let
                 bindingsList =
                     Dict.toList bindings
 
-                ( bindingBodiesList, idSource1 ) =
+                ( bindingBodiesList, newId ) =
                     List.foldl
-                        (\( name, binding ) ( acc, currentIdSource ) ->
+                        (\( name, binding ) ( acc, runningId ) ->
                             let
-                                ( body__, nextIdSource ) =
-                                    assignIdsWith currentIdSource binding.body
+                                ( body__, nextId ) =
+                                    assignIdsWith runningId binding.body
 
                                 newElt =
                                     ( name, { name = name, body = body__ } )
                             in
                             ( newElt :: acc
-                            , nextIdSource
+                            , nextId
                             )
                         )
-                        ( [], idSource )
+                        ( [], currentId )
                         bindingsList
             in
-            assignId idSource1 <|
+            assignId newId <|
                 Typed.Record (Dict.fromList bindingBodiesList)
