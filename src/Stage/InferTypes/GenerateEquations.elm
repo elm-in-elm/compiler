@@ -34,13 +34,13 @@ import Elm.AST.Typed as Typed
 import Elm.Data.Located as Located
 import Elm.Data.Type as Type
 import Elm.Data.VarName exposing (VarName)
-import Stage.InferTypes.IdSource as IdSource exposing (IdSource)
+import Stage.InferTypes.AssignIds exposing (Id)
 import Stage.InferTypes.TypeEquation exposing (TypeEquation, equals)
 import Transform
 
 
-generateEquations : IdSource -> Typed.LocatedExpr -> ( List TypeEquation, IdSource )
-generateEquations idSource located =
+generateEquations : Id -> Typed.LocatedExpr -> ( List TypeEquation, Id )
+generateEquations currentId located =
     let
         ( expr, type_ ) =
             Located.unwrap located
@@ -49,40 +49,40 @@ generateEquations idSource located =
         Typed.Int _ ->
             -- integer is an integer ¯\_(ツ)_/¯
             ( [ equals type_ Type.Int ]
-            , idSource
+            , currentId
             )
 
         Typed.Float _ ->
             -- float is a float
             ( [ equals type_ Type.Float ]
-            , idSource
+            , currentId
             )
 
         Typed.Char _ ->
             -- char is a char
             ( [ equals type_ Type.Char ]
-            , idSource
+            , currentId
             )
 
         Typed.String _ ->
             -- string is a string
             ( [ equals type_ Type.String ]
-            , idSource
+            , currentId
             )
 
         Typed.Bool _ ->
             -- bool is a bool
             ( [ equals type_ Type.Bool ]
-            , idSource
+            , currentId
             )
 
         Typed.Argument _ ->
             -- we can't make any assumptions here
-            ( [], idSource )
+            ( [], currentId )
 
         Typed.Var _ ->
             -- we can't make any assumptions here
-            ( [], idSource )
+            ( [], currentId )
 
         Typed.Plus left right ->
             let
@@ -92,11 +92,11 @@ generateEquations idSource located =
                 ( _, rightType ) =
                     Located.unwrap right
 
-                ( leftEquations, idSource1 ) =
-                    generateEquations idSource left
+                ( leftEquations, id1 ) =
+                    generateEquations currentId left
 
-                ( rightEquations, idSource2 ) =
-                    generateEquations idSource1 right
+                ( rightEquations, id2 ) =
+                    generateEquations id1 right
             in
             ( -- for expression `a + b`:
               [ equals leftType Type.Int -- type of `a` is Int
@@ -105,7 +105,7 @@ generateEquations idSource located =
               ]
                 ++ leftEquations
                 ++ rightEquations
-            , idSource2
+            , id2
             )
 
         Typed.Cons left right ->
@@ -116,11 +116,11 @@ generateEquations idSource located =
                 ( _, rightType ) =
                     Located.unwrap right
 
-                ( leftEquations, idSource1 ) =
-                    generateEquations idSource left
+                ( leftEquations, id1 ) =
+                    generateEquations currentId left
 
-                ( rightEquations, idSource2 ) =
-                    generateEquations idSource1 right
+                ( rightEquations, id2 ) =
+                    generateEquations id1 right
             in
             ( -- For expression a :: [ b ]:
               [ equals rightType (Type.List leftType) -- type of b is a List a
@@ -128,7 +128,7 @@ generateEquations idSource located =
               ]
                 ++ leftEquations
                 ++ rightEquations
-            , idSource2
+            , id2
             )
 
         Typed.Lambda { body, argument } ->
@@ -136,24 +136,21 @@ generateEquations idSource located =
                 ( _, bodyType ) =
                     Located.unwrap body
 
-                ( argumentId, idSource1 ) =
-                    IdSource.increment idSource
-
-                ( bodyEquations, idSource2 ) =
-                    generateEquations idSource1 body
+                ( bodyEquations, newId ) =
+                    generateEquations currentId body
 
                 usages =
                     findArgumentUsages argument body
 
                 usageEquations =
-                    generateArgumentUsageEquations argumentId usages
+                    generateArgumentUsageEquations currentId usages
             in
             ( -- type of `\arg -> body` is (arg -> body)
               equals type_ (Type.Function { from = Type.Var argumentId, to = bodyType })
                 -- type of the argument is the same as the type of all the children usages of that argument
                 :: usageEquations
                 ++ bodyEquations
-            , idSource2
+            , newId
             )
 
         Typed.Call { fn, argument } ->
@@ -164,18 +161,18 @@ generateEquations idSource located =
                 ( _, argumentType ) =
                     Located.unwrap argument
 
-                ( fnEquations, idSource1 ) =
-                    generateEquations idSource fn
+                ( fnEquations, id1 ) =
+                    generateEquations currentId fn
 
-                ( argumentEquations, idSource2 ) =
-                    generateEquations idSource1 argument
+                ( argumentEquations, id2 ) =
+                    generateEquations id1 argument
             in
             ( -- for expression `a b`:
               -- type of `a` is (argumentType -> resultType)
               equals fnType (Type.Function { from = argumentType, to = type_ })
                 :: fnEquations
                 ++ argumentEquations
-            , idSource2
+            , id2
             )
 
         Typed.If { test, then_, else_ } ->
@@ -189,14 +186,14 @@ generateEquations idSource located =
                 ( _, elseType ) =
                     Located.unwrap else_
 
-                ( testEquations, idSource1 ) =
-                    generateEquations idSource test
+                ( testEquations, id1 ) =
+                    generateEquations currentId test
 
-                ( thenEquations, idSource2 ) =
-                    generateEquations idSource1 then_
+                ( thenEquations, id2 ) =
+                    generateEquations id1 then_
 
-                ( elseEquations, idSource3 ) =
-                    generateEquations idSource2 else_
+                ( elseEquations, id3 ) =
+                    generateEquations id2 else_
             in
             ( -- for expression `if a then b else c`:
               [ equals testType Type.Bool -- type of `a` is Bool
@@ -206,7 +203,7 @@ generateEquations idSource located =
                 ++ testEquations
                 ++ thenEquations
                 ++ elseEquations
-            , idSource3
+            , id3
             )
 
         Typed.Let { bindings, body } ->
@@ -214,10 +211,10 @@ generateEquations idSource located =
                 ( _, bodyType ) =
                     Located.unwrap body
 
-                ( bodyEquations, idSource1 ) =
-                    generateEquations idSource body
+                ( bodyEquations, id1 ) =
+                    generateEquations currentId body
 
-                ( bindingEquations, idSource2 ) =
+                ( bindingEquations, id2 ) =
                     List.foldl
                         (\binding ( acc, currentIdSource ) ->
                             let
@@ -228,7 +225,7 @@ generateEquations idSource located =
                             , nextIdSource
                             )
                         )
-                        ( [], idSource1 )
+                        ( [], id1 )
                         (Dict.values bindings)
             in
             ( -- for expression `let x = a, y = b in c` (pardon the comma):
@@ -236,24 +233,24 @@ generateEquations idSource located =
               equals bodyType type_
                 :: bodyEquations
                 ++ bindingEquations
-            , idSource2
+            , id2
             )
 
         Typed.Unit ->
             -- unit is unit
             ( [ equals type_ Type.Unit ]
-            , idSource
+            , currentId
             )
 
         Typed.List items ->
             let
-                ( listParamId, idSource1 ) =
-                    IdSource.increment idSource
+                id1 =
+                    currentId + 1
 
                 listParamType =
-                    Type.Var listParamId
+                    Type.Var currentId
 
-                ( bodyEquations, idSource2 ) =
+                ( bodyEquations, id2 ) =
                     List.foldr
                         (\item ( acc, currentIdSource ) ->
                             let
@@ -269,14 +266,14 @@ generateEquations idSource located =
                             , nextIdSource
                             )
                         )
-                        ( [], idSource1 )
+                        ( [], id1 )
                         items
             in
             ( -- for expression `[ a, b, c ]`
               -- the `x` in `List x` type and types of all the items are the same
               equals type_ (Type.List listParamType)
                 :: bodyEquations
-            , idSource2
+            , id2
             )
 
         Typed.Tuple fst snd ->
@@ -287,16 +284,16 @@ generateEquations idSource located =
                 ( _, sndType ) =
                     Located.unwrap snd
 
-                ( fstEquations, idSource1 ) =
-                    generateEquations idSource fst
+                ( fstEquations, id1 ) =
+                    generateEquations currentId fst
 
-                ( sndEquations, idSource2 ) =
-                    generateEquations idSource1 snd
+                ( sndEquations, id2 ) =
+                    generateEquations id1 snd
             in
             ( equals type_ (Type.Tuple fstType sndType)
                 :: fstEquations
                 ++ sndEquations
-            , idSource2
+            , id2
             )
 
         Typed.Tuple3 fst snd trd ->
@@ -310,20 +307,20 @@ generateEquations idSource located =
                 ( _, trdType ) =
                     Located.unwrap trd
 
-                ( fstEquations, idSource1 ) =
-                    generateEquations idSource fst
+                ( fstEquations, id1 ) =
+                    generateEquations currentId fst
 
-                ( sndEquations, idSource2 ) =
-                    generateEquations idSource1 snd
+                ( sndEquations, id2 ) =
+                    generateEquations id1 snd
 
-                ( trdEquations, idSource3 ) =
-                    generateEquations idSource2 trd
+                ( trdEquations, id3 ) =
+                    generateEquations id2 trd
             in
             ( equals type_ (Type.Tuple3 fstType sndType trdType)
                 :: fstEquations
                 ++ sndEquations
                 ++ trdEquations
-            , idSource3
+            , id3
             )
 
         Typed.Record bindings ->
@@ -335,7 +332,7 @@ generateEquations idSource located =
                         )
                         bindings
 
-                ( bindingEquations, idSource1 ) =
+                ( bindingEquations, id1 ) =
                     List.foldl
                         (\binding ( acc, currentIdSource ) ->
                             let
@@ -346,12 +343,12 @@ generateEquations idSource located =
                             , nextIdSource
                             )
                         )
-                        ( [], idSource )
+                        ( [], currentId )
                         (Dict.values bindings)
             in
             ( equals type_ (Type.Record bindingTypes)
                 :: bindingEquations
-            , idSource1
+            , id1
             )
 
 
