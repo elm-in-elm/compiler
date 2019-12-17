@@ -146,7 +146,7 @@ generateEquations currentId located =
                     generateArgumentUsageEquations currentId usages
             in
             ( -- type of `\arg -> body` is (arg -> body)
-              equals type_ (Type.Function { from = Type.Var argumentId, to = bodyType })
+              equals type_ (Type.Function { from = Type.Var currentId, to = bodyType })
                 -- type of the argument is the same as the type of all the children usages of that argument
                 :: usageEquations
                 ++ bodyEquations

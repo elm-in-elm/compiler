@@ -33,6 +33,8 @@ inferProject inferExpr unifyWithTypeAnnotation project =
         |> Result.andThen
             (\( stuff, substitutionMap ) ->
                 -- TODO start here
+                -- stuff needs to be Declaration Typed.LocatedExpr Type
+                -- but is Dict String (Module Typed.LocatedExpr Never)
                 unifyWithTypeAnnotation substitutionMap stuff
             )
         |> Result.map (projectOfNewType project)
@@ -56,7 +58,7 @@ projectOfNewType old modules =
 inferModule :
     (Canonical.LocatedExpr -> Result TypeError Typed.LocatedExpr)
     -> Module Canonical.LocatedExpr Type
-    -> Result TypeError (Module Typed.LocatedExpr Never)
+    -> Result ( TypeError, SubstitutionMap ) ( Module Typed.LocatedExpr Never, SubstitutionMap )
 inferModule inferExpr module_ =
     module_.declarations
         |> Dict.map (always (inferDeclaration inferExpr))
