@@ -39,6 +39,14 @@ import Stage.InferTypes.TypeEquation exposing (TypeEquation, equals)
 import Transform
 
 
+{-| The ID returned here is usually just passed over from the recursive
+`generateEquations` calls. Rarely do you need to actually increment the number
+yourself.
+
+But there are such cases - see eg. List or Lambda. It is because of them that we
+need to pass the ID as one of the return values.
+
+-}
 generateEquations : Id -> Typed.LocatedExpr -> ( List TypeEquation, Id )
 generateEquations currentId located =
     let
@@ -132,25 +140,48 @@ generateEquations currentId located =
             )
 
         Typed.Lambda { body, argument } ->
+            {- We need to increment the ID here because lambda arguments didn't
+               get their IDs in the AssignIds phase (Strings aren't Exprs).
+
+               If we didn't increment the ID, the generated equations could
+               mix up the different arguments in different lambdas. For example:
+
+               \a b -> a + b
+
+               (which is, after desugaring, \a -> (\b -> a + b))
+
+               would generate (among other equations) something like:
+
+               "a" argument == Var 5
+               "b" argument == Var 5
+
+               Which isn't correct. So we increment the ID here!
+            -}
             let
+                argumentId =
+                    currentId
+
+                id1 =
+                    currentId + 1
+
                 ( _, bodyType ) =
                     Located.unwrap body
 
-                ( bodyEquations, newId ) =
-                    generateEquations currentId body
+                ( bodyEquations, id2 ) =
+                    generateEquations id1 body
 
                 usages =
                     findArgumentUsages argument body
 
                 usageEquations =
-                    generateArgumentUsageEquations currentId usages
+                    generateArgumentUsageEquations argumentId usages
             in
             ( -- type of `\arg -> body` is (arg -> body)
               equals type_ (Type.Function { from = Type.Var currentId, to = bodyType })
                 -- type of the argument is the same as the type of all the children usages of that argument
                 :: usageEquations
                 ++ bodyEquations
-            , newId
+            , id2
             )
 
         Typed.Call { fn, argument } ->
@@ -216,13 +247,13 @@ generateEquations currentId located =
 
                 ( bindingEquations, id2 ) =
                     List.foldl
-                        (\binding ( acc, currentIdSource ) ->
+                        (\binding ( acc, currentId_ ) ->
                             let
-                                ( equations, nextIdSource ) =
-                                    generateEquations currentIdSource binding.body
+                                ( equations, nextId ) =
+                                    generateEquations currentId_ binding.body
                             in
                             ( equations ++ acc
-                            , nextIdSource
+                            , nextId
                             )
                         )
                         ( [], id1 )
@@ -243,6 +274,9 @@ generateEquations currentId located =
             )
 
         Typed.List items ->
+            {- The list type parameter needs extra ID so that we can
+               bind the items' types to it... so we create one here.
+            -}
             let
                 id1 =
                     currentId + 1
@@ -252,18 +286,18 @@ generateEquations currentId located =
 
                 ( bodyEquations, id2 ) =
                     List.foldr
-                        (\item ( acc, currentIdSource ) ->
+                        (\item ( acc, currentId_ ) ->
                             let
                                 ( _, itemType ) =
                                     Located.unwrap item
 
-                                ( equations, nextIdSource ) =
-                                    generateEquations currentIdSource item
+                                ( equations, nextId ) =
+                                    generateEquations currentId_ item
                             in
                             ( equals itemType listParamType
                                 :: equations
                                 ++ acc
-                            , nextIdSource
+                            , nextId
                             )
                         )
                         ( [], id1 )
@@ -334,13 +368,13 @@ generateEquations currentId located =
 
                 ( bindingEquations, id1 ) =
                     List.foldl
-                        (\binding ( acc, currentIdSource ) ->
+                        (\binding ( acc, currentId_ ) ->
                             let
-                                ( equations, nextIdSource ) =
-                                    generateEquations currentIdSource binding.body
+                                ( equations, nextId ) =
+                                    generateEquations currentId_ binding.body
                             in
                             ( equations ++ acc
-                            , nextIdSource
+                            , nextId
                             )
                         )
                         ( [], currentId )
