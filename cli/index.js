@@ -1,10 +1,10 @@
 const fs = require('fs').promises; // needs Node.JS v10+
 
-const {Elm}          = require('../build/elm.js'); // build using Makefile... no Webpack around here!
-const {registerPort} = require('./utils.js');
+const { Elm } = require('../build/elm.js'); // build using Makefile... no Webpack around here!
+const { registerPort } = require('./utils.js');
 
 // Async/await is nice! (needs Node.JS v7.6+)
-(async function(){
+(async function () {
 
   console.log('---------------------------');
   console.log('-- STARTING THE COMPILER --');
@@ -15,7 +15,8 @@ const {registerPort} = require('./utils.js');
   const app = Elm.Main.init({
     flags: {
       mainFilePath: 'src/Main.elm',
-      elmJson: await fs.readFile(`${exampleProjectPath}/elm.json`, {encoding: 'utf8'}),
+      elmJson: await fs.readFile(`${exampleProjectPath}/elm.json`, { encoding: 'utf8' }),
+      outputFormat: "JavaScript" // alternative "JSON"
     }
   });
 
@@ -27,9 +28,9 @@ const {registerPort} = require('./utils.js');
     process.stderr.write('\n---------------------------');
     process.stderr.write(`\n${string}`);
   });
-  registerPort(app, 'read', async function(filename) {
+  registerPort(app, 'read', async function (filename) {
     try {
-      const contents = await fs.readFile(`${exampleProjectPath}/${filename}`, {encoding: 'utf8'});
+      const contents = await fs.readFile(`${exampleProjectPath}/${filename}`, { encoding: 'utf8' });
       app.ports.readSubscription.send({
         filePath: filename,
         fileContents: contents,
@@ -47,7 +48,7 @@ const {registerPort} = require('./utils.js');
       }
     }
   });
-  registerPort(app, 'writeToFile', async function({filePath,fileContents}) {
+  registerPort(app, 'writeToFile', async function ({ filePath, fileContents }) {
     console.log('---------------------------');
     console.log('-- WRITING TO FS ----------');
     console.log('---------------------------');

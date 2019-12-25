@@ -56,6 +56,7 @@ import Ports exposing (println, printlnStderr)
 import Set exposing (Set)
 import Stage.Desugar as Desugar
 import Stage.Emit.JavaScript as EmitJS
+import Stage.Emit.JsonAST as EmitJson
 import Stage.InferTypes as InferTypes
 import Stage.Optimize as Optimize
 import Stage.Parse as Parse
@@ -76,6 +77,7 @@ main =
 type alias Flags =
     { mainFilePath : String
     , elmJson : String
+    , outputFormat : String
     }
 
 
@@ -97,6 +99,7 @@ to make functions work with its data instead of the general `Model`.
 type alias Model_ projectFields =
     { project : Project projectFields
     , waitingForFiles : Set FilePath
+    , outputFormat : String
     }
 
 
@@ -133,7 +136,7 @@ We have two tasks here:
 
 -}
 init : Flags -> ( Model Frontend.ProjectFields, Cmd Msg )
-init { mainFilePath, elmJson } =
+init { mainFilePath, elmJson, outputFormat } =
     let
         elmJsonProject : Result Error Elm.Project.Project
         elmJsonProject =
@@ -177,6 +180,7 @@ init { mainFilePath, elmJson } =
                             , modules = Dict.empty
                             }
                         , waitingForFiles = Set.singleton mainFilePath
+                        , outputFormat = outputFormat
                         }
                     , Ports.readFile mainFilePath
                     )
@@ -302,7 +306,7 @@ handleReadFileSuccess ({ filePath } as file) ({ project } as model) =
                     }
             in
             if Set.isEmpty newWaitingForFiles then
-                compile newProject
+                compile model.outputFormat newProject
 
             else
                 ( Compiling newModel
@@ -321,8 +325,8 @@ handleReadFileError errorCode =
 {-| We're done reading and parsing files. All the IO is done, now we can do
 the rest synchronously!
 -}
-compile : Project Frontend.ProjectFields -> ( Model Frontend.ProjectFields, Cmd Msg )
-compile project =
+compile : String -> Project Frontend.ProjectFields -> ( Model Frontend.ProjectFields, Cmd Msg )
+compile format project =
     let
         _ =
             project.modules
@@ -337,12 +341,20 @@ compile project =
                                         |> Debug.log (decl.module_ ++ "." ++ decl.name)
                                 )
                     )
+
+        emitter =
+            case format of
+                "JSON" ->
+                    EmitJson.emitProject
+
+                _ ->
+                    EmitJS.emitProject
     in
     Ok project
         |> Result.andThen Desugar.desugar
         |> Result.andThen InferTypes.inferTypes
         |> Result.map Optimize.optimize
-        |> Result.andThen EmitJS.emitProject
+        |> Result.andThen emitter
         |> Result.mapError CompilerError
         |> writeToFSAndExit
 
