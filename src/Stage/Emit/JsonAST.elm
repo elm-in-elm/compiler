@@ -3,15 +3,17 @@ module Stage.Emit.JsonAST exposing
     , emitDeclaration, emitExpr
     )
 
-{-| The `emitProject` function is the main entrypoint in this module, ie. every
-`Stage.Emit.<INSERT LANGUAGE HERE>` module has to expose this function to fit
-well with the APIs of the other stages. See cli/Main.elm and its `compile`
-function for example usage.
+{-| This module encodes the AST representation into JSON. It is intended
+that the JSON can then be processed by another tool.
+See <https://github.com/sgdan/truffle-elm> for an example implementation that
+uses the Truffle API and GraalVM to either interpret the code on the JVM,
+or compile to a native linux executable.
+
+`emitProject` is the main entrypoint for this module.
 
 @docs emitProject
 
-All the other exposed functions are (as of time of writing) exposed only for
-testing purposes.
+Other exposed functions are only for testing purposes.
 
 @docs emitDeclaration, emitExpr
 
@@ -23,10 +25,9 @@ import Elm.Compiler.Error exposing (Error(..))
 import Elm.Data.Declaration exposing (Declaration, DeclarationBody(..))
 import Elm.Data.FileContents exposing (FileContents)
 import Elm.Data.FilePath exposing (FilePath)
-import Elm.Data.ModuleName exposing (ModuleName)
 import Elm.Data.Project exposing (Project)
-import Elm.Data.VarName exposing (VarName)
-import Stage.Emit as Emit
+import Json.Encode as E
+import Stage.Emit.Common exposing (mangleQualifiedVar, prepareProjectFields)
 
 
 type alias ProjectFields =
@@ -40,182 +41,116 @@ emitProject project =
         |> Result.map emitProject_
 
 
-prepareProjectFields : Project Typed.ProjectFields -> Result Error (Project ProjectFields)
-prepareProjectFields project =
-    Emit.projectToDeclarationList project
-        |> Result.mapError EmitError
-        |> Result.map
-            (\declarationList ->
-                { mainFilePath = project.mainFilePath
-                , mainModuleName = project.mainModuleName
-                , elmJson = project.elmJson
-                , sourceDirectory = project.sourceDirectory
-                , declarationList = declarationList
-                }
-            )
-
-
 emitProject_ : Project ProjectFields -> Dict FilePath FileContents
 emitProject_ { declarationList } =
     let
-        declarations =
-            declarationList
-                |> List.map emitDeclaration
+        emit =
+            \d -> emitDeclaration d
     in
-    Dict.singleton "out.json" ("[" ++ String.join "," declarations ++ "]")
+    Dict.singleton "out.json" (E.list emit declarationList |> E.encode 0)
 
 
-toJson : String -> List ( String, String ) -> String
-toJson astType fields =
-    (quote "type" ++ ":" ++ quote astType)
-        :: List.map (\( k, v ) -> quote k ++ ":" ++ v) fields
-        |> brace
+encode : String -> List ( String, E.Value ) -> E.Value
+encode tipe values =
+    E.object (( "type", E.string tipe ) :: values)
 
 
-quote : String -> String
-quote s =
-    "\"" ++ s ++ "\""
-
-
-brace : List String -> String
-brace s =
-    "{" ++ String.join "," s ++ "}"
-
-
-fromFloat : Float -> String
-fromFloat f =
-    if isNaN f || isInfinite f then
-        quote (String.fromFloat f)
-
-    else
-        String.fromFloat f
-
-
-emitExpr : Typed.LocatedExpr -> String
+emitExpr : Typed.LocatedExpr -> E.Value
 emitExpr located =
     case Typed.getExpr located of
         Int int ->
-            toJson "int"
-                [ ( "value", String.fromInt int ) ]
+            encode "int" [ ( "value", E.int int ) ]
 
         Float float ->
-            toJson "float" [ ( "value", fromFloat float ) ]
+            encode "float" [ ( "value", E.float float ) ]
 
         Char char ->
-            toJson "char" [ ( "value", quote (String.fromChar char) ) ]
+            encode "char" [ ( "value", E.string (String.fromChar char) ) ]
 
         String string ->
-            toJson "string" [ ( "value", quote string ) ]
+            encode "string" [ ( "value", E.string string ) ]
 
         Bool bool ->
-            if bool then
-                toJson "bool" [ ( "value", "true" ) ]
-
-            else
-                toJson "bool" [ ( "value", "false" ) ]
+            encode "bool" [ ( "value", E.bool bool ) ]
 
         Var var ->
-            toJson "var" [ ( "name", quote (mangleQualifiedVar var) ) ]
+            encode "var" [ ( "name", E.string (mangleQualifiedVar var) ) ]
 
         Argument argument ->
-            toJson "arg" [ ( "name", quote argument ) ]
+            encode "arg" [ ( "name", E.string argument ) ]
 
         Plus e1 e2 ->
-            toJson "plus"
+            encode "plus"
                 [ ( "e1", emitExpr e1 )
                 , ( "e2", emitExpr e2 )
                 ]
 
         Cons e1 e2 ->
-            toJson "cons"
+            encode "cons"
                 [ ( "e1", emitExpr e1 )
                 , ( "e2", emitExpr e2 )
                 ]
 
         Lambda { argument, body } ->
-            toJson "lambda"
-                [ ( "arg", quote argument )
+            encode "lambda"
+                [ ( "arg", E.string argument )
                 , ( "body", emitExpr body )
                 ]
 
         Call { fn, argument } ->
-            toJson "call"
+            encode "call"
                 [ ( "fn", emitExpr fn )
                 , ( "arg", emitExpr argument )
                 ]
 
         If { test, then_, else_ } ->
-            toJson "if"
+            encode "if"
                 [ ( "test", emitExpr test )
                 , ( "then", emitExpr then_ )
                 , ( "else", emitExpr else_ )
                 ]
 
         Let { bindings, body } ->
-            let
-                {- TODO this doesn't take inter-let dependencies into account, also Dict.values just returns stuff "randomly" -}
-                assignments =
-                    bindings
-                        |> Dict.values
-                        |> List.map (\binding -> quote binding.name ++ ":" ++ emitExpr binding.body)
-            in
-            toJson "let"
-                [ ( "bind", brace assignments )
+            encode "let"
+                [ ( "bind", E.dict (\k -> k) (\v -> emitExpr v.body) bindings )
                 , ( "body", emitExpr body )
                 ]
 
         List items ->
-            toJson "list"
-                [ ( "items", "[" ++ (List.map emitExpr items |> String.join ",") ++ "]" )
-                ]
+            encode "list"
+                [ ( "items", E.list emitExpr items ) ]
 
         Unit ->
-            toJson "unit" []
+            encode "unit" []
 
         Tuple e1 e2 ->
-            toJson "tuple"
+            encode "tuple"
                 [ ( "e1", emitExpr e1 )
                 , ( "e2", emitExpr e2 )
                 ]
 
         Tuple3 e1 e2 e3 ->
-            toJson "tuple"
+            encode "tuple"
                 [ ( "e1", emitExpr e1 )
                 , ( "e2", emitExpr e2 )
                 , ( "e3", emitExpr e3 )
                 ]
 
         Record bindings ->
-            let
-                entries =
-                    bindings
-                        |> Dict.values
-                        |> List.map (\binding -> quote binding.name ++ ":" ++ emitExpr binding.body)
-            in
-            toJson "record" [ ( "bind", brace entries ) ]
+            encode "record" [ ( "bind", E.dict (\k -> k) (\v -> emitExpr v.body) bindings ) ]
 
 
-emitDeclaration : Declaration Typed.LocatedExpr -> String
+emitDeclaration : Declaration Typed.LocatedExpr -> E.Value
 emitDeclaration { module_, name, body } =
     case body of
         Value expr ->
-            toJson "decl"
-                [ ( "name", quote (module_ ++ "$" ++ name) )
+            encode "decl"
+                [ ( "name", E.string (module_ ++ "$" ++ name) )
                 , ( "expr", emitExpr expr )
                 ]
 
         TypeAlias _ ->
-            ""
+            E.string ""
 
         CustomType _ ->
-            ""
-
-
-mangleQualifiedVar : { module_ : ModuleName, name : VarName } -> String
-mangleQualifiedVar { module_, name } =
-    mangleModuleName module_ ++ "$" ++ name
-
-
-mangleModuleName : ModuleName -> String
-mangleModuleName moduleName =
-    String.replace "." "$" moduleName
+            E.string ""

@@ -6,6 +6,25 @@ const { registerPort } = require('./utils.js');
 // Async/await is nice! (needs Node.JS v7.6+)
 (async function () {
 
+  // process command line arguments
+  const yargs = require('yargs')
+  const argv = yargs
+    .option('main', {
+      alias: 'm',
+      description: 'The main Elm file',
+      type: 'string',
+      default: 'src/Main.elm'
+    })
+    .option('output', {
+      alias: 'o',
+      description: 'The format to emit: JavaScript or JSON',
+      type: 'string',
+      default: 'JavaScript'
+    })
+    .help()
+    .alias('help', 'h')
+    .argv;
+
   console.log('---------------------------');
   console.log('-- STARTING THE COMPILER --');
   console.log('---------------------------');
@@ -14,9 +33,9 @@ const { registerPort } = require('./utils.js');
 
   const app = Elm.Main.init({
     flags: {
-      mainFilePath: 'src/Main.elm',
+      mainFilePath: argv.main,
       elmJson: await fs.readFile(`${exampleProjectPath}/elm.json`, { encoding: 'utf8' }),
-      outputFormat: "JavaScript" // alternative "JSON"
+      outputFormat: argv.output
     }
   });
 

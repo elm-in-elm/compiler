@@ -21,12 +21,10 @@ import Dict exposing (Dict)
 import Elm.AST.Typed as Typed exposing (Expr_(..))
 import Elm.Compiler.Error exposing (Error(..))
 import Elm.Data.Declaration exposing (Declaration, DeclarationBody(..))
-import Elm.Data.FileContents as FileContents exposing (FileContents)
-import Elm.Data.FilePath as FilePath exposing (FilePath)
-import Elm.Data.ModuleName as ModuleName exposing (ModuleName)
+import Elm.Data.FileContents exposing (FileContents)
+import Elm.Data.FilePath exposing (FilePath)
 import Elm.Data.Project exposing (Project)
-import Elm.Data.VarName as VarName exposing (VarName)
-import Stage.Emit as Emit
+import Stage.Emit.Common exposing (mangleQualifiedVar, mangleVarName, prepareProjectFields)
 
 
 type alias ProjectFields =
@@ -38,21 +36,6 @@ emitProject project =
     Ok project
         |> Result.andThen prepareProjectFields
         |> Result.map emitProject_
-
-
-prepareProjectFields : Project Typed.ProjectFields -> Result Error (Project ProjectFields)
-prepareProjectFields project =
-    Emit.projectToDeclarationList project
-        |> Result.mapError EmitError
-        |> Result.map
-            (\declarationList ->
-                { mainFilePath = project.mainFilePath
-                , mainModuleName = project.mainModuleName
-                , elmJson = project.elmJson
-                , sourceDirectory = project.sourceDirectory
-                , declarationList = declarationList
-                }
-            )
 
 
 emitProject_ : Project ProjectFields -> Dict FilePath FileContents
@@ -161,19 +144,3 @@ emitDeclaration { module_, name, body } =
 
         CustomType _ ->
             ""
-
-
-mangleQualifiedVar : { module_ : ModuleName, name : VarName } -> String
-mangleQualifiedVar { module_, name } =
-    mangleModuleName module_ ++ "$" ++ mangleVarName name
-
-
-mangleModuleName : ModuleName -> String
-mangleModuleName moduleName =
-    String.replace "." "$" moduleName
-
-
-mangleVarName : VarName -> String
-mangleVarName varName =
-    -- TODO this does nothing currently... what does the official Elm compiler do?
-    varName

@@ -5,6 +5,7 @@ import Elm.AST.Typed as Typed exposing (Expr_(..))
 import Elm.Data.Declaration exposing (Declaration, DeclarationBody(..))
 import Expect
 import Fuzz exposing (bool, char, float, int, string)
+import Json.Encode as E
 import Stage.Emit.JsonAST as JSON
 import Test exposing (Test, describe, fuzz, test)
 import TestHelpers
@@ -33,30 +34,35 @@ json =
                 \x ->
                     typedInt x
                         |> JSON.emitExpr
+                        |> E.encode 0
                         |> Expect.equal
                             ("{\"type\":\"int\",\"value\":" ++ String.fromInt x ++ "}")
             , fuzz float "encode float" <|
                 \x ->
                     typed (Float x)
                         |> JSON.emitExpr
+                        |> E.encode 0
                         |> Expect.equal
                             ("{\"type\":\"float\",\"value\":" ++ String.fromFloat x ++ "}")
             , fuzz char "encode char" <|
                 \x ->
                     typed (Char x)
                         |> JSON.emitExpr
+                        |> E.encode 0
                         |> Expect.equal
-                            ("{\"type\":\"char\",\"value\":\"" ++ String.fromChar x ++ "\"}")
+                            ("{\"type\":\"char\",\"value\":" ++ E.encode 0 (E.string (String.fromChar x)) ++ "}")
             , fuzz string "encode string" <|
                 \x ->
                     typed (String x)
                         |> JSON.emitExpr
+                        |> E.encode 0
                         |> Expect.equal
-                            ("{\"type\":\"string\",\"value\":\"" ++ x ++ "\"}")
+                            ("{\"type\":\"string\",\"value\":" ++ E.encode 0 (E.string x) ++ "}")
             , fuzz bool "encode bool" <|
                 \x ->
                     typed (Bool x)
                         |> JSON.emitExpr
+                        |> E.encode 0
                         |> Expect.equal
                             ("{\"type\":\"bool\",\"value\":" ++ fromBool x ++ "}")
             ]
@@ -67,6 +73,7 @@ json =
                     \() ->
                         typed input
                             |> JSON.emitExpr
+                            |> E.encode 0
                             |> Expect.equal output
           in
           describe "emitExpr"
@@ -207,6 +214,7 @@ json =
                     \() ->
                         input
                             |> JSON.emitDeclaration
+                            |> E.encode 0
                             |> Expect.equal output
           in
           describe "emitDeclaration"
