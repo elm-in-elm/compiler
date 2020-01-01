@@ -167,9 +167,10 @@ type alias Parser a =
 {-| A helper for a common pattern with our Elm parsers. Don't expose it.
 -}
 parse : Parser a -> FileContents -> Result Error a
-parse parser string =
-    P.run parser string
-        |> Result.mapError (ParseError << ParseProblem)
+parse parser sourceCode =
+    Result.mapError
+        (\errorList -> ParseError (ParseProblem ( errorList, sourceCode )))
+        (P.run parser sourceCode)
 
 
 {-| Parse a single expression like

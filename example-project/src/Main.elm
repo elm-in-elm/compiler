@@ -1,5 +1,9 @@
 module Main exposing (main)
 
 
+f x =
+    5 + x
+
+
 main =
-    { x = 1, y = (), z = [ 5 ], x = 2 }
+    f 6
