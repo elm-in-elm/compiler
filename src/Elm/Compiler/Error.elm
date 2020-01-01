@@ -233,7 +233,6 @@ toString error =
                                     ++ String.fromInt col
                                     ++ (source
                                             |> String.split "\n"
-                                            |> Debug.log "source"
                                             |> Array.fromList
                                             |> Array.get (row - 1)
                                             |> Maybe.map
