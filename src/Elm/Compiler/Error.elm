@@ -208,23 +208,23 @@ toString error =
                         (List.map
                             (\{ problem, row, col, contextStack } ->
                                 let
-                                    filename =
-                                        contextStack
-                                            |> List.filterMap
-                                                (\{ context } ->
-                                                    case context of
-                                                        InFile name ->
-                                                            Just name
+                                    filenameFromContext : List { a | context: ParseContext } -> Maybe FilePath
+                                    filenameFromContext contextStack_ =
+                                        case contextStack_ of
+                                            { context } :: rest ->
+                                                case context of
+                                                    InFile name ->
+                                                        Just name
+                                                    _ ->
+                                                        filenameFromContext rest
 
-                                                        _ ->
-                                                            Nothing
-                                                )
-                                            |> List.Extra.last
+                                            [] ->
+                                                Nothing
                                 in
                                 "Parse problem: "
                                     ++ parseProblemToString problem
                                     ++ "\n  --> "
-                                    ++ (filename
+                                    ++ (filenameFromContext contextStack
                                             |> Maybe.map (\s -> s ++ ":")
                                             |> Maybe.withDefault ""
                                        )
