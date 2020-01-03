@@ -17,15 +17,23 @@ import OurExtras.Dict as Dict
 import Stage.InferTypes.SubstitutionMap exposing (SubstitutionMap)
 
 
+type alias InferExprFn =
+    SubstitutionMap
+    -> Canonical.LocatedExpr
+    -> Result ( TypeError, SubstitutionMap ) ( Typed.LocatedExpr, SubstitutionMap )
+
+
+type alias UnifyWithTypeAnnotationFn =
+    SubstitutionMap
+    -> Declaration Typed.LocatedExpr Type
+    -> Result ( TypeError, SubstitutionMap ) ( Declaration Typed.LocatedExpr Never, SubstitutionMap )
+
+
 inferProject :
-    (Canonical.LocatedExpr -> Result TypeError Typed.LocatedExpr)
-    ->
-        (SubstitutionMap
-         -> Declaration Typed.LocatedExpr Type
-         -> Result ( TypeError, SubstitutionMap ) ( Declaration Typed.LocatedExpr Never, SubstitutionMap )
-        )
+    InferExprFn
+    -> UnifyWithTypeAnnotationFn
     -> Project Canonical.ProjectFields
-    -> Result TypeError (Project Typed.ProjectFields)
+    -> Result ( TypeError, SubstitutionMap ) ( Project Typed.ProjectFields, SubstitutionMap )
 inferProject inferExpr unifyWithTypeAnnotation project =
     project.modules
         |> Dict.map (always (inferModule inferExpr))
@@ -56,7 +64,7 @@ projectOfNewType old modules =
 
 
 inferModule :
-    (Canonical.LocatedExpr -> Result TypeError Typed.LocatedExpr)
+    InferExprFn
     -> Module Canonical.LocatedExpr Type
     -> Result ( TypeError, SubstitutionMap ) ( Module Typed.LocatedExpr Never, SubstitutionMap )
 inferModule inferExpr module_ =
@@ -83,13 +91,19 @@ moduleOfNewType old newDecls =
 
 
 inferDeclaration :
-    (Canonical.LocatedExpr -> Result TypeError Typed.LocatedExpr)
+    InferExprFn
+    -> SubstitutionMap
     -> Declaration Canonical.LocatedExpr Type
-    -> Result TypeError (Declaration Typed.LocatedExpr Never)
-inferDeclaration inferExpr decl =
+    -> Result ( TypeError, SubstitutionMap ) ( Declaration Typed.LocatedExpr Never, SubstitutionMap )
+inferDeclaration inferExpr substitutionMap decl =
     decl.body
-        |> Declaration.mapBody inferExpr
+        |> Declaration.mapBody (inferExpr substitutionMap)
         |> Declaration.combine
+        -- TODO start here - how to get the SubstitutionMap out of the declaration body?
+        -- Tried Declaration.combineTuple and similar things - got blocked by
+        -- there not being this value for non-Value constructors...
+        -- Do we have to provide empty SubstitutionMap?
+        -- We should probably return a Maybe, signaling this isn't possible?
         |> Result.map (declarationOfNewType decl)
 
 

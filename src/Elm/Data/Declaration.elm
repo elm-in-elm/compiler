@@ -21,6 +21,11 @@ import Elm.Data.VarName exposing (VarName)
 {-| -}
 type alias Declaration expr annotation =
     { module_ : ModuleName
+
+    -- What information from the annotation is yet to be used in the current stage?
+    -----------------------------------
+    -- Nothing: no annotation was given
+    -- Just Never: annotation was given but we successfully used all of it
     , typeAnnotation : Maybe annotation
     , name : VarName
     , body : DeclarationBody expr
