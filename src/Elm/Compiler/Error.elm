@@ -16,6 +16,8 @@ module Elm.Compiler.Error exposing
 
 -}
 
+import Array
+import Elm.Data.FileContents exposing (FileContents)
 import Elm.Data.FilePath exposing (FilePath)
 import Elm.Data.Located exposing (Located)
 import Elm.Data.ModuleName exposing (ModuleName)
@@ -47,7 +49,7 @@ type ParseError
         }
     | EmptySourceDirectories
     | InvalidElmJson JD.Error
-    | ParseProblem (List (P.DeadEnd ParseContext ParseProblem))
+    | ParseProblem ( List (P.DeadEnd ParseContext ParseProblem), FileContents )
 
 
 {-| Context information about what was the parser trying to do at the time of
@@ -71,6 +73,7 @@ type ParseContext
     | InTuple
     | InTuple3
     | InRecord
+    | InFile FilePath
 
 
 {-| The specific problem the parser encountered. Together with [`ParseContext`](#ParseContext)
@@ -198,10 +201,56 @@ toString error =
                     "Invalid elm.json! "
                         ++ JD.errorToString jsonError
 
-                ParseProblem problems ->
-                    String.join "\n"
-                        ("Parse problems: "
-                            :: List.map (\{ problem } -> "  " ++ parseProblemToString problem) problems
+                ParseProblem ( problems, source ) ->
+                    String.join
+                        "\n"
+                        (List.map
+                            (\{ problem, row, col, contextStack } ->
+                                let
+                                    filenameFromContext : List { a | context : ParseContext } -> Maybe FilePath
+                                    filenameFromContext contextStack_ =
+                                        case contextStack_ of
+                                            { context } :: rest ->
+                                                case context of
+                                                    InFile name ->
+                                                        Just name
+
+                                                    _ ->
+                                                        filenameFromContext rest
+
+                                            [] ->
+                                                Nothing
+                                in
+                                "Parse problem: "
+                                    ++ parseProblemToString problem
+                                    ++ "\n  --> "
+                                    ++ (filenameFromContext contextStack
+                                            |> Maybe.map (\s -> s ++ ":")
+                                            |> Maybe.withDefault ""
+                                       )
+                                    ++ String.fromInt row
+                                    ++ ":"
+                                    ++ String.fromInt col
+                                    ++ (source
+                                            |> String.split "\n"
+                                            |> Array.fromList
+                                            |> Array.get (row - 1)
+                                            |> Maybe.map
+                                                (\snippet ->
+                                                    "\n   | "
+                                                        ++ "\n"
+                                                        ++ String.padRight 3 ' ' (String.fromInt row)
+                                                        ++ "| "
+                                                        ++ snippet
+                                                        ++ "\n   | "
+                                                        ++ String.repeat (col - 1) " "
+                                                        ++ "^ "
+                                                        ++ parseProblemToString problem
+                                                )
+                                            |> Maybe.withDefault ""
+                                       )
+                            )
+                            problems
                         )
 
         DesugarError desugarError ->
