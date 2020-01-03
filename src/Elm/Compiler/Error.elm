@@ -25,7 +25,6 @@ import Elm.Data.Type as Type exposing (Type)
 import Elm.Data.Type.ToString as TypeToString
 import Elm.Data.VarName exposing (VarName)
 import Json.Decode as JD
-import List.Extra
 import Parser.Advanced as P
 
 
