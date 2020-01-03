@@ -207,13 +207,14 @@ toString error =
                         (List.map
                             (\{ problem, row, col, contextStack } ->
                                 let
-                                    filenameFromContext : List { a | context: ParseContext } -> Maybe FilePath
+                                    filenameFromContext : List { a | context : ParseContext } -> Maybe FilePath
                                     filenameFromContext contextStack_ =
                                         case contextStack_ of
                                             { context } :: rest ->
                                                 case context of
                                                     InFile name ->
                                                         Just name
+
                                                     _ ->
                                                         filenameFromContext rest
 
