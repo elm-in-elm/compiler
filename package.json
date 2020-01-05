@@ -4,5 +4,8 @@
     },
     "devDependencies": {
         "elm-test": "^0.19.1"
+    },
+    "dependencies": {
+        "yargs": "^15.0.2"
     }
 }
