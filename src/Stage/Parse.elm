@@ -16,7 +16,6 @@ Maybe we should use it in library/ too?
 -}
 parse : { filePath : FilePath, fileContents : FileContents } -> Result Error (Module Frontend.LocatedExpr TypeAnnotation)
 parse { filePath, fileContents } =
-    P.run
-        (Parser.module_ filePath)
-        fileContents
-        |> Result.mapError (ParseError << ParseProblem)
+    Result.mapError
+        (\errorList -> ParseError (ParseProblem ( errorList, fileContents )))
+        (P.run (Parser.module_ filePath) fileContents)

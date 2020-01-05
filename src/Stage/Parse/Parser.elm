@@ -86,6 +86,7 @@ module_ filePath =
         -- TODO what about module doc comment? is it before the imports or after?
         |= imports
         |= declarations
+        |> P.inContext (InFile filePath)
 
 
 moduleDeclaration : Parser_ ( ModuleType, ModuleName, Exposing )

@@ -3,6 +3,11 @@ run: build
 	tput reset
 	@node cli/index.js
 
+.PHONY: json
+json: build
+	tput reset
+	@node cli/index.js -o JSON
+
 .PHONY: build
 build:
 	rm -rf build/elm.js elm-stuff

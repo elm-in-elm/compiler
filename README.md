@@ -270,6 +270,12 @@ Make sure to format code before submitting a pull request!
       </td>
       <td align="center">
         <img width="150" height="150"
+        src="https://avatars3.githubusercontent.com/u/12603666">
+        </br>
+        <a href="https://github.com/sgdan">sgdan</a>
+      </td>
+      <td align="center">
+        <img width="150" height="150"
         src="https://raw.github.com/elm-in-elm/compiler/master/assets/user-placeholder.png">
         </br>
         You?
