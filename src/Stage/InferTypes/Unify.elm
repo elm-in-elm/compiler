@@ -12,17 +12,17 @@ import Stage.InferTypes.TypeEquation as TypeEquation exposing (TypeEquation)
 
 {-| TODO document
 -}
-unifyAllEquations : List TypeEquation -> Result ( TypeError, SubstitutionMap ) SubstitutionMap
-unifyAllEquations equations =
+unifyAllEquations : List TypeEquation -> SubstitutionMap -> Result ( TypeError, SubstitutionMap ) SubstitutionMap
+unifyAllEquations equations substitutionMap =
     List.foldl
-        (\equation substitutionMap ->
+        (\equation substitutionMap_ ->
             let
                 ( t1, t2 ) =
                     TypeEquation.unwrap equation
             in
-            Result.andThen (unify t1 t2) substitutionMap
+            Result.andThen (unify t1 t2) substitutionMap_
         )
-        (Ok SubstitutionMap.empty)
+        (Ok substitutionMap)
         equations
 
 

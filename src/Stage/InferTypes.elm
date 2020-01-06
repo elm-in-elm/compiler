@@ -36,11 +36,15 @@ inferTypes project =
         |> Boilerplate.inferProject
             inferExpr
             unifyWithTypeAnnotation
+            SubstitutionMap.empty
         |> Result.mapError TypeError
 
 
-inferExpr : Canonical.LocatedExpr -> Result TypeError ( Typed.LocatedExpr, SubstitutionMap )
-inferExpr located =
+inferExpr :
+    SubstitutionMap
+    -> Canonical.LocatedExpr
+    -> Result ( TypeError, SubstitutionMap ) ( Typed.LocatedExpr, SubstitutionMap )
+inferExpr substitutionMap located =
     let
         ( exprWithIds, idSource ) =
             AssignIds.assignIds located
@@ -70,11 +74,11 @@ inferExpr located =
            The second option seems like an unnecessary work, but for the purposes
            of readability and education we go with it.
         -}
-        substitutionMap : Result ( TypeError, SubstitutionMap ) SubstitutionMap
-        substitutionMap =
-            Unify.unifyAllEquations typeEquations
+        newSubstitutionMap : Result ( TypeError, SubstitutionMap ) SubstitutionMap
+        newSubstitutionMap =
+            Unify.unifyAllEquations typeEquations substitutionMap
     in
-    substitutionMap
+    newSubstitutionMap
         |> Result.map (\map -> ( substituteAllInExpr exprWithIds map, map ))
         |> Result.mapError substituteAllInError
 
@@ -96,9 +100,9 @@ Ie. if we have `t0 == Int` and error `List t0 /= Int`, we can do a bit better
 and return `List Int /= Int` to the user.
 
 -}
-substituteAllInError : ( TypeError, SubstitutionMap ) -> TypeError
+substituteAllInError : ( TypeError, SubstitutionMap ) -> ( TypeError, SubstitutionMap )
 substituteAllInError ( error, substitutionMap ) =
-    case error of
+    ( case error of
         TypeMismatch t1 t2 ->
             TypeMismatch
                 (getBetterType substitutionMap t1)
@@ -109,6 +113,8 @@ substituteAllInError ( error, substitutionMap ) =
 
         AnnotationForNonExprDeclaration ->
             AnnotationForNonExprDeclaration
+    , substitutionMap
+    )
 
 
 {-| Only care about this level, don't recurse

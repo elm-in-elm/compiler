@@ -29,23 +29,42 @@ type alias UnifyWithTypeAnnotationFn =
     -> Result ( TypeError, SubstitutionMap ) ( Declaration Typed.LocatedExpr Never, SubstitutionMap )
 
 
+type alias SubstResult a =
+    Result ( TypeError, SubstitutionMap ) ( a, SubstitutionMap )
+
+
 inferProject :
     InferExprFn
     -> UnifyWithTypeAnnotationFn
+    -> SubstitutionMap
     -> Project Canonical.ProjectFields
-    -> Result ( TypeError, SubstitutionMap ) ( Project Typed.ProjectFields, SubstitutionMap )
-inferProject inferExpr unifyWithTypeAnnotation project =
-    project.modules
-        |> Dict.map (always (inferModule inferExpr))
-        |> Dict.combine
-        |> Result.andThen
-            (\( stuff, substitutionMap ) ->
-                -- TODO start here
-                -- stuff needs to be Declaration Typed.LocatedExpr Type
-                -- but is Dict String (Module Typed.LocatedExpr Never)
-                unifyWithTypeAnnotation substitutionMap stuff
-            )
-        |> Result.map (projectOfNewType project)
+    -> Result TypeError (Project Typed.ProjectFields)
+inferProject inferExpr unifyWithTypeAnnotation substitutionMap project =
+    -- TODO would it be benefitial to return the SubstitutionMap in the Err case too?
+    let
+        result : SubstResult (Dict ModuleName (Module Typed.LocatedExpr Never))
+        result =
+            project.modules
+                |> Dict.foldl
+                    (\moduleName module_ result_ ->
+                        result_
+                            |> Result.andThen
+                                (\( newModules, substMap ) ->
+                                    inferModule inferExpr substMap module_
+                                        -- TODO unifyWithTypeAnnotation substitutionMap stuff
+                                        |> Result.map
+                                            (\( newModule, newSubstMap ) ->
+                                                ( Dict.insert moduleName newModule newModules
+                                                , newSubstMap
+                                                )
+                                            )
+                                )
+                    )
+                    (Ok ( Dict.empty, substitutionMap ))
+    in
+    result
+        |> Result.map (Tuple.first >> projectOfNewType project)
+        |> Result.mapError Tuple.first
 
 
 projectOfNewType :
@@ -65,13 +84,35 @@ projectOfNewType old modules =
 
 inferModule :
     InferExprFn
+    -> SubstitutionMap
     -> Module Canonical.LocatedExpr Type
-    -> Result ( TypeError, SubstitutionMap ) ( Module Typed.LocatedExpr Never, SubstitutionMap )
-inferModule inferExpr module_ =
-    module_.declarations
-        |> Dict.map (always (inferDeclaration inferExpr))
-        |> Dict.combine
-        |> Result.map (moduleOfNewType module_)
+    -> SubstResult (Module Typed.LocatedExpr Never)
+inferModule inferExpr substitutionMap module_ =
+    let
+        result : SubstResult (Dict VarName (Declaration Typed.LocatedExpr Never))
+        result =
+            {- We'd like to Dict.map here, but we need to thread
+               the SubstitutionMap through all the calls...
+            -}
+            module_.declarations
+                |> Dict.foldl
+                    (\varName decl result_ ->
+                        result_
+                            |> Result.andThen
+                                (\( newDecls, substMap ) ->
+                                    inferDeclaration inferExpr substMap decl
+                                        |> Result.map
+                                            (\( newDecl, newSubstMap ) ->
+                                                ( Dict.insert varName newDecl newDecls
+                                                , newSubstMap
+                                                )
+                                            )
+                                )
+                    )
+                    (Ok ( Dict.empty, substitutionMap ))
+    in
+    result
+        |> Result.map (Tuple.mapFirst (moduleOfNewType module_))
 
 
 moduleOfNewType :
@@ -94,17 +135,18 @@ inferDeclaration :
     InferExprFn
     -> SubstitutionMap
     -> Declaration Canonical.LocatedExpr Type
-    -> Result ( TypeError, SubstitutionMap ) ( Declaration Typed.LocatedExpr Never, SubstitutionMap )
+    -> SubstResult (Declaration Typed.LocatedExpr Never)
 inferDeclaration inferExpr substitutionMap decl =
-    decl.body
-        |> Declaration.mapBody (inferExpr substitutionMap)
-        |> Declaration.combine
-        -- TODO start here - how to get the SubstitutionMap out of the declaration body?
-        -- Tried Declaration.combineTuple and similar things - got blocked by
-        -- there not being this value for non-Value constructors...
-        -- Do we have to provide empty SubstitutionMap?
-        -- We should probably return a Maybe, signaling this isn't possible?
-        |> Result.map (declarationOfNewType decl)
+    let
+        result : SubstResult (DeclarationBody Typed.LocatedExpr)
+        result =
+            decl.body
+                |> Declaration.mapBody (inferExpr substitutionMap)
+                |> Declaration.combine
+                |> Result.map Declaration.combineSubstitutionMap
+    in
+    result
+        |> Result.map (Tuple.mapFirst (declarationOfNewType decl))
 
 
 declarationOfNewType :

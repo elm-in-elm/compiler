@@ -141,6 +141,8 @@ import Elm.Data.FilePath exposing (FilePath)
 import Elm.Data.Import exposing (Import)
 import Elm.Data.Module as Module exposing (Module)
 import Elm.Data.ModuleName exposing (ModuleName)
+import Elm.Data.Type exposing (Type)
+import Elm.Data.TypeAnnotation exposing (TypeAnnotation)
 import OurExtras.Dict as Dict
 import Parser.Advanced as P
 import Result.Extra as Result
@@ -148,6 +150,7 @@ import Stage.Desugar
 import Stage.Desugar.Boilerplate
 import Stage.InferTypes
 import Stage.InferTypes.Boilerplate
+import Stage.InferTypes.SubstitutionMap as SubstitutionMap
 import Stage.Optimize
 import Stage.Optimize.Boilerplate
 import Stage.Parse.Parser
@@ -240,7 +243,7 @@ will get parsed into
 -}
 parseModule :
     { filePath : FilePath, sourceCode : FileContents }
-    -> Result Error (Module Frontend.LocatedExpr)
+    -> Result Error (Module Frontend.LocatedExpr TypeAnnotation)
 parseModule { filePath, sourceCode } =
     -- TODO maybe we can think of a way to not force the user to give us `filePath`?
     parse (Stage.Parse.Parser.module_ filePath) sourceCode
@@ -250,7 +253,7 @@ parseModule { filePath, sourceCode } =
 -}
 parseModules :
     List { filePath : FilePath, sourceCode : FileContents }
-    -> Result Error (Dict ModuleName (Module Frontend.LocatedExpr))
+    -> Result Error (Dict ModuleName (Module Frontend.LocatedExpr TypeAnnotation))
 parseModules files =
     {- TODO same as with `parseModule` - maybe we can think of a way to not force
        the user to give us `filePath`?
@@ -302,7 +305,9 @@ into
     }
 
 -}
-parseDeclaration : { moduleName : ModuleName, declaration : FileContents } -> Result Error (Declaration Frontend.LocatedExpr)
+parseDeclaration :
+    { moduleName : ModuleName, declaration : FileContents }
+    -> Result Error (Declaration Frontend.LocatedExpr TypeAnnotation)
 parseDeclaration { moduleName, declaration } =
     parse Stage.Parse.Parser.declaration declaration
         |> Result.map (\toDeclaration -> toDeclaration moduleName)
@@ -340,8 +345,8 @@ very descriptive. **The real type of this function is:**
 
 -}
 desugarExpr :
-    Dict ModuleName (Module Frontend.LocatedExpr)
-    -> Module Frontend.LocatedExpr
+    Dict ModuleName (Module Frontend.LocatedExpr TypeAnnotation)
+    -> Module Frontend.LocatedExpr TypeAnnotation
     -> Frontend.LocatedExpr
     -> Result Error Canonical.LocatedExpr
 desugarExpr modules thisModule locatedExpr =
@@ -360,9 +365,9 @@ very descriptive. **The real type of this function is:**
 
 -}
 desugarModule :
-    Dict ModuleName (Module Frontend.LocatedExpr)
-    -> Module Frontend.LocatedExpr
-    -> Result Error (Module Canonical.LocatedExpr)
+    Dict ModuleName (Module Frontend.LocatedExpr TypeAnnotation)
+    -> Module Frontend.LocatedExpr TypeAnnotation
+    -> Result Error (Module Canonical.LocatedExpr Type)
 desugarModule modules thisModule =
     Stage.Desugar.Boilerplate.desugarModule (Stage.Desugar.desugarExpr modules) thisModule
         |> Result.mapError DesugarError
@@ -378,8 +383,8 @@ very descriptive. **The real type of this function is:**
 
 -}
 desugarModules :
-    Dict ModuleName (Module Frontend.LocatedExpr)
-    -> Result Error (Dict ModuleName (Module Canonical.LocatedExpr))
+    Dict ModuleName (Module Frontend.LocatedExpr TypeAnnotation)
+    -> Result Error (Dict ModuleName (Module Canonical.LocatedExpr Type))
 desugarModules modules =
     modules
         |> Dict.map (always (Stage.Desugar.Boilerplate.desugarModule (Stage.Desugar.desugarExpr modules)))
@@ -393,13 +398,13 @@ another one.
 We're hitting limitations of the Elm Packages website, and the type shown isn't
 very descriptive. **The real type of this function is:**
 
-    Module Frontend.LocatedExpr
-    -> Result Error (Module Canonical.LocatedExpr)
+    Module Frontend.LocatedExpr TypeAnnotation
+    -> Result Error (Module Canonical.LocatedExpr )
 
 -}
 desugarOnlyModule :
-    Module Frontend.LocatedExpr
-    -> Result Error (Module Canonical.LocatedExpr)
+    Module Frontend.LocatedExpr TypeAnnotation
+    -> Result Error (Module Canonical.LocatedExpr Type)
 desugarOnlyModule module_ =
     desugarModule
         (Dict.singleton module_.name module_)
@@ -434,10 +439,14 @@ very descriptive. **The real type of this function is:**
 
 -}
 inferModule :
-    Module Canonical.LocatedExpr
-    -> Result Error (Module Typed.LocatedExpr)
+    Module Canonical.LocatedExpr Type
+    -> Result Error (Module Typed.LocatedExpr Never)
 inferModule thisModule =
-    Stage.InferTypes.Boilerplate.inferModule Stage.InferTypes.inferExpr thisModule
+    -- TODO think about letting the user give it the substitution map themselves?
+    Stage.InferTypes.Boilerplate.inferModule
+        Stage.InferTypes.inferExpr
+        SubstitutionMap.empty
+        thisModule
         |> Result.mapError TypeError
 
 
@@ -451,8 +460,8 @@ very descriptive. **The real type of this function is:**
 
 -}
 inferModules :
-    Dict ModuleName (Module Canonical.LocatedExpr)
-    -> Result Error (Dict ModuleName (Module Typed.LocatedExpr))
+    Dict ModuleName (Module Canonical.LocatedExpr Type)
+    -> Result Error (Dict ModuleName (Module Typed.LocatedExpr Never))
 inferModules modules =
     modules
         |> Dict.map (always inferModule)
@@ -521,7 +530,7 @@ For using your own optimizations instead of or in addition to the default ones,
 look at the [`optimizeModuleWith`](#optimizeModuleWith) function.
 
 -}
-optimizeModule : Module Typed.LocatedExpr -> Module Typed.LocatedExpr
+optimizeModule : Module Typed.LocatedExpr Never -> Module Typed.LocatedExpr Never
 optimizeModule thisModule =
     Stage.Optimize.Boilerplate.optimizeModule optimizeExpr thisModule
 
@@ -535,8 +544,8 @@ only the optimizations on each separate expression.
 -}
 optimizeModuleWith :
     List ( String, Typed.LocatedExpr -> Maybe Typed.LocatedExpr )
-    -> Module Typed.LocatedExpr
-    -> Module Typed.LocatedExpr
+    -> Module Typed.LocatedExpr Never
+    -> Module Typed.LocatedExpr Never
 optimizeModuleWith optimizations thisModule =
     Stage.Optimize.Boilerplate.optimizeModule (optimizeExprWith optimizations) thisModule
 
@@ -549,8 +558,8 @@ look at the [`optimizeModulesWith`](#optimizeModulesWith) function.
 
 -}
 optimizeModules :
-    Dict ModuleName (Module Typed.LocatedExpr)
-    -> Dict ModuleName (Module Typed.LocatedExpr)
+    Dict ModuleName (Module Typed.LocatedExpr Never)
+    -> Dict ModuleName (Module Typed.LocatedExpr Never)
 optimizeModules modules =
     Dict.map (always optimizeModule) modules
 
@@ -560,8 +569,8 @@ optimizations.
 -}
 optimizeModulesWith :
     List ( String, Typed.LocatedExpr -> Maybe Typed.LocatedExpr )
-    -> Dict ModuleName (Module Typed.LocatedExpr)
-    -> Dict ModuleName (Module Typed.LocatedExpr)
+    -> Dict ModuleName (Module Typed.LocatedExpr Never)
+    -> Dict ModuleName (Module Typed.LocatedExpr Never)
 optimizeModulesWith optimizations modules =
     Dict.map (always (optimizeModuleWith optimizations)) modules
 
@@ -614,8 +623,12 @@ very descriptive. **The real type of this function is:**
     -> Module Canonical.LocatedExpr
 
 -}
-dropTypesModule : Module Typed.LocatedExpr -> Module Canonical.LocatedExpr
+dropTypesModule : Module Typed.LocatedExpr Never -> Module Canonical.LocatedExpr Type
 dropTypesModule module_ =
+    -- TODO figure out how to
+    -- a) put the annotation type back in (do we have to remember it?)
+    -- b) or make the annotations all Nothing
+    -- c) or just screw it and remove all these dropTypes* functions...
     Module.map dropTypesExpr module_
 
 
@@ -629,7 +642,7 @@ very descriptive. **The real type of this function is:**
 
 -}
 dropTypesModules :
-    Dict ModuleName (Module Typed.LocatedExpr)
-    -> Dict ModuleName (Module Canonical.LocatedExpr)
+    Dict ModuleName (Module Typed.LocatedExpr Never)
+    -> Dict ModuleName (Module Canonical.LocatedExpr Type)
 dropTypesModules modules =
     Dict.map (always dropTypesModule) modules
