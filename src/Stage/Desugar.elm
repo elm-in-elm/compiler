@@ -196,6 +196,9 @@ desugarExpr modules thisModule located =
                                     |> Canonical.Record
                             )
 
+        Frontend.RecordAccessor name ->
+            return <| Canonical.RecordAccessor name
+
 
 
 -- HELPERS

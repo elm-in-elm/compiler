@@ -38,3 +38,4 @@ type Expr
     | Tuple Expr Expr
     | Tuple3 Expr Expr Expr
     | Record (Dict VarName (Binding Expr))
+    | RecordAccessor VarName
