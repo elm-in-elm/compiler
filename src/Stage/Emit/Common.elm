@@ -15,7 +15,7 @@ import Stage.Emit as Emit
 
 
 type alias ProjectFields =
-    { declarationList : List (Declaration Typed.LocatedExpr) }
+    { declarationList : List (Declaration Typed.LocatedExpr Never) }
 
 
 prepareProjectFields : Project Typed.ProjectFields -> Result Error (Project ProjectFields)

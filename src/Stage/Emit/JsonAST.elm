@@ -31,7 +31,7 @@ import Stage.Emit.Common exposing (mangleQualifiedVar, prepareProjectFields)
 
 
 type alias ProjectFields =
-    { declarationList : List (Declaration Typed.LocatedExpr) }
+    { declarationList : List (Declaration Typed.LocatedExpr Never) }
 
 
 emitProject : Project Typed.ProjectFields -> Result Error (Dict FilePath FileContents)
@@ -140,7 +140,7 @@ emitExpr located =
             encode "record" [ ( "bind", E.dict (\k -> k) (\v -> emitExpr v.body) bindings ) ]
 
 
-emitDeclaration : Declaration Typed.LocatedExpr -> E.Value
+emitDeclaration : Declaration Typed.LocatedExpr Never -> E.Value
 emitDeclaration { module_, name, body } =
     case body of
         Value expr ->

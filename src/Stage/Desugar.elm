@@ -1,4 +1,8 @@
-module Stage.Desugar exposing (desugar, desugarExpr)
+module Stage.Desugar exposing
+    ( checkAndDesugarTypeAnnotation
+    , desugar
+    , desugarExpr
+    )
 
 import Basics.Extra exposing (flip)
 import Dict exposing (Dict)

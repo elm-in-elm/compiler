@@ -50,8 +50,7 @@ inferProject inferExpr unifyWithTypeAnnotation substitutionMap project =
                         result_
                             |> Result.andThen
                                 (\( newModules, substMap ) ->
-                                    inferModule inferExpr substMap module_
-                                        -- TODO unifyWithTypeAnnotation substitutionMap stuff
+                                    inferModule inferExpr unifyWithTypeAnnotation substMap module_
                                         |> Result.map
                                             (\( newModule, newSubstMap ) ->
                                                 ( Dict.insert moduleName newModule newModules
@@ -84,34 +83,33 @@ projectOfNewType old modules =
 
 inferModule :
     InferExprFn
+    -> UnifyWithTypeAnnotationFn
     -> SubstitutionMap
     -> Module Canonical.LocatedExpr Type
     -> SubstResult (Module Typed.LocatedExpr Never)
-inferModule inferExpr substitutionMap module_ =
-    let
-        result : SubstResult (Dict VarName (Declaration Typed.LocatedExpr Never))
-        result =
-            {- We'd like to Dict.map here, but we need to thread
-               the SubstitutionMap through all the calls...
-            -}
-            module_.declarations
-                |> Dict.foldl
-                    (\varName decl result_ ->
-                        result_
-                            |> Result.andThen
-                                (\( newDecls, substMap ) ->
-                                    inferDeclaration inferExpr substMap decl
-                                        |> Result.map
-                                            (\( newDecl, newSubstMap ) ->
-                                                ( Dict.insert varName newDecl newDecls
-                                                , newSubstMap
-                                                )
-                                            )
-                                )
-                    )
-                    (Ok ( Dict.empty, substitutionMap ))
-    in
-    result
+inferModule inferExpr unifyWithTypeAnnotation substitutionMap module_ =
+    module_.declarations
+        |> Dict.foldl
+            (\varName decl result_ ->
+                result_
+                    |> Result.andThen
+                        (\( newDecls, substMap ) ->
+                            inferDeclaration inferExpr substMap decl
+                                |> Result.andThen
+                                    (\( newDecl, newSubstMap ) ->
+                                        unifyWithTypeAnnotation
+                                            newSubstMap
+                                            newDecl
+                                    )
+                                |> Result.map
+                                    (\( newDecl, newSubstMap ) ->
+                                        ( Dict.insert varName newDecl newDecls
+                                        , newSubstMap
+                                        )
+                                    )
+                        )
+            )
+            (Ok ( Dict.empty, substitutionMap ))
         |> Result.map (Tuple.mapFirst (moduleOfNewType module_))
 
 
@@ -135,7 +133,7 @@ inferDeclaration :
     InferExprFn
     -> SubstitutionMap
     -> Declaration Canonical.LocatedExpr Type
-    -> SubstResult (Declaration Typed.LocatedExpr Never)
+    -> SubstResult (Declaration Typed.LocatedExpr Type)
 inferDeclaration inferExpr substitutionMap decl =
     let
         result : SubstResult (DeclarationBody Typed.LocatedExpr)
@@ -150,13 +148,13 @@ inferDeclaration inferExpr substitutionMap decl =
 
 
 declarationOfNewType :
-    Declaration Canonical.LocatedExpr Type
+    Declaration Canonical.LocatedExpr annotation
     -> DeclarationBody Typed.LocatedExpr
-    -> Declaration Typed.LocatedExpr Never
+    -> Declaration Typed.LocatedExpr annotation
 declarationOfNewType old newBody =
     { name = old.name
     , module_ = old.module_
-    , typeAnnotation = Nothing
+    , typeAnnotation = old.typeAnnotation
 
     -- all that code because of this:
     , body = newBody

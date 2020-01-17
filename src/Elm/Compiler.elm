@@ -4,7 +4,6 @@ module Elm.Compiler exposing
     , inferExpr, inferModule, inferModules
     , defaultOptimizations
     , optimizeExpr, optimizeExprWith, optimizeModule, optimizeModuleWith, optimizeModules, optimizeModulesWith
-    , dropTypesExpr, dropTypesModule, dropTypesModules
     )
 
 {-| Functions for working with Elm source code.
@@ -150,7 +149,7 @@ import Stage.Desugar
 import Stage.Desugar.Boilerplate
 import Stage.InferTypes
 import Stage.InferTypes.Boilerplate
-import Stage.InferTypes.SubstitutionMap as SubstitutionMap
+import Stage.InferTypes.SubstitutionMap as SubstitutionMap exposing (SubstitutionMap)
 import Stage.Optimize
 import Stage.Optimize.Boilerplate
 import Stage.Parse.Parser
@@ -369,7 +368,10 @@ desugarModule :
     -> Module Frontend.LocatedExpr TypeAnnotation
     -> Result Error (Module Canonical.LocatedExpr Type)
 desugarModule modules thisModule =
-    Stage.Desugar.Boilerplate.desugarModule (Stage.Desugar.desugarExpr modules) thisModule
+    Stage.Desugar.Boilerplate.desugarModule
+        (Stage.Desugar.desugarExpr modules)
+        Stage.Desugar.checkAndDesugarTypeAnnotation
+        thisModule
         |> Result.mapError DesugarError
 
 
@@ -387,7 +389,13 @@ desugarModules :
     -> Result Error (Dict ModuleName (Module Canonical.LocatedExpr Type))
 desugarModules modules =
     modules
-        |> Dict.map (always (Stage.Desugar.Boilerplate.desugarModule (Stage.Desugar.desugarExpr modules)))
+        |> Dict.map
+            (always
+                (Stage.Desugar.Boilerplate.desugarModule
+                    (Stage.Desugar.desugarExpr modules)
+                    Stage.Desugar.checkAndDesugarTypeAnnotation
+                )
+            )
         |> Dict.combine
         |> Result.mapError DesugarError
 
@@ -423,10 +431,10 @@ very descriptive. **The real type of this function is:**
     Canonical.LocatedExpr -> Result Error Typed.LocatedExpr
 
 -}
-inferExpr : Canonical.LocatedExpr -> Result Error Typed.LocatedExpr
-inferExpr locatedExpr =
-    Stage.InferTypes.inferExpr locatedExpr
-        |> Result.mapError TypeError
+inferExpr : SubstitutionMap -> Canonical.LocatedExpr -> Result Error ( Typed.LocatedExpr, SubstitutionMap )
+inferExpr substitutionMap locatedExpr =
+    Stage.InferTypes.inferExpr substitutionMap locatedExpr
+        |> Result.mapError (Tuple.first >> TypeError)
 
 
 {-| Infer the types of expressions in a module (a single `*.elm` file).
@@ -439,15 +447,15 @@ very descriptive. **The real type of this function is:**
 
 -}
 inferModule :
-    Module Canonical.LocatedExpr Type
-    -> Result Error (Module Typed.LocatedExpr Never)
-inferModule thisModule =
-    -- TODO think about letting the user give it the substitution map themselves?
+    SubstitutionMap
+    -> Module Canonical.LocatedExpr Type
+    -> Result Error ( Module Typed.LocatedExpr Never, SubstitutionMap )
+inferModule substitutionMap thisModule =
     Stage.InferTypes.Boilerplate.inferModule
         Stage.InferTypes.inferExpr
-        SubstitutionMap.empty
+        substitutionMap
         thisModule
-        |> Result.mapError TypeError
+        |> Result.mapError (Tuple.first >> TypeError)
 
 
 {-| Infer the types of expressions in multiple modules (`*.elm` files).
@@ -460,12 +468,26 @@ very descriptive. **The real type of this function is:**
 
 -}
 inferModules :
-    Dict ModuleName (Module Canonical.LocatedExpr Type)
-    -> Result Error (Dict ModuleName (Module Typed.LocatedExpr Never))
-inferModules modules =
+    SubstitutionMap
+    -> Dict ModuleName (Module Canonical.LocatedExpr Type)
+    -> Result Error ( Dict ModuleName (Module Typed.LocatedExpr Never), SubstitutionMap )
+inferModules substitutionMap modules =
     modules
-        |> Dict.map (always inferModule)
-        |> Dict.combine
+        |> Dict.foldl
+            (\moduleName module_ acc ->
+                acc
+                    |> Result.andThen
+                        (\( accDict, accSubstMap ) ->
+                            inferModule accSubstMap module_
+                                |> Result.map
+                                    (Tuple.mapFirst
+                                        (\newModule_ ->
+                                            Dict.insert moduleName newModule_ accDict
+                                        )
+                                    )
+                        )
+            )
+            (Ok ( Dict.empty, substitutionMap ))
 
 
 
@@ -573,76 +595,3 @@ optimizeModulesWith :
     -> Dict ModuleName (Module Typed.LocatedExpr Never)
 optimizeModulesWith optimizations modules =
     Dict.map (always (optimizeModuleWith optimizations)) modules
-
-
-
--- DROP TYPES
-
-
-{-| Drop types from a single expression.
-
-We're hitting limitations of the Elm Packages website, and the type shown isn't
-very descriptive. **The real type of this function is:**
-
-    Typed.LocatedExpr -> Canonical.LocatedExpr
-
-Example usage:
-
-    Located
-        { start = ..., end = ... }
-        ( Tuple
-            (Located ... ( Int 12, Type.Int ))
-            (Located ... ( String "Hello", Type.String ))
-        , Type.Tuple Type.Int Type.String
-        )
-
-becomes
-
-    Located
-        { start = ..., end = ... }
-        (Tuple
-            (Located ... (Int 12)
-            (Located ... (String "Hello")
-        )
-
-If location info is not useful to you either, look for the `unwrap` functions
-in the various `Elm.AST.*` modules.
-
--}
-dropTypesExpr : Typed.LocatedExpr -> Canonical.LocatedExpr
-dropTypesExpr locatedExpr =
-    Typed.dropTypes locatedExpr
-
-
-{-| Drop types from all expressions in the module.
-
-We're hitting limitations of the Elm Packages website, and the type shown isn't
-very descriptive. **The real type of this function is:**
-
-    Module Typed.LocatedExpr
-    -> Module Canonical.LocatedExpr
-
--}
-dropTypesModule : Module Typed.LocatedExpr Never -> Module Canonical.LocatedExpr Type
-dropTypesModule module_ =
-    -- TODO figure out how to
-    -- a) put the annotation type back in (do we have to remember it?)
-    -- b) or make the annotations all Nothing
-    -- c) or just screw it and remove all these dropTypes* functions...
-    Module.map dropTypesExpr module_
-
-
-{-| Drop types from all expressions in all the modules.
-
-We're hitting limitations of the Elm Packages website, and the type shown isn't
-very descriptive. **The real type of this function is:**
-
-    Dict ModuleName (Module Typed.LocatedExpr)
-    -> Dict ModuleName (Module Canonical.LocatedExpr)
-
--}
-dropTypesModules :
-    Dict ModuleName (Module Typed.LocatedExpr Never)
-    -> Dict ModuleName (Module Canonical.LocatedExpr Type)
-dropTypesModules modules =
-    Dict.map (always dropTypesModule) modules

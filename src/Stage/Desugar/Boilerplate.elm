@@ -17,15 +17,20 @@ import Elm.Data.VarName exposing (VarName)
 import OurExtras.Dict as Dict
 
 
+type alias DesugarExprFn =
+    Module Frontend.LocatedExpr TypeAnnotation
+    -> Frontend.LocatedExpr
+    -> Result DesugarError Canonical.LocatedExpr
+
+
+type alias DesugarAnnotationFn =
+    Declaration Canonical.LocatedExpr TypeAnnotation
+    -> Result DesugarError (Declaration Canonical.LocatedExpr Type)
+
+
 desugarProject :
-    (Module Frontend.LocatedExpr TypeAnnotation
-     -> Frontend.LocatedExpr
-     -> Result DesugarError Canonical.LocatedExpr
-    )
-    ->
-        (Declaration Canonical.LocatedExpr TypeAnnotation
-         -> Result DesugarError (Declaration Canonical.LocatedExpr Type)
-        )
+    DesugarExprFn
+    -> DesugarAnnotationFn
     -> Project Frontend.ProjectFields
     -> Result DesugarError (Project Canonical.ProjectFields)
 desugarProject desugarExpr desugarTypeAnnotation project =
@@ -51,14 +56,8 @@ projectOfNewType old modules =
 
 
 desugarModule :
-    (Module Frontend.LocatedExpr TypeAnnotation
-     -> Frontend.LocatedExpr
-     -> Result DesugarError Canonical.LocatedExpr
-    )
-    ->
-        (Declaration Canonical.LocatedExpr TypeAnnotation
-         -> Result DesugarError (Declaration Canonical.LocatedExpr Type)
-        )
+    DesugarExprFn
+    -> DesugarAnnotationFn
     -> Module Frontend.LocatedExpr TypeAnnotation
     -> Result DesugarError (Module Canonical.LocatedExpr Type)
 desugarModule desugarExpr desugarTypeAnnotation module_ =
@@ -91,10 +90,7 @@ moduleOfNewType old newDecls =
 
 desugarDeclaration :
     (Frontend.LocatedExpr -> Result DesugarError Canonical.LocatedExpr)
-    ->
-        (Declaration Canonical.LocatedExpr TypeAnnotation
-         -> Result DesugarError (Declaration Canonical.LocatedExpr Type)
-        )
+    -> DesugarAnnotationFn
     -> Declaration Frontend.LocatedExpr TypeAnnotation
     -> Result DesugarError (Declaration Canonical.LocatedExpr Type)
 desugarDeclaration desugarExpr desugarTypeAnnotation decl =

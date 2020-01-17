@@ -117,7 +117,8 @@ substituteAllInError ( error, substitutionMap ) =
     )
 
 
-{-| Only care about this level, don't recurse
+{-| Only care about this level, don't recurse. The recursion is handled by
+`transform` library.
 -}
 substituteType : SubstitutionMap -> Typed.LocatedExpr -> Typed.LocatedExpr
 substituteType substitutionMap located =
@@ -131,7 +132,7 @@ substituteType substitutionMap located =
 {-| Tries to resolve `Var 0`-like references through the SubstitutionMap.
 
 Only goes one step, but that should be enough if we created the SubstitutionMap
-correctly. (TODO check that assumption)
+correctly. (Any references not fully resolved are bugs, please report them!)
 
 Remember to call itself recursively on children Exprs!
 

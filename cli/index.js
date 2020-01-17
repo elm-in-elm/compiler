@@ -41,7 +41,6 @@ const { registerPort } = require('./utils.js');
 
   registerPort(app, 'stdout', string => process.stdout.write(string));
   registerPort(app, 'stderr', string => {
-    process.stderr.write('\n');
     process.stderr.write('\n---------------------------');
     process.stderr.write('\n-- COMPILER ERROR ---------');
     process.stderr.write('\n---------------------------');
@@ -55,10 +54,10 @@ const { registerPort } = require('./utils.js');
         fileContents: contents,
       });
     } catch (e) {
-      console.log('---------------------------');
-      console.log('-- DEVELOPMENT ERROR ------');
-      console.log('---------------------------');
-      console.log(`\n${e.message}`);
+      process.stderr.write('---------------------------');
+      process.stderr.write('-- DEVELOPMENT ERROR ------');
+      process.stderr.write('---------------------------');
+      process.stderr.write(`\n${e.message}`);
       if (e.code != null) {
         app.ports.readErrorSubscription.send({
           filePath: filename,
