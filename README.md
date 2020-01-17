@@ -85,12 +85,12 @@ Oh God please yes! :heart: Feel free to look around the [<kbd>help wanted</kbd>]
 | if...then...else  | :warning: [[3]](#3)  | :heavy_check_mark:   | :heavy_check_mark:   | :warning: [[3]](#3)  | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark:   | :heavy_check_mark:   |
 | let..in           | :warning: [[3]](#3)  | :heavy_check_mark:   | :heavy_check_mark:   | :warning: [[3]](#3)  | :heavy_check_mark: | :warning:          | :heavy_check_mark:   | :warning:            |
 | case...of         | :x:                  | :x:                  | :x:                  | :x:                  | :x:                | :x:                | :x:                  | :x:                  |
-| records           | :warning: [[3]](#3)  | :heavy_check_mark:   | :heavy_check_mark:    | :warning: [[3]](#3)  | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark:   | :heavy_check_mark:   |
+| records           | :warning: [[3]](#3)  | :heavy_check_mark:   | :heavy_check_mark:   | :warning: [[3]](#3)  | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark:   | :heavy_check_mark:   |
 | record accessors  | :x:                  | :x:                  | :x:                  | :x:                  | :x:                | :x:                | :x:                  | :x:                  |
 | record updates    | :x:                  | :x:                  | :x:                  | :x:                  | :x:                | :x:                | :x:                  | :x:                  |
 | unit type         | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark:   | :heavy_check_mark:   |
-| tuples, 3-tuples  | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark:  | :heavy_check_mark:     | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark:   | :heavy_check_mark:  |
-| type annotations  | :x:                  | :x:                  | :x:                  | :x:                  | :x:                | :x:                | :x:                  | :x:                  |
+| tuples, 3-tuples  | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark:   | :heavy_check_mark:   |
+| type annotations  | :x:                  | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark:   | :heavy_check_mark:   |
 | type aliases      | :x:                  | :x:                  | :x:                  | :x:                  | :x:                | :x:                | :x:                  | :x:                  |
 | custom types      | :x:                  | :x:                  | :x:                  | :x:                  | :x:                | :x:                | :x:                  | :x:                  |
 | custom operators  | :x:                  | :x:                  | :x:                  | :x:                  | :x:                | :x:                | :x:                  | :x:                  |
@@ -99,12 +99,8 @@ Oh God please yes! :heart: Feel free to look around the [<kbd>help wanted</kbd>]
 1. <span id="f1"></span> Lists' `emit` will have to change a bit: conversion from target platform lists to Elm "custom type" lists is now missing; tracked in [#29](https://github.com/elm-in-elm/compiler/issues/29)
 2. <span id="f2"></span> To be optimized with multiplication, subtraction, division, modulo, exponentiation... maybe more?; not tracked yet
 3. <span id="f3"></span> Multi-line lists, binops, lambdas, fn calls, ifs, lets don't work correctly now; not tracked yet
-4. <span id="f4"></span> ... this space left intentionally blank :smile: ...
 5. <span id="f5"></span> To be optimized the same way Ints are; not tracked yet
-6. <span id="f6"></span> ... this space left intentionally blank :smile: ...
-7. <span id="f7"></span> ... this space left intentionally blank :smile: ...
 8. <span id="f8"></span> Not implemented; partially tracked in [#29](https://github.com/elm-in-elm/compiler/issues/29)
-9. <span id="f9"></span> ... this space left intentionally blank :smile: ...
 
 
 ## FAQ

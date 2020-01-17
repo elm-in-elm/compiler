@@ -208,7 +208,7 @@ json =
                 )
             ]
         , let
-            runTest : ( String, Declaration Typed.LocatedExpr, String ) -> Test
+            runTest : ( String, Declaration Typed.LocatedExpr Never, String ) -> Test
             runTest ( description, input, output ) =
                 test description <|
                     \() ->
@@ -221,6 +221,7 @@ json =
             (List.map runTest
                 [ ( "simple"
                   , { module_ = "Foo"
+                    , typeAnnotation = Nothing
                     , name = "bar"
                     , body = Value <| typedInt 1
                     }

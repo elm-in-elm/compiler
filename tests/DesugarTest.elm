@@ -12,6 +12,7 @@ import Elm.Data.Import exposing (Import)
 import Elm.Data.Located as Located exposing (Located)
 import Elm.Data.Module as Module exposing (Module)
 import Elm.Data.ModuleName exposing (ModuleName)
+import Elm.Data.TypeAnnotation exposing (TypeAnnotation)
 import Elm.Data.VarName exposing (VarName)
 import Expect
 import Stage.Desugar as Desugar
@@ -257,7 +258,7 @@ as_ alias_ ( moduleName, import_ ) =
     ( moduleName, { import_ | as_ = Just alias_ } )
 
 
-moduleFromName : ModuleName -> Module a
+moduleFromName : ModuleName -> Module expr ann
 moduleFromName name =
     { imports = Dict.empty
     , name = name
@@ -274,12 +275,13 @@ moduleFromName name =
 -}
 
 
-addDeclaration : String -> Module Frontend.LocatedExpr -> Module Frontend.LocatedExpr
+addDeclaration : String -> Module Frontend.LocatedExpr TypeAnnotation -> Module Frontend.LocatedExpr TypeAnnotation
 addDeclaration varName module_ =
     let
-        decl : Declaration Frontend.LocatedExpr
+        decl : Declaration Frontend.LocatedExpr TypeAnnotation
         decl =
             { module_ = module_.name
+            , typeAnnotation = Nothing
             , name = varName
             , body = Declaration.Value (located <| Frontend.Int 42)
             }
@@ -287,7 +289,7 @@ addDeclaration varName module_ =
     { module_ | declarations = Dict.insert varName decl module_.declarations }
 
 
-addDeclarations : List String -> Module Frontend.LocatedExpr -> Module Frontend.LocatedExpr
+addDeclarations : List String -> Module Frontend.LocatedExpr TypeAnnotation -> Module Frontend.LocatedExpr TypeAnnotation
 addDeclarations varNames module_ =
     List.foldr addDeclaration module_ varNames
 
@@ -296,7 +298,7 @@ addDeclarations varNames module_ =
 {- | add a list of exposed values to a module -}
 
 
-exposingValuesInModule : List VarName -> Module a -> Module a
+exposingValuesInModule : List VarName -> Module expr ann -> Module expr ann
 exposingValuesInModule varNames exposable =
     { exposable | exposing_ = Exposing.ExposingSome (List.map Exposing.ExposedValue varNames) }
 
@@ -305,12 +307,12 @@ exposingValuesInModule varNames exposable =
 {- | add an import to a module -}
 
 
-addImport : ( ModuleName, Import ) -> Module a -> Module a
+addImport : ( ModuleName, Import ) -> Module expr ann -> Module expr ann
 addImport ( moduleName, import_ ) module_ =
     { module_ | imports = Dict.insert moduleName import_ module_.imports }
 
 
-addImports : List ( ModuleName, Import ) -> Module a -> Module a
+addImports : List ( ModuleName, Import ) -> Module expr ann -> Module expr ann
 addImports imports module_ =
     List.foldr addImport module_ imports
 

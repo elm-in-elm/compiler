@@ -915,8 +915,19 @@ typeAnnotation =
 type_ : Parser_ Type
 type_ =
     P.oneOf
-        [ simpleType "Int" Type.Int
+        [ varType
+        , functionType
+        , simpleType "Int" Type.Int
+        , simpleType "Float" Type.Float
+        , simpleType "Char" Type.Char
+        , simpleType "String" Type.String
+        , simpleType "Bool" Type.Bool
+        , listType
         , simpleType "()" Type.Unit
+        , tupleType
+        , tuple3Type
+        , recordType
+        , userDefinedType
         ]
 
 

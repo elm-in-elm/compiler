@@ -14,6 +14,7 @@ import Random.Extra as Random
 import Shrink exposing (Shrinker)
 import Shrink.Extra as Shrink
 import Stage.InferTypes
+import Stage.InferTypes.SubstitutionMap as SubstitutionMap
 import Test exposing (Test, describe, fuzz)
 import TestHelpers exposing (dumpType)
 
@@ -27,9 +28,8 @@ typeInference =
                 \input ->
                     input
                         |> Canonical.fromUnwrapped
-                        |> Stage.InferTypes.inferExpr
-                        |> Result.map Located.unwrap
-                        |> Result.map Tuple.second
+                        |> Stage.InferTypes.inferExpr SubstitutionMap.empty
+                        |> Result.map (Tuple.first >> Located.unwrap >> Tuple.second)
                         |> Expect.equal (Ok typeWanted)
 
         fuzzExpressions : String -> List Type -> Test

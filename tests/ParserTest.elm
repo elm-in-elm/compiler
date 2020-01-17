@@ -1095,29 +1095,28 @@ typeAnnotation =
                         |> Result.toMaybe
                         |> Expect.equal output
 
-        example : TypeAnnotation
-        example =
+        xInt : TypeAnnotation
+        xInt =
             { varName = "x", type_ = Type.Int }
     in
     describe "Stage.Parse.Parser.typeAnnotation"
         [ describe "various cases"
-            [ runTest
-                ( "x int"
-                , "x : Int"
-                , Just example
-                )
+            [ runTest ( "x int", "x : Int", Just xInt )
+            , runTest ( "x unit", "x : ()", Just { varName = "x", type_ = Type.Unit } )
+            , runTest ( "y bool", "y : Bool", Just { varName = "y", type_ = Type.Bool } )
+            , runTest ( "foo tuple", "foo : (Int, Bool)", Just { varName = "foo", type_ = Type.Tuple Type.Int Type.Bool } )
             ]
         , describe "whitespace behaviour"
             (List.map runTest
-                [ ( "canonical format", "x : Int", Just example )
-                , ( "no spaces", "x:Int", Just example )
-                , ( "multiple spaces before", "x   : Int", Just example )
-                , ( "multiple spaces after", "x :   Int", Just example )
-                , ( "newline and space before", "x\n  : Int", Just example )
-                , ( "newline and space after", "x :\n Int", Just example )
+                [ ( "canonical format", "x : Int", Just xInt )
+                , ( "no spaces", "x:Int", Just xInt )
+                , ( "multiple spaces before", "x   : Int", Just xInt )
+                , ( "multiple spaces after", "x :   Int", Just xInt )
+                , ( "newline and space before", "x\n  : Int", Just xInt )
+                , ( "newline and space after", "x :\n Int", Just xInt )
 
-                --, ( "newline before", "x\n: Int", Nothing )
-                --, ( "newline after", "x :\nInt", Nothing )
+                -- TODO , ( "newline before", "x\n: Int", Nothing )
+                -- TODO , ( "newline after", "x :\nInt", Nothing )
                 ]
             )
         ]
