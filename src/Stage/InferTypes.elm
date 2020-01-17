@@ -1,4 +1,4 @@
-module Stage.InferTypes exposing (inferExpr, inferTypes)
+module Stage.InferTypes exposing (inferExpr, inferTypes, unifyWithTypeAnnotation)
 
 import Dict
 import Elm.AST.Canonical as Canonical

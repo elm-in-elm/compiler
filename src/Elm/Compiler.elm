@@ -453,6 +453,7 @@ inferModule :
 inferModule substitutionMap thisModule =
     Stage.InferTypes.Boilerplate.inferModule
         Stage.InferTypes.inferExpr
+        Stage.InferTypes.unifyWithTypeAnnotation
         substitutionMap
         thisModule
         |> Result.mapError (Tuple.first >> TypeError)

@@ -26,7 +26,6 @@ test:
 format:
 	elm-format . --yes
 
-
 .PHONY: lint
 lint:
 	elm-format . --validate
