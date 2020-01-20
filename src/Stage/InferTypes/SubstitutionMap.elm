@@ -7,13 +7,15 @@ module Stage.InferTypes.SubstitutionMap exposing
     )
 
 import Dict exposing (Dict)
-import Elm.Data.Type exposing (Type)
+import Elm.Data.Type exposing (TypeOrId(..))
 
 
 {-| A thin opaque wrapper around a dict from type variable IDs to inferred types.
+Note ID can point to another ID (eg. dict entry `(1,Id 2)`) so you might need to
+walk this dict multiple times.
 -}
 type SubstitutionMap
-    = SubstitutionMap (Dict Int Type)
+    = SubstitutionMap (Dict Int TypeOrId)
 
 
 empty : SubstitutionMap
@@ -21,12 +23,28 @@ empty =
     SubstitutionMap Dict.empty
 
 
-insert : Int -> Type -> SubstitutionMap -> SubstitutionMap
-insert id type_ (SubstitutionMap substitutionMap) =
-    SubstitutionMap (Dict.insert id type_ substitutionMap)
+{-| Automatically walks the TypeOrId end of the mapping if it's an ID.
+
+    insert 1 (Id 2) (SubstitutionMap [(2,Type Unit)])
+    --> SubstitutionMap [(1,Type Unit),(2,Type Unit)]
+
+-}
+insert : Int -> TypeOrId -> SubstitutionMap -> SubstitutionMap
+insert id typeOrId ((SubstitutionMap substitutionMap) as map) =
+    case typeOrId of
+        Id id_ ->
+            case get id_ map of
+                Nothing ->
+                    SubstitutionMap (Dict.insert id typeOrId substitutionMap)
+
+                Just another ->
+                    insert id another map
+
+        Type type_ ->
+            insert id typeOrId map
 
 
-get : Int -> SubstitutionMap -> Maybe Type
+get : Int -> SubstitutionMap -> Maybe TypeOrId
 get id (SubstitutionMap substitutionMap) =
     Dict.get id substitutionMap
 

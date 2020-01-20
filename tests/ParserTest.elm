@@ -1101,7 +1101,21 @@ typeAnnotation =
     in
     describe "Stage.Parse.Parser.typeAnnotation"
         [ describe "various cases"
-            [ runTest ( "x int", "x : Int", Just xInt )
+            [ -- TODO var
+              -- TODO function
+              -- TODO Int
+              -- TODO Float
+              -- TODO Char
+              -- TODO String
+              -- TODO Bool
+              -- TODO List
+              -- TODO List with a different param
+              -- TODO Unit
+              -- TODO Tuple
+              -- TODO Tuple3
+              -- TODO Record
+              -- TODO UserDefinedType
+              runTest ( "x int", "x : Int", Just xInt )
             , runTest ( "x unit", "x : ()", Just { varName = "x", type_ = Type.Unit } )
             , runTest ( "y bool", "y : Bool", Just { varName = "y", type_ = Type.Bool } )
             , runTest ( "foo tuple", "foo : (Int, Bool)", Just { varName = "foo", type_ = Type.Tuple Type.Int Type.Bool } )
@@ -1119,4 +1133,7 @@ typeAnnotation =
                 -- TODO , ( "newline after", "x :\nInt", Nothing )
                 ]
             )
+
+        -- TODO parentheses behaviour
+        -- TODO whitespace behaviour of `->` type (esp. newlines)
         ]

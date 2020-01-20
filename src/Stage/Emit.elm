@@ -39,7 +39,7 @@ import Elm.Data.Exposing as Exposing exposing (ExposedItem(..), Exposing(..))
 import Elm.Data.Module exposing (Module)
 import Elm.Data.ModuleName exposing (ModuleName)
 import Elm.Data.Project exposing (Project)
-import Elm.Data.Type as Type exposing (Type, TypeArgument(..))
+import Elm.Data.Type as Type exposing (Type, TypeOrId(..))
 import Elm.Data.VarName exposing (VarName)
 import Graph
 import Result.Extra as Result
@@ -286,22 +286,22 @@ findDependencies modules declarationBody =
 
         CustomType { constructors } ->
             constructors
-                |> List.concatMap (.arguments >> List.map (findDependenciesOfTypeArgument modules))
+                |> List.concatMap (.arguments >> List.map (findDependenciesOfTypeOrId modules))
                 |> Result.combine
                 |> Result.map List.concat
 
 
-findDependenciesOfTypeArgument :
+findDependenciesOfTypeOrId :
     Dict ModuleName (Module Typed.LocatedExpr Never)
-    -> TypeArgument
+    -> TypeOrId
     -> Result EmitError (List (Declaration Typed.LocatedExpr Never))
-findDependenciesOfTypeArgument modules typeArgument =
+findDependenciesOfTypeOrId modules typeArgument =
     case typeArgument of
-        ConcreteType type_ ->
-            findDependenciesOfType modules type_
+        Id _ ->
+            []
 
-        TypeVariable _ ->
-            Ok []
+        Type type_ ->
+            findDependenciesOfType modules type_
 
 
 findDependenciesOfType :
@@ -354,28 +354,37 @@ findDependenciesOfType modules type_ =
                 (findDependencies_ t2)
                 (findDependencies_ t3)
 
-        Type.UserDefinedType { module_, name } paramTypes ->
+        Type.UserDefinedType { name, args } ->
             let
-                typeDependencies =
-                    modules
-                        |> Dict.get module_
-                        |> Result.fromMaybe (ModuleNotFoundForType { module_ = module_, type_ = name })
-                        |> Result.andThen
-                            (.declarations
-                                >> Dict.get name
-                                >> Result.fromMaybe (DeclarationNotFound { module_ = module_, name = name })
-                            )
-                        |> Result.andThen (.body >> findDependencies modules)
-
-                paramsDependencies =
-                    paramTypes
-                        |> List.map findDependencies_
-                        |> Result.combine
-                        |> Result.map List.concat
+                maybeModule =
+                    unaliasWithCurrentImportsOrSomething
             in
-            Result.map2 (++)
-                typeDependencies
-                paramsDependencies
+            maybeModule
+                |> Maybe.map
+                    (\module_ ->
+                        let
+                            typeDependencies =
+                                modules
+                                    |> Dict.get module_
+                                    |> Result.fromMaybe (ModuleNotFoundForType { module_ = module_, type_ = name })
+                                    |> Result.andThen
+                                        (.declarations
+                                            >> Dict.get name
+                                            >> Result.fromMaybe (DeclarationNotFound { module_ = module_, name = name })
+                                        )
+                                    |> Result.andThen (.body >> findDependencies modules)
+
+                            argsDependencies =
+                                args
+                                    |> List.map findDependencies_
+                                    |> Result.combine
+                                    |> Result.map List.concat
+                        in
+                        Result.map2 (++)
+                            typeDependencies
+                            argsDependencies
+                    )
+                |> Maybe.withDefault (Err typeNotImportedOrSomething)
 
         Type.Record bindings ->
             bindings

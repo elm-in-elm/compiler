@@ -68,6 +68,7 @@ exposes : VarName -> Module expr annotation -> Bool
 exposes varName module_ =
     let
         isInDeclarations =
+            -- TODO this means constructors will have to be in the module_.declarations
             Dict.member varName module_.declarations
     in
     case module_.exposing_ of

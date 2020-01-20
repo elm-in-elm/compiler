@@ -13,13 +13,13 @@ Convert to it using the [`Elm.AST.Typed.unwrap`](Elm.AST.Typed#unwrap).
 import Dict exposing (Dict)
 import Elm.Data.Binding exposing (Binding)
 import Elm.Data.ModuleName exposing (ModuleName)
-import Elm.Data.Type exposing (Type)
+import Elm.Data.Type exposing (TypeOrId)
 import Elm.Data.VarName exposing (VarName)
 
 
 {-| -}
 type alias Expr =
-    ( Expr_, Type )
+    ( Expr_, TypeOrId )
 
 
 {-| Note this type recurses not on itself but on Expr (so that children also hold

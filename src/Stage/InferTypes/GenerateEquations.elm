@@ -32,9 +32,9 @@ subexpression.
 import Dict
 import Elm.AST.Typed as Typed
 import Elm.Data.Located as Located
-import Elm.Data.Type as Type
+import Elm.Data.Type as Type exposing (Type(..), TypeOrId(..))
 import Elm.Data.VarName exposing (VarName)
-import Stage.InferTypes.AssignIds exposing (Id)
+import Stage.InferTypes.AssignIds
 import Stage.InferTypes.TypeEquation exposing (TypeEquation, equals)
 import Transform
 
@@ -47,7 +47,7 @@ But there are such cases - see eg. List or Lambda. It is because of them that we
 need to pass the ID as one of the return values.
 
 -}
-generateEquations : Id -> Typed.LocatedExpr -> ( List TypeEquation, Id )
+generateEquations : Int -> Typed.LocatedExpr -> ( List TypeEquation, Int )
 generateEquations currentId located =
     let
         ( expr, type_ ) =
@@ -56,31 +56,31 @@ generateEquations currentId located =
     case expr of
         Typed.Int _ ->
             -- integer is an integer ¯\_(ツ)_/¯
-            ( [ equals type_ Type.Int ]
+            ( [ equals type_ (Type Int) ]
             , currentId
             )
 
         Typed.Float _ ->
             -- float is a float
-            ( [ equals type_ Type.Float ]
+            ( [ equals type_ (Type Float) ]
             , currentId
             )
 
         Typed.Char _ ->
             -- char is a char
-            ( [ equals type_ Type.Char ]
+            ( [ equals type_ (Type Char) ]
             , currentId
             )
 
         Typed.String _ ->
             -- string is a string
-            ( [ equals type_ Type.String ]
+            ( [ equals type_ (Type String) ]
             , currentId
             )
 
         Typed.Bool _ ->
             -- bool is a bool
-            ( [ equals type_ Type.Bool ]
+            ( [ equals type_ (Type Bool) ]
             , currentId
             )
 
@@ -107,9 +107,9 @@ generateEquations currentId located =
                     generateEquations id1 right
             in
             ( -- for expression `a + b`:
-              [ equals leftType Type.Int -- type of `a` is Int
-              , equals rightType Type.Int -- type of `b` is Int
-              , equals type_ Type.Int -- type of `a + b` is Int
+              [ equals leftType (Type Int) -- type of `a` is Int
+              , equals rightType (Type Int) -- type of `b` is Int
+              , equals type_ (Type Int) -- type of `a + b` is Int
               ]
                 ++ leftEquations
                 ++ rightEquations
@@ -131,7 +131,7 @@ generateEquations currentId located =
                     generateEquations id1 right
             in
             ( -- For expression a :: [ b ]:
-              [ equals rightType (Type.List leftType) -- type of b is a List a
+              [ equals rightType (Type (List leftType)) -- type of b is a List a
               , equals type_ rightType -- a :: [ b ] is a List b
               ]
                 ++ leftEquations
@@ -177,7 +177,7 @@ generateEquations currentId located =
                     generateArgumentUsageEquations argumentId usages
             in
             ( -- type of `\arg -> body` is (arg -> body)
-              equals type_ (Type.Function { from = Type.Var currentId, to = bodyType })
+              equals type_ (Type (Function { from = Id currentId, to = bodyType }))
                 -- type of the argument is the same as the type of all the children usages of that argument
                 :: usageEquations
                 ++ bodyEquations
@@ -200,7 +200,7 @@ generateEquations currentId located =
             in
             ( -- for expression `a b`:
               -- type of `a` is (argumentType -> resultType)
-              equals fnType (Type.Function { from = argumentType, to = type_ })
+              equals fnType (Type (Function { from = argumentType, to = type_ }))
                 :: fnEquations
                 ++ argumentEquations
             , id2
@@ -227,7 +227,7 @@ generateEquations currentId located =
                     generateEquations id2 else_
             in
             ( -- for expression `if a then b else c`:
-              [ equals testType Type.Bool -- type of `a` is Bool
+              [ equals testType (Type Bool) -- type of `a` is Bool
               , equals thenType elseType -- types of `b` and `c` are the same
               , equals thenType type_ -- types of `b` and `if a then b else c` are the same
               ]
@@ -269,7 +269,7 @@ generateEquations currentId located =
 
         Typed.Unit ->
             -- unit is unit
-            ( [ equals type_ Type.Unit ]
+            ( [ equals type_ (Type Unit) ]
             , currentId
             )
 
@@ -282,7 +282,7 @@ generateEquations currentId located =
                     currentId + 1
 
                 listParamType =
-                    Type.Var currentId
+                    Id currentId
 
                 ( bodyEquations, id2 ) =
                     List.foldr
@@ -305,7 +305,7 @@ generateEquations currentId located =
             in
             ( -- for expression `[ a, b, c ]`
               -- the `x` in `List x` type and types of all the items are the same
-              equals type_ (Type.List listParamType)
+              equals type_ (Type (List listParamType))
                 :: bodyEquations
             , id2
             )
@@ -324,7 +324,7 @@ generateEquations currentId located =
                 ( sndEquations, id2 ) =
                     generateEquations id1 snd
             in
-            ( equals type_ (Type.Tuple fstType sndType)
+            ( equals type_ (Type (Tuple fstType sndType))
                 :: fstEquations
                 ++ sndEquations
             , id2
@@ -350,7 +350,7 @@ generateEquations currentId located =
                 ( trdEquations, id3 ) =
                     generateEquations id2 trd
             in
-            ( equals type_ (Type.Tuple3 fstType sndType trdType)
+            ( equals type_ (Type (Tuple3 fstType sndType trdType))
                 :: fstEquations
                 ++ sndEquations
                 ++ trdEquations
@@ -380,7 +380,7 @@ generateEquations currentId located =
                         ( [], currentId )
                         (Dict.values bindings)
             in
-            ( equals type_ (Type.Record bindingTypes)
+            ( equals type_ (Type (Record bindingTypes))
                 :: bindingEquations
             , id1
             )
@@ -406,9 +406,10 @@ isArgument name locatedExpr =
 generateArgumentUsageEquations : Int -> List Typed.LocatedExpr -> List TypeEquation
 generateArgumentUsageEquations argumentId usages =
     let
+        argumentType : Type.TypeOrId
         argumentType =
-            Type.Var argumentId
+            Type.Id argumentId
     in
     List.map
-        (Typed.getType >> equals argumentType)
+        (Typed.getTypeOrId >> equals argumentType)
         usages

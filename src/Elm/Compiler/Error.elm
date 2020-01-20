@@ -21,7 +21,7 @@ import Elm.Data.FileContents exposing (FileContents)
 import Elm.Data.FilePath exposing (FilePath)
 import Elm.Data.Located exposing (Located)
 import Elm.Data.ModuleName exposing (ModuleName)
-import Elm.Data.Type as Type exposing (Type)
+import Elm.Data.Type as Type exposing (Type, TypeOrId(..))
 import Elm.Data.Type.ToString as TypeToString
 import Elm.Data.VarName exposing (VarName)
 import Json.Decode as JD
@@ -86,9 +86,7 @@ type ParseProblem
     | ExpectingModuleName -- `module >Foo.Bar< exposing (..)`
     | ExpectingExposingKeyword -- `module Foo.Bar >exposing< (..)`
     | ExpectingExposingAllSymbol -- `module Foo.Bar exposing >(..)<`
-    | ExpectingExposingListLeftParen -- `module Foo.Bar exposing >(<a, b, c)`
-    | ExpectingExposingListRightParen -- `module Foo.Bar exposing (a, b, c>)<`
-    | ExpectingExposingListSeparatorComma -- `module Foo.Bar exposing (a>,< b, c)`
+    | ExpectingComma -- `module Foo.Bar exposing (a>,< b, c)`
     | ExpectingExposedTypeDoublePeriod -- `module Foo.Bar exposing (Foo>(..)<)`
     | ExpectingVarName -- eg. `module Foo.Bar exposing (>a<)`
     | ExpectingTypeOrConstructorName -- eg. `module Foo.Bar exposing (>Foo<)`
@@ -105,8 +103,8 @@ type ParseProblem
     | ExpectingChar
     | ExpectingEscapeBackslash
     | ExpectingEscapeCharacter Char
-    | ExpectingUnicodeEscapeLeftBrace
-    | ExpectingUnicodeEscapeRightBrace
+    | ExpectingLeftBrace
+    | ExpectingRightBrace
     | InvalidUnicodeCodePoint
     | ExpectingDoubleQuote
     | ExpectingTripleQuote
@@ -133,9 +131,7 @@ type ParseProblem
     | ExpectingUnit
     | ExpectingColon
     | ExpectingSimpleType String
-    | ExpectingRecordLeftBrace
-    | ExpectingRecordSeparator
-    | ExpectingRecordRightBrace
+    | ExpectingListType
     | InvalidNumber
     | TriedToParseCharacterStoppingDelimiter
     | CompilerBug String
@@ -168,8 +164,8 @@ type DesugarError
 {-| Errors encountered during [typechecking](Elm.Compiler#inferExpr).
 -}
 type TypeError
-    = TypeMismatch Type Type
-    | OccursCheckFailed Int Type
+    = TypeMismatch TypeOrId TypeOrId
+    | OccursCheckFailed Int TypeOrId
     | -- TODO should this be a parse error instead?
       AnnotationForNonExprDeclaration
 
@@ -317,7 +313,9 @@ toString error =
                     let
                         -- share index between types
                         ( type1, state1 ) =
-                            TypeToString.toString TypeToString.emptyState t1
+                            TypeToString.toString
+                                (TypeToString.fromTypesOrIds [ t1, t2 ])
+                                t1
 
                         ( type2, _ ) =
                             TypeToString.toString state1 t2
@@ -328,14 +326,16 @@ toString error =
                         ++ type2
                         ++ "` don't match."
 
-                OccursCheckFailed varId type_ ->
+                OccursCheckFailed varId typeOrId ->
                     let
                         -- share index between types
                         ( type1, state1 ) =
-                            TypeToString.toString TypeToString.emptyState (Type.Var varId)
+                            TypeToString.toString
+                                (TypeToString.fromTypeOrId typeOrId)
+                                (Id varId)
 
                         ( type2, _ ) =
-                            TypeToString.toString state1 type_
+                            TypeToString.toString state1 typeOrId
                     in
                     "An \"occurs check\" failed while typechecking: "
                         ++ type1
@@ -401,14 +401,8 @@ parseProblemToString problem =
         ExpectingExposingAllSymbol ->
             "ExpectingExposingAllSymbol"
 
-        ExpectingExposingListLeftParen ->
-            "ExpectingExposingListLeftParen"
-
-        ExpectingExposingListRightParen ->
-            "ExpectingExposingListRightParen"
-
-        ExpectingExposingListSeparatorComma ->
-            "ExpectingExposingListSeparatorComma"
+        ExpectingComma ->
+            "ExpectingComma"
 
         ExpectingExposedTypeDoublePeriod ->
             "ExpectingExposedTypeDoublePeriod"
@@ -458,11 +452,11 @@ parseProblemToString problem =
         ExpectingEscapeCharacter char ->
             "ExpectingEscapeCharacter " ++ String.fromChar char
 
-        ExpectingUnicodeEscapeLeftBrace ->
-            "ExpectingUnicodeEscapeLeftBrace"
+        ExpectingLeftBrace ->
+            "ExpectingLeftBrace"
 
-        ExpectingUnicodeEscapeRightBrace ->
-            "ExpectingUnicodeEscapeRightBrace"
+        ExpectingRightBrace ->
+            "ExpectingRightBrace"
 
         InvalidUnicodeCodePoint ->
             "InvalidUnicodeCodePoint"
@@ -542,14 +536,8 @@ parseProblemToString problem =
         ExpectingSimpleType type_ ->
             "ExpectingSimpleType " ++ type_
 
-        ExpectingRecordLeftBrace ->
-            "ExpectingRecordLeftBrace"
-
-        ExpectingRecordSeparator ->
-            "ExpectingRecordSeparator"
-
-        ExpectingRecordRightBrace ->
-            "ExpectingRecordRightBrace"
+        ExpectingListType ->
+            "ExpectingListType"
 
         InvalidNumber ->
             "InvalidNumber"

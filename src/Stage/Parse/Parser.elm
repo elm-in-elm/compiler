@@ -28,7 +28,7 @@ import Elm.Data.Import exposing (Import)
 import Elm.Data.Located as Located exposing (Located)
 import Elm.Data.Module exposing (Module, ModuleType(..))
 import Elm.Data.ModuleName exposing (ModuleName)
-import Elm.Data.Type as Type exposing (Type)
+import Elm.Data.Type as Type exposing (Type, TypeOrId(..))
 import Elm.Data.TypeAnnotation exposing (TypeAnnotation)
 import Elm.Data.VarName exposing (VarName)
 import Hex
@@ -234,9 +234,9 @@ exposingAll =
 exposingSome : Parser_ Exposing
 exposingSome =
     P.sequence
-        { start = P.Token "(" ExpectingExposingListLeftParen
-        , separator = P.Token "," ExpectingExposingListSeparatorComma
-        , end = P.Token ")" ExpectingExposingListRightParen
+        { start = P.Token "(" ExpectingLeftParen
+        , separator = P.Token "," ExpectingComma
+        , end = P.Token ")" ExpectingRightParen
         , spaces = P.spaces
         , item = exposedItem
         , trailing = P.Forbidden
@@ -505,9 +505,9 @@ character quotes =
                 , P.map (\_ -> '\u{000D}') (P.token (P.Token "r" (ExpectingEscapeCharacter 'r')))
                 , P.succeed identity
                     |. P.token (P.Token "u" (ExpectingEscapeCharacter 'u'))
-                    |. P.token (P.Token "{" ExpectingUnicodeEscapeLeftBrace)
+                    |. P.token (P.Token "{" ExpectingLeftBrace)
                     |= unicodeCharacter
-                    |. P.token (P.Token "}" ExpectingUnicodeEscapeRightBrace)
+                    |. P.token (P.Token "}" ExpectingRightBrace)
                 ]
             |> P.inContext InCharEscapeMode
         , -- we don't want to eat the closing delimiter
@@ -742,6 +742,16 @@ binding config =
         |> P.inContext InLetBinding
 
 
+typeBinding : Parser_ ( VarName, TypeOrId )
+typeBinding =
+    P.succeed Tuple.pair
+        |= varName
+        |. P.spaces
+        |. P.symbol (P.Token ":" ExpectingColon)
+        |. P.spaces
+        |= P.lazy lazyTypeOrId
+
+
 promoteArguments : List VarName -> Expr -> Expr
 promoteArguments arguments expr_ =
     -- TODO set of arguments instead of list?
@@ -824,9 +834,9 @@ record : ExprConfig -> Parser_ LocatedExpr
 record config =
     P.succeed Frontend.Record
         |= P.sequence
-            { start = P.Token "{" ExpectingRecordLeftBrace
-            , separator = P.Token "," ExpectingRecordSeparator
-            , end = P.Token "}" ExpectingRecordRightBrace
+            { start = P.Token "{" ExpectingLeftBrace
+            , separator = P.Token "," ExpectingComma
+            , end = P.Token "}" ExpectingRightBrace
             , spaces = spacesOnly
             , item = binding config
             , trailing = P.Forbidden
@@ -931,7 +941,109 @@ type_ =
         ]
 
 
+lazyType : () -> Parser_ Type
+lazyType () =
+    type_
+
+
+lazyTypeOrId : () -> Parser_ TypeOrId
+lazyTypeOrId () =
+    P.map Type (lazyType ())
+
+
+varType : Parser_ Type
+varType =
+    {- TODO I think we'll need to do `Var String` instead of `Var Int` ...
+       and map from user-written strings to Int Var IDs in some later stage
+    -}
+    {-
+       varName
+           |> P.getChompedString
+           |> P.map Type.Var
+    -}
+    Debug.todo "varType"
+
+
+functionType : Parser_ Type
+functionType =
+    P.succeed (\from to -> Type.Function { from = from, to = to })
+        |= P.lazy lazyTypeOrId
+        |. spacesOnly
+        |. P.keyword (P.Token "->" ExpectingRightArrow)
+        |. spacesOnly
+        |= P.lazy lazyTypeOrId
+
+
 simpleType : String -> Type -> Parser_ Type
 simpleType name parsedType =
     P.succeed parsedType
         |. P.keyword (P.Token name (ExpectingSimpleType name))
+
+
+listType : Parser_ Type
+listType =
+    P.succeed Type.List
+        |. P.keyword (P.Token "List" ExpectingListType)
+        |. spacesOnly
+        |= P.lazy lazyTypeOrId
+
+
+tupleType : Parser_ Type
+tupleType =
+    P.succeed Type.Tuple
+        |. P.keyword (P.Token "(" ExpectingLeftParen)
+        |. spacesOnly
+        |= P.lazy lazyTypeOrId
+        |. spacesOnly
+        |. P.keyword (P.Token "," ExpectingComma)
+        |. spacesOnly
+        |= P.lazy lazyTypeOrId
+        |. spacesOnly
+        |. P.keyword (P.Token ")" ExpectingRightParen)
+
+
+tuple3Type : Parser_ Type
+tuple3Type =
+    P.succeed Type.Tuple3
+        |. P.keyword (P.Token "(" ExpectingLeftParen)
+        |. spacesOnly
+        |= P.lazy lazyTypeOrId
+        |. spacesOnly
+        |. P.keyword (P.Token "," ExpectingComma)
+        |. spacesOnly
+        |= P.lazy lazyTypeOrId
+        |. spacesOnly
+        |. P.keyword (P.Token "," ExpectingComma)
+        |. spacesOnly
+        |= P.lazy lazyTypeOrId
+        |. spacesOnly
+        |. P.keyword (P.Token ")" ExpectingRightParen)
+
+
+recordType : Parser_ Type
+recordType =
+    P.succeed (Dict.fromList >> Type.Record)
+        |= P.sequence
+            { start = P.Token "{" ExpectingLeftBrace
+            , separator = P.Token "," ExpectingComma
+            , end = P.Token "}" ExpectingRightBrace
+            , spaces = spacesOnly -- TODO what about definitions of type aliases etc?
+            , item = typeBinding
+            , trailing = P.Forbidden
+            }
+
+
+userDefinedType : Parser_ Type
+userDefinedType =
+    -- Maybe a
+    -- List Int
+    P.succeed
+        (\name args ->
+            Type.UserDefinedType
+                { name = name
+                , args = args
+                }
+        )
+        |= typeOrConstructorName
+        |. spacesOnly
+        |= zeroOrMoreWith spacesOnly (P.lazy lazyTypeOrId)

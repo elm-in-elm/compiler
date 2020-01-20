@@ -1,6 +1,6 @@
 module Elm.Data.Type.ToString exposing
-    ( toString
-    , State, emptyState
+    ( toString, toStringType
+    , State, fromType, fromTypeOrId, fromTypes, fromTypesOrIds
     , niceVarName
     )
 
@@ -37,14 +37,15 @@ If you didn't do that and passed `emptyState` to both cases, you'd get:
 
 Which would be wrong and misleading!
 
-@docs toString
-@docs State, emptyState
+@docs toString, toStringType
+@docs State, fromType, fromTypeOrId, fromTypes, fromTypesOrIds
 @docs niceVarName
 
 -}
 
 import Dict exposing (Dict)
-import Elm.Data.Type exposing (Type(..))
+import Elm.Data.Type as Type exposing (Type(..), TypeOrId(..))
+import Set exposing (Set)
 
 
 {-| State for keeping track of the type variables' chosen names.
@@ -53,27 +54,72 @@ type State
     = State
         { mapping : Dict Int String
         , counter : Int
+        , used : Set String
         }
 
 
 {-| Initial state to start with.
 -}
-emptyState : State
-emptyState =
+fromType : Type -> State
+fromType type_ =
     State
         { mapping = Dict.empty
         , counter = 0
+        , used = Set.fromList (Type.varNames type_)
+        }
+
+
+{-| Initial state to start with.
+-}
+fromTypeOrId : TypeOrId -> State
+fromTypeOrId typeOrId =
+    State
+        { mapping = Dict.empty
+        , counter = 0
+        , used = Set.fromList (Type.varNames_ typeOrId)
+        }
+
+
+{-| Initial state to start with.
+-}
+fromTypes : List Type -> State
+fromTypes types =
+    State
+        { mapping = Dict.empty
+        , counter = 0
+        , used = Set.fromList (List.concatMap Type.varNames types)
+        }
+
+
+{-| Initial state to start with.
+-}
+fromTypesOrIds : List TypeOrId -> State
+fromTypesOrIds typesOrIds =
+    State
+        { mapping = Dict.empty
+        , counter = 0
+        , used = Set.fromList (List.concatMap Type.varNames_ typesOrIds)
         }
 
 
 {-| The main function of this module. Use the state returned here
 in the subsequent calls (if they're going to end up as part of the same string!)
 -}
-toString : State -> Type -> ( String, State )
+toString : State -> TypeOrId -> ( String, State )
 toString state type_ =
     case type_ of
-        Var int ->
-            getName state int
+        Id id ->
+            getName state id
+
+        Type type__ ->
+            toStringType state type__
+
+
+toStringType : State -> Type -> ( String, State )
+toStringType state type_ =
+    case type_ of
+        Var string ->
+            ( string, state )
 
         Function args ->
             let
@@ -145,26 +191,26 @@ toString state type_ =
             in
             ( "( " ++ t1String ++ ", " ++ t2String ++ ", " ++ t3String ++ " )", state3 )
 
-        UserDefinedType { module_, name } typeVariables ->
+        UserDefinedType { name, args } ->
             let
-                ( paramsString, state1 ) =
-                    if List.isEmpty typeVariables then
+                ( argsString, state1 ) =
+                    if List.isEmpty args then
                         ( "", state )
 
                     else
                         List.foldl
-                            (\param ( strings, state2 ) ->
+                            (\arg ( strings, state2 ) ->
                                 let
                                     ( string, state3 ) =
-                                        toString state2 param
+                                        toString state2 arg
                                 in
                                 ( string :: strings, state3 )
                             )
                             ( [], state )
-                            typeVariables
-                            |> Tuple.mapFirst (\paramStrings -> " " ++ String.join " " paramStrings)
+                            args
+                            |> Tuple.mapFirst (\argStrings -> " " ++ String.join " " argStrings)
             in
-            ( module_ ++ "." ++ name ++ paramsString
+            ( name ++ argsString
             , state1
             )
 
@@ -191,7 +237,7 @@ toString state type_ =
 
 
 getName : State -> Int -> ( String, State )
-getName ((State { counter, mapping }) as state) varId =
+getName ((State { counter, mapping, used }) as state) varId =
     case Dict.get varId mapping of
         Just letter_ ->
             ( letter_, state )
@@ -200,13 +246,37 @@ getName ((State { counter, mapping }) as state) varId =
             let
                 name =
                     niceVarName counter
+                        |> findUnused used
             in
             ( name
             , State
                 { counter = counter + 1
                 , mapping = Dict.insert varId name mapping
+                , used = Set.insert name used
                 }
             )
+
+
+findUnused : Set String -> String -> String
+findUnused used newName =
+    if Set.member newName used then
+        findUnusedHelp 1 used newName
+
+    else
+        newName
+
+
+findUnusedHelp : Int -> Set String -> String -> String
+findUnusedHelp n used newName =
+    let
+        newName_ =
+            newName ++ String.fromInt n
+    in
+    if Set.member newName_ used then
+        findUnusedHelp (n + 1) used newName_
+
+    else
+        newName_
 
 
 {-| Function to get from a number to a nice type variable name.
@@ -242,13 +312,11 @@ letter int =
         |> String.fromChar
 
 
-niceRecordBinding : State -> ( String, Type ) -> ( String, State )
-niceRecordBinding state ( varName, type_ ) =
+niceRecordBinding : State -> ( String, TypeOrId ) -> ( String, State )
+niceRecordBinding state ( varName, typeOrId ) =
     let
         ( typeStr, state1 ) =
-            toString
-                state
-                type_
+            toString state typeOrId
     in
     ( varName ++ " : " ++ typeStr, state1 )
 
@@ -262,14 +330,14 @@ niceRecordBinding state ( varName, type_ ) =
      --> ( "Int", state )
 
 -}
-maybeWrapParens : Type -> ( String, a ) -> ( String, a )
-maybeWrapParens type_ ( string, state ) =
+maybeWrapParens : TypeOrId -> ( String, a ) -> ( String, a )
+maybeWrapParens typeOrId ( string, state ) =
     let
         wrapParens : String -> String
         wrapParens x =
             "(" ++ x ++ ")"
     in
-    if shouldWrapParens type_ then
+    if shouldWrapParens typeOrId then
         ( wrapParens string, state )
 
     else
@@ -287,44 +355,49 @@ but there are usecases that need parentheses:
     task : Task (Int -> Bool) String
 
 -}
-shouldWrapParens : Type -> Bool
-shouldWrapParens type_ =
-    case type_ of
-        Var _ ->
+shouldWrapParens : TypeOrId -> Bool
+shouldWrapParens typeOrId =
+    case typeOrId of
+        Id _ ->
             False
 
-        Function _ ->
-            True
+        Type type_ ->
+            case type_ of
+                Var _ ->
+                    False
 
-        Int ->
-            False
+                Function _ ->
+                    True
 
-        Float ->
-            False
+                Int ->
+                    False
 
-        Char ->
-            False
+                Float ->
+                    False
 
-        String ->
-            False
+                Char ->
+                    False
 
-        Bool ->
-            False
+                String ->
+                    False
 
-        List _ ->
-            True
+                Bool ->
+                    False
 
-        Unit ->
-            False
+                List _ ->
+                    True
 
-        Tuple _ _ ->
-            False
+                Unit ->
+                    False
 
-        Tuple3 _ _ _ ->
-            False
+                Tuple _ _ ->
+                    False
 
-        UserDefinedType _ params ->
-            not (List.isEmpty params)
+                Tuple3 _ _ _ ->
+                    False
 
-        Record _ ->
-            False
+                UserDefinedType { args } ->
+                    not (List.isEmpty args)
+
+                Record _ ->
+                    False

@@ -7,7 +7,7 @@ import Elm.Compiler.Error exposing (Error(..), TypeError(..))
 import Elm.Data.Declaration as Declaration exposing (Declaration)
 import Elm.Data.Located as Located
 import Elm.Data.Project exposing (Project)
-import Elm.Data.Type exposing (Type(..))
+import Elm.Data.Type exposing (Type(..), TypeOrId(..))
 import Stage.InferTypes.AssignIds as AssignIds
 import Stage.InferTypes.Boilerplate as Boilerplate
 import Stage.InferTypes.GenerateEquations as GenerateEquations
@@ -137,66 +137,77 @@ correctly. (Any references not fully resolved are bugs, please report them!)
 Remember to call itself recursively on children Exprs!
 
 -}
-getBetterType : SubstitutionMap -> Type -> Type
-getBetterType substitutionMap type_ =
+getBetterType : SubstitutionMap -> TypeOrId -> TypeOrId
+getBetterType substitutionMap typeOrId =
     if SubstitutionMap.isEmpty substitutionMap then
-        type_
+        typeOrId
 
     else
-        case type_ of
-            Int ->
-                type_
-
-            Float ->
-                type_
-
-            Char ->
-                type_
-
-            String ->
-                type_
-
-            Bool ->
-                type_
-
-            Var id ->
+        case typeOrId of
+            Id id ->
                 -- walk one extra level
                 -- TODO: why? explain
                 SubstitutionMap.get id substitutionMap
-                    |> Maybe.map (\typeForId -> getBetterType substitutionMap typeForId)
-                    |> Maybe.withDefault type_
+                    |> Maybe.map (getBetterType substitutionMap)
+                    |> Maybe.withDefault typeOrId
 
-            Function { from, to } ->
-                Function
-                    { from = getBetterType substitutionMap from
-                    , to = getBetterType substitutionMap to
-                    }
+            Type type_ ->
+                case type_ of
+                    Int ->
+                        typeOrId
 
-            List param ->
-                List <| getBetterType substitutionMap param
+                    Float ->
+                        typeOrId
 
-            Unit ->
-                type_
+                    Char ->
+                        typeOrId
 
-            Tuple e1 e2 ->
-                Tuple
-                    (getBetterType substitutionMap e1)
-                    (getBetterType substitutionMap e2)
+                    String ->
+                        typeOrId
 
-            Tuple3 e1 e2 e3 ->
-                Tuple3
-                    (getBetterType substitutionMap e1)
-                    (getBetterType substitutionMap e2)
-                    (getBetterType substitutionMap e3)
+                    Bool ->
+                        typeOrId
 
-            UserDefinedType name params ->
-                UserDefinedType
-                    name
-                    (List.map (getBetterType substitutionMap) params)
+                    Var _ ->
+                        typeOrId
 
-            Record bindings ->
-                Record <|
-                    Dict.map (\_ binding -> getBetterType substitutionMap binding) bindings
+                    Function { from, to } ->
+                        Type <|
+                            Function
+                                { from = getBetterType substitutionMap from
+                                , to = getBetterType substitutionMap to
+                                }
+
+                    List param ->
+                        Type <|
+                            List <|
+                                getBetterType substitutionMap param
+
+                    Unit ->
+                        typeOrId
+
+                    Tuple e1 e2 ->
+                        Type <|
+                            Tuple
+                                (getBetterType substitutionMap e1)
+                                (getBetterType substitutionMap e2)
+
+                    Tuple3 e1 e2 e3 ->
+                        Type <|
+                            Tuple3
+                                (getBetterType substitutionMap e1)
+                                (getBetterType substitutionMap e2)
+                                (getBetterType substitutionMap e3)
+
+                    UserDefinedType ut ->
+                        Type <|
+                            UserDefinedType
+                                { ut | args = List.map (getBetterType substitutionMap) ut.args }
+
+                    Record bindings ->
+                        Type <|
+                            Record <|
+                                Dict.map (\_ binding -> getBetterType substitutionMap binding) bindings
 
 
 unifyWithTypeAnnotation :
@@ -208,10 +219,10 @@ unifyWithTypeAnnotation substitutionMap decl =
         ( Declaration.Value expr, Just annotationType ) ->
             let
                 realDeclarationType =
-                    Typed.getType expr
+                    Typed.getTypeOrId expr
 
                 unifyResult =
-                    Unify.unify annotationType realDeclarationType substitutionMap
+                    Unify.unify (Type annotationType) realDeclarationType substitutionMap
             in
             unifyResult
                 |> Result.map

@@ -1,12 +1,14 @@
 module Elm.AST.Typed exposing
     ( ProjectFields
-    , LocatedExpr, Expr, Expr_(..), getExpr, getType, unwrap, dropTypes, transformAll, transformOnce, recursiveChildren, setExpr
+    , LocatedExpr, Expr, Expr_(..), getExpr, unwrap, transformAll, transformOnce, recursiveChildren, setExpr
+    , dropTypes, getTypeOrId, getType
     )
 
 {-| Typed AST holds the inferred [types](Elm.Data.Type) for every expression.
 
 @docs ProjectFields
-@docs LocatedExpr, Expr, Expr_, getExpr, getType, unwrap, dropTypes, transformAll, transformOnce, recursiveChildren, setExpr
+@docs LocatedExpr, Expr, Expr_, getExpr, unwrap, transformAll, transformOnce, recursiveChildren, setExpr
+@docs dropTypes, getTypeOrId, getType
 
 -}
 
@@ -17,7 +19,7 @@ import Elm.Data.Binding as Binding exposing (Binding)
 import Elm.Data.Located as Located exposing (Located)
 import Elm.Data.Module exposing (Module)
 import Elm.Data.ModuleName exposing (ModuleName)
-import Elm.Data.Type exposing (Type)
+import Elm.Data.Type as Type exposing (Type, TypeOrId(..))
 import Elm.Data.VarName exposing (VarName)
 import Transform
 
@@ -52,7 +54,7 @@ type alias LocatedExpr =
 
 -}
 type alias Expr =
-    ( Expr_, Type )
+    ( Expr_, TypeOrId )
 
 
 {-| -}
@@ -274,14 +276,25 @@ setExpr expr locatedExpr =
 -}
 getExpr : LocatedExpr -> Expr_
 getExpr locatedExpr =
-    Tuple.first <| Located.unwrap locatedExpr
+    locatedExpr
+        |> Located.unwrap
+        |> Tuple.first
 
 
 {-| Extract the type (remove the location information and the expression).
 -}
-getType : LocatedExpr -> Type
+getTypeOrId : LocatedExpr -> TypeOrId
+getTypeOrId locatedExpr =
+    locatedExpr
+        |> Located.unwrap
+        |> Tuple.second
+
+
+getType : LocatedExpr -> Maybe Type
 getType locatedExpr =
-    Tuple.second <| Located.unwrap locatedExpr
+    locatedExpr
+        |> getTypeOrId
+        |> Type.getType
 
 
 {-| Discard the [location metadata](Elm.Data.Located#Located).

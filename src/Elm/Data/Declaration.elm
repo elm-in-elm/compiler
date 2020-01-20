@@ -13,7 +13,7 @@ module Elm.Data.Declaration exposing
 -}
 
 import Elm.Data.ModuleName exposing (ModuleName)
-import Elm.Data.Type exposing (Type, TypeArgument)
+import Elm.Data.Type exposing (Type, TypeOrId)
 import Elm.Data.TypeAnnotation exposing (TypeAnnotation)
 import Elm.Data.VarName exposing (VarName)
 import Stage.InferTypes.SubstitutionMap as SubstitutionMap exposing ({- TODO maybe move SubstMap module to Elm.Data? -} SubstitutionMap)
@@ -86,7 +86,7 @@ type DeclarationBody expr
 -}
 type alias Constructor =
     { name : String
-    , arguments : List TypeArgument
+    , arguments : List TypeOrId
     }
 
 
