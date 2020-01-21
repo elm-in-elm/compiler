@@ -301,7 +301,7 @@ findModuleOfVar :
 findModuleOfVar modules thisModule var =
     unqualifiedVarInThisModule thisModule var
         |> Maybe.Extra.orElseLazy (\() -> unqualifiedVarInImportedModule modules thisModule var)
-        |> Maybe.Extra.orElseLazy (\() -> qualifiedVarInImportedModule modules thisModule var)
+        |> Maybe.Extra.orElseLazy (\() -> qualifiedVarInImportedModule modules var)
         |> Maybe.Extra.orElseLazy (\() -> qualifiedVarInAliasedModule modules thisModule var)
         |> Result.fromMaybe (VarNameNotFound { var = var, insideModule = thisModule.name })
         |> Result.andThen identity
@@ -364,10 +364,9 @@ unqualifiedVarInImportedModule modules thisModule { module_, name } =
 -}
 qualifiedVarInImportedModule :
     Dict ModuleName (Module Frontend.LocatedExpr)
-    -> Module Frontend.LocatedExpr
     -> { module_ : Maybe ModuleName, name : VarName }
     -> Maybe (Result DesugarError ModuleName)
-qualifiedVarInImportedModule modules thisModule { module_, name } =
+qualifiedVarInImportedModule modules { module_, name } =
     module_
         |> Maybe.andThen (flip Dict.get modules)
         |> Maybe.andThen
@@ -392,5 +391,4 @@ qualifiedVarInAliasedModule modules thisModule { module_, name } =
     in
     qualifiedVarInImportedModule
         modules
-        thisModule
         { module_ = unaliasedModuleName, name = name }
