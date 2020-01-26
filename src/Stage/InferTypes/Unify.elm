@@ -185,11 +185,49 @@ occurs id type_ substitutionMap =
                 doesOccur
 
             Nothing ->
+                let
+                    fn innerType =
+                        occurs id innerType substitutionMap
+                in
                 case type_ of
                     Function arg result ->
-                        occurs id result substitutionMap
-                            || occurs id arg substitutionMap
+                        fn arg || fn result
 
-                    -- TODO potentially dangerous wildcard?
-                    _ ->
+                    Var _ ->
+                        -- We've already checked the (Var id) case at the beginning
                         False
+
+                    Int ->
+                        False
+
+                    Float ->
+                        False
+
+                    Char ->
+                        False
+
+                    String ->
+                        False
+
+                    Bool ->
+                        False
+
+                    List listType ->
+                        fn listType
+
+                    Unit ->
+                        False
+
+                    Tuple a b ->
+                        fn a || fn b
+
+                    Tuple3 a b c ->
+                        fn a || fn b || fn c
+
+                    Record bindings ->
+                        bindings
+                            |> Dict.values
+                            |> List.any fn
+
+                    UserDefinedType _ args ->
+                        List.any fn args
