@@ -6,8 +6,5 @@ test(
     exec,
     __dirname,
     ["-m", "src/Main.elm"],
-    async (program, t) => {
-        t.pass();
-        return {snapshot: await program};
-    }
+    async program => ({snapshot: await program})
 );
