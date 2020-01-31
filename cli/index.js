@@ -13,7 +13,7 @@ const { registerPort } = require('./utils.js');
       alias: 'm',
       description: 'The main Elm file',
       type: 'string',
-      default: 'src/Main.elm'
+      demandOption: true
     })
     .option('output', {
       alias: 'o',
@@ -70,7 +70,7 @@ const { registerPort } = require('./utils.js');
     console.log('-- WRITING TO FS ----------');
     console.log('---------------------------');
     console.log(fileContents);
-    await fs.writeFile(`${exampleProjectPath}/${filePath}`, fileContents);
+    await fs.writeFile(`${filePath}`, fileContents);
   });
 
 })();

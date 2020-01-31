@@ -1,12 +1,12 @@
 .PHONY: run
 run: build
 	tput reset
-	@cd example-project && node ../cli/index.js
+	@ cd example-project && node ../cli/index.js --main src/Main.elm
 
 .PHONY: json
 json: build
 	tput reset
-	@cd example-project && node ../cli/index.js -o JSON
+	@ cd example-project && node ../cli/index.js --main src/Main.elm -o JSON
 
 .PHONY: build
 build:
