@@ -21,7 +21,7 @@ async function exec(t, cwd, args, func) {
     const {snapshot} = await func(runCompiler(cwd, args), t);
 
     if (snapshot !== undefined) {
-        t.snapshot(`elm-in-elm ${[cliPath, ...args].join(' ')}`, {id: `Invocation`});
+        t.snapshot(`elm-in-elm ${args.join(' ')}`, {id: `Invocation`});
         t.snapshot(snapshot.stderr, {id: `Stderr`});
         t.snapshot(snapshot.stdout, {id: `Stdout`});
         t.snapshot(await fs.readFile(path.join(cwd, 'out.js'), 'utf-8'), {id: `out.js`});
