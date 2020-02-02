@@ -72,5 +72,8 @@ const { registerPort } = require('./utils.js');
     console.log(fileContents);
     await fs.writeFile(`${filePath}`, fileContents);
   });
+  registerPort(app, 'setExitCode', code => {
+    process.exitCode = code;
+  });
 
 })();

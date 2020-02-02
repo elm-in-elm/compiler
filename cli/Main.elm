@@ -52,7 +52,7 @@ import Elm.Data.Project exposing (Project)
 import Elm.Project
 import Json.Decode as JD
 import Platform
-import Ports exposing (println, printlnStderr)
+import Ports exposing (println)
 import Set exposing (Set)
 import Stage.Desugar as Desugar
 import Stage.Emit.JavaScript as EmitJS
@@ -87,7 +87,7 @@ mostly useless; they do effectively stop `subscriptions` and `update` though.
 type Model projectFields
     = Compiling (Model_ projectFields)
     | {- We don't need to remember the error, because we report it
-         at the time of transition to this new model. See `handleError`.
+         at the time of transition to this new model. See `handleFatalError`.
       -}
       EncounteredError
     | Finished
@@ -194,7 +194,7 @@ init { mainFilePath, elmJson, outputFormat } =
             modelAndCmd_
 
         Err error ->
-            handleError error
+            handleFatalError error
 
 
 normalizeDirs : Elm.Project.Project -> Elm.Project.Project
@@ -265,7 +265,7 @@ handleReadFileSuccess ({ filePath } as file) ({ project } as model) =
     in
     case parseResult of
         Err error ->
-            handleError <| CompilerError error
+            handleFatalError <| CompilerError error
 
         Ok ({ name, imports } as parsedModule) ->
             let
@@ -319,7 +319,7 @@ handleReadFileSuccess ({ filePath } as file) ({ project } as model) =
 
 handleReadFileError : ErrorCode -> ( Model Frontend.ProjectFields, Cmd Msg )
 handleReadFileError errorCode =
-    handleError (IOError errorCode)
+    handleFatalError (IOError errorCode)
 
 
 {-| We're done reading and parsing files. All the IO is done, now we can do
@@ -391,7 +391,7 @@ writeToFSAndExit result =
             )
 
         Err error ->
-            handleError error
+            handleFatalError error
 
 
 {-| When an error happens, we bail out as early as possible.
@@ -400,10 +400,13 @@ Stop everything, abort mission, jump ship!
 The `EncounteredError` model stops most everything (`update`, `subscriptions`).
 
 -}
-handleError : CLIError -> ( Model dontcare, Cmd Msg )
-handleError error =
+handleFatalError : CLIError -> ( Model dontcare, Cmd Msg )
+handleFatalError error =
     ( EncounteredError
-    , printlnStderr (errorToString error)
+    , Cmd.batch
+        [ Ports.printlnStderr (errorToString error)
+        , Ports.setExitCode 1
+        ]
     )
 
 
