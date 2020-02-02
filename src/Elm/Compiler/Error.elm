@@ -205,7 +205,14 @@ toString error =
                     String.join
                         "\n"
                         (List.map
-                            (multilineErrorMessage source)
+                            (\{problem, row, col, contextStack} ->
+                                multilineErrorMessage
+                                    source
+                                    (filenameFromContext contextStack)
+                                    ("Parse problem: " ++ parseProblemToString problem)
+                                    (parseProblemToString problem)
+                                    {row=row, col=col}
+                            )
                             problems
                         )
 
@@ -490,28 +497,25 @@ parseProblemToString problem =
         CompilerBug bug ->
             "CompilerBug " ++ bug
 
+filenameFromContext : List { a | context : ParseContext } -> Maybe FilePath
+filenameFromContext contextStack_ =
+    case contextStack_ of
+        { context } :: rest ->
+            case context of
+                InFile name ->
+                    Just name
 
-multilineErrorMessage : FileContents -> (P.DeadEnd ParseContext ParseProblem) -> String
-multilineErrorMessage source {problem, row, col, contextStack} =
-    let
-        filenameFromContext : List { a | context : ParseContext } -> Maybe FilePath
-        filenameFromContext contextStack_ =
-            case contextStack_ of
-                { context } :: rest ->
-                    case context of
-                        InFile name ->
-                            Just name
+                _ ->
+                    filenameFromContext rest
 
-                        _ ->
-                            filenameFromContext rest
+        [] ->
+            Nothing
 
-                [] ->
-                    Nothing
-    in
-    "Parse problem: "
-        ++ parseProblemToString problem
+multilineErrorMessage : FileContents -> (Maybe FilePath) -> String -> String -> { row: Int, col: Int } -> String
+multilineErrorMessage source filename title errorMessage {row, col} =
+    title
         ++ "\n  --> "
-        ++ (filenameFromContext contextStack
+        ++ (filename
                 |> Maybe.map (\s -> s ++ ":")
                 |> Maybe.withDefault ""
            )
@@ -532,7 +536,7 @@ multilineErrorMessage source {problem, row, col, contextStack} =
                             ++ "\n   | "
                             ++ String.repeat (col - 1) " "
                             ++ "^ "
-                            ++ parseProblemToString problem
+                            ++ errorMessage
                     )
                 |> Maybe.withDefault ""
            )
