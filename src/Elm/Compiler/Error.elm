@@ -205,51 +205,7 @@ toString error =
                     String.join
                         "\n"
                         (List.map
-                            (\{ problem, row, col, contextStack } ->
-                                let
-                                    filenameFromContext : List { a | context : ParseContext } -> Maybe FilePath
-                                    filenameFromContext contextStack_ =
-                                        case contextStack_ of
-                                            { context } :: rest ->
-                                                case context of
-                                                    InFile name ->
-                                                        Just name
-
-                                                    _ ->
-                                                        filenameFromContext rest
-
-                                            [] ->
-                                                Nothing
-                                in
-                                "Parse problem: "
-                                    ++ parseProblemToString problem
-                                    ++ "\n  --> "
-                                    ++ (filenameFromContext contextStack
-                                            |> Maybe.map (\s -> s ++ ":")
-                                            |> Maybe.withDefault ""
-                                       )
-                                    ++ String.fromInt row
-                                    ++ ":"
-                                    ++ String.fromInt col
-                                    ++ (source
-                                            |> String.split "\n"
-                                            |> Array.fromList
-                                            |> Array.get (row - 1)
-                                            |> Maybe.map
-                                                (\snippet ->
-                                                    "\n   | "
-                                                        ++ "\n"
-                                                        ++ String.padRight 3 ' ' (String.fromInt row)
-                                                        ++ "| "
-                                                        ++ snippet
-                                                        ++ "\n   | "
-                                                        ++ String.repeat (col - 1) " "
-                                                        ++ "^ "
-                                                        ++ parseProblemToString problem
-                                                )
-                                            |> Maybe.withDefault ""
-                                       )
-                            )
+                            (multilineErrorMessage source)
                             problems
                         )
 
@@ -533,3 +489,50 @@ parseProblemToString problem =
 
         CompilerBug bug ->
             "CompilerBug " ++ bug
+
+
+multilineErrorMessage : FileContents -> (P.DeadEnd ParseContext ParseProblem) -> String
+multilineErrorMessage source {problem, row, col, contextStack} =
+    let
+        filenameFromContext : List { a | context : ParseContext } -> Maybe FilePath
+        filenameFromContext contextStack_ =
+            case contextStack_ of
+                { context } :: rest ->
+                    case context of
+                        InFile name ->
+                            Just name
+
+                        _ ->
+                            filenameFromContext rest
+
+                [] ->
+                    Nothing
+    in
+    "Parse problem: "
+        ++ parseProblemToString problem
+        ++ "\n  --> "
+        ++ (filenameFromContext contextStack
+                |> Maybe.map (\s -> s ++ ":")
+                |> Maybe.withDefault ""
+           )
+        ++ String.fromInt row
+        ++ ":"
+        ++ String.fromInt col
+        ++ (source
+                |> String.split "\n"
+                |> Array.fromList
+                |> Array.get (row - 1)
+                |> Maybe.map
+                    (\snippet ->
+                        "\n   | "
+                            ++ "\n"
+                            ++ String.padRight 3 ' ' (String.fromInt row)
+                            ++ "| "
+                            ++ snippet
+                            ++ "\n   | "
+                            ++ String.repeat (col - 1) " "
+                            ++ "^ "
+                            ++ parseProblemToString problem
+                    )
+                |> Maybe.withDefault ""
+           )
