@@ -1,7 +1,9 @@
 .PHONY: run
 run: build
 	tput reset
-	@ cd example-project && node ../cli/index.js --main src/Main.elm
+	@ cd example-project && \
+	(node ../cli/index.js --main src/Main.elm || true) \
+	# have `make run` succeed even if compilation fails.
 
 .PHONY: json
 json: build
