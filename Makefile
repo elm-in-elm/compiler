@@ -19,6 +19,7 @@ build:
 test:
 	elm make --output /dev/null # build the library just to test it compiles
 	elm-test
+	npx ava
 
 .PHONY: format
 format:
