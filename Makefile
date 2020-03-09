@@ -16,7 +16,7 @@ build:
 	cd cli && elm make Main.elm --output ../build/elm.js
 
 .PHONY: test
-test:
+test: build
 	elm make --output /dev/null # build the library just to test it compiles
 	elm-test
 	npx ava
