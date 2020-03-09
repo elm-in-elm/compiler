@@ -205,13 +205,13 @@ toString error =
                     String.join
                         "\n"
                         (List.map
-                            (\{problem, row, col, contextStack} ->
+                            (\{ problem, row, col, contextStack } ->
                                 multilineErrorMessage
                                     source
                                     (filenameFromContext contextStack)
                                     ("Parse problem: " ++ parseProblemToString problem)
                                     (parseProblemToString problem)
-                                    {row=row, col=col}
+                                    { row = row, col = col }
                             )
                             problems
                         )
@@ -497,6 +497,7 @@ parseProblemToString problem =
         CompilerBug bug ->
             "CompilerBug " ++ bug
 
+
 filenameFromContext : List { a | context : ParseContext } -> Maybe FilePath
 filenameFromContext contextStack_ =
     case contextStack_ of
@@ -511,8 +512,9 @@ filenameFromContext contextStack_ =
         [] ->
             Nothing
 
-multilineErrorMessage : FileContents -> (Maybe FilePath) -> String -> String -> { row: Int, col: Int } -> String
-multilineErrorMessage source filename title errorMessage {row, col} =
+
+multilineErrorMessage : FileContents -> Maybe FilePath -> String -> String -> { row : Int, col : Int } -> String
+multilineErrorMessage source filename title errorMessage { row, col } =
     title
         ++ "\n  --> "
         ++ (filename
