@@ -18,6 +18,13 @@ function runCompiler(cwd, args) {
 }
 
 async function exec(t, cwd, args, func) {
+    try {
+        t.log(await fs.unlink(path.join(cwd, 'out.js')));
+    } catch (e) {
+        if (e.code !== 'ENOENT') {
+            throw e;
+        }
+    }
     const {snapshot} = await func(runCompiler(cwd, args), t);
 
     if (snapshot !== undefined) {
