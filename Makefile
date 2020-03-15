@@ -1,3 +1,11 @@
+
+# elm-format does not support exlucding files so we explicitly list all the directories
+# we want to be formatted. See https://github.com/avh4/elm-format/issues/669.
+FORMAT_DIRS = \
+	benchmarks cli example-library-usages example-project \
+	integration-tests/cli integration-tests/parser integration-tests/typecheck \
+	src tests
+
 .PHONY: run
 run: build
 	tput reset
@@ -23,12 +31,12 @@ test: build
 
 .PHONY: format
 format:
-	elm-format . --yes
+	elm-format $(FORMAT_DIRS) --yes
 
 
 .PHONY: lint
 lint:
-	elm-format . --validate
+	elm-format $(FORMAT_DIRS) --validate
 
 .PHONY: readme_lib
 readme_lib:
