@@ -1,5 +1,5 @@
 
-# elm-format does not support exlucding files so we explicitly list all the directories
+# elm-format does not support excluding files so we explicitly list all the directories
 # we want to be formatted. See https://github.com/avh4/elm-format/issues/669.
 FORMAT_DIRS = \
 	benchmarks cli example-library-usages example-project \
