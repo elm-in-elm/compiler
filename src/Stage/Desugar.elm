@@ -269,7 +269,11 @@ desugarType modules thisModule typeOrId =
                         (f c)
 
                 Record bindings ->
-                    Debug.todo "desugarType record"
+                    bindings
+                        |> Dict.toList
+                        |> List.map {- pheeew... -} (Result.combineMapSecond f)
+                        |> Result.combine
+                        |> Result.map (Dict.fromList >> Record >> Type)
 
                 UserDefinedType { module_, name, args } ->
                     Result.map2
