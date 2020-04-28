@@ -18,13 +18,30 @@ function runCompiler(cwd, args) {
 }
 
 async function exec(t, cwd, args, func) {
+    try {
+        t.log(await fs.unlink(path.join(cwd, 'out.js')));
+    } catch (e) {
+        if (e.code !== 'ENOENT') {
+            throw e;
+        }
+    }
     const {snapshot} = await func(runCompiler(cwd, args), t);
 
     if (snapshot !== undefined) {
         t.snapshot(`elm-in-elm ${args.join(' ')}`, {id: `Invocation`});
         t.snapshot(snapshot.stderr, {id: `Stderr`});
         t.snapshot(snapshot.stdout, {id: `Stdout`});
-        t.snapshot(await fs.readFile(path.join(cwd, 'out.js'), 'utf-8'), {id: `out.js`});
+        let out;
+        try {
+            out = await fs.readFile(path.join(cwd, 'out.js'), 'utf-8');
+        } catch (e) {
+            if (e.code !== 'ENOENT') {
+                throw e;
+            }
+        }
+        if (out !== undefined) {
+            t.snapshot(out, {id: `out.js`});
+        }
     }
 }
 
