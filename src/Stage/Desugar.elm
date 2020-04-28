@@ -16,7 +16,7 @@ import Elm.Data.Located as Located
 import Elm.Data.Module as Module exposing (Module)
 import Elm.Data.ModuleName exposing (ModuleName)
 import Elm.Data.Project exposing (Project)
-import Elm.Data.Type exposing (Type)
+import Elm.Data.Type exposing (Type(..), TypeOrId(..), TypeOrIdQ, TypeOrIdUnq, TypeQ, TypeUnq)
 import Elm.Data.TypeAnnotation exposing (TypeAnnotation)
 import Elm.Data.VarName exposing (VarName)
 import Maybe.Extra
@@ -29,6 +29,7 @@ desugar project =
     project
         |> Boilerplate.desugarProject
             (desugarExpr project.modules)
+            (desugarType project.modules)
             checkAndDesugarTypeAnnotation
         |> Result.mapError DesugarError
 
@@ -38,8 +39,8 @@ of them. Thus, we get some separation of concerns - each pass only cares about
 a small subset of the whole process!
 -}
 desugarExpr :
-    Dict ModuleName (Module Frontend.LocatedExpr TypeAnnotation)
-    -> Module Frontend.LocatedExpr TypeAnnotation
+    Dict ModuleName (Module Frontend.LocatedExpr TypeAnnotation (Maybe String))
+    -> Module Frontend.LocatedExpr TypeAnnotation (Maybe String)
     -> Frontend.LocatedExpr
     -> Result DesugarError Canonical.LocatedExpr
 desugarExpr modules thisModule located =
@@ -91,7 +92,7 @@ desugarExpr modules thisModule located =
             return <| Canonical.Bool bool
 
         Frontend.Var var ->
-            findModuleOfVar modules thisModule var
+            Module.findModuleOfVar modules thisModule var
                 |> map (\moduleName -> Canonical.Var { module_ = moduleName, name = var.name })
 
         Frontend.Argument varName ->
@@ -207,6 +208,89 @@ desugarExpr modules thisModule located =
                             )
 
 
+{-| We only do stuff in the UserDefinedType case. The rest is boilerplate.
+-}
+desugarType :
+    Dict ModuleName (Module Frontend.LocatedExpr TypeAnnotation (Maybe String))
+    -> Module Frontend.LocatedExpr TypeAnnotation (Maybe String)
+    -> TypeOrIdUnq
+    -> Result DesugarError TypeOrIdQ
+desugarType modules thisModule typeOrId =
+    let
+        f =
+            desugarType modules thisModule
+    in
+    case typeOrId of
+        Id id ->
+            Ok <| Id id
+
+        Type type_ ->
+            case type_ of
+                Var s ->
+                    Ok <| Type <| Var s
+
+                Function { from, to } ->
+                    Result.map2
+                        (\from_ to_ -> Type <| Function { from = from_, to = to_ })
+                        (f from)
+                        (f to)
+
+                Int ->
+                    Ok <| Type Int
+
+                Float ->
+                    Ok <| Type Float
+
+                Char ->
+                    Ok <| Type Char
+
+                String ->
+                    Ok <| Type String
+
+                Bool ->
+                    Ok <| Type Bool
+
+                List listType ->
+                    Result.map (Type << List)
+                        (f listType)
+
+                Unit ->
+                    Ok <| Type Unit
+
+                Tuple a b ->
+                    Result.map2 (\a_ b_ -> Type <| Tuple a_ b_)
+                        (f a)
+                        (f b)
+
+                Tuple3 a b c ->
+                    Result.map3 (\a_ b_ c_ -> Type <| Tuple3 a_ b_ c_)
+                        (f a)
+                        (f b)
+                        (f c)
+
+                Record bindings ->
+                    Debug.todo "desugarType record"
+
+                UserDefinedType { module_, name, args } ->
+                    Result.map2
+                        (\foundModuleName desugaredArgs ->
+                            Type <|
+                                UserDefinedType
+                                    { module_ = foundModuleName
+                                    , name = name
+                                    , args = desugaredArgs
+                                    }
+                        )
+                        (Module.findModuleOfVar
+                            modules
+                            thisModule
+                            { module_ = module_
+                            , name = name
+                            }
+                        )
+                        (Result.combine (List.map f args))
+
+
 {-| Check the var name in the type annotation is the same as the one in the declaration:
 
     x : Int
@@ -223,9 +307,10 @@ TODO test
 
 -}
 checkAndDesugarTypeAnnotation :
-    Declaration a TypeAnnotation
-    -> Result DesugarError (Declaration a Type)
+    Declaration a TypeAnnotation (Maybe String)
+    -> Result DesugarError (Declaration a TypeUnq (Maybe String))
 checkAndDesugarTypeAnnotation decl =
+    -- TODO find the modules of user types here too
     decl.typeAnnotation
         |> Maybe.map
             (\{ varName, type_ } ->
@@ -242,7 +327,7 @@ checkAndDesugarTypeAnnotation decl =
         |> Maybe.withDefault (Ok <| throwAwayTypeAnnotationName decl)
 
 
-throwAwayTypeAnnotationName : Declaration a TypeAnnotation -> Declaration a Type
+throwAwayTypeAnnotationName : Declaration a TypeAnnotation (Maybe String) -> Declaration a TypeUnq (Maybe String)
 throwAwayTypeAnnotationName decl =
     { module_ = decl.module_
     , typeAnnotation = Maybe.map .type_ decl.typeAnnotation
@@ -328,121 +413,3 @@ curryLambda located arguments body =
         )
         body
         arguments
-
-
-{-| We have roughly these options:
-
-  - bar = >baz< (baz being defined elsewhere in this module)
-  - import Foo exposing (baz); bar = >baz<
-  - import Foo; bar = >Foo.baz<
-  - import Foo as F; bar = >F.baz<
-
-In all these cases we need to find the full unaliased module name of the var.
-
-There are two possible errors here:
-
-  - VarNameNotFound: you used var name that can't be found
-  - AmbiguousName: you used a name that is imported/defined more than once
-
-TODO "module name not found" somewhere... maybe here, maybe parsing? dunno yet...
-
--}
-findModuleOfVar :
-    Dict ModuleName (Module Frontend.LocatedExpr TypeAnnotation)
-    -> Module Frontend.LocatedExpr TypeAnnotation
-    -> { module_ : Maybe ModuleName, name : VarName }
-    -> Result DesugarError ModuleName
-findModuleOfVar modules thisModule var =
-    unqualifiedVarInThisModule thisModule var
-        |> Maybe.Extra.orElseLazy (\() -> unqualifiedVarInImportedModule modules thisModule var)
-        |> Maybe.Extra.orElseLazy (\() -> qualifiedVarInImportedModule modules var)
-        |> Maybe.Extra.orElseLazy (\() -> qualifiedVarInAliasedModule modules thisModule var)
-        |> Result.fromMaybe (VarNameNotFound { var = var, insideModule = thisModule.name })
-        |> Result.andThen identity
-
-
-unqualifiedVarInThisModule :
-    Module Frontend.LocatedExpr TypeAnnotation
-    -> { module_ : Maybe ModuleName, name : VarName }
-    -> Maybe (Result DesugarError ModuleName)
-unqualifiedVarInThisModule thisModule { module_, name } =
-    if module_ == Nothing && Dict.member name thisModule.declarations then
-        Just (Ok thisModule.name)
-
-    else
-        Nothing
-
-
-unqualifiedVarInImportedModule :
-    Dict ModuleName (Module Frontend.LocatedExpr TypeAnnotation)
-    -> Module Frontend.LocatedExpr TypeAnnotation
-    -> { module_ : Maybe ModuleName, name : VarName }
-    -> Maybe (Result DesugarError ModuleName)
-unqualifiedVarInImportedModule modules thisModule { module_, name } =
-    if module_ == Nothing then
-        -- find a module which exposes that var
-        let
-            acceptableImports =
-                thisModule.imports
-                    |> Dict.values
-                    |> List.filter
-                        (\import_ ->
-                            Dict.get import_.moduleName modules
-                                |> Maybe.map (Module.exposes name)
-                                |> Maybe.withDefault False
-                        )
-        in
-        case acceptableImports of
-            [] ->
-                Nothing
-
-            [ acceptableImport ] ->
-                Just (Ok acceptableImport.moduleName)
-
-            _ ->
-                Just
-                    (Err
-                        (AmbiguousName
-                            { name = name
-                            , insideModule = thisModule.name
-                            , possibleModules = List.map .moduleName acceptableImports
-                            }
-                        )
-                    )
-
-    else
-        Nothing
-
-
-{-| We don't think about module `as` aliasing here.
--}
-qualifiedVarInImportedModule :
-    Dict ModuleName (Module Frontend.LocatedExpr TypeAnnotation)
-    -> { module_ : Maybe ModuleName, name : VarName }
-    -> Maybe (Result DesugarError ModuleName)
-qualifiedVarInImportedModule modules { module_, name } =
-    module_
-        |> Maybe.andThen (flip Dict.get modules)
-        |> Maybe.andThen
-            (\module__ ->
-                if Dict.member name module__.declarations then
-                    Just (Ok module__.name)
-
-                else
-                    Nothing
-            )
-
-
-qualifiedVarInAliasedModule :
-    Dict ModuleName (Module Frontend.LocatedExpr TypeAnnotation)
-    -> Module Frontend.LocatedExpr TypeAnnotation
-    -> { module_ : Maybe ModuleName, name : VarName }
-    -> Maybe (Result DesugarError ModuleName)
-qualifiedVarInAliasedModule modules thisModule { module_, name } =
-    let
-        unaliasedModuleName =
-            Maybe.andThen (Module.unalias thisModule) module_
-    in
-    qualifiedVarInImportedModule
-        modules
-        { module_ = unaliasedModuleName, name = name }

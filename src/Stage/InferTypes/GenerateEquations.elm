@@ -32,7 +32,7 @@ subexpression.
 import Dict
 import Elm.AST.Typed as Typed
 import Elm.Data.Located as Located
-import Elm.Data.Type as Type exposing (Type(..), TypeOrId(..))
+import Elm.Data.Type as Type exposing (Type(..), TypeOrId(..), TypeOrIdQ)
 import Elm.Data.VarName exposing (VarName)
 import Stage.InferTypes.AssignIds
 import Stage.InferTypes.TypeEquation exposing (TypeEquation, equals)
@@ -406,7 +406,7 @@ isArgument name locatedExpr =
 generateArgumentUsageEquations : Int -> List Typed.LocatedExpr -> List TypeEquation
 generateArgumentUsageEquations argumentId usages =
     let
-        argumentType : Type.TypeOrId
+        argumentType : TypeOrIdQ
         argumentType =
             Type.Id argumentId
     in

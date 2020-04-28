@@ -283,7 +283,7 @@ handleReadFileSuccess ({ filePath } as file) ({ project } as model) =
                             )
                         |> Set.fromList
 
-                newModules : Dict ModuleName (Module Frontend.LocatedExpr TypeAnnotation)
+                newModules : Dict ModuleName (Module Frontend.LocatedExpr TypeAnnotation (Maybe ModuleName))
                 newModules =
                     Dict.update name
                         (always (Just parsedModule))
@@ -472,7 +472,10 @@ parseErrorCode { errorCode, filePath } =
 
 {-| TODO maybe there should be a "Checks" module for checks across phases?
 -}
-checkModuleNameAndFilePath : { sourceDirectory : FilePath, filePath : FilePath } -> Module Frontend.LocatedExpr TypeAnnotation -> Result Error (Module Frontend.LocatedExpr TypeAnnotation)
+checkModuleNameAndFilePath :
+    { sourceDirectory : FilePath, filePath : FilePath }
+    -> Module Frontend.LocatedExpr TypeAnnotation (Maybe ModuleName)
+    -> Result Error (Module Frontend.LocatedExpr TypeAnnotation (Maybe ModuleName))
 checkModuleNameAndFilePath { sourceDirectory, filePath } ({ name } as parsedModule) =
     let
         expectedName : Result CLIError ModuleName

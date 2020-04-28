@@ -25,13 +25,14 @@ import Elm.Compiler.Error exposing (Error(..))
 import Elm.Data.Declaration exposing (Declaration, DeclarationBody(..))
 import Elm.Data.FileContents exposing (FileContents)
 import Elm.Data.FilePath exposing (FilePath)
+import Elm.Data.ModuleName exposing (ModuleName)
 import Elm.Data.Project exposing (Project)
-import Json.Encode as E
+import Json.Encode as Encode exposing (Value)
 import Stage.Emit.Common exposing (mangleQualifiedVar, prepareProjectFields)
 
 
 type alias ProjectFields =
-    { declarationList : List (Declaration Typed.LocatedExpr Never) }
+    { declarationList : List (Declaration Typed.LocatedExpr Never ModuleName) }
 
 
 emitProject : Project Typed.ProjectFields -> Result Error (Dict FilePath FileContents)
@@ -47,37 +48,37 @@ emitProject_ { declarationList } =
         emit =
             \d -> emitDeclaration d
     in
-    Dict.singleton "out.json" (E.list emit declarationList |> E.encode 0)
+    Dict.singleton "out.json" (Encode.list emit declarationList |> Encode.encode 0)
 
 
-encode : String -> List ( String, E.Value ) -> E.Value
+encode : String -> List ( String, Value ) -> Value
 encode tipe values =
-    E.object (( "type", E.string tipe ) :: values)
+    Encode.object (( "type", Encode.string tipe ) :: values)
 
 
-emitExpr : Typed.LocatedExpr -> E.Value
+emitExpr : Typed.LocatedExpr -> Value
 emitExpr located =
     case Typed.getExpr located of
         Int int ->
-            encode "int" [ ( "value", E.int int ) ]
+            encode "int" [ ( "value", Encode.int int ) ]
 
         Float float ->
-            encode "float" [ ( "value", E.float float ) ]
+            encode "float" [ ( "value", Encode.float float ) ]
 
         Char char ->
-            encode "char" [ ( "value", E.string (String.fromChar char) ) ]
+            encode "char" [ ( "value", Encode.string (String.fromChar char) ) ]
 
         String string ->
-            encode "string" [ ( "value", E.string string ) ]
+            encode "string" [ ( "value", Encode.string string ) ]
 
         Bool bool ->
-            encode "bool" [ ( "value", E.bool bool ) ]
+            encode "bool" [ ( "value", Encode.bool bool ) ]
 
         Var var ->
-            encode "var" [ ( "name", E.string (mangleQualifiedVar var) ) ]
+            encode "var" [ ( "name", Encode.string (mangleQualifiedVar var) ) ]
 
         Argument argument ->
-            encode "arg" [ ( "name", E.string argument ) ]
+            encode "arg" [ ( "name", Encode.string argument ) ]
 
         Plus e1 e2 ->
             encode "plus"
@@ -93,7 +94,7 @@ emitExpr located =
 
         Lambda { argument, body } ->
             encode "lambda"
-                [ ( "arg", E.string argument )
+                [ ( "arg", Encode.string argument )
                 , ( "body", emitExpr body )
                 ]
 
@@ -112,13 +113,13 @@ emitExpr located =
 
         Let { bindings, body } ->
             encode "let"
-                [ ( "bind", E.dict (\k -> k) (\v -> emitExpr v.body) bindings )
+                [ ( "bind", Encode.dict identity (\v -> emitExpr v.body) bindings )
                 , ( "body", emitExpr body )
                 ]
 
         List items ->
             encode "list"
-                [ ( "items", E.list emitExpr items ) ]
+                [ ( "items", Encode.list emitExpr items ) ]
 
         Unit ->
             encode "unit" []
@@ -137,20 +138,20 @@ emitExpr located =
                 ]
 
         Record bindings ->
-            encode "record" [ ( "bind", E.dict (\k -> k) (\v -> emitExpr v.body) bindings ) ]
+            encode "record" [ ( "bind", Encode.dict identity (\v -> emitExpr v.body) bindings ) ]
 
 
-emitDeclaration : Declaration Typed.LocatedExpr Never -> E.Value
+emitDeclaration : Declaration Typed.LocatedExpr Never ModuleName -> Value
 emitDeclaration { module_, name, body } =
     case body of
         Value expr ->
             encode "decl"
-                [ ( "name", E.string (module_ ++ "$" ++ name) )
+                [ ( "name", Encode.string (module_ ++ "$" ++ name) )
                 , ( "expr", emitExpr expr )
                 ]
 
         TypeAlias _ ->
-            E.string ""
+            Encode.string ""
 
         CustomType _ ->
-            E.string ""
+            Encode.string ""

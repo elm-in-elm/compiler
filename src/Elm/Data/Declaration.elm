@@ -20,7 +20,7 @@ import Stage.InferTypes.SubstitutionMap as SubstitutionMap exposing ({- TODO may
 
 
 {-| -}
-type alias Declaration expr annotation =
+type alias Declaration expr annotation userTypeModule =
     { module_ : ModuleName
 
     -- What information from the annotation is yet to be used in the current stage?
@@ -37,7 +37,7 @@ type alias Declaration expr annotation =
     --               don't need it anymore)
     , typeAnnotation : Maybe annotation
     , name : VarName
-    , body : DeclarationBody expr
+    , body : DeclarationBody expr userTypeModule
     }
 
 
@@ -53,16 +53,16 @@ type alias Declaration expr annotation =
      --> TypeAlias ["a"] (Maybe (Var 0))
 
 -}
-type DeclarationBody expr
+type DeclarationBody expr userTypeModule
     = Value expr
     | TypeAlias
         { parameters : List VarName -- on the left side of =
         , -- TODO how to map from the parameters to the vars in the definition?
-          definition : Type
+          definition : Type userTypeModule
         }
     | CustomType
         { parameters : List VarName -- on the left side of =
-        , constructors : List Constructor
+        , constructors : List (Constructor userTypeModule)
         }
 
 
@@ -84,15 +84,15 @@ type DeclarationBody expr
             ]
 
 -}
-type alias Constructor =
+type alias Constructor a =
     { name : String
-    , arguments : List TypeOrId
+    , arguments : List (TypeOrId a)
     }
 
 
 {-| Apply a function to the expression inside the declaration.
 -}
-map : (exprA -> exprB) -> Declaration exprA annotation -> Declaration exprB annotation
+map : (exprA -> exprB) -> Declaration exprA a b -> Declaration exprB a b
 map fn declaration =
     { module_ = declaration.module_
     , typeAnnotation = declaration.typeAnnotation
@@ -103,7 +103,7 @@ map fn declaration =
 
 {-| Apply a function to the expression inside the declaration body.
 -}
-mapBody : (exprA -> exprB) -> DeclarationBody exprA -> DeclarationBody exprB
+mapBody : (exprA -> exprB) -> DeclarationBody exprA a -> DeclarationBody exprB a
 mapBody fn body =
     case body of
         Value expr ->
@@ -123,7 +123,7 @@ Similar to [`Result.Extra.combine`](/packages/elm-community/result-extra/latest/
     --> Ok (Value (Int 5))
 
 -}
-combine : DeclarationBody (Result err a) -> Result err (DeclarationBody a)
+combine : DeclarationBody (Result err a) b -> Result err (DeclarationBody a b)
 combine body =
     case body of
         Value result ->
@@ -136,7 +136,9 @@ combine body =
             Ok <| CustomType r
 
 
-combineSubstitutionMap : DeclarationBody ( expr, SubstitutionMap ) -> ( DeclarationBody expr, SubstitutionMap )
+combineSubstitutionMap :
+    DeclarationBody ( expr, SubstitutionMap ) a
+    -> ( DeclarationBody expr a, SubstitutionMap )
 combineSubstitutionMap body =
     {- TODO very unsure about this. Are we ever merging those empty
        SubstitutionMaps with the non-empty ones?
@@ -152,7 +154,7 @@ combineSubstitutionMap body =
             ( CustomType r, SubstitutionMap.empty )
 
 
-getExpr : Declaration expr annotation -> Maybe expr
+getExpr : Declaration expr a b -> Maybe expr
 getExpr decl =
     case decl.body of
         Value expr ->

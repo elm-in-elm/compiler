@@ -14,7 +14,9 @@ import Stage.Parse.Parser as Parser
 {-| This `parse` function is used only by cli/, not by library/.
 Maybe we should use it in library/ too?
 -}
-parse : { filePath : FilePath, fileContents : FileContents } -> Result Error (Module Frontend.LocatedExpr TypeAnnotation)
+parse :
+    { filePath : FilePath, fileContents : FileContents }
+    -> Result Error (Module Frontend.LocatedExpr TypeAnnotation (Maybe String))
 parse { filePath, fileContents } =
     Result.mapError
         (\errorList -> ParseError (ParseProblem ( errorList, fileContents )))

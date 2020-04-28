@@ -24,7 +24,7 @@ optimizeProject optimizeExpr project =
 
 asModulesIn :
     Project Typed.ProjectFields
-    -> Dict ModuleName (Module Typed.LocatedExpr Never)
+    -> Dict ModuleName (Module Typed.LocatedExpr Never ModuleName)
     -> Project Typed.ProjectFields
 asModulesIn project modules =
     { project | modules = modules }
@@ -32,8 +32,8 @@ asModulesIn project modules =
 
 optimizeModule :
     (Typed.LocatedExpr -> Typed.LocatedExpr)
-    -> Module Typed.LocatedExpr Never
-    -> Module Typed.LocatedExpr Never
+    -> Module Typed.LocatedExpr Never ModuleName
+    -> Module Typed.LocatedExpr Never ModuleName
 optimizeModule optimizeExpr module_ =
     module_.declarations
         |> Dict.map (always (optimizeDeclaration optimizeExpr))
@@ -41,17 +41,17 @@ optimizeModule optimizeExpr module_ =
 
 
 asDeclarationsIn :
-    Module Typed.LocatedExpr Never
-    -> Dict VarName (Declaration Typed.LocatedExpr Never)
-    -> Module Typed.LocatedExpr Never
+    Module Typed.LocatedExpr Never ModuleName
+    -> Dict VarName (Declaration Typed.LocatedExpr Never ModuleName)
+    -> Module Typed.LocatedExpr Never ModuleName
 asDeclarationsIn module_ declarations =
     { module_ | declarations = declarations }
 
 
 optimizeDeclaration :
     (Typed.LocatedExpr -> Typed.LocatedExpr)
-    -> Declaration Typed.LocatedExpr Never
-    -> Declaration Typed.LocatedExpr Never
+    -> Declaration Typed.LocatedExpr Never ModuleName
+    -> Declaration Typed.LocatedExpr Never ModuleName
 optimizeDeclaration optimizeExpr decl =
     decl.body
         |> Declaration.mapBody optimizeExpr
@@ -59,8 +59,8 @@ optimizeDeclaration optimizeExpr decl =
 
 
 asBodyIn :
-    Declaration Typed.LocatedExpr Never
-    -> DeclarationBody Typed.LocatedExpr
-    -> Declaration Typed.LocatedExpr Never
+    Declaration Typed.LocatedExpr Never ModuleName
+    -> DeclarationBody Typed.LocatedExpr ModuleName
+    -> Declaration Typed.LocatedExpr Never ModuleName
 asBodyIn decl body =
     { decl | body = body }

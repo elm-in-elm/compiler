@@ -19,7 +19,7 @@ import Elm.Data.Binding as Binding exposing (Binding)
 import Elm.Data.Located as Located exposing (Located)
 import Elm.Data.Module exposing (Module)
 import Elm.Data.ModuleName exposing (ModuleName)
-import Elm.Data.Type as Type exposing (Type, TypeOrId(..))
+import Elm.Data.Type as Type exposing (Type, TypeOrId(..), TypeOrIdQ, TypeQ)
 import Elm.Data.VarName exposing (VarName)
 import Transform
 
@@ -33,7 +33,7 @@ that hold [typed AST expressions](#LocatedExpr).
 
 -}
 type alias ProjectFields =
-    { modules : Dict ModuleName (Module LocatedExpr Never) }
+    { modules : Dict ModuleName (Module LocatedExpr Never ModuleName) }
 
 
 {-| The main type of this module. Expression with [location metadata](Elm.Data.Located).
@@ -54,7 +54,7 @@ type alias LocatedExpr =
 
 -}
 type alias Expr =
-    ( Expr_, TypeOrId )
+    ( Expr_, TypeOrIdQ )
 
 
 {-| -}
@@ -283,14 +283,14 @@ getExpr locatedExpr =
 
 {-| Extract the type (remove the location information and the expression).
 -}
-getTypeOrId : LocatedExpr -> TypeOrId
+getTypeOrId : LocatedExpr -> TypeOrIdQ
 getTypeOrId locatedExpr =
     locatedExpr
         |> Located.unwrap
         |> Tuple.second
 
 
-getType : LocatedExpr -> Maybe Type
+getType : LocatedExpr -> Maybe TypeQ
 getType locatedExpr =
     locatedExpr
         |> getTypeOrId

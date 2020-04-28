@@ -33,39 +33,48 @@ import AssocSet
 import Dict exposing (Dict)
 import Dict.Extra as Dict
 import Elm.AST.Typed as Typed exposing (Expr_(..))
-import Elm.Compiler.Error exposing (EmitError(..))
+import Elm.Compiler.Error
+    exposing
+        ( DesugarError(..)
+        , EmitError(..)
+        , Error(..)
+        )
 import Elm.Data.Declaration exposing (Declaration, DeclarationBody(..))
 import Elm.Data.Exposing as Exposing exposing (ExposedItem(..), Exposing(..))
-import Elm.Data.Module exposing (Module)
+import Elm.Data.Module as Module exposing (Module)
 import Elm.Data.ModuleName exposing (ModuleName)
 import Elm.Data.Project exposing (Project)
-import Elm.Data.Type as Type exposing (Type, TypeOrId(..))
+import Elm.Data.Type as Type exposing (Type, TypeOrId(..), TypeOrIdQ, TypeQ)
 import Elm.Data.VarName exposing (VarName)
 import Graph
 import Result.Extra as Result
 import Set exposing (Set)
 
 
-projectToDeclarationList : Project Typed.ProjectFields -> Result EmitError (List (Declaration Typed.LocatedExpr Never))
+projectToDeclarationList :
+    Project Typed.ProjectFields
+    -> Result EmitError (List (Declaration Typed.LocatedExpr Never ModuleName))
 projectToDeclarationList { mainModuleName, modules } =
     modulesToGraph mainModuleName modules
         |> Result.map (findPathToMain mainModuleName)
 
 
-modulesToDeclarationLists : Project Typed.ProjectFields -> Result EmitError (Dict ModuleName (List (Declaration Typed.LocatedExpr Never)))
+modulesToDeclarationLists :
+    Project Typed.ProjectFields
+    -> Result EmitError (Dict ModuleName (List (Declaration Typed.LocatedExpr Never ModuleName)))
 modulesToDeclarationLists ({ mainModuleName, modules } as project) =
     modulesToGraph mainModuleName modules
         |> Result.map (findPathForEachModule project)
 
 
 type alias Graph =
-    Graph.Graph (Declaration Typed.LocatedExpr Never) ()
+    Graph.Graph (Declaration Typed.LocatedExpr Never ModuleName) ()
 
 
 {-| We want to be able to emit `main`. We only emit what's needed for that.
 Taken from the example in elm-community/graph README :sweat\_smile:
 -}
-findPathToMain : ModuleName -> Graph -> List (Declaration Typed.LocatedExpr Never)
+findPathToMain : ModuleName -> Graph -> List (Declaration Typed.LocatedExpr Never ModuleName)
 findPathToMain mainModuleName programGraph =
     findPath
         programGraph
@@ -74,7 +83,10 @@ findPathToMain mainModuleName programGraph =
 
 {-| In this case we don't have `main`s but TODO finish writing this
 -}
-findPathForEachModule : Project Typed.ProjectFields -> Graph -> Dict ModuleName (List (Declaration Typed.LocatedExpr Never))
+findPathForEachModule :
+    Project Typed.ProjectFields
+    -> Graph
+    -> Dict ModuleName (List (Declaration Typed.LocatedExpr Never ModuleName))
 findPathForEachModule project graph =
     let
         exposedDeclarations : Set ( ModuleName, VarName )
@@ -85,7 +97,9 @@ findPathForEachModule project graph =
                 |> List.map (\decl -> ( decl.module_, decl.name ))
                 |> Set.fromList
 
-        moduleToExposedDeclarations : Module Typed.LocatedExpr Never -> List (Declaration Typed.LocatedExpr Never)
+        moduleToExposedDeclarations :
+            Module Typed.LocatedExpr Never ModuleName
+            -> List (Declaration Typed.LocatedExpr Never ModuleName)
         moduleToExposedDeclarations module_ =
             case module_.exposing_ of
                 ExposingAll ->
@@ -102,11 +116,14 @@ findPathForEachModule project graph =
            Maybe we should return a Result here (Err (DeclarationExposedButNotDefined ...))
            and thread it through and report it?
         -}
-        exposedItemToDeclaration : Module Typed.LocatedExpr Never -> ExposedItem -> Maybe (Declaration Typed.LocatedExpr Never)
+        exposedItemToDeclaration :
+            Module Typed.LocatedExpr Never ModuleName
+            -> ExposedItem
+            -> Maybe (Declaration Typed.LocatedExpr Never ModuleName)
         exposedItemToDeclaration module_ item =
             Dict.get (Exposing.name item) module_.declarations
 
-        globalPath : List (Declaration Typed.LocatedExpr Never)
+        globalPath : List (Declaration Typed.LocatedExpr Never ModuleName)
         globalPath =
             findPath
                 graph
@@ -119,7 +136,7 @@ findPathForEachModule project graph =
 {-| Generic function to find a good ordering of values (so that all the
 dependencies are emitted before the TODO finish writing this
 -}
-findPath : Graph -> Set ( ModuleName, VarName ) -> List (Declaration Typed.LocatedExpr Never)
+findPath : Graph -> Set ( ModuleName, VarName ) -> List (Declaration Typed.LocatedExpr Never ModuleName)
 findPath graph startingDeclarations =
     let
         edgesToFollow =
@@ -159,21 +176,21 @@ findDeclarations graph declarations =
 
 
 type alias Dependency =
-    { from : Declaration Typed.LocatedExpr Never
-    , to : Declaration Typed.LocatedExpr Never
+    { from : Declaration Typed.LocatedExpr Never ModuleName
+    , to : Declaration Typed.LocatedExpr Never ModuleName
     }
 
 
 modulesToGraph :
     ModuleName
-    -> Dict ModuleName (Module Typed.LocatedExpr Never)
+    -> Dict ModuleName (Module Typed.LocatedExpr Never ModuleName)
     -> Result EmitError Graph
 modulesToGraph mainModuleName modules =
     {- TODO this is probably a bit far off, but... how to allow for cyclic
        dependencies in lambdas but not in exposed expressions?
     -}
     let
-        maybeMainDeclaration : Maybe (Declaration Typed.LocatedExpr Never)
+        maybeMainDeclaration : Maybe (Declaration Typed.LocatedExpr Never ModuleName)
         maybeMainDeclaration =
             Dict.get mainModuleName modules
                 |> Maybe.andThen (.declarations >> Dict.get "main")
@@ -191,11 +208,11 @@ modulesToGraph mainModuleName modules =
         |> Result.map
             (\( declarations, dependencies ) ->
                 let
-                    declarationList : List (Declaration Typed.LocatedExpr Never)
+                    declarationList : List (Declaration Typed.LocatedExpr Never ModuleName)
                     declarationList =
                         AssocSet.toList declarations
 
-                    declarationIndexes : AssocList.Dict (Declaration Typed.LocatedExpr Never) Int
+                    declarationIndexes : AssocList.Dict (Declaration Typed.LocatedExpr Never ModuleName) Int
                     declarationIndexes =
                         declarationList
                             |> List.indexedMap (\i declaration -> ( declaration, i ))
@@ -224,11 +241,11 @@ modulesToGraph mainModuleName modules =
 
 
 collectDependencies :
-    Dict ModuleName (Module Typed.LocatedExpr Never)
-    -> List (Declaration Typed.LocatedExpr Never)
-    -> AssocSet.Set (Declaration Typed.LocatedExpr Never)
+    Dict ModuleName (Module Typed.LocatedExpr Never ModuleName)
+    -> List (Declaration Typed.LocatedExpr Never ModuleName)
+    -> AssocSet.Set (Declaration Typed.LocatedExpr Never ModuleName)
     -> List Dependency
-    -> Result EmitError ( AssocSet.Set (Declaration Typed.LocatedExpr Never), List Dependency )
+    -> Result EmitError ( AssocSet.Set (Declaration Typed.LocatedExpr Never ModuleName), List Dependency )
 collectDependencies modules remainingDeclarations doneDeclarations doneDependencies =
     -- TODO arguments in a record for better clarity... the usages of this function look weird
     {- TODO maybe keep a dict around so that we don't do the same work twice if
@@ -248,7 +265,35 @@ collectDependencies modules remainingDeclarations doneDeclarations doneDependenc
                     doneDependencies
 
             else
-                findDependencies modules currentDeclaration.body
+                Dict.get currentDeclaration.module_ modules
+                    |> Maybe.map
+                        (\currentModule ->
+                            findDependencies
+                                modules
+                                currentModule
+                                currentDeclaration.body
+                        )
+                    |> Result.fromMaybe
+                        (case currentDeclaration.body of
+                            Value _ ->
+                                ModuleNotFoundForVar
+                                    { module_ = currentDeclaration.module_
+                                    , var = currentDeclaration.name
+                                    }
+
+                            TypeAlias _ ->
+                                ModuleNotFoundForType
+                                    { module_ = currentDeclaration.module_
+                                    , type_ = currentDeclaration.name
+                                    }
+
+                            CustomType _ ->
+                                ModuleNotFoundForType
+                                    { module_ = currentDeclaration.module_
+                                    , type_ = currentDeclaration.name
+                                    }
+                        )
+                    |> Result.join
                     |> Result.andThen
                         (\newDeclarations ->
                             let
@@ -273,45 +318,55 @@ collectDependencies modules remainingDeclarations doneDeclarations doneDependenc
 
 
 findDependencies :
-    Dict ModuleName (Module Typed.LocatedExpr Never)
-    -> DeclarationBody Typed.LocatedExpr
-    -> Result EmitError (List (Declaration Typed.LocatedExpr Never))
-findDependencies modules declarationBody =
+    Dict ModuleName (Module Typed.LocatedExpr Never ModuleName)
+    -> Module Typed.LocatedExpr Never ModuleName
+    -> DeclarationBody Typed.LocatedExpr ModuleName
+    -> Result EmitError (List (Declaration Typed.LocatedExpr Never ModuleName))
+findDependencies modules thisModule declarationBody =
     case declarationBody of
         Value locatedExpr ->
             findDependenciesOfExpr modules locatedExpr
 
         TypeAlias { definition } ->
-            findDependenciesOfType modules definition
+            findDependenciesOfType modules thisModule definition
 
         CustomType { constructors } ->
             constructors
-                |> List.concatMap (.arguments >> List.map (findDependenciesOfTypeOrId modules))
+                |> List.concatMap
+                    (.arguments
+                        >> List.map
+                            (findDependenciesOfTypeOrId
+                                modules
+                                thisModule
+                            )
+                    )
                 |> Result.combine
                 |> Result.map List.concat
 
 
 findDependenciesOfTypeOrId :
-    Dict ModuleName (Module Typed.LocatedExpr Never)
-    -> TypeOrId
-    -> Result EmitError (List (Declaration Typed.LocatedExpr Never))
-findDependenciesOfTypeOrId modules typeArgument =
+    Dict ModuleName (Module Typed.LocatedExpr Never ModuleName)
+    -> Module Typed.LocatedExpr Never ModuleName
+    -> TypeOrIdQ
+    -> Result EmitError (List (Declaration Typed.LocatedExpr Never ModuleName))
+findDependenciesOfTypeOrId modules thisModule typeArgument =
     case typeArgument of
         Id _ ->
-            []
+            Ok []
 
         Type type_ ->
-            findDependenciesOfType modules type_
+            findDependenciesOfType modules thisModule type_
 
 
 findDependenciesOfType :
-    Dict ModuleName (Module Typed.LocatedExpr Never)
-    -> Type
-    -> Result EmitError (List (Declaration Typed.LocatedExpr Never))
-findDependenciesOfType modules type_ =
+    Dict ModuleName (Module Typed.LocatedExpr Never ModuleName)
+    -> Module Typed.LocatedExpr Never ModuleName
+    -> TypeQ
+    -> Result EmitError (List (Declaration Typed.LocatedExpr Never ModuleName))
+findDependenciesOfType modules thisModule type_ =
     let
-        findDependencies_ =
-            findDependenciesOfType modules
+        f =
+            findDependenciesOfTypeOrId modules thisModule
     in
     case type_ of
         Type.Var id ->
@@ -319,8 +374,8 @@ findDependenciesOfType modules type_ =
 
         Type.Function { from, to } ->
             Result.map2 (++)
-                (findDependencies_ from)
-                (findDependencies_ to)
+                (f from)
+                (f to)
 
         Type.Int ->
             Ok []
@@ -338,69 +393,52 @@ findDependenciesOfType modules type_ =
             Ok []
 
         Type.List t1 ->
-            findDependencies_ t1
+            f t1
 
         Type.Unit ->
             Ok []
 
         Type.Tuple t1 t2 ->
             Result.map2 (++)
-                (findDependencies_ t1)
-                (findDependencies_ t2)
+                (f t1)
+                (f t2)
 
         Type.Tuple3 t1 t2 t3 ->
             Result.map3 (\d1 d2 d3 -> d1 ++ d2 ++ d3)
-                (findDependencies_ t1)
-                (findDependencies_ t2)
-                (findDependencies_ t3)
+                (f t1)
+                (f t2)
+                (f t3)
 
-        Type.UserDefinedType { name, args } ->
+        Type.UserDefinedType { module_, name, args } ->
             let
-                maybeModule =
-                    unaliasWithCurrentImportsOrSomething
-            in
-            maybeModule
-                |> Maybe.map
-                    (\module_ ->
-                        let
-                            typeDependencies =
-                                modules
-                                    |> Dict.get module_
-                                    |> Result.fromMaybe (ModuleNotFoundForType { module_ = module_, type_ = name })
-                                    |> Result.andThen
-                                        (.declarations
-                                            >> Dict.get name
-                                            >> Result.fromMaybe (DeclarationNotFound { module_ = module_, name = name })
-                                        )
-                                    |> Result.andThen (.body >> findDependencies modules)
+                argsDependencies =
+                    args
+                        |> List.map f
+                        |> Result.combine
+                        |> Result.map List.concat
 
-                            argsDependencies =
-                                args
-                                    |> List.map findDependencies_
-                                    |> Result.combine
-                                    |> Result.map List.concat
-                        in
-                        Result.map2 (++)
-                            typeDependencies
-                            argsDependencies
-                    )
-                |> Maybe.withDefault (Err typeNotImportedOrSomething)
+                typeDependencies =
+                    Debug.todo "type dependencies"
+            in
+            Result.map2 (++)
+                typeDependencies
+                argsDependencies
 
         Type.Record bindings ->
             bindings
                 |> Dict.values
-                |> List.map findDependencies_
+                |> List.map f
                 |> Result.combine
                 |> Result.map List.concat
 
 
 findDependenciesOfExpr :
-    Dict ModuleName (Module Typed.LocatedExpr Never)
+    Dict ModuleName (Module Typed.LocatedExpr Never ModuleName)
     -> Typed.LocatedExpr
-    -> Result EmitError (List (Declaration Typed.LocatedExpr Never))
+    -> Result EmitError (List (Declaration Typed.LocatedExpr Never ModuleName))
 findDependenciesOfExpr modules locatedExpr =
     let
-        findDependencies_ =
+        f =
             findDependenciesOfExpr modules
     in
     case Typed.getExpr locatedExpr of
@@ -435,44 +473,44 @@ findDependenciesOfExpr modules locatedExpr =
 
         Plus e1 e2 ->
             Result.map2 (++)
-                (findDependencies_ e1)
-                (findDependencies_ e2)
+                (f e1)
+                (f e2)
 
         Cons e1 e2 ->
             Result.map2 (++)
-                (findDependencies_ e1)
-                (findDependencies_ e2)
+                (f e1)
+                (f e2)
 
         Lambda { argument, body } ->
-            findDependencies_ body
+            f body
                 |> Result.map (List.filter (\decl -> decl.name /= argument))
 
         Call { fn, argument } ->
             Result.map2 (++)
-                (findDependencies_ fn)
-                (findDependencies_ argument)
+                (f fn)
+                (f argument)
 
         If { test, then_, else_ } ->
             Result.map3 (\d1 d2 d3 -> d1 ++ d2 ++ d3)
-                (findDependencies_ test)
-                (findDependencies_ then_)
-                (findDependencies_ else_)
+                (f test)
+                (f then_)
+                (f else_)
 
         Let { bindings, body } ->
             let
                 bindingsDependencies =
                     bindings
                         |> Dict.values
-                        |> List.map (.body >> findDependencies_)
+                        |> List.map (.body >> f)
                         |> Result.combine
                         |> Result.map List.concat
             in
             Result.map2 (++)
                 bindingsDependencies
-                (findDependencies_ body)
+                (f body)
 
         List items ->
-            List.map findDependencies_ items
+            List.map f items
                 |> Result.combine
                 |> Result.map List.concat
 
@@ -481,18 +519,18 @@ findDependenciesOfExpr modules locatedExpr =
 
         Tuple e1 e2 ->
             Result.map2 (++)
-                (findDependencies_ e1)
-                (findDependencies_ e2)
+                (f e1)
+                (f e2)
 
         Tuple3 e1 e2 e3 ->
             Result.map3 (\d1 d2 d3 -> d1 ++ d2 ++ d3)
-                (findDependencies_ e1)
-                (findDependencies_ e2)
-                (findDependencies_ e3)
+                (f e1)
+                (f e2)
+                (f e3)
 
         Record bindings ->
             bindings
                 |> Dict.values
-                |> List.map (.body >> findDependencies_)
+                |> List.map (.body >> f)
                 |> Result.combine
                 |> Result.map List.concat

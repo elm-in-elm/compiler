@@ -21,7 +21,7 @@ import Elm.Data.FileContents exposing (FileContents)
 import Elm.Data.FilePath exposing (FilePath)
 import Elm.Data.Located exposing (Located)
 import Elm.Data.ModuleName exposing (ModuleName)
-import Elm.Data.Type as Type exposing (Type, TypeOrId(..))
+import Elm.Data.Type as Type exposing (Type, TypeOrId(..), TypeOrIdQ)
 import Elm.Data.Type.ToString as TypeToString
 import Elm.Data.VarName exposing (VarName)
 import Json.Decode as JD
@@ -134,7 +134,7 @@ type ParseProblem
     | ExpectingListType
     | InvalidNumber
     | TriedToParseCharacterStoppingDelimiter
-    | CompilerBug String
+    | ParseCompilerBug String
 
 
 {-| Errors encountered during [desugaring](Elm.Compiler#desugarExpr) from the [Frontend AST](Elm.AST.Frontend) to [Canonical AST](Elm.AST.Canonical).
@@ -164,8 +164,8 @@ type DesugarError
 {-| Errors encountered during [typechecking](Elm.Compiler#inferExpr).
 -}
 type TypeError
-    = TypeMismatch TypeOrId TypeOrId
-    | OccursCheckFailed Int TypeOrId
+    = TypeMismatch TypeOrIdQ TypeOrIdQ
+    | OccursCheckFailed Int TypeOrIdQ
     | -- TODO should this be a parse error instead?
       AnnotationForNonExprDeclaration
 
@@ -182,6 +182,7 @@ type EmitError
     | ModuleNotFoundForVar { module_ : ModuleName, var : VarName }
     | ModuleNotFoundForType { module_ : ModuleName, type_ : VarName }
     | DeclarationNotFound { module_ : ModuleName, name : VarName }
+    | EmitCompilerBug String
 
 
 {-| An English description of the error. Feel free to write your own though!
@@ -372,6 +373,9 @@ toString error =
                         ++ module_
                         ++ "`."
 
+                EmitCompilerBug bug ->
+                    "Emit stage bug: " ++ bug
+
 
 fullVarName : { module_ : Maybe ModuleName, name : VarName } -> String
 fullVarName { module_, name } =
@@ -545,5 +549,5 @@ parseProblemToString problem =
         TriedToParseCharacterStoppingDelimiter ->
             "TriedToParseCharacterStoppingDelimiter"
 
-        CompilerBug bug ->
-            "CompilerBug " ++ bug
+        ParseCompilerBug bug ->
+            "Parse stage bug: " ++ bug

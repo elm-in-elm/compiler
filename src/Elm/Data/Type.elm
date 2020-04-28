@@ -1,5 +1,6 @@
 module Elm.Data.Type exposing
     ( Type(..), TypeOrId(..), isParametric
+    , TypeUnq, TypeQ, TypeOrIdUnq, TypeOrIdQ
     , varName, varName_, varNames, getType
     , getId, varNames_
     )
@@ -7,35 +8,47 @@ module Elm.Data.Type exposing
 {-| A data structure representing the Elm types.
 
 @docs Type, TypeOrId, isParametric
+@docs TypeUnq, TypeQ, TypeOrIdUnq, TypeOrIdQ
 @docs varName, varName_, varNames, varNames_ getId, getType
 
 -}
 
 import Dict exposing (Dict)
+import Elm.Data.ModuleName exposing (ModuleName)
 import Elm.Data.VarName exposing (VarName)
 import Transform
 
 
 {-| -}
-type TypeOrId
+type TypeOrId userTypeModule
     = Id Int
-    | Type Type
+    | Type (Type userTypeModule)
 
 
-{-| -}
-type Type
+{-| The `a` here is type of user type modules; usually one of
+
+    * Maybe ModuleName (Frontend)
+    * ModuleName (Desugar and onward)
+
+We're only really writing it as an `a` for convenience here.
+
+-}
+type Type a
     = Var String {- in `foo : a -> Int`, `a` is `Var "a"` -}
-    | Function { from : TypeOrId, to : TypeOrId }
+    | Function
+        { from : TypeOrId a
+        , to : TypeOrId a
+        }
     | Int
     | Float
     | Char
     | String
     | Bool
-    | List TypeOrId
+    | List (TypeOrId a)
     | Unit
-    | Tuple TypeOrId TypeOrId
-    | Tuple3 TypeOrId TypeOrId TypeOrId
-    | Record (Dict VarName TypeOrId)
+    | Tuple (TypeOrId a) (TypeOrId a)
+    | Tuple3 (TypeOrId a) (TypeOrId a) (TypeOrId a)
+    | Record (Dict VarName (TypeOrId a))
     | {- The actual definitions of type aliases and custom types are elsewhere
          (in the Declaration module), this is just a "pointer", "var".
 
@@ -45,12 +58,41 @@ type Type
 
          This constructor encompasses both type aliases and custom types:
       -}
-      UserDefinedType { name : String, args : List TypeOrId }
+      UserDefinedType
+        { module_ : a
+        , name : String
+        , args : List (TypeOrId a)
+        }
+
+
+
+{- These are the two possibilities for `userTypeModule`.
+
+   * Unq = unqualified: Frontend haven't yet looked up the modules of user defined types.
+   * Q = qualified: Canonical and Typed have that information already for all types.
+
+-}
+
+
+type alias TypeOrIdUnq =
+    TypeOrId (Maybe ModuleName)
+
+
+type alias TypeOrIdQ =
+    TypeOrId ModuleName
+
+
+type alias TypeUnq =
+    Type (Maybe ModuleName)
+
+
+type alias TypeQ =
+    Type ModuleName
 
 
 {-| Unwrap the string inside the type variable
 -}
-varName : Type -> Maybe String
+varName : Type a -> Maybe String
 varName type_ =
     case type_ of
         Var string ->
@@ -62,7 +104,7 @@ varName type_ =
 
 {-| Unwrap the string inside the type variable
 -}
-varName_ : TypeOrId -> Maybe String
+varName_ : TypeOrId a -> Maybe String
 varName_ typeOrId =
     case typeOrId of
         Id _ ->
@@ -72,7 +114,7 @@ varName_ typeOrId =
             varName type_
 
 
-getId : TypeOrId -> Maybe Int
+getId : TypeOrId a -> Maybe Int
 getId typeOrId =
     case typeOrId of
         Id id ->
@@ -82,7 +124,7 @@ getId typeOrId =
             Nothing
 
 
-getType : TypeOrId -> Maybe Type
+getType : TypeOrId a -> Maybe (Type a)
 getType typeOrId =
     case typeOrId of
         Id _ ->
@@ -94,10 +136,10 @@ getType typeOrId =
 
 {-| Does it contain lower-case type parameters?
 -}
-isParametric : Type -> Bool
+isParametric : Type a -> Bool
 isParametric type_ =
     let
-        fn_ : TypeOrId -> Bool
+        fn_ : TypeOrId a -> Bool
         fn_ typeOrId =
             case typeOrId of
                 Id _ ->
@@ -147,14 +189,14 @@ isParametric type_ =
             List.any fn_ args
 
 
-varNames : Type -> List String
+varNames : Type a -> List String
 varNames type_ =
     type_
         |> Transform.children recursiveChildren
         |> List.filterMap varName
 
 
-varNames_ : TypeOrId -> List String
+varNames_ : TypeOrId a -> List String
 varNames_ typeOrId =
     typeOrId
         |> Transform.children recursiveChildren_
@@ -163,10 +205,10 @@ varNames_ typeOrId =
 
 {-| Find all the children of this expression (and their children, etc...)
 -}
-recursiveChildren : (Type -> List Type) -> Type -> List Type
+recursiveChildren : (Type a -> List (Type a)) -> Type a -> List (Type a)
 recursiveChildren fn type_ =
     let
-        fn_ : TypeOrId -> List Type
+        fn_ : TypeOrId a -> List (Type a)
         fn_ typeOrId =
             case typeOrId of
                 Id _ ->
@@ -218,7 +260,7 @@ recursiveChildren fn type_ =
 
 {-| Find all the children of this expression (and their children, etc...)
 -}
-recursiveChildren_ : (TypeOrId -> List TypeOrId) -> TypeOrId -> List TypeOrId
+recursiveChildren_ : (TypeOrId a -> List (TypeOrId a)) -> TypeOrId a -> List (TypeOrId a)
 recursiveChildren_ fn typeOrId =
     case typeOrId of
         Id _ ->

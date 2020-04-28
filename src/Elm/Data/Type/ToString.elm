@@ -60,7 +60,7 @@ type State
 
 {-| Initial state to start with.
 -}
-fromType : Type -> State
+fromType : Type a -> State
 fromType type_ =
     State
         { mapping = Dict.empty
@@ -71,7 +71,7 @@ fromType type_ =
 
 {-| Initial state to start with.
 -}
-fromTypeOrId : TypeOrId -> State
+fromTypeOrId : TypeOrId a -> State
 fromTypeOrId typeOrId =
     State
         { mapping = Dict.empty
@@ -82,7 +82,7 @@ fromTypeOrId typeOrId =
 
 {-| Initial state to start with.
 -}
-fromTypes : List Type -> State
+fromTypes : List (Type a) -> State
 fromTypes types =
     State
         { mapping = Dict.empty
@@ -93,7 +93,7 @@ fromTypes types =
 
 {-| Initial state to start with.
 -}
-fromTypesOrIds : List TypeOrId -> State
+fromTypesOrIds : List (TypeOrId a) -> State
 fromTypesOrIds typesOrIds =
     State
         { mapping = Dict.empty
@@ -105,7 +105,7 @@ fromTypesOrIds typesOrIds =
 {-| The main function of this module. Use the state returned here
 in the subsequent calls (if they're going to end up as part of the same string!)
 -}
-toString : State -> TypeOrId -> ( String, State )
+toString : State -> TypeOrId a -> ( String, State )
 toString state type_ =
     case type_ of
         Id id ->
@@ -115,7 +115,7 @@ toString state type_ =
             toStringType state type__
 
 
-toStringType : State -> Type -> ( String, State )
+toStringType : State -> Type a -> ( String, State )
 toStringType state type_ =
     case type_ of
         Var string ->
@@ -312,7 +312,7 @@ letter int =
         |> String.fromChar
 
 
-niceRecordBinding : State -> ( String, TypeOrId ) -> ( String, State )
+niceRecordBinding : State -> ( String, TypeOrId a ) -> ( String, State )
 niceRecordBinding state ( varName, typeOrId ) =
     let
         ( typeStr, state1 ) =
@@ -330,7 +330,7 @@ niceRecordBinding state ( varName, typeOrId ) =
      --> ( "Int", state )
 
 -}
-maybeWrapParens : TypeOrId -> ( String, a ) -> ( String, a )
+maybeWrapParens : TypeOrId b -> ( String, a ) -> ( String, a )
 maybeWrapParens typeOrId ( string, state ) =
     let
         wrapParens : String -> String
@@ -355,7 +355,7 @@ but there are usecases that need parentheses:
     task : Task (Int -> Bool) String
 
 -}
-shouldWrapParens : TypeOrId -> Bool
+shouldWrapParens : TypeOrId a -> Bool
 shouldWrapParens typeOrId =
     case typeOrId of
         Id _ ->

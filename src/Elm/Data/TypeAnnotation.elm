@@ -8,8 +8,13 @@ import Elm.Data.VarName exposing (VarName)
 
     x : Int
 
+The user type modules can be unqualified in type annotations:
+
+     import Page exposing (Msg)
+     x : Msg -- unqualified
+
 -}
 type alias TypeAnnotation =
     { varName : VarName
-    , type_ : Type
+    , type_ : Type (Maybe String)
     }

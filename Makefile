@@ -15,7 +15,7 @@ build:
 
 .PHONY: watch
 watch:
-	npx elm-live cli/Main.elm src/Elm/Compiler.elm --no-server
+	cd cli && npx elm-live Main.elm --no-server
 
 .PHONY: test
 test:

@@ -9,6 +9,8 @@ module Elm.Data.ModuleName exposing (ModuleName, expectedModuleName)
 
 -}
 
+-- TODO maybe hold it as a list for as long as possible?
+
 
 {-| Just a `String` alias, instead of a `type` wrapper. We generally use records
 with explanatory field names where two Strings would be next to each other,

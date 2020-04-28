@@ -28,7 +28,7 @@ import Elm.Data.Import exposing (Import)
 import Elm.Data.Located as Located exposing (Located)
 import Elm.Data.Module exposing (Module, ModuleType(..))
 import Elm.Data.ModuleName exposing (ModuleName)
-import Elm.Data.Type as Type exposing (Type, TypeOrId(..))
+import Elm.Data.Type as Type exposing (Type, TypeOrId(..), TypeOrIdUnq, TypeUnq)
 import Elm.Data.TypeAnnotation exposing (TypeAnnotation)
 import Elm.Data.VarName exposing (VarName)
 import Hex
@@ -60,7 +60,7 @@ located p =
         |= P.getPosition
 
 
-module_ : FilePath -> Parser_ (Module LocatedExpr TypeAnnotation)
+module_ : FilePath -> Parser_ (Module LocatedExpr TypeAnnotation (Maybe String))
 module_ filePath =
     P.succeed
         (\( moduleType_, moduleName_, exposing_ ) imports_ declarations_ ->
@@ -190,9 +190,13 @@ effectModuleType =
 moduleName : Parser_ String
 moduleName =
     P.sequence
-        { start = P.Token "" (CompilerBug "moduleName start parser failed") -- TODO is this the right way?
+        { start =
+            -- TODO is this the right way?
+            P.Token "" (ParseCompilerBug "moduleName start parser failed")
         , separator = P.Token "." ExpectingModuleDot
-        , end = P.Token "" (CompilerBug "moduleName start parser failed") -- TODO is this the right way?
+        , end =
+            -- TODO is this the right way?
+            P.Token "" (ParseCompilerBug "moduleName start parser failed")
         , spaces = P.succeed ()
         , item = moduleNameWithoutDots
         , trailing = P.Forbidden
@@ -292,6 +296,22 @@ typeOrConstructorName =
         }
 
 
+qualifiedTypeOrConstructorName : Parser_ Expr
+qualifiedTypeOrConstructorName =
+    qualifiers
+        |> P.andThen
+            (\modules ->
+                P.map
+                    (\varName_ ->
+                        Frontend.Var
+                            { module_ = qualifiersToString modules
+                            , name = varName_
+                            }
+                    )
+                    varName
+            )
+
+
 {-| Taken from the official compiler.
 -}
 reservedWords : Set String
@@ -314,7 +334,7 @@ reservedWords =
         ]
 
 
-declarations : Parser_ (List (ModuleName -> Declaration LocatedExpr TypeAnnotation))
+declarations : Parser_ (List (ModuleName -> Declaration LocatedExpr TypeAnnotation (Maybe String)))
 declarations =
     oneOrMoreWith P.spaces
         (P.succeed identity
@@ -323,7 +343,7 @@ declarations =
         )
 
 
-declaration : Parser_ (ModuleName -> Declaration LocatedExpr TypeAnnotation)
+declaration : Parser_ (ModuleName -> Declaration LocatedExpr TypeAnnotation (Maybe String))
 declaration =
     P.succeed
         (\typeAnnotation_ name body module__ ->
@@ -530,7 +550,7 @@ character quotes =
                     string
                         |> String.uncons
                         |> Maybe.map (Tuple.first >> P.succeed)
-                        |> Maybe.withDefault (P.problem (CompilerBug "Multiple characters chomped in `character`"))
+                        |> Maybe.withDefault (P.problem (ParseCompilerBug "Multiple characters chomped in `character`"))
                 )
         ]
 
@@ -628,28 +648,43 @@ varName =
         }
 
 
-qualifiedVar : Parser_ Expr
-qualifiedVar =
+qualifiers : Parser_ (List ModuleName)
+qualifiers =
     P.sequence
-        { start = P.Token "" (CompilerBug "qualifiedVar start parser failed") -- TODO is this the right way?
+        { start =
+            -- TODO is this the right way?
+            P.Token "" (ParseCompilerBug "qualifiers start parser failed")
         , separator = P.Token "." ExpectingQualifiedVarNameDot
-        , end = P.Token "" (CompilerBug "qualifiedVar end parser failed") -- TODO is this the right way?
+        , end =
+            -- TODO is this the right way?
+            P.Token "" (ParseCompilerBug "qualifiers end parser failed")
         , spaces = P.succeed ()
         , item = moduleNameWithoutDots
-        , trailing = P.Mandatory -- this is the difference from `moduleName`
+        , trailing = P.Mandatory
         }
-        |> P.andThen
-            (\list_ ->
-                let
-                    maybeModuleName =
-                        if List.isEmpty list_ then
-                            Nothing
 
-                        else
-                            Just <| String.join "." list_
-                in
+
+qualifiersToString : List ModuleName -> Maybe String
+qualifiersToString modules =
+    if List.isEmpty modules then
+        Nothing
+
+    else
+        Just <| String.join "." modules
+
+
+qualifiedVar : Parser_ Expr
+qualifiedVar =
+    qualifiers
+        |> P.andThen
+            (\modules ->
                 P.map
-                    (\varName_ -> Frontend.Var { module_ = maybeModuleName, name = varName_ })
+                    (\varName_ ->
+                        Frontend.Var
+                            { module_ = qualifiersToString modules
+                            , name = varName_
+                            }
+                    )
                     varName
             )
 
@@ -742,7 +777,7 @@ binding config =
         |> P.inContext InLetBinding
 
 
-typeBinding : Parser_ ( VarName, TypeOrId )
+typeBinding : Parser_ ( VarName, TypeOrIdUnq )
 typeBinding =
     P.succeed Tuple.pair
         |= varName
@@ -922,7 +957,7 @@ typeAnnotation =
         |= type_
 
 
-type_ : Parser_ Type
+type_ : Parser_ TypeUnq
 type_ =
     P.oneOf
         [ varType
@@ -941,17 +976,17 @@ type_ =
         ]
 
 
-lazyType : () -> Parser_ Type
+lazyType : () -> Parser_ TypeUnq
 lazyType () =
     type_
 
 
-lazyTypeOrId : () -> Parser_ TypeOrId
+lazyTypeOrId : () -> Parser_ TypeOrIdUnq
 lazyTypeOrId () =
     P.map Type (lazyType ())
 
 
-varType : Parser_ Type
+varType : Parser_ TypeUnq
 varType =
     {- TODO I think we'll need to do `Var String` instead of `Var Int` ...
        and map from user-written strings to Int Var IDs in some later stage
@@ -964,7 +999,7 @@ varType =
     Debug.todo "varType"
 
 
-functionType : Parser_ Type
+functionType : Parser_ TypeUnq
 functionType =
     P.succeed (\from to -> Type.Function { from = from, to = to })
         |= P.lazy lazyTypeOrId
@@ -974,13 +1009,13 @@ functionType =
         |= P.lazy lazyTypeOrId
 
 
-simpleType : String -> Type -> Parser_ Type
+simpleType : String -> TypeUnq -> Parser_ TypeUnq
 simpleType name parsedType =
     P.succeed parsedType
         |. P.keyword (P.Token name (ExpectingSimpleType name))
 
 
-listType : Parser_ Type
+listType : Parser_ TypeUnq
 listType =
     P.succeed Type.List
         |. P.keyword (P.Token "List" ExpectingListType)
@@ -988,7 +1023,7 @@ listType =
         |= P.lazy lazyTypeOrId
 
 
-tupleType : Parser_ Type
+tupleType : Parser_ TypeUnq
 tupleType =
     P.succeed Type.Tuple
         |. P.keyword (P.Token "(" ExpectingLeftParen)
@@ -1002,7 +1037,7 @@ tupleType =
         |. P.keyword (P.Token ")" ExpectingRightParen)
 
 
-tuple3Type : Parser_ Type
+tuple3Type : Parser_ TypeUnq
 tuple3Type =
     P.succeed Type.Tuple3
         |. P.keyword (P.Token "(" ExpectingLeftParen)
@@ -1020,7 +1055,7 @@ tuple3Type =
         |. P.keyword (P.Token ")" ExpectingRightParen)
 
 
-recordType : Parser_ Type
+recordType : Parser_ TypeUnq
 recordType =
     P.succeed (Dict.fromList >> Type.Record)
         |= P.sequence
@@ -1033,17 +1068,21 @@ recordType =
             }
 
 
-userDefinedType : Parser_ Type
+userDefinedType : Parser_ TypeUnq
 userDefinedType =
     -- Maybe a
     -- List Int
+    -- Result Foo.Bar
+    -- Browser.Position Int
     P.succeed
-        (\name args ->
+        (\modules name args ->
             Type.UserDefinedType
-                { name = name
+                { module_ = qualifiersToString modules
+                , name = name
                 , args = args
                 }
         )
+        |= qualifiers
         |= typeOrConstructorName
         |. spacesOnly
         |= zeroOrMoreWith spacesOnly (P.lazy lazyTypeOrId)

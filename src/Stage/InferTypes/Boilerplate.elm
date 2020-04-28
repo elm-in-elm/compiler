@@ -11,7 +11,7 @@ import Elm.Data.Declaration as Declaration exposing (Declaration, DeclarationBod
 import Elm.Data.Module exposing (Module)
 import Elm.Data.ModuleName exposing (ModuleName)
 import Elm.Data.Project exposing (Project)
-import Elm.Data.Type exposing (Type)
+import Elm.Data.Type exposing (Type, TypeQ)
 import Elm.Data.VarName exposing (VarName)
 import OurExtras.Dict as Dict
 import Stage.InferTypes.SubstitutionMap exposing (SubstitutionMap)
@@ -25,8 +25,8 @@ type alias InferExprFn =
 
 type alias UnifyWithTypeAnnotationFn =
     SubstitutionMap
-    -> Declaration Typed.LocatedExpr Type
-    -> Result ( TypeError, SubstitutionMap ) ( Declaration Typed.LocatedExpr Never, SubstitutionMap )
+    -> Declaration Typed.LocatedExpr TypeQ ModuleName
+    -> Result ( TypeError, SubstitutionMap ) ( Declaration Typed.LocatedExpr Never ModuleName, SubstitutionMap )
 
 
 type alias SubstResult a =
@@ -42,7 +42,7 @@ inferProject :
 inferProject inferExpr unifyWithTypeAnnotation substitutionMap project =
     -- TODO would it be benefitial to return the SubstitutionMap in the Err case too?
     let
-        result : SubstResult (Dict ModuleName (Module Typed.LocatedExpr Never))
+        result : SubstResult (Dict ModuleName (Module Typed.LocatedExpr Never ModuleName))
         result =
             project.modules
                 |> Dict.foldl
@@ -68,7 +68,7 @@ inferProject inferExpr unifyWithTypeAnnotation substitutionMap project =
 
 projectOfNewType :
     Project Canonical.ProjectFields
-    -> Dict ModuleName (Module Typed.LocatedExpr Never)
+    -> Dict ModuleName (Module Typed.LocatedExpr Never ModuleName)
     -> Project Typed.ProjectFields
 projectOfNewType old modules =
     { elmJson = old.elmJson
@@ -85,8 +85,8 @@ inferModule :
     InferExprFn
     -> UnifyWithTypeAnnotationFn
     -> SubstitutionMap
-    -> Module Canonical.LocatedExpr Type
-    -> SubstResult (Module Typed.LocatedExpr Never)
+    -> Module Canonical.LocatedExpr TypeQ ModuleName
+    -> SubstResult (Module Typed.LocatedExpr Never ModuleName)
 inferModule inferExpr unifyWithTypeAnnotation substitutionMap module_ =
     module_.declarations
         |> Dict.foldl
@@ -114,9 +114,9 @@ inferModule inferExpr unifyWithTypeAnnotation substitutionMap module_ =
 
 
 moduleOfNewType :
-    Module Canonical.LocatedExpr Type
-    -> Dict VarName (Declaration Typed.LocatedExpr Never)
-    -> Module Typed.LocatedExpr Never
+    Module Canonical.LocatedExpr TypeQ ModuleName
+    -> Dict VarName (Declaration Typed.LocatedExpr Never ModuleName)
+    -> Module Typed.LocatedExpr Never ModuleName
 moduleOfNewType old newDecls =
     { imports = old.imports
     , name = old.name
@@ -132,11 +132,11 @@ moduleOfNewType old newDecls =
 inferDeclaration :
     InferExprFn
     -> SubstitutionMap
-    -> Declaration Canonical.LocatedExpr Type
-    -> SubstResult (Declaration Typed.LocatedExpr Type)
+    -> Declaration Canonical.LocatedExpr TypeQ ModuleName
+    -> SubstResult (Declaration Typed.LocatedExpr TypeQ ModuleName)
 inferDeclaration inferExpr substitutionMap decl =
     let
-        result : SubstResult (DeclarationBody Typed.LocatedExpr)
+        result : SubstResult (DeclarationBody Typed.LocatedExpr ModuleName)
         result =
             decl.body
                 |> Declaration.mapBody (inferExpr substitutionMap)
@@ -148,9 +148,9 @@ inferDeclaration inferExpr substitutionMap decl =
 
 
 declarationOfNewType :
-    Declaration Canonical.LocatedExpr annotation
-    -> DeclarationBody Typed.LocatedExpr
-    -> Declaration Typed.LocatedExpr annotation
+    Declaration Canonical.LocatedExpr annotation ModuleName
+    -> DeclarationBody Typed.LocatedExpr ModuleName
+    -> Declaration Typed.LocatedExpr annotation ModuleName
 declarationOfNewType old newBody =
     { name = old.name
     , module_ = old.module_

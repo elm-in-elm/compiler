@@ -17,7 +17,7 @@ import Elm.Data.Binding as Binding exposing (Binding)
 import Elm.Data.Located as Located exposing (Located)
 import Elm.Data.Module exposing (Module)
 import Elm.Data.ModuleName exposing (ModuleName)
-import Elm.Data.Type exposing (Type)
+import Elm.Data.Type as Type exposing (TypeQ)
 import Elm.Data.VarName exposing (VarName)
 
 
@@ -30,7 +30,7 @@ that hold [canonical AST expressions](#LocatedExpr).
 
 -}
 type alias ProjectFields =
-    { modules : Dict ModuleName (Module LocatedExpr Type) }
+    { modules : Dict ModuleName (Module LocatedExpr TypeQ String) }
 
 
 {-| The main type of this module. Expression with [location metadata](Elm.Data.Located).

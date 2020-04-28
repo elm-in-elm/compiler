@@ -23,12 +23,13 @@ import Elm.Compiler.Error exposing (Error(..))
 import Elm.Data.Declaration exposing (Declaration, DeclarationBody(..))
 import Elm.Data.FileContents exposing (FileContents)
 import Elm.Data.FilePath exposing (FilePath)
+import Elm.Data.ModuleName exposing (ModuleName)
 import Elm.Data.Project exposing (Project)
 import Stage.Emit.Common exposing (mangleQualifiedVar, mangleVarName, prepareProjectFields)
 
 
 type alias ProjectFields =
-    { declarationList : List (Declaration Typed.LocatedExpr Never) }
+    { declarationList : List (Declaration Typed.LocatedExpr Never ModuleName) }
 
 
 emitProject : Project Typed.ProjectFields -> Result Error (Dict FilePath FileContents)
@@ -129,7 +130,7 @@ emitExpr located =
             "{" ++ bindingsJS ++ "}"
 
 
-emitDeclaration : Declaration Typed.LocatedExpr Never -> String
+emitDeclaration : Declaration Typed.LocatedExpr Never ModuleName -> String
 emitDeclaration { module_, name, body } =
     case body of
         Value expr ->
