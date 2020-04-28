@@ -328,9 +328,15 @@ findDependencies modules thisModule declarationBody =
             findDependenciesOfExpr modules locatedExpr
 
         TypeAlias { definition } ->
+            {- we don't have to think about parameters; those are always
+               variables and not concrete types here
+            -}
             findDependenciesOfType modules thisModule definition
 
         CustomType { constructors } ->
+            {- we don't have to think about parameters; those are always
+               variables and not concrete types here
+            -}
             constructors
                 |> List.concatMap
                     (.arguments
@@ -418,7 +424,11 @@ findDependenciesOfType modules thisModule type_ =
                         |> Result.map List.concat
 
                 typeDependencies =
-                    Debug.todo "type dependencies"
+                    findDependenciesOfVar
+                        modules
+                        thisModule
+                        module_
+                        name
             in
             Result.map2 (++)
                 typeDependencies
@@ -430,6 +440,33 @@ findDependenciesOfType modules thisModule type_ =
                 |> List.map f
                 |> Result.combine
                 |> Result.map List.concat
+
+
+findDependenciesOfVar :
+    Dict ModuleName (Module Typed.LocatedExpr Never ModuleName)
+    -> Module Typed.LocatedExpr Never ModuleName
+    -> ModuleName
+    -> VarName
+    -> Result EmitError (List (Declaration Typed.LocatedExpr Never ModuleName))
+findDependenciesOfVar modules thisModule moduleName varName =
+    Dict.get moduleName modules
+        |> Result.fromMaybe
+            (ModuleNotFoundForVar
+                { module_ = moduleName
+                , var = varName
+                }
+            )
+        |> Result.andThen
+            (\module_ ->
+                Dict.get varName module_.declarations
+                    |> Result.fromMaybe
+                        (DeclarationNotFound
+                            { module_ = moduleName
+                            , name = varName
+                            }
+                        )
+            )
+        |> Result.andThen (.body >> findDependencies modules thisModule)
 
 
 findDependenciesOfExpr :
