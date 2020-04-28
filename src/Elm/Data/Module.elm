@@ -122,12 +122,16 @@ unalias thisModule moduleName =
 
 {-| Apply a function to all the expressions inside the module.
 -}
-map : (exprA -> exprB) -> Module exprA annotation utm -> Module exprB annotation utm
-map fn module_ =
+map :
+    (exprA -> exprB)
+    -> (typeA -> typeB)
+    -> Module exprA annotation typeA
+    -> Module exprB annotation typeB
+map fnExpr fnType module_ =
     { imports = module_.imports
     , name = module_.name
     , filePath = module_.filePath
-    , declarations = Dict.map (always <| Declaration.map fn) module_.declarations
+    , declarations = Dict.map (always <| Declaration.map fnExpr fnType) module_.declarations
     , type_ = module_.type_
     , exposing_ = module_.exposing_
     }

@@ -1,5 +1,5 @@
 module Elm.Data.Type exposing
-    ( Type(..), TypeOrId(..), isParametric
+    ( Type(..), TypeOrId(..), isParametric, mapType, mapTypeOrId
     , TypeUnq, TypeQ, TypeOrIdUnq, TypeOrIdQ
     , varName, varName_, varNames, getType
     , getId, varNames_
@@ -7,7 +7,7 @@ module Elm.Data.Type exposing
 
 {-| A data structure representing the Elm types.
 
-@docs Type, TypeOrId, isParametric
+@docs Type, TypeOrId, isParametric, mapType, mapTypeOrId
 @docs TypeUnq, TypeQ, TypeOrIdUnq, TypeOrIdQ
 @docs varName, varName_, varNames, varNames_ getId, getType
 
@@ -304,3 +304,68 @@ recursiveChildren_ fn typeOrId =
 
         Type (UserDefinedType { args }) ->
             List.concatMap fn args
+
+
+mapTypeOrId : (a -> b) -> TypeOrId a -> TypeOrId b
+mapTypeOrId fn typeOrId =
+    case typeOrId of
+        Id id ->
+            Id id
+
+        Type type_ ->
+            Type <| mapType fn type_
+
+
+mapType : (a -> b) -> Type a -> Type b
+mapType fn type_ =
+    case type_ of
+        Var str ->
+            Var str
+
+        Function { from, to } ->
+            Function
+                { from = mapTypeOrId fn from
+                , to = mapTypeOrId fn to
+                }
+
+        Int ->
+            Int
+
+        Float ->
+            Float
+
+        Char ->
+            Char
+
+        String ->
+            String
+
+        Bool ->
+            Bool
+
+        List typeOrId ->
+            List <| mapTypeOrId fn typeOrId
+
+        Unit ->
+            Unit
+
+        Tuple a b ->
+            Tuple
+                (mapTypeOrId fn a)
+                (mapTypeOrId fn b)
+
+        Tuple3 a b c ->
+            Tuple3
+                (mapTypeOrId fn a)
+                (mapTypeOrId fn b)
+                (mapTypeOrId fn c)
+
+        Record dict ->
+            Record <| Dict.map (\k v -> mapTypeOrId fn v) dict
+
+        UserDefinedType r ->
+            UserDefinedType
+                { module_ = fn r.module_
+                , name = r.name
+                , args = List.map (mapTypeOrId fn) r.args
+                }

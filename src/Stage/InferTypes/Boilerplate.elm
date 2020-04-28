@@ -139,7 +139,7 @@ inferDeclaration inferExpr substitutionMap decl =
         result : SubstResult (DeclarationBody Typed.LocatedExpr ModuleName)
         result =
             decl.body
-                |> Declaration.mapBody (inferExpr substitutionMap)
+                |> Declaration.mapBody (inferExpr substitutionMap) identity
                 |> Declaration.combine
                 |> Result.map Declaration.combineSubstitutionMap
     in

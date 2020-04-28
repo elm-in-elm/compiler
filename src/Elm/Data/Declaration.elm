@@ -13,7 +13,7 @@ module Elm.Data.Declaration exposing
 -}
 
 import Elm.Data.ModuleName exposing (ModuleName)
-import Elm.Data.Type exposing (Type, TypeOrId)
+import Elm.Data.Type as Type exposing (Type, TypeOrId)
 import Elm.Data.TypeAnnotation exposing (TypeAnnotation)
 import Elm.Data.VarName exposing (VarName)
 import Stage.InferTypes.SubstitutionMap as SubstitutionMap exposing ({- TODO maybe move SubstMap module to Elm.Data? -} SubstitutionMap)
@@ -92,28 +92,42 @@ type alias Constructor a =
 
 {-| Apply a function to the expression inside the declaration.
 -}
-map : (exprA -> exprB) -> Declaration exprA a b -> Declaration exprB a b
-map fn declaration =
+map :
+    (exprA -> exprB)
+    -> (utmA -> utmB)
+    -> Declaration exprA annotation utmA
+    -> Declaration exprB annotation utmB
+map fnExpr fnUtm declaration =
     { module_ = declaration.module_
     , typeAnnotation = declaration.typeAnnotation
     , name = declaration.name
-    , body = mapBody fn declaration.body
+    , body = mapBody fnExpr fnUtm declaration.body
     }
 
 
 {-| Apply a function to the expression inside the declaration body.
 -}
-mapBody : (exprA -> exprB) -> DeclarationBody exprA a -> DeclarationBody exprB a
-mapBody fn body =
+mapBody :
+    (exprA -> exprB)
+    -> (utmA -> utmB)
+    -> DeclarationBody exprA utmA
+    -> DeclarationBody exprB utmB
+mapBody fnExpr fnUtm body =
     case body of
         Value expr ->
-            Value <| fn expr
+            Value <| fnExpr expr
 
         TypeAlias r ->
-            TypeAlias r
+            TypeAlias
+                { parameters = r.parameters
+                , definition = Type.mapType fnUtm r.definition
+                }
 
         CustomType r ->
-            CustomType r
+            CustomType
+                { parameters = r.parameters
+                , constructors = List.map (mapConstructor fnUtm) r.constructors
+                }
 
 
 {-| Switch the Result and the expression inside the declaration body.
@@ -162,3 +176,10 @@ getExpr decl =
 
         _ ->
             Nothing
+
+
+mapConstructor : (a -> b) -> Constructor a -> Constructor b
+mapConstructor fn constructor =
+    { name = constructor.name
+    , arguments = List.map (Type.mapTypeOrId fn) constructor.arguments
+    }

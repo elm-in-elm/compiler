@@ -29,7 +29,7 @@ desugar project =
     project
         |> Boilerplate.desugarProject
             (desugarExpr project.modules)
-            (desugarType project.modules)
+            desugarUtm
             checkAndDesugarTypeAnnotation
         |> Result.mapError DesugarError
 
@@ -208,17 +208,30 @@ desugarExpr modules thisModule located =
                             )
 
 
-{-| We only do stuff in the UserDefinedType case. The rest is boilerplate.
+desugarUtm : a
+desugarUtm =
+    Debug.todo "desugarUtm"
+
+
+{-| TODO this should be used somewhere in the checkAndDesugarTypeAnnotation
+function?
+
+TODO or is this even needed? This was `desugarType` before we figured out the
+declaration needs to change the UTM (params in IdOrType etc. are UTM and not
+types)
+
+We only do stuff in the UserDefinedType case. The rest is boilerplate.
+
 -}
-desugarType :
+todoDesugarType :
     Dict ModuleName (Module Frontend.LocatedExpr TypeAnnotation (Maybe String))
     -> Module Frontend.LocatedExpr TypeAnnotation (Maybe String)
     -> TypeOrIdUnq
     -> Result DesugarError TypeOrIdQ
-desugarType modules thisModule typeOrId =
+todoDesugarType modules thisModule typeOrId =
     let
         f =
-            desugarType modules thisModule
+            todoDesugarType modules thisModule
     in
     case typeOrId of
         Id id ->
@@ -312,10 +325,12 @@ TODO test
 -}
 checkAndDesugarTypeAnnotation :
     Declaration a TypeAnnotation (Maybe String)
-    -> Result DesugarError (Declaration a TypeUnq (Maybe String))
+    -> Result DesugarError (Declaration a TypeQ (Maybe String))
 checkAndDesugarTypeAnnotation decl =
-    -- TODO find the modules of user types here too
-    decl.typeAnnotation
+    start here
+        -- TODO find the modules of user types here too
+        -- TODO this can be done using todoDesugarType
+        decl.typeAnnotation
         |> Maybe.map
             (\{ varName, type_ } ->
                 if varName == decl.name then

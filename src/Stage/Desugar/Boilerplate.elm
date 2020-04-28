@@ -23,30 +23,30 @@ type alias DesugarExprFn =
     -> Result DesugarError Canonical.LocatedExpr
 
 
-type alias DesugarTypeFn =
-    Module Frontend.LocatedExpr TypeAnnotation (Maybe String)
-    -> TypeOrIdUnq
-    -> Result DesugarError TypeOrIdQ
+type alias DesugarUtmFn =
+    Maybe String -> String
 
 
+{-| Annotation desugaring happens after the declaration desugaring
+-}
 type alias DesugarAnnotationFn =
-    Declaration Canonical.LocatedExpr TypeAnnotation (Maybe String)
-    -> Result DesugarError (Declaration Canonical.LocatedExpr TypeUnq (Maybe String))
+    Declaration Canonical.LocatedExpr TypeAnnotation String
+    -> Result DesugarError (Declaration Canonical.LocatedExpr TypeQ String)
 
 
 desugarProject :
     DesugarExprFn
-    -> DesugarTypeFn
+    -> DesugarUtmFn
     -> DesugarAnnotationFn
     -> Project Frontend.ProjectFields
     -> Result DesugarError (Project Canonical.ProjectFields)
-desugarProject desugarExpr desugarType desugarAnnotation project =
+desugarProject desugarExpr desugarUtm desugarAnnotation project =
     project.modules
         |> Dict.map
             (always
                 (desugarModule
                     desugarExpr
-                    desugarType
+                    desugarUtm
                     desugarAnnotation
                 )
             )
@@ -71,17 +71,17 @@ projectOfNewType old modules =
 
 desugarModule :
     DesugarExprFn
-    -> DesugarTypeFn
+    -> DesugarUtmFn
     -> DesugarAnnotationFn
     -> Module Frontend.LocatedExpr TypeAnnotation (Maybe String)
     -> Result DesugarError (Module Canonical.LocatedExpr TypeQ String)
-desugarModule desugarExpr desugarType desugarAnnotation module_ =
+desugarModule desugarExpr desugarUtm desugarAnnotation module_ =
     module_.declarations
         |> Dict.map
             (always
                 (desugarDeclaration
                     (desugarExpr module_)
-                    (desugarType module_)
+                    desugarUtm
                     desugarAnnotation
                 )
             )
@@ -107,19 +107,16 @@ moduleOfNewType old newDecls =
 
 desugarDeclaration :
     (Frontend.LocatedExpr -> Result DesugarError Canonical.LocatedExpr)
-    -> (TypeOrIdUnq -> Result DesugarError TypeOrIdQ)
+    -> DesugarUtmFn
     -> DesugarAnnotationFn
     -> Declaration Frontend.LocatedExpr TypeAnnotation (Maybe String)
     -> Result DesugarError (Declaration Canonical.LocatedExpr TypeQ String)
-desugarDeclaration desugarExpr desugarType desugarAnnotation decl =
-    {-
-       decl.body
-           |> Declaration.mapBody desugarExpr
-           |> Declaration.combine
-           |> Result.map (declarationOfNewType decl)
-           |> Result.andThen desugarAnnotation
-    -}
-    Debug.todo "TODO use desugarType here somewhere"
+desugarDeclaration desugarExpr desugarUtm desugarAnnotation decl =
+    decl.body
+        |> Declaration.mapBody desugarExpr desugarUtm
+        |> Declaration.combine
+        |> Result.map (declarationOfNewType decl)
+        |> Result.andThen desugarAnnotation
 
 
 declarationOfNewType :

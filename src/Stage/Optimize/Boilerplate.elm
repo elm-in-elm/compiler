@@ -54,7 +54,7 @@ optimizeDeclaration :
     -> Declaration Typed.LocatedExpr Never ModuleName
 optimizeDeclaration optimizeExpr decl =
     decl.body
-        |> Declaration.mapBody optimizeExpr
+        |> Declaration.mapBody optimizeExpr identity
         |> asBodyIn decl
 
 
