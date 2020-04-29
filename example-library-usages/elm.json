@@ -18,7 +18,7 @@
             "elm-community/basics-extra": "4.0.0",
             "elm-community/dict-extra": "2.4.0",
             "elm-community/maybe-extra": "5.0.0",
-            "elm-community/result-extra": "2.2.1",
+            "elm-community/result-extra": "2.4.0",
             "erlandsona/assoc-set": "1.0.0",
             "pzp1997/assoc-list": "1.0.0",
             "rtfeldman/elm-hex": "1.0.0"
