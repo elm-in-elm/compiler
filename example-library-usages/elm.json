@@ -15,7 +15,7 @@
             "elm/json": "1.1.3",
             "elm/parser": "1.1.0",
             "elm/project-metadata-utils": "1.0.1",
-            "elm-community/basics-extra": "4.0.0",
+            "elm-community/basics-extra": "4.1.0",
             "elm-community/dict-extra": "2.4.0",
             "elm-community/maybe-extra": "5.0.0",
             "elm-community/result-extra": "2.2.1",
