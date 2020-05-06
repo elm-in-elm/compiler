@@ -17,6 +17,7 @@ import Elm.Data.Binding as Binding exposing (Binding)
 import Elm.Data.Located as Located exposing (Located)
 import Elm.Data.Module exposing (Module)
 import Elm.Data.ModuleName exposing (ModuleName)
+import Elm.Data.Pattern as Pattern exposing (Pattern)
 import Elm.Data.VarName exposing (VarName)
 
 
@@ -69,6 +70,7 @@ type Expr
     | Tuple LocatedExpr LocatedExpr
     | Tuple3 LocatedExpr LocatedExpr LocatedExpr
     | Record (Dict VarName (Binding LocatedExpr))
+    | Case LocatedExpr (List { pattern : Pattern, body : LocatedExpr })
 
 
 {-| Discard the [location metadata](Elm.Data.Located#Located).
@@ -159,6 +161,16 @@ unwrap expr =
                     (always (Binding.map unwrap))
                     bindings
 
+        Case e branches ->
+            Unwrapped.Case (unwrap e) <|
+                List.map
+                    (\branch ->
+                        { pattern = branch.pattern
+                        , body = unwrap branch.body
+                        }
+                    )
+                    branches
+
 
 {-| Adds [**dummy** locations](Elm.Data.Located#dummyRegion) to the [Unwrapped.Expr](Elm.AST.Canonical.Unwrapped#Expr).
 -}
@@ -248,3 +260,13 @@ fromUnwrapped expr =
                     Dict.map
                         (always (Binding.map fromUnwrapped))
                         bindings
+
+            Unwrapped.Case e branches ->
+                Case (fromUnwrapped e) <|
+                    List.map
+                        (\branch ->
+                            { pattern = branch.pattern
+                            , body = fromUnwrapped branch.body
+                            }
+                        )
+                        branches

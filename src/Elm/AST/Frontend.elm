@@ -18,6 +18,7 @@ import Elm.Data.Binding as Binding exposing (Binding)
 import Elm.Data.Located as Located exposing (Located)
 import Elm.Data.Module exposing (Module)
 import Elm.Data.ModuleName exposing (ModuleName)
+import Elm.Data.Pattern as Pattern exposing (Pattern)
 import Elm.Data.VarName exposing (VarName)
 import Transform
 
@@ -67,6 +68,7 @@ type Expr
     | Tuple LocatedExpr LocatedExpr
     | Tuple3 LocatedExpr LocatedExpr LocatedExpr
     | Record (List (Binding LocatedExpr))
+    | Case LocatedExpr (List { pattern : Pattern, body : LocatedExpr })
 
 
 {-| A helper for the [Transform](/packages/Janiczek/transform/latest/) library.
@@ -149,6 +151,16 @@ recurse f expr =
 
         Record bindings ->
             Record <| List.map (Binding.map f_) bindings
+
+        Case e branches ->
+            Case (f_ e) <|
+                List.map
+                    (\branch ->
+                        { pattern = branch.pattern
+                        , body = f_ branch.body
+                        }
+                    )
+                    branches
 
 
 {-| [Transform](/packages/Janiczek/transform/latest/Transform#transformAll)
@@ -256,3 +268,13 @@ unwrap expr =
         Record bindings ->
             Unwrapped.Record <|
                 List.map (Binding.map unwrap) bindings
+
+        Case e branches ->
+            Unwrapped.Case (unwrap e) <|
+                List.map
+                    (\branch ->
+                        { pattern = branch.pattern
+                        , body = unwrap branch.body
+                        }
+                    )
+                    branches

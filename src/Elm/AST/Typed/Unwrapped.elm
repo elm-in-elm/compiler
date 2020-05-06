@@ -13,6 +13,7 @@ Convert to it using the [`Elm.AST.Typed.unwrap`](Elm.AST.Typed#unwrap).
 import Dict exposing (Dict)
 import Elm.Data.Binding exposing (Binding)
 import Elm.Data.ModuleName exposing (ModuleName)
+import Elm.Data.Pattern exposing (Pattern)
 import Elm.Data.Type exposing (Type)
 import Elm.Data.VarName exposing (VarName)
 
@@ -44,3 +45,4 @@ type Expr_
     | Tuple Expr Expr
     | Tuple3 Expr Expr Expr
     | Record (Dict VarName (Binding Expr))
+    | Case Expr (List { pattern : Pattern, body : Expr })

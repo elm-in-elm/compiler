@@ -15,6 +15,7 @@ and from it using [`Elm.AST.Canonical.fromUnwrapped`](Elm.AST.Canonical#fromUnwr
 import Dict exposing (Dict)
 import Elm.Data.Binding exposing (Binding)
 import Elm.Data.ModuleName exposing (ModuleName)
+import Elm.Data.Pattern exposing (Pattern)
 import Elm.Data.VarName exposing (VarName)
 
 
@@ -38,3 +39,4 @@ type Expr
     | Tuple Expr Expr
     | Tuple3 Expr Expr Expr
     | Record (Dict VarName (Binding Expr))
+    | Case Expr (List { pattern : Pattern, body : Expr })

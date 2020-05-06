@@ -385,6 +385,38 @@ generateEquations currentId located =
             , id1
             )
 
+        Typed.Case test branches ->
+            let
+                ( _, testType ) =
+                    Located.unwrap test
+
+                ( testEquations, id1 ) =
+                    generateEquations currentId test
+
+                ( branchesEquations, newId ) =
+                    List.foldl
+                        (\branch ( acc, currentId_ ) ->
+                            let
+                                ( _, bodyType ) =
+                                    Located.unwrap branch.body
+
+                                ( equations, nextId ) =
+                                    generateEquations currentId_ branch.body
+                            in
+                            ( acc
+                                ++ [ equals type_ bodyType ]
+                                ++ equations
+                            , nextId
+                            )
+                        )
+                        ( [], id1 )
+                        branches
+            in
+            ( testEquations
+                ++ branchesEquations
+            , newId
+            )
+
 
 findArgumentUsages : VarName -> Typed.LocatedExpr -> List Typed.LocatedExpr
 findArgumentUsages argument bodyExpr =

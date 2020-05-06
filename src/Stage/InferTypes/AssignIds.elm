@@ -279,3 +279,28 @@ assignIdsWithHelp currentId located =
             in
             assignId newId <|
                 Typed.Record (Dict.fromList bindingBodiesList)
+
+        Canonical.Case e branches ->
+            let
+                ( e_, id1 ) =
+                    assignIdsWith currentId e
+
+                ( branches_, newId ) =
+                    List.foldr
+                        (\branch ( acc, runningId ) ->
+                            let
+                                ( branchBody, nextId ) =
+                                    assignIdsWith runningId branch.body
+                            in
+                            ( { pattern = branch.pattern
+                              , body = branchBody
+                              }
+                                :: acc
+                            , nextId
+                            )
+                        )
+                        ( [], id1 )
+                        branches
+            in
+            assignId newId <|
+                Typed.Case e_ branches_

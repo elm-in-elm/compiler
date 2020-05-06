@@ -353,6 +353,7 @@ expr =
             , tuple3
             , parenthesizedExpr
             , record
+            , case_
             ]
         , andThenOneOf =
             -- TODO test this: does `x =\n  call 1\n+ something` work? (it shouldn't: no space before '+')
@@ -818,6 +819,23 @@ record config =
             , trailing = P.Forbidden
             }
         |> P.inContext InRecord
+        |> located
+
+
+case_ : ExprConfig -> Parser_ LocatedExpr
+case_ config =
+    P.succeed
+        (\test branches ->
+            Frontend.Case test branches
+        )
+        |. P.keyword (P.Token "case" ExpectingLet)
+        |. P.spaces
+        |= PP.subExpression 0 config
+        |. P.spaces
+        |. P.keyword (P.Token "of" ExpectingIn)
+        |. P.spaces
+        |= P.succeed []
+        |> P.inContext InCase
         |> located
 
 

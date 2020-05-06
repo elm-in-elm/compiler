@@ -17,6 +17,7 @@ import Elm.Data.Binding as Binding exposing (Binding)
 import Elm.Data.Located as Located exposing (Located)
 import Elm.Data.Module exposing (Module)
 import Elm.Data.ModuleName exposing (ModuleName)
+import Elm.Data.Pattern as Pattern exposing (Pattern)
 import Elm.Data.Type exposing (Type)
 import Elm.Data.VarName exposing (VarName)
 import Transform
@@ -75,6 +76,7 @@ type Expr_
     | Tuple LocatedExpr LocatedExpr
     | Tuple3 LocatedExpr LocatedExpr LocatedExpr
     | Record (Dict VarName (Binding LocatedExpr))
+    | Case LocatedExpr (List { pattern : Pattern, body : LocatedExpr })
 
 
 {-| A helper for the [Transform](/packages/Janiczek/transform/latest/) library.
@@ -165,6 +167,16 @@ recurse fn locatedExpr =
                                 (always (Binding.map fn))
                                 bindings
                             )
+
+                    Case e branches ->
+                        Case (fn e) <|
+                            List.map
+                                (\branch ->
+                                    { pattern = branch.pattern
+                                    , body = fn branch.body
+                                    }
+                                )
+                                branches
             )
 
 
@@ -255,6 +267,9 @@ recursiveChildren fn locatedExpr =
 
         Record bindings ->
             List.concatMap (.body >> fn) (Dict.values bindings)
+
+        Case e branches ->
+            fn e ++ List.concatMap (.body >> fn) branches
 
 
 mapExpr : (Expr_ -> Expr_) -> LocatedExpr -> LocatedExpr
@@ -375,6 +390,16 @@ unwrap expr =
                 Dict.map
                     (always (Binding.map unwrap))
                     bindings
+
+        Case e branches ->
+            Unwrapped.Case (unwrap e) <|
+                List.map
+                    (\branch ->
+                        { pattern = branch.pattern
+                        , body = unwrap branch.body
+                        }
+                    )
+                    branches
     , type_
     )
 
@@ -463,4 +488,14 @@ dropTypes locatedExpr =
                     Record bindings ->
                         Canonical.Record <|
                             Dict.map (always (Binding.map dropTypes)) bindings
+
+                    Case e branches ->
+                        Canonical.Case (dropTypes e) <|
+                            List.map
+                                (\branch ->
+                                    { pattern = branch.pattern
+                                    , body = dropTypes branch.body
+                                    }
+                                )
+                                branches
             )

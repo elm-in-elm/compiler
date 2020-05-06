@@ -12,6 +12,7 @@ Convert to it using the [`Elm.AST.Frontend.unwrap`](Elm.AST.Frontend#unwrap).
 
 import Elm.Data.Binding exposing (Binding)
 import Elm.Data.ModuleName exposing (ModuleName)
+import Elm.Data.Pattern exposing (Pattern)
 import Elm.Data.VarName exposing (VarName)
 
 
@@ -36,3 +37,4 @@ type Expr
     | Tuple Expr Expr
     | Tuple3 Expr Expr Expr
     | Record (List (Binding Expr))
+    | Case Expr (List { pattern : Pattern, body : Expr })

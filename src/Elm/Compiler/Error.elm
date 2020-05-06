@@ -74,6 +74,7 @@ type ParseContext
     | InTuple3
     | InRecord
     | InFile FilePath
+    | InCase
 
 
 {-| The specific problem the parser encountered. Together with [`ParseContext`](#ParseContext)

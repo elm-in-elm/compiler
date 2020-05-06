@@ -196,6 +196,24 @@ desugarExpr modules thisModule located =
                                     |> Canonical.Record
                             )
 
+        Frontend.Case e branches ->
+            --TODO: Cover all possibilities
+            map2 Canonical.Case
+                (recurse e)
+                (List.map
+                    (\branch ->
+                        recurse branch.body
+                            |> Result.map
+                                (\r ->
+                                    { pattern = branch.pattern
+                                    , body = r
+                                    }
+                                )
+                    )
+                    branches
+                    |> List.foldr (Result.map2 (::)) (Ok [])
+                )
+
 
 
 -- HELPERS
