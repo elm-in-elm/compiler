@@ -1,0 +1,38 @@
+// notstarted
+// juststarted
+// inprogress
+// nearlydone
+// complete
+
+# General
+
+parsing|inprogress
+library|juststarted|First version released, not entirely usable without all parsers
+cli|juststarted|Very rudimentary, almost no customization
+
+# Parsing
+
+integers|complete
+floats|complete
+chars|complete
+strings|complete
+booleans|complete
+variables|complete
+list literals|nearlydone|Multi-line support missing
+binary operators|inprogress|Multi-line support missing
+lambdas|nearlydone|Multi-line support missing
+function calls|nearlydone|Multi-line support missing
+if...then...else|nearlydone|Multi-line support missing
+let...in|nearlydone|Multi-line support missing
+case...of|notstarted
+records|nearlydone|Multi-line support missing
+record accessors|notstarted
+record updates|notstarted
+unit|complete
+tuples and 3-tuples|complete
+type annotations|nearlydone|#65
+custom types|notstarted
+type aliases|notstarted
+pattern matching|notstarted
+infix operator definitions|notstarted
+WebGL shaders|notstarted
