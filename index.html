@@ -13,6 +13,15 @@
       <li>
         <a href="#Parsing">Parsing</a>
       </li>
+      <li>
+        <a href="#Type Inference">Type Inference</a>
+      </li>
+      <li>
+        <a href="#Optimizations">Optimizations</a>
+      </li>
+      <li>
+        <a href="#Emitting">Emitting</a>
+      </li>
     </ul>
     <div>
       <h2 id="General">General</h2>
@@ -26,6 +35,23 @@
           <td>parsing</td>
           <td>In progress</td>
           <td></td>
+        </tr>
+        <tr class="inprogress">
+          <td>type inference</td>
+          <td>In progress</td>
+          <td></td>
+        </tr>
+        <tr class="juststarted">
+          <td>optimizing</td>
+          <td>Just started</td>
+          <td></td>
+        </tr>
+        <tr class="juststarted">
+          <td>emitting</td>
+          <td>Just started</td>
+          <td>
+            <span>Very naive JS implementation</span>
+          </td>
         </tr>
         <tr class="juststarted">
           <td>library</td>
@@ -50,6 +76,18 @@
           <th class="progresstitle">Title</th>
           <th class="progressstatus">Status</th>
           <th>Notes</th>
+        </tr>
+        <tr class="nearlydone">
+          <td>module declarations</td>
+          <td>Nearly done</td>
+          <td>
+            <span>Effect modules missing</span>
+          </td>
+        </tr>
+        <tr class="notstarted">
+          <td>port declarations</td>
+          <td>Not started</td>
+          <td></td>
         </tr>
         <tr class="complete">
           <td>integers</td>
@@ -187,6 +225,139 @@
         <tr class="notstarted">
           <td>WebGL shaders</td>
           <td>Not started</td>
+          <td></td>
+        </tr>
+      </table>
+    </div>
+    <div>
+      <h2 id="Type Inference">Type Inference</h2>
+      <table class="progress">
+        <tr>
+          <th class="progresstitle">Title</th>
+          <th class="progressstatus">Status</th>
+          <th>Notes</th>
+        </tr>
+        <tr class="complete">
+          <td>basic Hindley-Milner</td>
+          <td>Complete</td>
+          <td></td>
+        </tr>
+        <tr class="notstarted">
+          <td>let polymorphism</td>
+          <td>Not started</td>
+          <td></td>
+        </tr>
+        <tr class="notstarted">
+          <td>type aliases</td>
+          <td>Not started</td>
+          <td></td>
+        </tr>
+        <tr class="notstarted">
+          <td>custom types</td>
+          <td>Not started</td>
+          <td></td>
+        </tr>
+        <tr class="notstarted">
+          <td>extensible records</td>
+          <td>Not started</td>
+          <td></td>
+        </tr>
+      </table>
+    </div>
+    <div>
+      <h2 id="Optimizations">Optimizations</h2>
+      <table class="progress">
+        <tr>
+          <th class="progresstitle">Title</th>
+          <th class="progressstatus">Status</th>
+          <th>Notes</th>
+        </tr>
+        <tr class="juststarted">
+          <td>constant-folding integers</td>
+          <td>Just started</td>
+          <td>
+            <span>Only (+) done</span>
+          </td>
+        </tr>
+        <tr class="juststarted">
+          <td>constant-folding floats</td>
+          <td>Just started</td>
+          <td>
+            <span>Only (+) done</span>
+          </td>
+        </tr>
+        <tr class="notstarted">
+          <td>constant-folding strings</td>
+          <td>Not started</td>
+          <td></td>
+        </tr>
+        <tr class="notstarted">
+          <td>constant-folding booleans</td>
+          <td>Not started</td>
+          <td></td>
+        </tr>
+        <tr class="juststarted">
+          <td>constant-folding lists</td>
+          <td>Just started</td>
+          <td>
+            <span>Only (::) done</span>
+          </td>
+        </tr>
+        <tr class="notstarted">
+          <td>constant-folding tuples and 3-tuples</td>
+          <td>Not started</td>
+          <td></td>
+        </tr>
+        <tr class="notstarted">
+          <td>merging lambdas</td>
+          <td>Not started</td>
+          <td></td>
+        </tr>
+        <tr class="notstarted">
+          <td>merging function calls</td>
+          <td>Not started</td>
+          <td></td>
+        </tr>
+        <tr class="notstarted">
+          <td>merging record updates</td>
+          <td>Not started</td>
+          <td></td>
+        </tr>
+        <tr class="notstarted">
+          <td>pipe operators inlining</td>
+          <td>Not started</td>
+          <td></td>
+        </tr>
+        <tr class="notstarted">
+          <td>variable inlining</td>
+          <td>Not started</td>
+          <td></td>
+        </tr>
+        <tr class="complete">
+          <td>if &lt;literal bool&gt; folding</td>
+          <td>Complete</td>
+          <td></td>
+        </tr>
+      </table>
+    </div>
+    <div>
+      <h2 id="Emitting">Emitting</h2>
+      <table class="progress">
+        <tr>
+          <th class="progresstitle">Title</th>
+          <th class="progressstatus">Status</th>
+          <th>Notes</th>
+        </tr>
+        <tr class="inprogress">
+          <td>proof-of-concept JS backend</td>
+          <td>In progress</td>
+          <td>
+            <span>only stuff we can parse is emitted</span>
+          </td>
+        </tr>
+        <tr class="complete">
+          <td>dead code elimination</td>
+          <td>Complete</td>
           <td></td>
         </tr>
       </table>
