@@ -1,5 +1,0 @@
-- [ ] Elm.Compiler function type annotations don't really show the transitions between AST modules. (It all looks like LocatedExpr -> LocatedExpr). Try aliasing the types just for the sake of this module.
-- [ ] desugarExpr is needlessly complicated... try creating some dummy throwaway module for that one expr? Does that change behaviour ("can't find variable x")?
-- [ ] Emit helpers
-- [ ] Emit.JavaScript
-- [ ] Elm.Compiler.compileToJS - do the whole pipeline with default settings. Show how it's written in doc comment
