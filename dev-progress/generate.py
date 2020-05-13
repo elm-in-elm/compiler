@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import re
+import datetime
 from lxml import etree
 from lxml.builder import E
 
@@ -97,6 +98,9 @@ def group_html(group):
         )
     )
 
+def last_updated():
+    return E.div(f'Last updated: {str(datetime.date.today())}')
+
 def to_html(groups):
     return E.html(
         E.head(
@@ -105,6 +109,7 @@ def to_html(groups):
         ),
         E.body(
             E.h1('elm-in-elm development progress'),
+            last_updated(),
             table_of_contents(groups),
             *[group_html(group) for group in groups]
         )
