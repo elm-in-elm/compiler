@@ -75,6 +75,7 @@ type ParseContext
     | InRecord
     | InFile FilePath
     | InCase
+    | InPattern
 
 
 {-| The specific problem the parser encountered. Together with [`ParseContext`](#ParseContext)
@@ -135,6 +136,15 @@ type ParseProblem
     | ExpectingRecordLeftBrace
     | ExpectingRecordSeparator
     | ExpectingRecordRightBrace
+    | ExpectingCase
+    | ExpectingOf
+    | ExpectingCaseBody
+    | ExpectingIndentation
+    | ExpectingPatternAnything -- >_< ->
+    | ExpectingMultiCommentOpen
+    | ExpectingMultiCommentClose
+    | ExpectingMaxThreeTuple
+    | InvalidTab
     | InvalidNumber
     | TriedToParseCharacterStoppingDelimiter
     | CompilerBug String
@@ -488,6 +498,33 @@ parseProblemToString problem =
 
         ExpectingRecordRightBrace ->
             "ExpectingRecordRightBrace"
+
+        ExpectingCase ->
+            "ExpectingCase"
+
+        ExpectingOf ->
+            "ExpectingOf"
+
+        ExpectingCaseBody ->
+            "ExpectingCaseBody"
+
+        ExpectingIndentation ->
+            "ExpectingIndentation"
+
+        ExpectingPatternAnything ->
+            "ExpectingPatternAnything"
+
+        ExpectingMultiCommentOpen ->
+            "ExpectingMultiCommentOpen"
+
+        ExpectingMultiCommentClose ->
+            "ExpectingMultiCommentClose"
+
+        ExpectingMaxThreeTuple ->
+            "ExpectingMaxThreeTuple"
+
+        InvalidTab ->
+            "InvalidTab"
 
         InvalidNumber ->
             "InvalidNumber"

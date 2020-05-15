@@ -287,13 +287,16 @@ assignIdsWithHelp currentId located =
 
                 ( branches_, newId ) =
                     List.foldr
-                        (\branch ( acc, runningId ) ->
+                        (\{ pattern, body } ( acc, runningId ) ->
                             let
-                                ( branchBody, nextId ) =
-                                    assignIdsWith runningId branch.body
+                                ( typedPattern, bodyId ) =
+                                    assignPatternIdsWith runningId pattern
+
+                                ( typedBody, nextId ) =
+                                    assignIdsWith bodyId body
                             in
-                            ( { pattern = branch.pattern
-                              , body = branchBody
+                            ( { pattern = typedPattern
+                              , body = typedBody
                               }
                                 :: acc
                             , nextId
@@ -304,3 +307,109 @@ assignIdsWithHelp currentId located =
             in
             assignId newId <|
                 Typed.Case e_ branches_
+
+
+assignPatternIdsWith : Id -> Canonical.LocatedPattern -> ( Typed.LocatedPattern, Id )
+assignPatternIdsWith currentId locatedCanonicalPattern =
+    let
+        ( typedPattern, newId ) =
+            assignPatternIdsWithHelp currentId (Located.unwrap locatedCanonicalPattern)
+    in
+    {- Keep location, for error context -}
+    ( Located.replaceWith typedPattern locatedCanonicalPattern
+    , newId
+    )
+
+
+assignPatternId : Id -> Typed.Pattern_ -> ( Typed.Pattern, Id )
+assignPatternId currentId located =
+    ( ( located, Type.Var currentId ), currentId + 1 )
+
+
+assignPatternIdsWithHelp : Id -> Canonical.Pattern -> ( Typed.Pattern, Id )
+assignPatternIdsWithHelp currentId located =
+    case located of
+        Canonical.PAnything ->
+            assignPatternId currentId Typed.PAnything
+
+        Canonical.PVar varName ->
+            assignPatternId currentId (Typed.PVar varName)
+
+        Canonical.PRecord varNames ->
+            assignPatternId currentId (Typed.PRecord varNames)
+
+        Canonical.PAlias pttrn varName ->
+            let
+                ( pttrn_, id1 ) =
+                    assignPatternIdsWith currentId pttrn
+            in
+            assignPatternId id1 (Typed.PAlias pttrn_ varName)
+
+        Canonical.PUnit ->
+            assignPatternId currentId Typed.PUnit
+
+        Canonical.PTuple pttrn1 pttrn2 ->
+            let
+                ( pttrn1_, id1 ) =
+                    assignPatternIdsWith currentId pttrn1
+
+                ( pttrn2_, id2 ) =
+                    assignPatternIdsWith id1 pttrn2
+            in
+            assignPatternId id2 (Typed.PTuple pttrn1_ pttrn2_)
+
+        Canonical.PTuple3 pttrn1 pttrn2 pttrn3 ->
+            let
+                ( pttrn1_, id1 ) =
+                    assignPatternIdsWith currentId pttrn1
+
+                ( pttrn2_, id2 ) =
+                    assignPatternIdsWith id1 pttrn2
+
+                ( pttrn3_, id3 ) =
+                    assignPatternIdsWith id2 pttrn3
+            in
+            assignPatternId id3 (Typed.PTuple3 pttrn1_ pttrn2_ pttrn3_)
+
+        Canonical.PList_ items ->
+            let
+                ( items_, newId ) =
+                    List.foldr
+                        (\item ( acc, runningId ) ->
+                            let
+                                ( item_, nextId ) =
+                                    assignPatternIdsWith runningId item
+                            in
+                            ( item_ :: acc
+                            , nextId
+                            )
+                        )
+                        ( [], currentId )
+                        items
+            in
+            assignPatternId newId (Typed.PList_ items_)
+
+        Canonical.PCons pttrn1 pttrn2 ->
+            let
+                ( pttrn1_, id1 ) =
+                    assignPatternIdsWith currentId pttrn1
+
+                ( pttrn2_, id2 ) =
+                    assignPatternIdsWith id1 pttrn2
+            in
+            assignPatternId id2 (Typed.PCons pttrn1_ pttrn2_)
+
+        Canonical.PBool bool ->
+            assignPatternId currentId (Typed.PBool bool)
+
+        Canonical.PChar char ->
+            assignPatternId currentId (Typed.PChar char)
+
+        Canonical.PString string ->
+            assignPatternId currentId (Typed.PString string)
+
+        Canonical.PInt int ->
+            assignPatternId currentId (Typed.PInt int)
+
+        Canonical.PFloat float ->
+            assignPatternId currentId (Typed.PFloat float)

@@ -196,23 +196,117 @@ desugarExpr modules thisModule located =
                                     |> Canonical.Record
                             )
 
-        Frontend.Case e branches ->
-            --TODO: Cover all possibilities
-            map2 Canonical.Case
-                (recurse e)
+        Frontend.Case test branches ->
+            Result.map2
+                (\expr branches_ ->
+                    Located.replaceWith
+                        (Canonical.Case expr branches_)
+                        located
+                )
+                (recurse test)
                 (List.map
-                    (\branch ->
-                        recurse branch.body
-                            |> Result.map
-                                (\r ->
-                                    { pattern = branch.pattern
-                                    , body = r
-                                    }
-                                )
+                    (\{ pattern, body } ->
+                        Result.map2
+                            (\p b ->
+                                { pattern = p
+                                , body = b
+                                }
+                            )
+                            (desugarPattern pattern)
+                            (recurse body)
                     )
                     branches
                     |> List.foldr (Result.map2 (::)) (Ok [])
                 )
+
+
+desugarPattern :
+    Frontend.LocatedPattern
+    -> Result DesugarError Canonical.LocatedPattern
+desugarPattern located =
+    let
+        recurse =
+            desugarPattern
+
+        return pattern =
+            Ok (Located.replaceWith pattern located)
+
+        map fn =
+            Result.map
+                (\pattern ->
+                    Located.replaceWith
+                        (fn pattern)
+                        located
+                )
+
+        map2 fn =
+            Result.map2
+                (\pttrn1 pttrn2 ->
+                    Located.replaceWith
+                        (fn pttrn1 pttrn2)
+                        located
+                )
+
+        map3 fn =
+            Result.map3
+                (\pttrn1 pttrn2 pttrn3 ->
+                    Located.replaceWith
+                        (fn pttrn1 pttrn2 pttrn3)
+                        located
+                )
+    in
+    case Located.unwrap located of
+        Frontend.PAnything ->
+            return <| Canonical.PAnything
+
+        Frontend.PVar varName ->
+            return <| Canonical.PVar varName
+
+        Frontend.PRecord varNames ->
+            return <| Canonical.PRecord varNames
+
+        Frontend.PAlias pttrn varName ->
+            recurse pttrn
+                |> map (\p -> Canonical.PAlias p varName)
+
+        Frontend.PUnit ->
+            return <| Canonical.PUnit
+
+        Frontend.PTuple pttrn1 pttrn2 ->
+            map2 Canonical.PTuple
+                (recurse pttrn1)
+                (recurse pttrn2)
+
+        Frontend.PTuple3 pttrn1 pttrn2 pttrn3 ->
+            map3 Canonical.PTuple3
+                (recurse pttrn1)
+                (recurse pttrn2)
+                (recurse pttrn3)
+
+        Frontend.PList_ pttrns ->
+            List.map recurse pttrns
+                |> List.foldr (Result.map2 (::)) (Ok [])
+                |> map Canonical.PList_
+
+        Frontend.PCons pttrn1 pttrn2 ->
+            map2 Canonical.PCons
+                (recurse pttrn1)
+                (recurse pttrn2)
+
+        Frontend.PBool bool ->
+            return <| Canonical.PBool bool
+
+        Frontend.PChar char ->
+            return <| Canonical.PChar char
+
+        Frontend.PString string ->
+            return <| Canonical.PString string
+
+        Frontend.PInt int ->
+            return <| Canonical.PInt int
+
+        Frontend.PFloat float ->
+            return <| Canonical.PFloat float
 
 
 

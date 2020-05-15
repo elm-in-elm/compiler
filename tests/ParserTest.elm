@@ -8,7 +8,7 @@ module ParserTest exposing
 
 import Dict
 import Elm.AST.Frontend as Frontend
-import Elm.AST.Frontend.Unwrapped exposing (Expr(..))
+import Elm.AST.Frontend.Unwrapped exposing (Expr(..), Pattern(..))
 import Elm.Compiler.Error exposing (ParseContext, ParseProblem)
 import Elm.Data.Exposing exposing (ExposedItem(..), Exposing(..))
 import Elm.Data.Module exposing (ModuleType(..))
@@ -961,6 +961,72 @@ expr =
                 , ( "two fields record"
                   , """{ a = 42, b = "hello" }"""
                   , Just (Record [ { name = "a", body = Int 42 }, { name = "b", body = String "hello" } ])
+                  )
+                ]
+              )
+            , ( "case"
+              , [ ( "simple case"
+                  , "case True of _ -> True"
+                  , Just
+                        (Case (Bool True)
+                            [ { pattern = PAnything, body = Bool True }
+                            ]
+                        )
+                  )
+                , ( "multiline case"
+                  , "case 21 of\n31 -> True\n5 -> True\n_ -> False"
+                  , Just
+                        (Case (Int 21)
+                            [ { pattern = PInt 31, body = Bool True }
+                            , { pattern = PInt 5, body = Bool True }
+                            , { pattern = PAnything, body = Bool False }
+                            ]
+                        )
+                  )
+                , ( "complex case"
+                  , [ "case arg of"
+                    , "('c', 23) ->"
+                    , " True"
+                    , "(\"string\") ->"
+                    , " True"
+                    , "((arg1, arg2), 435.4) ->"
+                    , " False"
+                    , "[_, 45, (67.7)] ->"
+                    , " False"
+                    , "fst :: snd :: tail ->"
+                    , " False"
+                    , "({ count } as alias1) as alias2 ->"
+                    , " False"
+                    ]
+                        |> String.join "\n"
+                  , Just
+                        (Case (Var { name = "arg", module_ = Nothing })
+                            [ { pattern = PTuple (PChar 'c') (PInt 23)
+                              , body = Bool True
+                              }
+                            , { pattern = PString "string", body = Bool True }
+                            , { pattern =
+                                    PTuple
+                                        (PTuple (PVar "arg1") (PVar "arg2"))
+                                        (PFloat 435.4)
+                              , body = Bool False
+                              }
+                            , { pattern = PList_ [ PAnything, PInt 45, PFloat 67.7 ]
+                              , body = Bool False
+                              }
+                            , { pattern =
+                                    PCons (PVar "fst")
+                                        (PCons (PVar "snd") (PVar "tail"))
+                              , body = Bool False
+                              }
+                            , { pattern =
+                                    PAlias
+                                        (PAlias (PRecord [ "count" ]) "alias1")
+                                        "alias2"
+                              , body = Bool False
+                              }
+                            ]
+                        )
                   )
                 ]
               )

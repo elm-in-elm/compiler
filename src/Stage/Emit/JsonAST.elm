@@ -139,6 +139,21 @@ emitExpr located =
         Record bindings ->
             encode "record" [ ( "bind", E.dict (\k -> k) (\v -> emitExpr v.body) bindings ) ]
 
+        Case test branches ->
+            encode "case"
+                [ ( "test", emitExpr test )
+                , ( "branches"
+                  , E.list
+                        (\b ->
+                            E.object
+                                [ ( "pattern", E.string "TODO" )
+                                , ( "body", emitExpr b.body )
+                                ]
+                        )
+                        branches
+                  )
+                ]
+
 
 emitDeclaration : Declaration Typed.LocatedExpr -> E.Value
 emitDeclaration { module_, name, body } =

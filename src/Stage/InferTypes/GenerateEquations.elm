@@ -395,17 +395,29 @@ generateEquations currentId located =
 
                 ( branchesEquations, newId ) =
                     List.foldl
-                        (\branch ( acc, currentId_ ) ->
+                        (\{ pattern, body } ( acc, currentId_ ) ->
                             let
-                                ( _, bodyType ) =
-                                    Located.unwrap branch.body
+                                ( _, patternType ) =
+                                    Located.unwrap pattern
 
-                                ( equations, nextId ) =
-                                    generateEquations currentId_ branch.body
+                                ( _, bodyType ) =
+                                    Located.unwrap body
+
+                                ( patternEquations, bodyId ) =
+                                    generatePatternEquations currentId_ pattern
+
+                                ( bodyEquations, nextId ) =
+                                    generateEquations bodyId body
                             in
                             ( acc
-                                ++ [ equals type_ bodyType ]
-                                ++ equations
+                                --pattern type must be equal the test type
+                                ++ [ equals testType patternType
+
+                                   -- bodies types must be equal the overall type
+                                   , equals type_ bodyType
+                                   ]
+                                ++ patternEquations
+                                ++ bodyEquations
                             , nextId
                             )
                         )
@@ -444,3 +456,165 @@ generateArgumentUsageEquations argumentId usages =
     List.map
         (Typed.getType >> equals argumentType)
         usages
+
+
+generatePatternEquations : Id -> Typed.LocatedPattern -> ( List TypeEquation, Id )
+generatePatternEquations currentId located =
+    let
+        ( pttrn, type_ ) =
+            Located.unwrap located
+    in
+    case pttrn of
+        Typed.PAnything ->
+            -- we can't make any assumptions here
+            ( [], currentId )
+
+        Typed.PVar _ ->
+            -- we can't make any assumptions here
+            ( [], currentId )
+
+        Typed.PRecord _ ->
+            -- we can't make any assumptions here
+            ( [], currentId )
+
+        Typed.PAlias pttrn_ _ ->
+            --TODO: not sure what to do here
+            ( [], currentId )
+
+        Typed.PUnit ->
+            -- unit is unit
+            ( [ equals type_ Type.Unit ]
+            , currentId
+            )
+
+        Typed.PTuple fst snd ->
+            let
+                ( _, fstType ) =
+                    Located.unwrap fst
+
+                ( _, sndType ) =
+                    Located.unwrap snd
+
+                ( fstEquations, id1 ) =
+                    generatePatternEquations currentId fst
+
+                ( sndEquations, id2 ) =
+                    generatePatternEquations id1 snd
+            in
+            ( equals type_ (Type.Tuple fstType sndType)
+                :: fstEquations
+                ++ sndEquations
+            , id2
+            )
+
+        Typed.PTuple3 fst snd trd ->
+            let
+                ( _, fstType ) =
+                    Located.unwrap fst
+
+                ( _, sndType ) =
+                    Located.unwrap snd
+
+                ( _, trdType ) =
+                    Located.unwrap trd
+
+                ( fstEquations, id1 ) =
+                    generatePatternEquations currentId fst
+
+                ( sndEquations, id2 ) =
+                    generatePatternEquations id1 snd
+
+                ( trdEquations, id3 ) =
+                    generatePatternEquations id2 trd
+            in
+            ( equals type_ (Type.Tuple3 fstType sndType trdType)
+                :: fstEquations
+                ++ sndEquations
+                ++ trdEquations
+            , id3
+            )
+
+        Typed.PList_ items ->
+            {- The list type parameter needs extra ID so that we can
+               bind the items' types to it... so we create one here.
+            -}
+            let
+                id1 =
+                    currentId + 1
+
+                listParamType =
+                    Type.Var currentId
+
+                ( bodyEquations, id2 ) =
+                    List.foldr
+                        (\item ( acc, currentId_ ) ->
+                            let
+                                ( _, itemType ) =
+                                    Located.unwrap item
+
+                                ( equations, nextId ) =
+                                    generatePatternEquations currentId_ item
+                            in
+                            ( equals itemType listParamType
+                                :: equations
+                                ++ acc
+                            , nextId
+                            )
+                        )
+                        ( [], id1 )
+                        items
+            in
+            ( -- for expression `[ a, b, c ]`
+              -- the `x` in `List x` type and types of all the items are the same
+              equals type_ (Type.List listParamType)
+                :: bodyEquations
+            , id2
+            )
+
+        Typed.PCons left right ->
+            let
+                ( _, leftType ) =
+                    Located.unwrap left
+
+                ( _, rightType ) =
+                    Located.unwrap right
+
+                ( leftEquations, id1 ) =
+                    generatePatternEquations currentId left
+
+                ( rightEquations, id2 ) =
+                    generatePatternEquations id1 right
+            in
+            ( -- For expression a :: [ b ]:
+              [ equals rightType (Type.List leftType) -- type of b is a List a
+              , equals type_ rightType -- a :: [ b ] is a List b
+              ]
+                ++ leftEquations
+                ++ rightEquations
+            , id2
+            )
+
+        Typed.PBool _ ->
+            ( [ equals type_ Type.Bool ]
+            , currentId
+            )
+
+        Typed.PChar _ ->
+            ( [ equals type_ Type.Char ]
+            , currentId
+            )
+
+        Typed.PString _ ->
+            ( [ equals type_ Type.String ]
+            , currentId
+            )
+
+        Typed.PInt _ ->
+            ( [ equals type_ Type.Int ]
+            , currentId
+            )
+
+        Typed.PFloat _ ->
+            ( [ equals type_ Type.Float ]
+            , currentId
+            )

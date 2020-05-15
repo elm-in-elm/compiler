@@ -1,6 +1,7 @@
 module Elm.AST.Frontend exposing
     ( ProjectFields
     , LocatedExpr, Expr(..), unwrap, transform, recurse
+    , LocatedPattern, Pattern(..), unwrapPattern
     )
 
 {-| Frontend AST is the first stage after parsing from source code, and has
@@ -18,12 +19,11 @@ import Elm.Data.Binding as Binding exposing (Binding)
 import Elm.Data.Located as Located exposing (Located)
 import Elm.Data.Module exposing (Module)
 import Elm.Data.ModuleName exposing (ModuleName)
-import Elm.Data.Pattern as Pattern exposing (Pattern)
 import Elm.Data.VarName exposing (VarName)
 import Transform
 
 
-{-| "What does this compiler stage need to store abotut the whole project?
+{-| "What does this compiler stage need to store about the whole project?
 
 (See [`Elm.Data.Project`](Elm.Data.Project).)
 
@@ -68,7 +68,28 @@ type Expr
     | Tuple LocatedExpr LocatedExpr
     | Tuple3 LocatedExpr LocatedExpr LocatedExpr
     | Record (List (Binding LocatedExpr))
-    | Case LocatedExpr (List { pattern : Pattern, body : LocatedExpr })
+    | Case LocatedExpr (List { pattern : LocatedPattern, body : LocatedExpr })
+
+
+type alias LocatedPattern =
+    Located Pattern
+
+
+type Pattern
+    = PAnything
+    | PVar VarName
+    | PRecord (List VarName)
+    | PAlias LocatedPattern VarName
+    | PUnit
+    | PTuple LocatedPattern LocatedPattern
+    | PTuple3 LocatedPattern LocatedPattern LocatedPattern
+    | PList_ (List LocatedPattern)
+    | PCons LocatedPattern LocatedPattern
+    | PBool Bool
+    | PChar Char
+    | PString String
+    | PInt Int
+    | PFloat Float
 
 
 {-| A helper for the [Transform](/packages/Janiczek/transform/latest/) library.
@@ -152,12 +173,12 @@ recurse f expr =
         Record bindings ->
             Record <| List.map (Binding.map f_) bindings
 
-        Case e branches ->
-            Case (f_ e) <|
+        Case test branches ->
+            Case (f_ test) <|
                 List.map
-                    (\branch ->
-                        { pattern = branch.pattern
-                        , body = f_ branch.body
+                    (\{ pattern, body } ->
+                        { pattern = pattern
+                        , body = f_ body
                         }
                     )
                     branches
@@ -273,8 +294,59 @@ unwrap expr =
             Unwrapped.Case (unwrap e) <|
                 List.map
                     (\branch ->
-                        { pattern = branch.pattern
+                        { pattern = unwrapPattern branch.pattern
                         , body = unwrap branch.body
                         }
                     )
                     branches
+
+
+{-| Discard the [location metadata](Elm.Data.Located#Located).
+-}
+unwrapPattern : LocatedPattern -> Unwrapped.Pattern
+unwrapPattern expr =
+    case Located.unwrap expr of
+        PAnything ->
+            Unwrapped.PAnything
+
+        PVar varName ->
+            Unwrapped.PVar varName
+
+        PRecord varNames ->
+            Unwrapped.PRecord varNames
+
+        PAlias p varName ->
+            Unwrapped.PAlias (unwrapPattern p) varName
+
+        PUnit ->
+            Unwrapped.PUnit
+
+        PTuple p1 p2 ->
+            Unwrapped.PTuple (unwrapPattern p1) (unwrapPattern p2)
+
+        PTuple3 p1 p2 p3 ->
+            Unwrapped.PTuple3
+                (unwrapPattern p1)
+                (unwrapPattern p2)
+                (unwrapPattern p3)
+
+        PList_ ps ->
+            Unwrapped.PList_ (List.map unwrapPattern ps)
+
+        PCons p1 p2 ->
+            Unwrapped.PCons (unwrapPattern p1) (unwrapPattern p2)
+
+        PBool bool ->
+            Unwrapped.PBool bool
+
+        PChar char ->
+            Unwrapped.PChar char
+
+        PString string ->
+            Unwrapped.PString string
+
+        PInt int ->
+            Unwrapped.PInt int
+
+        PFloat float ->
+            Unwrapped.PFloat float
