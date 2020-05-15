@@ -67,6 +67,7 @@ type Expr
     | Tuple LocatedExpr LocatedExpr
     | Tuple3 LocatedExpr LocatedExpr LocatedExpr
     | Record (List (Binding LocatedExpr))
+    | RecordAccessor VarName
 
 
 {-| A helper for the [Transform](/packages/Janiczek/transform/latest/) library.
@@ -149,6 +150,9 @@ recurse f expr =
 
         Record bindings ->
             Record <| List.map (Binding.map f_) bindings
+
+        RecordAccessor _ ->
+            expr
 
 
 {-| [Transform](/packages/Janiczek/transform/latest/Transform#transformAll)
@@ -256,3 +260,6 @@ unwrap expr =
         Record bindings ->
             Unwrapped.Record <|
                 List.map (Binding.map unwrap) bindings
+
+        RecordAccessor name ->
+            Unwrapped.RecordAccessor name

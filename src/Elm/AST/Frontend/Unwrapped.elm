@@ -36,3 +36,4 @@ type Expr
     | Tuple Expr Expr
     | Tuple3 Expr Expr Expr
     | Record (List (Binding Expr))
+    | RecordAccessor VarName

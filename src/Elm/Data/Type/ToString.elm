@@ -183,6 +183,26 @@ toString state type_ =
             else
                 ( "{ " ++ bindingsStr ++ " }", state1 )
 
+        ExtensibleRecord firstBinding otherBindings ->
+            let
+                ( bindingsStr, state1 ) =
+                    List.foldr
+                        (\param ( acc, state2 ) ->
+                            let
+                                ( string, state3 ) =
+                                    niceRecordBinding state2 param
+                            in
+                            ( string :: acc, state3 )
+                        )
+                        ( [], state )
+                        (firstBinding :: Dict.toList otherBindings)
+                        |> Tuple.mapFirst (String.join ", ")
+
+                ( newName, newState ) =
+                    getFreeName state1
+            in
+            ( "{ " ++ newName ++ " | " ++ bindingsStr ++ " }", newState )
+
 
 getName : State -> Int -> ( String, State )
 getName ((State { counter, mapping }) as state) varId =
@@ -201,6 +221,11 @@ getName ((State { counter, mapping }) as state) varId =
                 , mapping = Dict.insert varId name mapping
                 }
             )
+
+
+getFreeName : State -> ( String, State )
+getFreeName (State r) =
+    ( niceVarName r.counter, State { r | counter = r.counter + 1 } )
 
 
 {-| Function to get from a number to a nice type variable name.
@@ -321,4 +346,7 @@ shouldWrapParens type_ =
             not (List.isEmpty params)
 
         Record _ ->
+            False
+
+        ExtensibleRecord _ _ ->
             False

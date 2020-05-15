@@ -24,6 +24,7 @@ type Type
     | Tuple Type Type
     | Tuple3 Type Type Type
     | Record (Dict VarName Type)
+    | ExtensibleRecord ( VarName, Type ) (Dict VarName Type) -- An extensible record has at least a binding
     | {- The actual definitions of type aliases and custom types are elsewhere
          (in the Declaration module), this is just a "pointer", "var".
 
