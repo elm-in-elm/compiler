@@ -62,7 +62,7 @@ type Pattern_
     | PUnit
     | PTuple Pattern Pattern
     | PTuple3 Pattern Pattern Pattern
-    | PList_ (List Pattern)
+    | PList (List Pattern)
     | PCons Pattern Pattern
     | PBool Bool
     | PChar Char

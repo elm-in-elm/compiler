@@ -1011,7 +1011,7 @@ expr =
                                         (PFloat 435.4)
                               , body = Bool False
                               }
-                            , { pattern = PList_ [ PAnything, PInt 45, PFloat 67.7 ]
+                            , { pattern = PList [ PAnything, PInt 45, PFloat 67.7 ]
                               , body = Bool False
                               }
                             , { pattern =

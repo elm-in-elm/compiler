@@ -371,7 +371,7 @@ assignPatternIdsWithHelp currentId located =
             in
             assignPatternId id3 (Typed.PTuple3 pttrn1_ pttrn2_ pttrn3_)
 
-        Canonical.PList_ items ->
+        Canonical.PList items ->
             let
                 ( items_, newId ) =
                     List.foldr
@@ -387,7 +387,7 @@ assignPatternIdsWithHelp currentId located =
                         ( [], currentId )
                         items
             in
-            assignPatternId newId (Typed.PList_ items_)
+            assignPatternId newId (Typed.PList items_)
 
         Canonical.PCons pttrn1 pttrn2 ->
             let

@@ -83,7 +83,7 @@ type Pattern
     | PUnit
     | PTuple LocatedPattern LocatedPattern
     | PTuple3 LocatedPattern LocatedPattern LocatedPattern
-    | PList_ (List LocatedPattern)
+    | PList (List LocatedPattern)
     | PCons LocatedPattern LocatedPattern
     | PBool Bool
     | PChar Char
@@ -330,8 +330,8 @@ unwrapPattern expr =
                 (unwrapPattern p2)
                 (unwrapPattern p3)
 
-        PList_ ps ->
-            Unwrapped.PList_ (List.map unwrapPattern ps)
+        PList ps ->
+            Unwrapped.PList (List.map unwrapPattern ps)
 
         PCons p1 p2 ->
             Unwrapped.PCons (unwrapPattern p1) (unwrapPattern p2)

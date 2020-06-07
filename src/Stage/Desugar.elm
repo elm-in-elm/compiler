@@ -283,10 +283,10 @@ desugarPattern located =
                 (recurse pttrn2)
                 (recurse pttrn3)
 
-        Frontend.PList_ pttrns ->
+        Frontend.PList pttrns ->
             List.map recurse pttrns
                 |> List.foldr (Result.map2 (::)) (Ok [])
-                |> map Canonical.PList_
+                |> map Canonical.PList
 
         Frontend.PCons pttrn1 pttrn2 ->
             map2 Canonical.PCons

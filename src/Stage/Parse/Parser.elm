@@ -1012,7 +1012,7 @@ patternList config =
         , item = PP.subExpression 0 config
         , trailing = P.Forbidden
         }
-        |> P.map PList_
+        |> P.map PList
         |> P.inContext InList
         |> located
 

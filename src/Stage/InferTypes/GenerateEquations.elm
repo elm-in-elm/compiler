@@ -534,7 +534,7 @@ generatePatternEquations currentId located =
             , id3
             )
 
-        Typed.PList_ items ->
+        Typed.PList items ->
             {- The list type parameter needs extra ID so that we can
                bind the items' types to it... so we create one here.
             -}
