@@ -241,17 +241,17 @@ desugarPattern located =
 
         map2 fn =
             Result.map2
-                (\pttrn1 pttrn2 ->
+                (\pattern1 pattern2 ->
                     Located.replaceWith
-                        (fn pttrn1 pttrn2)
+                        (fn pattern1 pattern2)
                         located
                 )
 
         map3 fn =
             Result.map3
-                (\pttrn1 pttrn2 pttrn3 ->
+                (\pattern1 pattern2 pattern3 ->
                     Located.replaceWith
-                        (fn pttrn1 pttrn2 pttrn3)
+                        (fn pattern1 pattern2 pattern3)
                         located
                 )
     in
@@ -265,33 +265,33 @@ desugarPattern located =
         Frontend.PRecord varNames ->
             return <| Canonical.PRecord varNames
 
-        Frontend.PAlias pttrn varName ->
-            recurse pttrn
+        Frontend.PAlias pattern varName ->
+            recurse pattern
                 |> map (\p -> Canonical.PAlias p varName)
 
         Frontend.PUnit ->
             return <| Canonical.PUnit
 
-        Frontend.PTuple pttrn1 pttrn2 ->
+        Frontend.PTuple pattern1 pattern2 ->
             map2 Canonical.PTuple
-                (recurse pttrn1)
-                (recurse pttrn2)
+                (recurse pattern1)
+                (recurse pattern2)
 
-        Frontend.PTuple3 pttrn1 pttrn2 pttrn3 ->
+        Frontend.PTuple3 pattern1 pattern2 pattern3 ->
             map3 Canonical.PTuple3
-                (recurse pttrn1)
-                (recurse pttrn2)
-                (recurse pttrn3)
+                (recurse pattern1)
+                (recurse pattern2)
+                (recurse pattern3)
 
-        Frontend.PList pttrns ->
-            List.map recurse pttrns
+        Frontend.PList patterns ->
+            List.map recurse patterns
                 |> List.foldr (Result.map2 (::)) (Ok [])
                 |> map Canonical.PList
 
-        Frontend.PCons pttrn1 pttrn2 ->
+        Frontend.PCons pattern1 pattern2 ->
             map2 Canonical.PCons
-                (recurse pttrn1)
-                (recurse pttrn2)
+                (recurse pattern1)
+                (recurse pattern2)
 
         Frontend.PBool bool ->
             return <| Canonical.PBool bool

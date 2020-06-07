@@ -424,8 +424,7 @@ generateEquations currentId located =
                         ( [], id1 )
                         branches
             in
-            ( testEquations
-                ++ branchesEquations
+            ( testEquations ++ branchesEquations
             , newId
             )
 
@@ -461,10 +460,10 @@ generateArgumentUsageEquations argumentId usages =
 generatePatternEquations : Id -> Typed.LocatedPattern -> ( List TypeEquation, Id )
 generatePatternEquations currentId located =
     let
-        ( pttrn, type_ ) =
+        ( pattern, type_ ) =
             Located.unwrap located
     in
-    case pttrn of
+    case pattern of
         Typed.PAnything ->
             -- we can't make any assumptions here
             ( [], currentId )
@@ -585,9 +584,9 @@ generatePatternEquations currentId located =
                 ( rightEquations, id2 ) =
                     generatePatternEquations id1 right
             in
-            ( -- For expression a :: [ b ]:
-              [ equals rightType (Type.List leftType) -- type of b is a List a
-              , equals type_ rightType -- a :: [ b ] is a List b
+            ( -- For expression a :: b:
+              [ equals rightType (Type.List leftType) -- type of `b` is a `List a`
+              , equals type_ rightType -- type of `a :: b` is `List a`
               ]
                 ++ leftEquations
                 ++ rightEquations

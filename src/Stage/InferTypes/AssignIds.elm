@@ -348,28 +348,28 @@ assignPatternIdsWithHelp currentId located =
         Canonical.PUnit ->
             assignPatternId currentId Typed.PUnit
 
-        Canonical.PTuple pttrn1 pttrn2 ->
+        Canonical.PTuple pattern1 pattern2 ->
             let
-                ( pttrn1_, id1 ) =
-                    assignPatternIdsWith currentId pttrn1
+                ( pattern1_, id1 ) =
+                    assignPatternIdsWith currentId pattern1
 
-                ( pttrn2_, id2 ) =
-                    assignPatternIdsWith id1 pttrn2
+                ( pattern2_, id2 ) =
+                    assignPatternIdsWith id1 pattern2
             in
-            assignPatternId id2 (Typed.PTuple pttrn1_ pttrn2_)
+            assignPatternId id2 (Typed.PTuple pattern1_ pattern2_)
 
-        Canonical.PTuple3 pttrn1 pttrn2 pttrn3 ->
+        Canonical.PTuple3 pattern1 pattern2 pattern3 ->
             let
-                ( pttrn1_, id1 ) =
-                    assignPatternIdsWith currentId pttrn1
+                ( pattern1_, id1 ) =
+                    assignPatternIdsWith currentId pattern1
 
-                ( pttrn2_, id2 ) =
-                    assignPatternIdsWith id1 pttrn2
+                ( pattern2_, id2 ) =
+                    assignPatternIdsWith id1 pattern2
 
-                ( pttrn3_, id3 ) =
-                    assignPatternIdsWith id2 pttrn3
+                ( pattern3_, id3 ) =
+                    assignPatternIdsWith id2 pattern3
             in
-            assignPatternId id3 (Typed.PTuple3 pttrn1_ pttrn2_ pttrn3_)
+            assignPatternId id3 (Typed.PTuple3 pattern1_ pattern2_ pattern3_)
 
         Canonical.PList items ->
             let
@@ -389,15 +389,15 @@ assignPatternIdsWithHelp currentId located =
             in
             assignPatternId newId (Typed.PList items_)
 
-        Canonical.PCons pttrn1 pttrn2 ->
+        Canonical.PCons pattern1 pattern2 ->
             let
-                ( pttrn1_, id1 ) =
-                    assignPatternIdsWith currentId pttrn1
+                ( pattern1_, id1 ) =
+                    assignPatternIdsWith currentId pattern1
 
-                ( pttrn2_, id2 ) =
-                    assignPatternIdsWith id1 pttrn2
+                ( pattern2_, id2 ) =
+                    assignPatternIdsWith id1 pattern2
             in
-            assignPatternId id2 (Typed.PCons pttrn1_ pttrn2_)
+            assignPatternId id2 (Typed.PCons pattern1_ pattern2_)
 
         Canonical.PBool bool ->
             assignPatternId currentId (Typed.PBool bool)

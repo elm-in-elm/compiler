@@ -966,7 +966,7 @@ expr =
               )
             , ( "case"
               , [ ( "simple case"
-                  , "case True of _ -> True"
+                  , "case True of _->True"
                   , Just
                         (Case (Bool True)
                             [ { pattern = PAnything, body = Bool True }

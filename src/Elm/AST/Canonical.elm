@@ -77,6 +77,8 @@ type alias LocatedPattern =
     Located Pattern
 
 
+{-| Exactly equal to [Frontend.Pattern](Elm.AST.Frontend#Pattern).
+-}
 type Pattern
     = PAnything
     | PVar VarName

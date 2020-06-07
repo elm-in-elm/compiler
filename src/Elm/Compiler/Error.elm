@@ -140,7 +140,7 @@ type ParseProblem
     | ExpectingOf
     | ExpectingCaseBody
     | ExpectingIndentation
-    | ExpectingPatternAnything -- >_< ->
+    | ExpectingPatternAnything -- `>_< ->`
     | ExpectingMaxThreeTuple
     | InvalidTab
     | InvalidNumber

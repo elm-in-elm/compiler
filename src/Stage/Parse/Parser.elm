@@ -861,7 +861,7 @@ caseBranch config =
         |. checkIndent (==) ExpectingIndentation
         |= pattern
         |. ignorablesAndCheckIndent (<) ExpectingRightArrow
-        |. P.keyword (P.Token "->" ExpectingRightArrow)
+        |. P.symbol (P.Token "->" ExpectingRightArrow)
         |. ignorablesAndCheckIndent (<) ExpectingCaseBody
         |= PP.subExpression 0 config
 
@@ -878,12 +878,16 @@ pattern =
             [ PP.infixRight 1 (P.symbol (P.Token "::" ExpectingConsOperator)) (Located.merge PCons)
             , postfix 1
                 (P.succeed identity
-                    |. P.symbol (P.Token "as" ExpectingAsKeyword)
+                    |. P.keyword (P.Token "as" ExpectingAsKeyword)
                     |. ignorablesAndCheckIndent (<) ExpectingIndentation
                     |= varName
                     |> located
                 )
-                (Located.merge (\p v -> PAlias p (Located.unwrap v)))
+                (Located.merge
+                    (\pattern_ alias_ ->
+                        PAlias pattern_ (Located.unwrap alias_)
+                    )
+                )
             ]
         , spaces = ignorables
         }
@@ -907,7 +911,7 @@ patternLiteral =
 patternAnything : Parser_ LocatedPattern
 patternAnything =
     P.succeed PAnything
-        |. P.keyword (P.Token "_" ExpectingPatternAnything)
+        |. P.symbol (P.Token "_" ExpectingPatternAnything)
         |> located
 
 
@@ -1031,20 +1035,20 @@ patternTuple config =
         |> P.andThen
             (\locatedPattern ->
                 case Located.unwrap locatedPattern of
-                    [ p1, p2, p3 ] ->
-                        Located.map (\_ -> PTuple3 p1 p2 p3)
-                            locatedPattern
-                            |> P.succeed
-                            |> P.inContext InTuple
-
-                    [ p1, p2 ] ->
-                        Located.map (\_ -> PTuple p1 p2)
+                    [ pattern1, pattern2, pattern3 ] ->
+                        Located.map (\_ -> PTuple3 pattern1 pattern2 pattern3)
                             locatedPattern
                             |> P.succeed
                             |> P.inContext InTuple3
 
-                    [ p ] ->
-                        P.succeed p
+                    [ pattern1, pattern2 ] ->
+                        Located.map (\_ -> PTuple pattern1 pattern2)
+                            locatedPattern
+                            |> P.succeed
+                            |> P.inContext InTuple
+
+                    [ pattern_ ] ->
+                        P.succeed pattern_
 
                     _ ->
                         P.problem ExpectingMaxThreeTuple
@@ -1065,6 +1069,58 @@ newlines =
     P.chompWhile ((==) '\n')
 
 
+{-| Parse zero or more ignorables Elm code.
+
+It will ignore spaces (' ', '\\n' and '\\r') and rise an error if it finds a tab.
+
+The fact that spaces comes last is very important! It can succeed without
+consuming any characters, so if it were the first option, it would always
+succeed and bypass the others!
+
+This possibility of success without consumption is also why wee need the
+ifProgress helper. It detects if there is no more whitespace to consume.
+
+-}
+ignorables : Parser_ ()
+ignorables =
+    P.loop 0 <|
+        ifProgress <|
+            P.oneOf
+                [ P.symbol (P.Token "\t" InvalidTab)
+                    |> P.andThen (\_ -> P.problem InvalidTab)
+                , P.spaces
+                ]
+
+
+{-| Continues a loop if the parser is making progress (consuming anything).
+
+Taken from elm/parser `Parser.multiComment` documentation.
+
+-}
+ifProgress : Parser_ a -> Int -> Parser_ (P.Step Int ())
+ifProgress parser offset =
+    P.succeed identity
+        |. parser
+        |= P.getOffset
+        |> P.map
+            (\newOffset ->
+                if offset == newOffset then
+                    P.Done ()
+
+                else
+                    P.Loop newOffset
+            )
+
+
+{-| Check the current indent ([`Parser.getIndent`](https://package.elm-lang.org/packages/elm/parser/latest/Parser#getIndent), previously defined with [`Parser.withIndent`](https://package.elm-lang.org/packages/elm/parser/latest/Parser#withIndent))
+and the current column, in this order, with the given function.
+
+If the check function result is `True` it will succeed, otherwise it will return
+the given problem.
+
+If no indent is defined, the default indent is `0`.
+
+-}
 checkIndent : (Int -> Int -> Bool) -> ParseProblem -> Parser_ ()
 checkIndent check error =
     P.succeed
@@ -1080,46 +1136,14 @@ checkIndent check error =
         |> P.andThen identity
 
 
+{-| Parse ignorable code then check the current defined indentation and the
+current column.
+-}
 ignorablesAndCheckIndent : (Int -> Int -> Bool) -> ParseProblem -> Parser_ ()
 ignorablesAndCheckIndent check error =
-    P.succeed
-        (\indent col ->
-            if check indent col then
-                P.succeed ()
-
-            else
-                P.problem error
-        )
-        |= P.getIndent
+    P.succeed ()
         |. ignorables
-        |= P.getCol
-        |> P.andThen identity
-
-
-ignorables : Parser_ ()
-ignorables =
-    P.loop 0 <|
-        ifProgress <|
-            P.oneOf
-                [ P.symbol (P.Token "\t" InvalidTab)
-                    |> P.andThen (\_ -> P.problem InvalidTab)
-                , P.spaces
-                ]
-
-
-ifProgress : Parser_ a -> Int -> Parser_ (P.Step Int ())
-ifProgress parser offset =
-    P.succeed identity
-        |. parser
-        |= P.getOffset
-        |> P.map
-            (\newOffset ->
-                if offset == newOffset then
-                    P.Done ()
-
-                else
-                    P.Loop newOffset
-            )
+        |. checkIndent check error
 
 
 {-| Taken from Punie/elm-parser-extras (original name: `many`), made to work with
@@ -1174,7 +1198,17 @@ oneOrMoreHelp spaces p vs =
         ]
 
 
-{-| Taken from dmy/elm-pratt-parser, made to accept the operator parser result
+{-| Taken from [dmy/elm-pratt-parser](https://package.elm-lang.org/packages/dmy/elm-pratt-parser/latest/Pratt-Advanced#postfix),
+made to accept the operator parser result.
+
+It differs from an _infix_ expression by not having left _and_ right expressions.
+It has only a left expression and an operator, eg.: 180º (the degree (`º`)
+symbol is the postfix operator).
+
+It can be used to parse Elm's aliasing expressions, like `{ foo } as bar`,
+since only the `{ foo }` is a pattern expression, but we also need the `bar`
+string, which is not another expression.
+
 -}
 postfix : Int -> P.Parser c x a -> (e -> a -> e) -> PP.Config c x e -> ( Int, e -> P.Parser c x e )
 postfix precedence operator apply _ =
