@@ -77,10 +77,6 @@ type alias LocatedPattern =
     Located Pattern
 
 
-
---TODO: Exactly equal to [Frontend.Pattern](Elm.AST.Frontend#Pattern). Should it be different?
-
-
 type Pattern
     = PAnything
     | PVar VarName

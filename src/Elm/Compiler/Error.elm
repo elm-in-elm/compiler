@@ -141,8 +141,6 @@ type ParseProblem
     | ExpectingCaseBody
     | ExpectingIndentation
     | ExpectingPatternAnything -- >_< ->
-    | ExpectingMultiCommentOpen
-    | ExpectingMultiCommentClose
     | ExpectingMaxThreeTuple
     | InvalidTab
     | InvalidNumber
@@ -513,12 +511,6 @@ parseProblemToString problem =
 
         ExpectingPatternAnything ->
             "ExpectingPatternAnything"
-
-        ExpectingMultiCommentOpen ->
-            "ExpectingMultiCommentOpen"
-
-        ExpectingMultiCommentClose ->
-            "ExpectingMultiCommentClose"
 
         ExpectingMaxThreeTuple ->
             "ExpectingMaxThreeTuple"

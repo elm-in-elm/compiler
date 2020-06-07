@@ -1103,11 +1103,6 @@ ignorables =
             P.oneOf
                 [ P.symbol (P.Token "\t" InvalidTab)
                     |> P.andThen (\_ -> P.problem InvalidTab)
-                , P.lineComment (P.Token "--" ExpectingMultiCommentOpen)
-                , P.multiComment
-                    (P.Token "{-" ExpectingMultiCommentOpen)
-                    (P.Token "-}" ExpectingMultiCommentClose)
-                    P.Nestable
                 , P.spaces
                 ]
 
