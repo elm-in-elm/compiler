@@ -67,7 +67,7 @@ assignIdsWith currentId locatedCanonicalExpr =
     )
 
 
-assignId : Id -> Typed.Expr_ -> ( Typed.Expr, Id )
+assignId : Id -> a -> ( ( a, Type.Type ), Id )
 assignId currentId located =
     ( ( located, Type.Var currentId ), currentId + 1 )
 
@@ -321,32 +321,27 @@ assignPatternIdsWith currentId locatedCanonicalPattern =
     )
 
 
-assignPatternId : Id -> Typed.Pattern_ -> ( Typed.Pattern, Id )
-assignPatternId currentId located =
-    ( ( located, Type.Var currentId ), currentId + 1 )
-
-
 assignPatternIdsWithHelp : Id -> Canonical.Pattern -> ( Typed.Pattern, Id )
 assignPatternIdsWithHelp currentId located =
     case located of
         Canonical.PAnything ->
-            assignPatternId currentId Typed.PAnything
+            assignId currentId Typed.PAnything
 
         Canonical.PVar varName ->
-            assignPatternId currentId (Typed.PVar varName)
+            assignId currentId (Typed.PVar varName)
 
         Canonical.PRecord varNames ->
-            assignPatternId currentId (Typed.PRecord varNames)
+            assignId currentId (Typed.PRecord varNames)
 
         Canonical.PAlias pttrn varName ->
             let
                 ( pttrn_, id1 ) =
                     assignPatternIdsWith currentId pttrn
             in
-            assignPatternId id1 (Typed.PAlias pttrn_ varName)
+            assignId id1 (Typed.PAlias pttrn_ varName)
 
         Canonical.PUnit ->
-            assignPatternId currentId Typed.PUnit
+            assignId currentId Typed.PUnit
 
         Canonical.PTuple pattern1 pattern2 ->
             let
@@ -356,7 +351,7 @@ assignPatternIdsWithHelp currentId located =
                 ( pattern2_, id2 ) =
                     assignPatternIdsWith id1 pattern2
             in
-            assignPatternId id2 (Typed.PTuple pattern1_ pattern2_)
+            assignId id2 (Typed.PTuple pattern1_ pattern2_)
 
         Canonical.PTuple3 pattern1 pattern2 pattern3 ->
             let
@@ -369,7 +364,7 @@ assignPatternIdsWithHelp currentId located =
                 ( pattern3_, id3 ) =
                     assignPatternIdsWith id2 pattern3
             in
-            assignPatternId id3 (Typed.PTuple3 pattern1_ pattern2_ pattern3_)
+            assignId id3 (Typed.PTuple3 pattern1_ pattern2_ pattern3_)
 
         Canonical.PList items ->
             let
@@ -387,7 +382,7 @@ assignPatternIdsWithHelp currentId located =
                         ( [], currentId )
                         items
             in
-            assignPatternId newId (Typed.PList items_)
+            assignId newId (Typed.PList items_)
 
         Canonical.PCons pattern1 pattern2 ->
             let
@@ -397,19 +392,19 @@ assignPatternIdsWithHelp currentId located =
                 ( pattern2_, id2 ) =
                     assignPatternIdsWith id1 pattern2
             in
-            assignPatternId id2 (Typed.PCons pattern1_ pattern2_)
+            assignId id2 (Typed.PCons pattern1_ pattern2_)
 
         Canonical.PBool bool ->
-            assignPatternId currentId (Typed.PBool bool)
+            assignId currentId (Typed.PBool bool)
 
         Canonical.PChar char ->
-            assignPatternId currentId (Typed.PChar char)
+            assignId currentId (Typed.PChar char)
 
         Canonical.PString string ->
-            assignPatternId currentId (Typed.PString string)
+            assignId currentId (Typed.PString string)
 
         Canonical.PInt int ->
-            assignPatternId currentId (Typed.PInt int)
+            assignId currentId (Typed.PInt int)
 
         Canonical.PFloat float ->
-            assignPatternId currentId (Typed.PFloat float)
+            assignId currentId (Typed.PFloat float)
