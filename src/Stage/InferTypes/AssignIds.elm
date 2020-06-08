@@ -333,12 +333,12 @@ assignPatternIdsWithHelp currentId located =
         Canonical.PRecord varNames ->
             assignId currentId (Typed.PRecord varNames)
 
-        Canonical.PAlias pttrn varName ->
+        Canonical.PAlias pattern varName ->
             let
-                ( pttrn_, id1 ) =
-                    assignPatternIdsWith currentId pttrn
+                ( pattern_, id1 ) =
+                    assignPatternIdsWith currentId pattern
             in
-            assignId id1 (Typed.PAlias pttrn_ varName)
+            assignId id1 (Typed.PAlias pattern_ varName)
 
         Canonical.PUnit ->
             assignId currentId Typed.PUnit

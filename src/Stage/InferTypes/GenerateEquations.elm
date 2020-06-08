@@ -472,13 +472,38 @@ generatePatternEquations currentId located =
             -- we can't make any assumptions here
             ( [], currentId )
 
-        Typed.PRecord _ ->
-            -- we can't make any assumptions here
+        Typed.PRecord keys ->
+            {- TODO:
+               We know it's a record and have at least these keys.
+
+               Do something like Typed.Lambda's argument for each key?
+
+               Which is:
+               Assign a new ID to each key because it didn't
+               get one in the AssignIds phase (Strings aren't Exprs).
+
+               Then in case of `Case` expr, check this branch's body for
+               usage of the key name and generate equals equations?
+            -}
             ( [], currentId )
 
-        Typed.PAlias pttrn_ _ ->
-            --TODO: not sure what to do here
-            ( [], currentId )
+        Typed.PAlias aliasPattern aliasName ->
+            {- TODO:
+               aliasPattern and aliasName have the same type.
+
+               Do something like Typed.Lambda's argument for the aliasName?
+
+            -}
+            let
+                ( _, aliasPatternType ) =
+                    Located.unwrap aliasPattern
+
+                ( aliasPatternEquations, id1 ) =
+                    generatePatternEquations currentId aliasPattern
+            in
+            ( aliasPatternEquations
+            , id1
+            )
 
         Typed.PUnit ->
             -- unit is unit
