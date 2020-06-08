@@ -139,6 +139,7 @@ type ParseProblem
     | ExpectingCase
     | ExpectingOf
     | ExpectingCaseBody
+    | ExpectingPatternAliasName -- `{ foo } as >bar<`
     | ExpectingIndentation
     | ExpectingPatternAnything -- `>_< ->`
     | ExpectingMaxThreeTuple
@@ -505,6 +506,9 @@ parseProblemToString problem =
 
         ExpectingCaseBody ->
             "ExpectingCaseBody"
+
+        ExpectingPatternAliasName ->
+            "ExpectingPatternAliasName"
 
         ExpectingIndentation ->
             "ExpectingIndentation"

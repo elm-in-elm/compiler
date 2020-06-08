@@ -15,6 +15,7 @@ import Elm.Data.Module exposing (ModuleType(..))
 import Expect exposing (Expectation)
 import Parser.Advanced as P
 import Stage.Parse.Parser
+import String.Extra as String
 import Test exposing (Test, describe, test)
 
 
@@ -974,7 +975,13 @@ expr =
                         )
                   )
                 , ( "multiline case"
-                  , "case 21 of\n31 -> True\n5 -> True\n_ -> False"
+                  , """
+                    case 21 of
+                        31 -> True
+                        5 -> True
+                        _ -> False
+                    """
+                        |> String.unindent
                   , Just
                         (Case (Int 21)
                             [ { pattern = PInt 31, body = Bool True }
@@ -984,21 +991,22 @@ expr =
                         )
                   )
                 , ( "complex case"
-                  , [ "case arg of"
-                    , "('c', 23) ->"
-                    , " True"
-                    , "(\"string\") ->"
-                    , " True"
-                    , "((arg1, arg2), 435.4) ->"
-                    , " False"
-                    , "[_, 45, (67.7)] ->"
-                    , " False"
-                    , "fst :: snd :: tail ->"
-                    , " False"
-                    , "({ count } as alias1) as alias2 ->"
-                    , " False"
-                    ]
-                        |> String.join "\n"
+                  , """
+                    case arg of
+                        ('c', 23) ->
+                            True
+                        ("string") ->
+                            True
+                        ((arg1, arg2), 435.4) ->
+                            False
+                        [_, 45, (67.7)] ->
+                            False
+                        fst :: snd :: tail ->
+                            False
+                        ({ count } as alias1) as alias2 ->
+                            False
+                    """
+                        |> String.unindent
                   , Just
                         (Case (Var { name = "arg", module_ = Nothing })
                             [ { pattern = PTuple (PChar 'c') (PInt 23)

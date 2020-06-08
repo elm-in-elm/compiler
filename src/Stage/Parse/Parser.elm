@@ -362,7 +362,7 @@ expr =
         , andThenOneOf =
             -- TODO test this: does `x =\n  call 1\n+ something` work? (it shouldn't: no space before '+')
             [ PP.infixLeft 99
-                checkNotBeginningOfLine
+                (ignorablesAndCheckIndent (<) ExpectingIndentation)
                 (Located.merge
                     (\fn argument ->
                         Frontend.Call
@@ -879,7 +879,7 @@ pattern =
             , postfix 1
                 (P.succeed identity
                     |. P.keyword (P.Token "as" ExpectingAsKeyword)
-                    |. ignorablesAndCheckIndent (<) ExpectingIndentation
+                    |. ignorablesAndCheckIndent (<) ExpectingPatternAliasName
                     |= varName
                     |> located
                 )
