@@ -162,7 +162,7 @@ desugarExpr modules thisModule located =
 
         Frontend.List items ->
             List.map recurse items
-                |> List.foldr (Result.map2 (::)) (Ok [])
+                |> Result.combine
                 |> map Canonical.List
 
         Frontend.Tuple e1 e2 ->
@@ -204,19 +204,19 @@ desugarExpr modules thisModule located =
                         located
                 )
                 (recurse test)
-                (List.map
-                    (\{ pattern, body } ->
-                        Result.map2
-                            (\p b ->
-                                { pattern = p
-                                , body = b
-                                }
-                            )
-                            (desugarPattern pattern)
-                            (recurse body)
-                    )
-                    branches
-                    |> List.foldr (Result.map2 (::)) (Ok [])
+                (branches
+                    |> List.map
+                        (\{ pattern, body } ->
+                            Result.map2
+                                (\p b ->
+                                    { pattern = p
+                                    , body = b
+                                    }
+                                )
+                                (desugarPattern pattern)
+                                (recurse body)
+                        )
+                    |> Result.combine
                 )
 
 
