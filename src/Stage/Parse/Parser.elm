@@ -1071,7 +1071,7 @@ newlines =
 
 {-| Parse zero or more ignorables Elm code.
 
-It will ignore spaces (' ', '\\n' and '\\r') and rise an error if it finds a tab.
+It will ignore spaces (' ', '\\n' and '\\r') and raise an error if it finds a tab.
 
 The fact that spaces comes last is very important! It can succeed without
 consuming any characters, so if it were the first option, it would always
