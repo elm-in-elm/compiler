@@ -31,7 +31,7 @@ lambdas|nearlydone|Multi-line support missing
 function calls|nearlydone|Multi-line support missing
 if...then...else|nearlydone|Multi-line support missing
 let...in|nearlydone|Multi-line support missing
-case...of|complete
+case...of|nearlydone|Custom type destructuring missing
 records|nearlydone|Multi-line support missing
 record accessors|notstarted
 record updates|notstarted
