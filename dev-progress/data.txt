@@ -31,7 +31,7 @@ lambdas|nearlydone|Multi-line support missing
 function calls|nearlydone|Multi-line support missing
 if...then...else|nearlydone|Multi-line support missing
 let...in|nearlydone|Multi-line support missing
-case...of|notstarted
+case...of|complete
 records|nearlydone|Multi-line support missing
 record accessors|notstarted
 record updates|notstarted
@@ -51,6 +51,7 @@ let polymorphism|notstarted
 type aliases|notstarted
 custom types|notstarted
 extensible records|notstarted
+case...of|nearlydone|A few remaining TODOs for generating equations
 
 # Optimizations
 
@@ -66,6 +67,7 @@ merging record updates|notstarted
 pipe operators inlining|notstarted
 variable inlining|notstarted
 if <literal bool> folding|complete
+case <literal> of -> if|notstarted
 
 # Emitting
 
