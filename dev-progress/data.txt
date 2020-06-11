@@ -43,6 +43,7 @@ type aliases|notstarted
 pattern matching|notstarted
 infix operator definitions|notstarted
 WebGL shaders|notstarted
+comments|notstarted
 
 # Type Inference
 
