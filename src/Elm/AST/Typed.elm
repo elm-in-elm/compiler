@@ -1,6 +1,7 @@
 module Elm.AST.Typed exposing
     ( ProjectFields
     , LocatedExpr, Expr, Expr_(..), getExpr, getType, unwrap, dropTypes, transformAll, transformOnce, recursiveChildren, setExpr
+    , LocatedPattern, Pattern, Pattern_(..)
     )
 
 {-| Typed AST holds the inferred [types](Elm.Data.Type) for every expression.
@@ -22,7 +23,7 @@ import Elm.Data.VarName exposing (VarName)
 import Transform
 
 
-{-| "What does this compiler stage need to store abotut the whole project?
+{-| "What does this compiler stage need to store about the whole project?
 
 (See [`Elm.Data.Project`](Elm.Data.Project).)
 
@@ -75,6 +76,37 @@ type Expr_
     | Tuple LocatedExpr LocatedExpr
     | Tuple3 LocatedExpr LocatedExpr LocatedExpr
     | Record (Dict VarName (Binding LocatedExpr))
+    | Case LocatedExpr (List { pattern : LocatedPattern, body : LocatedExpr })
+
+
+type alias LocatedPattern =
+    Located Pattern
+
+
+{-| Differs from [Canonical.Pattern](Elm.AST.Canonical#Pattern) by:
+
+  - being a tuple of the underlying Pattern\_ and its inferred type
+
+-}
+type alias Pattern =
+    ( Pattern_, Type )
+
+
+type Pattern_
+    = PAnything
+    | PVar VarName
+    | PRecord (List VarName)
+    | PAlias LocatedPattern VarName
+    | PUnit
+    | PTuple LocatedPattern LocatedPattern
+    | PTuple3 LocatedPattern LocatedPattern LocatedPattern
+    | PList (List LocatedPattern)
+    | PCons LocatedPattern LocatedPattern
+    | PBool Bool
+    | PChar Char
+    | PString String
+    | PInt Int
+    | PFloat Float
 
 
 {-| A helper for the [Transform](/packages/Janiczek/transform/latest/) library.
@@ -165,6 +197,16 @@ recurse fn locatedExpr =
                                 (always (Binding.map fn))
                                 bindings
                             )
+
+                    Case test branches ->
+                        Case (fn test) <|
+                            List.map
+                                (\{ pattern, body } ->
+                                    { pattern = pattern
+                                    , body = fn body
+                                    }
+                                )
+                                branches
             )
 
 
@@ -255,6 +297,9 @@ recursiveChildren fn locatedExpr =
 
         Record bindings ->
             List.concatMap (.body >> fn) (Dict.values bindings)
+
+        Case e branches ->
+            fn e ++ List.concatMap (.body >> fn) branches
 
 
 mapExpr : (Expr_ -> Expr_) -> LocatedExpr -> LocatedExpr
@@ -375,6 +420,73 @@ unwrap expr =
                 Dict.map
                     (always (Binding.map unwrap))
                     bindings
+
+        Case test branches ->
+            Unwrapped.Case (unwrap test) <|
+                List.map
+                    (\{ pattern, body } ->
+                        { pattern = unwrapPattern pattern
+                        , body = unwrap body
+                        }
+                    )
+                    branches
+    , type_
+    )
+
+
+{-| Discard the [location metadata](Elm.Data.Located#Located).
+-}
+unwrapPattern : LocatedPattern -> Unwrapped.Pattern
+unwrapPattern expr =
+    let
+        ( expr_, type_ ) =
+            Located.unwrap expr
+    in
+    ( case expr_ of
+        PAnything ->
+            Unwrapped.PAnything
+
+        PVar varName ->
+            Unwrapped.PVar varName
+
+        PRecord varNames ->
+            Unwrapped.PRecord varNames
+
+        PAlias p varName ->
+            Unwrapped.PAlias (unwrapPattern p) varName
+
+        PUnit ->
+            Unwrapped.PUnit
+
+        PTuple p1 p2 ->
+            Unwrapped.PTuple (unwrapPattern p1) (unwrapPattern p2)
+
+        PTuple3 p1 p2 p3 ->
+            Unwrapped.PTuple3
+                (unwrapPattern p1)
+                (unwrapPattern p2)
+                (unwrapPattern p3)
+
+        PList ps ->
+            Unwrapped.PList (List.map unwrapPattern ps)
+
+        PCons p1 p2 ->
+            Unwrapped.PCons (unwrapPattern p1) (unwrapPattern p2)
+
+        PBool bool ->
+            Unwrapped.PBool bool
+
+        PChar char ->
+            Unwrapped.PChar char
+
+        PString string ->
+            Unwrapped.PString string
+
+        PInt int ->
+            Unwrapped.PInt int
+
+        PFloat float ->
+            Unwrapped.PFloat float
     , type_
     )
 
@@ -463,4 +575,71 @@ dropTypes locatedExpr =
                     Record bindings ->
                         Canonical.Record <|
                             Dict.map (always (Binding.map dropTypes)) bindings
+
+                    Case test branches ->
+                        Canonical.Case (dropTypes test) <|
+                            List.map
+                                (\{ pattern, body } ->
+                                    { pattern = dropPatternTypes pattern
+                                    , body = dropTypes body
+                                    }
+                                )
+                                branches
+            )
+
+
+{-| Go from `AST.Typed` to [`AST.Canonical`](Elm.AST.Canonical).
+-}
+dropPatternTypes : LocatedPattern -> Canonical.LocatedPattern
+dropPatternTypes locatedPattern =
+    locatedPattern
+        |> Located.map
+            (\( pattern, _ ) ->
+                case pattern of
+                    PAnything ->
+                        Canonical.PAnything
+
+                    PVar varName ->
+                        Canonical.PVar varName
+
+                    PRecord varNames ->
+                        Canonical.PRecord varNames
+
+                    PAlias p varName ->
+                        Canonical.PAlias (dropPatternTypes p) varName
+
+                    PUnit ->
+                        Canonical.PUnit
+
+                    PTuple p1 p2 ->
+                        Canonical.PTuple
+                            (dropPatternTypes p1)
+                            (dropPatternTypes p2)
+
+                    PTuple3 p1 p2 p3 ->
+                        Canonical.PTuple3
+                            (dropPatternTypes p1)
+                            (dropPatternTypes p2)
+                            (dropPatternTypes p3)
+
+                    PList ps ->
+                        Canonical.PList (List.map dropPatternTypes ps)
+
+                    PCons p1 p2 ->
+                        Canonical.PCons (dropPatternTypes p1) (dropPatternTypes p2)
+
+                    PBool bool ->
+                        Canonical.PBool bool
+
+                    PChar char ->
+                        Canonical.PChar char
+
+                    PString string ->
+                        Canonical.PString string
+
+                    PInt int ->
+                        Canonical.PInt int
+
+                    PFloat float ->
+                        Canonical.PFloat float
             )

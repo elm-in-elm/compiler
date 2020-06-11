@@ -90,7 +90,7 @@ replaceWith expr (Located region _) =
 
 {-| Merge the regions of the two wrappers.
 -}
-merge : (Located a -> Located a -> b) -> Located a -> Located a -> Located b
+merge : (Located a -> Located b -> c) -> Located a -> Located b -> Located c
 merge fn l1 l2 =
     Located
         (mergeRegions (getRegion l1) (getRegion l2))

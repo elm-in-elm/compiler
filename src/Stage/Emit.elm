@@ -487,3 +487,15 @@ findDependenciesOfExpr modules locatedExpr =
                 |> List.map (.body >> findDependencies_)
                 |> Result.combine
                 |> Result.map List.concat
+
+        Case e branches ->
+            let
+                branchesDependencies =
+                    branches
+                        |> List.map (.body >> findDependencies_)
+                        |> Result.combine
+                        |> Result.map List.concat
+            in
+            Result.map2 (++)
+                (findDependencies_ e)
+                branchesDependencies

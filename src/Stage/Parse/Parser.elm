@@ -10,7 +10,7 @@ module Stage.Parse.Parser exposing
     )
 
 import Dict exposing (Dict)
-import Elm.AST.Frontend as Frontend exposing (Expr(..), LocatedExpr)
+import Elm.AST.Frontend as Frontend exposing (Expr(..), LocatedExpr, LocatedPattern, Pattern(..))
 import Elm.Compiler.Error
     exposing
         ( Error(..)
@@ -39,6 +39,10 @@ type alias Parser_ a =
 
 type alias ExprConfig =
     PP.Config ParseContext ParseProblem LocatedExpr
+
+
+type alias PatternConfig =
+    PP.Config ParseContext ParseProblem LocatedPattern
 
 
 located : Parser_ p -> Parser_ (Located p)
@@ -353,11 +357,12 @@ expr =
             , tuple3
             , parenthesizedExpr
             , record
+            , case_
             ]
         , andThenOneOf =
             -- TODO test this: does `x =\n  call 1\n+ something` work? (it shouldn't: no space before '+')
             [ PP.infixLeft 99
-                checkNotBeginningOfLine
+                (ignorablesAndCheckIndent (<) ExpectingIndentation)
                 (Located.merge
                     (\fn argument ->
                         Frontend.Call
@@ -585,12 +590,16 @@ tripleQuoteString =
 
 literalBool : Parser_ LocatedExpr
 literalBool =
-    P.succeed Bool
-        |= P.oneOf
-            [ P.map (always True) <| P.keyword (P.Token "True" ExpectingTrue)
-            , P.map (always False) <| P.keyword (P.Token "False" ExpectingFalse)
-            ]
+    P.map Bool bool
         |> located
+
+
+bool : Parser_ Bool
+bool =
+    P.oneOf
+        [ P.map (always True) <| P.keyword (P.Token "True" ExpectingTrue)
+        , P.map (always False) <| P.keyword (P.Token "False" ExpectingFalse)
+        ]
 
 
 var : Parser_ LocatedExpr
@@ -821,6 +830,231 @@ record config =
         |> located
 
 
+case_ : ExprConfig -> Parser_ LocatedExpr
+case_ config =
+    P.succeed
+        (\test branchAlignCol ->
+            P.succeed (Frontend.Case test)
+                |= P.withIndent branchAlignCol
+                    (oneOrMoreWith ignorables (caseBranch config))
+        )
+        |. P.keyword (P.Token "case" ExpectingCase)
+        |. ignorables
+        |= PP.subExpression 0 config
+        |. ignorables
+        |. P.keyword (P.Token "of" ExpectingOf)
+        |. ignorables
+        |= P.getCol
+        |> P.andThen identity
+        |> P.inContext InCase
+        |> located
+
+
+caseBranch : ExprConfig -> Parser_ { pattern : LocatedPattern, body : LocatedExpr }
+caseBranch config =
+    P.succeed
+        (\pattern_ body ->
+            { pattern = pattern_
+            , body = body
+            }
+        )
+        |. checkIndent (==) ExpectingIndentation
+        |= pattern
+        |. ignorablesAndCheckIndent (<) ExpectingRightArrow
+        |. P.symbol (P.Token "->" ExpectingRightArrow)
+        |. ignorablesAndCheckIndent (<) ExpectingCaseBody
+        |= PP.subExpression 0 config
+
+
+pattern : Parser_ LocatedPattern
+pattern =
+    PP.expression
+        { oneOf =
+            [ PP.literal patternLiteral
+            , patternList
+            , patternTuple
+            ]
+        , andThenOneOf =
+            [ PP.infixRight 1 (P.symbol (P.Token "::" ExpectingConsOperator)) (Located.merge PCons)
+            , postfix 1
+                (P.succeed identity
+                    |. P.keyword (P.Token "as" ExpectingAsKeyword)
+                    |. ignorablesAndCheckIndent (<) ExpectingPatternAliasName
+                    |= varName
+                    |> located
+                )
+                (Located.merge
+                    (\pattern_ alias_ ->
+                        PAlias pattern_ (Located.unwrap alias_)
+                    )
+                )
+            ]
+        , spaces = ignorables
+        }
+        |> P.inContext InPattern
+
+
+patternLiteral : Parser_ LocatedPattern
+patternLiteral =
+    P.oneOf
+        [ patternAnything
+        , patternUnit
+        , patternVar
+        , patternChar
+        , patternString
+        , patternBool
+        , patternNumber
+        , patternRecord
+        ]
+
+
+patternAnything : Parser_ LocatedPattern
+patternAnything =
+    P.succeed PAnything
+        |. P.symbol (P.Token "_" ExpectingPatternAnything)
+        |> located
+
+
+patternUnit : Parser_ LocatedPattern
+patternUnit =
+    P.succeed PUnit
+        |. P.keyword (P.Token "()" ExpectingUnit)
+        |> located
+
+
+patternChar : Parser_ LocatedPattern
+patternChar =
+    P.succeed PChar
+        |. P.symbol singleQuote
+        |= character SingleQuote
+        |. P.symbol singleQuote
+        |> P.inContext InChar
+        |> located
+
+
+patternString : Parser_ LocatedPattern
+patternString =
+    P.succeed PString
+        |= P.oneOf
+            [ tripleQuoteString
+            , doubleQuoteString
+            ]
+        |> P.inContext InString
+        |> located
+
+
+patternBool : Parser_ LocatedPattern
+patternBool =
+    P.map PBool bool
+        |> located
+
+
+patternVar : Parser_ LocatedPattern
+patternVar =
+    P.map PVar varName
+        |> located
+
+
+patternNumber : Parser_ LocatedPattern
+patternNumber =
+    let
+        parseLiteralNumber =
+            P.backtrackable <|
+                P.number
+                    { int = Ok PInt
+                    , hex = Ok PInt
+                    , octal = Err InvalidNumber -- Elm does not support octal notation
+                    , binary = Err InvalidNumber -- Elm does not support binary notation
+                    , float = Ok PFloat
+                    , invalid = InvalidNumber
+                    , expecting = ExpectingNumber
+                    }
+
+        negateLiteral toBeNegated =
+            case toBeNegated of
+                PInt int ->
+                    PInt (negate int)
+
+                PFloat float ->
+                    PFloat (negate float)
+
+                _ ->
+                    toBeNegated
+    in
+    P.oneOf
+        [ P.succeed negateLiteral
+            |. P.symbol (P.Token "-" ExpectingMinusSign)
+            |= parseLiteralNumber
+        , parseLiteralNumber
+        ]
+        |> P.inContext InNumber
+        |> located
+
+
+patternRecord : Parser_ LocatedPattern
+patternRecord =
+    P.sequence
+        { start = P.Token "{" ExpectingRecordLeftBrace
+        , separator = P.Token "," ExpectingRecordSeparator
+        , end = P.Token "}" ExpectingRecordRightBrace
+        , spaces = ignorablesAndCheckIndent (<) ExpectingIndentation
+        , item = varName
+        , trailing = P.Forbidden
+        }
+        |> P.map PRecord
+        |> P.inContext InRecord
+        |> located
+
+
+patternList : PatternConfig -> Parser_ LocatedPattern
+patternList config =
+    P.sequence
+        { start = P.Token "[" ExpectingLeftBracket
+        , separator = P.Token "," ExpectingListSeparator
+        , end = P.Token "]" ExpectingRightBracket
+        , spaces = ignorablesAndCheckIndent (<) ExpectingIndentation
+        , item = PP.subExpression 0 config
+        , trailing = P.Forbidden
+        }
+        |> P.map PList
+        |> P.inContext InList
+        |> located
+
+
+patternTuple : PatternConfig -> Parser_ LocatedPattern
+patternTuple config =
+    P.sequence
+        { start = P.Token "(" ExpectingLeftParen
+        , separator = P.Token "," ExpectingTupleSeparator
+        , end = P.Token ")" ExpectingRightParen
+        , spaces = ignorablesAndCheckIndent (<) ExpectingIndentation
+        , item = PP.subExpression 0 config
+        , trailing = P.Forbidden
+        }
+        |> located
+        |> P.andThen
+            (\locatedPattern ->
+                case Located.unwrap locatedPattern of
+                    [ pattern1, pattern2, pattern3 ] ->
+                        Located.map (\_ -> PTuple3 pattern1 pattern2 pattern3)
+                            locatedPattern
+                            |> P.succeed
+                            |> P.inContext InTuple3
+
+                    [ pattern1, pattern2 ] ->
+                        Located.map (\_ -> PTuple pattern1 pattern2)
+                            locatedPattern
+                            |> P.succeed
+                            |> P.inContext InTuple
+
+                    [ pattern_ ] ->
+                        P.succeed pattern_
+
+                    _ ->
+                        P.problem ExpectingMaxThreeTuple
+            )
+
+
 
 -- Helpers
 
@@ -833,6 +1067,83 @@ spacesOnly =
 newlines : Parser_ ()
 newlines =
     P.chompWhile ((==) '\n')
+
+
+{-| Parse zero or more ignorables Elm code.
+
+It will ignore spaces (' ', '\\n' and '\\r') and raise an error if it finds a tab.
+
+The fact that spaces comes last is very important! It can succeed without
+consuming any characters, so if it were the first option, it would always
+succeed and bypass the others!
+
+This possibility of success without consumption is also why wee need the
+ifProgress helper. It detects if there is no more whitespace to consume.
+
+-}
+ignorables : Parser_ ()
+ignorables =
+    P.loop 0 <|
+        ifProgress <|
+            P.oneOf
+                [ P.symbol (P.Token "\t" InvalidTab)
+                    |> P.andThen (\_ -> P.problem InvalidTab)
+                , P.spaces
+                ]
+
+
+{-| Continues a loop if the parser is making progress (consuming anything).
+
+Taken from elm/parser `Parser.multiComment` documentation.
+
+-}
+ifProgress : Parser_ a -> Int -> Parser_ (P.Step Int ())
+ifProgress parser offset =
+    P.succeed identity
+        |. parser
+        |= P.getOffset
+        |> P.map
+            (\newOffset ->
+                if offset == newOffset then
+                    P.Done ()
+
+                else
+                    P.Loop newOffset
+            )
+
+
+{-| Check the current indent ([`Parser.getIndent`](https://package.elm-lang.org/packages/elm/parser/latest/Parser#getIndent), previously defined with [`Parser.withIndent`](https://package.elm-lang.org/packages/elm/parser/latest/Parser#withIndent))
+and the current column, in this order, with the given function.
+
+If the check function result is `True` it will succeed, otherwise it will return
+the given problem.
+
+If no indent is defined, the default indent is `0`.
+
+-}
+checkIndent : (Int -> Int -> Bool) -> ParseProblem -> Parser_ ()
+checkIndent check error =
+    P.succeed
+        (\indent col ->
+            if check indent col then
+                P.succeed ()
+
+            else
+                P.problem error
+        )
+        |= P.getIndent
+        |= P.getCol
+        |> P.andThen identity
+
+
+{-| Parse ignorable code then check the current defined indentation and the
+current column.
+-}
+ignorablesAndCheckIndent : (Int -> Int -> Bool) -> ParseProblem -> Parser_ ()
+ignorablesAndCheckIndent check error =
+    P.succeed ()
+        |. ignorables
+        |. checkIndent check error
 
 
 {-| Taken from Punie/elm-parser-extras (original name: `many`), made to work with
@@ -885,3 +1196,22 @@ oneOrMoreHelp spaces p vs =
         , P.succeed ()
             |> P.map (always (P.Done (List.reverse vs)))
         ]
+
+
+{-| Taken from [dmy/elm-pratt-parser](https://package.elm-lang.org/packages/dmy/elm-pratt-parser/latest/Pratt-Advanced#postfix),
+made to accept the operator parser result.
+
+It differs from an _infix_ expression by not having left _and_ right expressions.
+It has only a left expression and an operator, eg.: 180º (the degree (`º`)
+symbol is the postfix operator).
+
+It can be used to parse Elm's aliasing expressions, like `{ foo } as bar`,
+since only the `{ foo }` is a pattern expression, but we also need the `bar`
+string, which is not another expression.
+
+-}
+postfix : Int -> P.Parser c x a -> (e -> a -> e) -> PP.Config c x e -> ( Int, e -> P.Parser c x e )
+postfix precedence operator apply _ =
+    ( precedence
+    , \left -> P.map (apply left) operator
+    )

@@ -74,6 +74,8 @@ type ParseContext
     | InTuple3
     | InRecord
     | InFile FilePath
+    | InCase
+    | InPattern
 
 
 {-| The specific problem the parser encountered. Together with [`ParseContext`](#ParseContext)
@@ -134,6 +136,14 @@ type ParseProblem
     | ExpectingRecordLeftBrace
     | ExpectingRecordSeparator
     | ExpectingRecordRightBrace
+    | ExpectingCase
+    | ExpectingOf
+    | ExpectingCaseBody
+    | ExpectingPatternAliasName -- `{ foo } as >bar<`
+    | ExpectingIndentation
+    | ExpectingPatternAnything -- `>_< ->`
+    | ExpectingMaxThreeTuple
+    | InvalidTab
     | InvalidNumber
     | TriedToParseCharacterStoppingDelimiter
     | CompilerBug String
@@ -487,6 +497,30 @@ parseProblemToString problem =
 
         ExpectingRecordRightBrace ->
             "ExpectingRecordRightBrace"
+
+        ExpectingCase ->
+            "ExpectingCase"
+
+        ExpectingOf ->
+            "ExpectingOf"
+
+        ExpectingCaseBody ->
+            "ExpectingCaseBody"
+
+        ExpectingPatternAliasName ->
+            "ExpectingPatternAliasName"
+
+        ExpectingIndentation ->
+            "ExpectingIndentation"
+
+        ExpectingPatternAnything ->
+            "ExpectingPatternAnything"
+
+        ExpectingMaxThreeTuple ->
+            "ExpectingMaxThreeTuple"
+
+        InvalidTab ->
+            "InvalidTab"
 
         InvalidNumber ->
             "InvalidNumber"

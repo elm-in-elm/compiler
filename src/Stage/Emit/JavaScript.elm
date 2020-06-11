@@ -128,6 +128,9 @@ emitExpr located =
             in
             "{" ++ bindingsJS ++ "}"
 
+        Case e branches ->
+            "TODO"
+
 
 emitDeclaration : Declaration Typed.LocatedExpr -> String
 emitDeclaration { module_, name, body } =

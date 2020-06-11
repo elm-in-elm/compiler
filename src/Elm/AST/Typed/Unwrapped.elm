@@ -1,4 +1,7 @@
-module Elm.AST.Typed.Unwrapped exposing (Expr, Expr_(..))
+module Elm.AST.Typed.Unwrapped exposing
+    ( Expr, Expr_(..)
+    , Pattern, Pattern_(..)
+    )
 
 {-| Version of [Typed AST](Elm.AST.Typed) without the location info.
 
@@ -44,3 +47,25 @@ type Expr_
     | Tuple Expr Expr
     | Tuple3 Expr Expr Expr
     | Record (Dict VarName (Binding Expr))
+    | Case Expr (List { pattern : Pattern, body : Expr })
+
+
+type alias Pattern =
+    ( Pattern_, Type )
+
+
+type Pattern_
+    = PAnything
+    | PVar VarName
+    | PRecord (List VarName)
+    | PAlias Pattern VarName
+    | PUnit
+    | PTuple Pattern Pattern
+    | PTuple3 Pattern Pattern Pattern
+    | PList (List Pattern)
+    | PCons Pattern Pattern
+    | PBool Bool
+    | PChar Char
+    | PString String
+    | PInt Int
+    | PFloat Float
