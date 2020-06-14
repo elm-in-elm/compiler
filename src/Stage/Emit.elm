@@ -44,7 +44,8 @@ import Elm.Data.Exposing as Exposing exposing (ExposedItem(..), Exposing(..))
 import Elm.Data.Module as Module exposing (Module)
 import Elm.Data.ModuleName exposing (ModuleName)
 import Elm.Data.Project exposing (Project)
-import Elm.Data.Type as Type exposing (Type, TypeOrId(..), TypeOrIdQ, TypeQ)
+import Elm.Data.Qualifiedness exposing (PossiblyQualified, Qualified(..))
+import Elm.Data.Type as Type exposing (Type, TypeOrId(..))
 import Elm.Data.VarName exposing (VarName)
 import Graph
 import Result.Extra as Result
@@ -53,7 +54,7 @@ import Set exposing (Set)
 
 projectToDeclarationList :
     Project Typed.ProjectFields
-    -> Result EmitError (List (Declaration Typed.LocatedExpr Never ModuleName))
+    -> Result EmitError (List (Declaration Typed.LocatedExpr Never Qualified))
 projectToDeclarationList { mainModuleName, modules } =
     modulesToGraph mainModuleName modules
         |> Result.map (findPathToMain mainModuleName)
@@ -61,20 +62,20 @@ projectToDeclarationList { mainModuleName, modules } =
 
 modulesToDeclarationLists :
     Project Typed.ProjectFields
-    -> Result EmitError (Dict ModuleName (List (Declaration Typed.LocatedExpr Never ModuleName)))
+    -> Result EmitError (Dict ModuleName (List (Declaration Typed.LocatedExpr Never Qualified)))
 modulesToDeclarationLists ({ mainModuleName, modules } as project) =
     modulesToGraph mainModuleName modules
         |> Result.map (findPathForEachModule project)
 
 
 type alias Graph =
-    Graph.Graph (Declaration Typed.LocatedExpr Never ModuleName) ()
+    Graph.Graph (Declaration Typed.LocatedExpr Never Qualified) ()
 
 
 {-| We want to be able to emit `main`. We only emit what's needed for that.
 Taken from the example in elm-community/graph README :sweat\_smile:
 -}
-findPathToMain : ModuleName -> Graph -> List (Declaration Typed.LocatedExpr Never ModuleName)
+findPathToMain : ModuleName -> Graph -> List (Declaration Typed.LocatedExpr Never Qualified)
 findPathToMain mainModuleName programGraph =
     findPath
         programGraph
@@ -86,7 +87,7 @@ findPathToMain mainModuleName programGraph =
 findPathForEachModule :
     Project Typed.ProjectFields
     -> Graph
-    -> Dict ModuleName (List (Declaration Typed.LocatedExpr Never ModuleName))
+    -> Dict ModuleName (List (Declaration Typed.LocatedExpr Never Qualified))
 findPathForEachModule project graph =
     let
         exposedDeclarations : Set ( ModuleName, VarName )
@@ -98,8 +99,8 @@ findPathForEachModule project graph =
                 |> Set.fromList
 
         moduleToExposedDeclarations :
-            Module Typed.LocatedExpr Never ModuleName
-            -> List (Declaration Typed.LocatedExpr Never ModuleName)
+            Module Typed.LocatedExpr Never Qualified
+            -> List (Declaration Typed.LocatedExpr Never Qualified)
         moduleToExposedDeclarations module_ =
             case module_.exposing_ of
                 ExposingAll ->
@@ -117,13 +118,13 @@ findPathForEachModule project graph =
            and thread it through and report it?
         -}
         exposedItemToDeclaration :
-            Module Typed.LocatedExpr Never ModuleName
+            Module Typed.LocatedExpr Never Qualified
             -> ExposedItem
-            -> Maybe (Declaration Typed.LocatedExpr Never ModuleName)
+            -> Maybe (Declaration Typed.LocatedExpr Never Qualified)
         exposedItemToDeclaration module_ item =
             Dict.get (Exposing.name item) module_.declarations
 
-        globalPath : List (Declaration Typed.LocatedExpr Never ModuleName)
+        globalPath : List (Declaration Typed.LocatedExpr Never Qualified)
         globalPath =
             findPath
                 graph
@@ -136,7 +137,7 @@ findPathForEachModule project graph =
 {-| Generic function to find a good ordering of values (so that all the
 dependencies are emitted before the TODO finish writing this
 -}
-findPath : Graph -> Set ( ModuleName, VarName ) -> List (Declaration Typed.LocatedExpr Never ModuleName)
+findPath : Graph -> Set ( ModuleName, VarName ) -> List (Declaration Typed.LocatedExpr Never Qualified)
 findPath graph startingDeclarations =
     let
         edgesToFollow =
@@ -176,21 +177,21 @@ findDeclarations graph declarations =
 
 
 type alias Dependency =
-    { from : Declaration Typed.LocatedExpr Never ModuleName
-    , to : Declaration Typed.LocatedExpr Never ModuleName
+    { from : Declaration Typed.LocatedExpr Never Qualified
+    , to : Declaration Typed.LocatedExpr Never Qualified
     }
 
 
 modulesToGraph :
     ModuleName
-    -> Dict ModuleName (Module Typed.LocatedExpr Never ModuleName)
+    -> Dict ModuleName (Module Typed.LocatedExpr Never Qualified)
     -> Result EmitError Graph
 modulesToGraph mainModuleName modules =
     {- TODO this is probably a bit far off, but... how to allow for cyclic
        dependencies in lambdas but not in exposed expressions?
     -}
     let
-        maybeMainDeclaration : Maybe (Declaration Typed.LocatedExpr Never ModuleName)
+        maybeMainDeclaration : Maybe (Declaration Typed.LocatedExpr Never Qualified)
         maybeMainDeclaration =
             Dict.get mainModuleName modules
                 |> Maybe.andThen (.declarations >> Dict.get "main")
@@ -208,11 +209,11 @@ modulesToGraph mainModuleName modules =
         |> Result.map
             (\( declarations, dependencies ) ->
                 let
-                    declarationList : List (Declaration Typed.LocatedExpr Never ModuleName)
+                    declarationList : List (Declaration Typed.LocatedExpr Never Qualified)
                     declarationList =
                         AssocSet.toList declarations
 
-                    declarationIndexes : AssocList.Dict (Declaration Typed.LocatedExpr Never ModuleName) Int
+                    declarationIndexes : AssocList.Dict (Declaration Typed.LocatedExpr Never Qualified) Int
                     declarationIndexes =
                         declarationList
                             |> List.indexedMap (\i declaration -> ( declaration, i ))
@@ -241,11 +242,11 @@ modulesToGraph mainModuleName modules =
 
 
 collectDependencies :
-    Dict ModuleName (Module Typed.LocatedExpr Never ModuleName)
-    -> List (Declaration Typed.LocatedExpr Never ModuleName)
-    -> AssocSet.Set (Declaration Typed.LocatedExpr Never ModuleName)
+    Dict ModuleName (Module Typed.LocatedExpr Never Qualified)
+    -> List (Declaration Typed.LocatedExpr Never Qualified)
+    -> AssocSet.Set (Declaration Typed.LocatedExpr Never Qualified)
     -> List Dependency
-    -> Result EmitError ( AssocSet.Set (Declaration Typed.LocatedExpr Never ModuleName), List Dependency )
+    -> Result EmitError ( AssocSet.Set (Declaration Typed.LocatedExpr Never Qualified), List Dependency )
 collectDependencies modules remainingDeclarations doneDeclarations doneDependencies =
     -- TODO arguments in a record for better clarity... the usages of this function look weird
     {- TODO maybe keep a dict around so that we don't do the same work twice if
@@ -318,10 +319,10 @@ collectDependencies modules remainingDeclarations doneDeclarations doneDependenc
 
 
 findDependencies :
-    Dict ModuleName (Module Typed.LocatedExpr Never ModuleName)
-    -> Module Typed.LocatedExpr Never ModuleName
-    -> DeclarationBody Typed.LocatedExpr ModuleName
-    -> Result EmitError (List (Declaration Typed.LocatedExpr Never ModuleName))
+    Dict ModuleName (Module Typed.LocatedExpr Never Qualified)
+    -> Module Typed.LocatedExpr Never Qualified
+    -> DeclarationBody Typed.LocatedExpr Qualified
+    -> Result EmitError (List (Declaration Typed.LocatedExpr Never Qualified))
 findDependencies modules thisModule declarationBody =
     case declarationBody of
         Value locatedExpr ->
@@ -351,10 +352,10 @@ findDependencies modules thisModule declarationBody =
 
 
 findDependenciesOfTypeOrId :
-    Dict ModuleName (Module Typed.LocatedExpr Never ModuleName)
-    -> Module Typed.LocatedExpr Never ModuleName
-    -> TypeOrIdQ
-    -> Result EmitError (List (Declaration Typed.LocatedExpr Never ModuleName))
+    Dict ModuleName (Module Typed.LocatedExpr Never Qualified)
+    -> Module Typed.LocatedExpr Never Qualified
+    -> TypeOrId Qualified
+    -> Result EmitError (List (Declaration Typed.LocatedExpr Never Qualified))
 findDependenciesOfTypeOrId modules thisModule typeArgument =
     case typeArgument of
         Id _ ->
@@ -365,10 +366,10 @@ findDependenciesOfTypeOrId modules thisModule typeArgument =
 
 
 findDependenciesOfType :
-    Dict ModuleName (Module Typed.LocatedExpr Never ModuleName)
-    -> Module Typed.LocatedExpr Never ModuleName
-    -> TypeQ
-    -> Result EmitError (List (Declaration Typed.LocatedExpr Never ModuleName))
+    Dict ModuleName (Module Typed.LocatedExpr Never Qualified)
+    -> Module Typed.LocatedExpr Never Qualified
+    -> Type Qualified
+    -> Result EmitError (List (Declaration Typed.LocatedExpr Never Qualified))
 findDependenciesOfType modules thisModule type_ =
     let
         f =
@@ -423,11 +424,14 @@ findDependenciesOfType modules thisModule type_ =
                         |> Result.combine
                         |> Result.map List.concat
 
+                (Qualified moduleName) =
+                    module_
+
                 typeDependencies =
                     findDependenciesOfVar
                         modules
                         thisModule
-                        module_
+                        moduleName
                         name
             in
             Result.map2 (++)
@@ -443,11 +447,11 @@ findDependenciesOfType modules thisModule type_ =
 
 
 findDependenciesOfVar :
-    Dict ModuleName (Module Typed.LocatedExpr Never ModuleName)
-    -> Module Typed.LocatedExpr Never ModuleName
+    Dict ModuleName (Module Typed.LocatedExpr Never Qualified)
+    -> Module Typed.LocatedExpr Never Qualified
     -> ModuleName
     -> VarName
-    -> Result EmitError (List (Declaration Typed.LocatedExpr Never ModuleName))
+    -> Result EmitError (List (Declaration Typed.LocatedExpr Never Qualified))
 findDependenciesOfVar modules thisModule moduleName varName =
     Dict.get moduleName modules
         |> Result.fromMaybe
@@ -470,9 +474,9 @@ findDependenciesOfVar modules thisModule moduleName varName =
 
 
 findDependenciesOfExpr :
-    Dict ModuleName (Module Typed.LocatedExpr Never ModuleName)
+    Dict ModuleName (Module Typed.LocatedExpr Never Qualified)
     -> Typed.LocatedExpr
-    -> Result EmitError (List (Declaration Typed.LocatedExpr Never ModuleName))
+    -> Result EmitError (List (Declaration Typed.LocatedExpr Never Qualified))
 findDependenciesOfExpr modules locatedExpr =
     let
         f =
@@ -571,3 +575,15 @@ findDependenciesOfExpr modules locatedExpr =
                 |> List.map (.body >> f)
                 |> Result.combine
                 |> Result.map List.concat
+
+        Case e branches ->
+            let
+                branchesDependencies =
+                    branches
+                        |> List.map (.body >> f)
+                        |> Result.combine
+                        |> Result.map List.concat
+            in
+            Result.map2 (++)
+                (f e)
+                branchesDependencies

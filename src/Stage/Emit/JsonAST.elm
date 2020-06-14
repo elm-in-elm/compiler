@@ -27,12 +27,13 @@ import Elm.Data.FileContents exposing (FileContents)
 import Elm.Data.FilePath exposing (FilePath)
 import Elm.Data.ModuleName exposing (ModuleName)
 import Elm.Data.Project exposing (Project)
+import Elm.Data.Qualifiedness exposing (Qualified)
 import Json.Encode as Encode exposing (Value)
 import Stage.Emit.Common exposing (mangleQualifiedVar, prepareProjectFields)
 
 
 type alias ProjectFields =
-    { declarationList : List (Declaration Typed.LocatedExpr Never ModuleName) }
+    { declarationList : List (Declaration Typed.LocatedExpr Never Qualified) }
 
 
 emitProject : Project Typed.ProjectFields -> Result Error (Dict FilePath FileContents)
@@ -140,8 +141,23 @@ emitExpr located =
         Record bindings ->
             encode "record" [ ( "bind", Encode.dict identity (\v -> emitExpr v.body) bindings ) ]
 
+        Case test branches ->
+            encode "case"
+                [ ( "test", emitExpr test )
+                , ( "branches"
+                  , Encode.list
+                        (\b ->
+                            Encode.object
+                                [ ( "pattern", Encode.string "TODO" )
+                                , ( "body", emitExpr b.body )
+                                ]
+                        )
+                        branches
+                  )
+                ]
 
-emitDeclaration : Declaration Typed.LocatedExpr Never ModuleName -> Value
+
+emitDeclaration : Declaration Typed.LocatedExpr Never Qualified -> Value
 emitDeclaration { module_, name, body } =
     case body of
         Value expr ->

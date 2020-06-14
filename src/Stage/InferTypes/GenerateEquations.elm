@@ -32,7 +32,8 @@ subexpression.
 import Dict
 import Elm.AST.Typed as Typed
 import Elm.Data.Located as Located
-import Elm.Data.Type as Type exposing (Type(..), TypeOrId(..), TypeOrIdQ)
+import Elm.Data.Qualifiedness exposing (Qualified)
+import Elm.Data.Type as Type exposing (Type(..), TypeOrId(..))
 import Elm.Data.VarName exposing (VarName)
 import Stage.InferTypes.AssignIds
 import Stage.InferTypes.TypeEquation exposing (TypeEquation, equals)
@@ -310,50 +311,50 @@ generateEquations currentId located =
             , id2
             )
 
-        Typed.Tuple fst snd ->
+        Typed.Tuple first second ->
             let
-                ( _, fstType ) =
-                    Located.unwrap fst
+                ( _, firstType ) =
+                    Located.unwrap first
 
-                ( _, sndType ) =
-                    Located.unwrap snd
+                ( _, secondType ) =
+                    Located.unwrap second
 
-                ( fstEquations, id1 ) =
-                    generateEquations currentId fst
+                ( firstEquations, id1 ) =
+                    generateEquations currentId first
 
-                ( sndEquations, id2 ) =
-                    generateEquations id1 snd
+                ( secondEquations, id2 ) =
+                    generateEquations id1 second
             in
-            ( equals type_ (Type (Tuple fstType sndType))
-                :: fstEquations
-                ++ sndEquations
+            ( equals type_ (Type (Tuple firstType secondType))
+                :: firstEquations
+                ++ secondEquations
             , id2
             )
 
-        Typed.Tuple3 fst snd trd ->
+        Typed.Tuple3 first second third ->
             let
-                ( _, fstType ) =
-                    Located.unwrap fst
+                ( _, firstType ) =
+                    Located.unwrap first
 
-                ( _, sndType ) =
-                    Located.unwrap snd
+                ( _, secondType ) =
+                    Located.unwrap second
 
-                ( _, trdType ) =
-                    Located.unwrap trd
+                ( _, thirdType ) =
+                    Located.unwrap third
 
-                ( fstEquations, id1 ) =
-                    generateEquations currentId fst
+                ( firstEquations, id1 ) =
+                    generateEquations currentId first
 
-                ( sndEquations, id2 ) =
-                    generateEquations id1 snd
+                ( secondEquations, id2 ) =
+                    generateEquations id1 second
 
-                ( trdEquations, id3 ) =
-                    generateEquations id2 trd
+                ( thirdEquations, id3 ) =
+                    generateEquations id2 third
             in
-            ( equals type_ (Type (Tuple3 fstType sndType trdType))
-                :: fstEquations
-                ++ sndEquations
-                ++ trdEquations
+            ( equals type_ (Type (Tuple3 firstType secondType thirdType))
+                :: firstEquations
+                ++ secondEquations
+                ++ thirdEquations
             , id3
             )
 
@@ -385,6 +386,49 @@ generateEquations currentId located =
             , id1
             )
 
+        Typed.Case test branches ->
+            let
+                ( _, testType ) =
+                    Located.unwrap test
+
+                ( testEquations, id1 ) =
+                    generateEquations currentId test
+
+                ( branchesEquations, newId ) =
+                    List.foldl
+                        (\{ pattern, body } ( acc, currentId_ ) ->
+                            let
+                                ( _, patternType ) =
+                                    Located.unwrap pattern
+
+                                ( _, bodyType ) =
+                                    Located.unwrap body
+
+                                ( patternEquations, bodyId ) =
+                                    generatePatternEquations currentId_ pattern
+
+                                ( bodyEquations, nextId ) =
+                                    generateEquations bodyId body
+                            in
+                            ( acc
+                                --pattern type must be equal the test type
+                                ++ [ equals testType patternType
+
+                                   -- bodies types must be equal the overall type
+                                   , equals type_ bodyType
+                                   ]
+                                ++ patternEquations
+                                ++ bodyEquations
+                            , nextId
+                            )
+                        )
+                        ( [], id1 )
+                        branches
+            in
+            ( testEquations ++ branchesEquations
+            , newId
+            )
+
 
 findArgumentUsages : VarName -> Typed.LocatedExpr -> List Typed.LocatedExpr
 findArgumentUsages argument bodyExpr =
@@ -406,10 +450,197 @@ isArgument name locatedExpr =
 generateArgumentUsageEquations : Int -> List Typed.LocatedExpr -> List TypeEquation
 generateArgumentUsageEquations argumentId usages =
     let
-        argumentType : TypeOrIdQ
+        argumentType : TypeOrId Qualified
         argumentType =
             Type.Id argumentId
     in
     List.map
         (Typed.getTypeOrId >> equals argumentType)
         usages
+
+
+generatePatternEquations : Int -> Typed.LocatedPattern -> ( List TypeEquation, Int )
+generatePatternEquations currentId located =
+    let
+        ( pattern, type_ ) =
+            Located.unwrap located
+    in
+    case pattern of
+        Typed.PAnything ->
+            -- we can't make any assumptions here
+            ( [], currentId )
+
+        Typed.PVar _ ->
+            -- we can't make any assumptions here
+            ( [], currentId )
+
+        Typed.PRecord keys ->
+            {- TODO:
+               We know it's a record and have at least these keys.
+
+               Do something like Typed.Lambda's argument for each key?
+
+               Which is:
+               Assign a new ID to each key because it didn't
+               get one in the AssignIds phase (Strings aren't Exprs).
+
+               Then in case of `Case` expr, check this branch's body for
+               usage of the key name and generate equals equations?
+            -}
+            ( [], currentId )
+
+        Typed.PAlias aliasPattern aliasName ->
+            {- TODO:
+               aliasPattern and aliasName have the same type.
+
+               Do something like Typed.Lambda's argument for the aliasName?
+
+            -}
+            let
+                ( _, aliasPatternType ) =
+                    Located.unwrap aliasPattern
+
+                ( aliasPatternEquations, id1 ) =
+                    generatePatternEquations currentId aliasPattern
+            in
+            ( aliasPatternEquations
+            , id1
+            )
+
+        Typed.PUnit ->
+            -- unit is unit
+            ( [ equals type_ (Type Type.Unit) ]
+            , currentId
+            )
+
+        Typed.PTuple first second ->
+            let
+                ( _, firstType ) =
+                    Located.unwrap first
+
+                ( _, secondType ) =
+                    Located.unwrap second
+
+                ( firstEquations, id1 ) =
+                    generatePatternEquations currentId first
+
+                ( secondEquations, id2 ) =
+                    generatePatternEquations id1 second
+            in
+            ( equals type_ (Type (Tuple firstType secondType))
+                :: firstEquations
+                ++ secondEquations
+            , id2
+            )
+
+        Typed.PTuple3 first second third ->
+            let
+                ( _, firstType ) =
+                    Located.unwrap first
+
+                ( _, secondType ) =
+                    Located.unwrap second
+
+                ( _, thirdType ) =
+                    Located.unwrap third
+
+                ( firstEquations, id1 ) =
+                    generatePatternEquations currentId first
+
+                ( secondEquations, id2 ) =
+                    generatePatternEquations id1 second
+
+                ( thirdEquations, id3 ) =
+                    generatePatternEquations id2 third
+            in
+            ( equals type_ (Type (Tuple3 firstType secondType thirdType))
+                :: firstEquations
+                ++ secondEquations
+                ++ thirdEquations
+            , id3
+            )
+
+        Typed.PList items ->
+            {- The list type parameter needs extra ID so that we can
+               bind the items' types to it... so we create one here.
+            -}
+            let
+                id1 =
+                    currentId + 1
+
+                listParamType =
+                    Id currentId
+
+                ( bodyEquations, id2 ) =
+                    List.foldr
+                        (\item ( acc, currentId_ ) ->
+                            let
+                                ( _, itemType ) =
+                                    Located.unwrap item
+
+                                ( equations, nextId ) =
+                                    generatePatternEquations currentId_ item
+                            in
+                            ( equals itemType listParamType
+                                :: equations
+                                ++ acc
+                            , nextId
+                            )
+                        )
+                        ( [], id1 )
+                        items
+            in
+            ( -- for expression `[ a, b, c ]`
+              -- the `x` in `List x` type and types of all the items are the same
+              equals type_ (Type (List listParamType))
+                :: bodyEquations
+            , id2
+            )
+
+        Typed.PCons left right ->
+            let
+                ( _, leftType ) =
+                    Located.unwrap left
+
+                ( _, rightType ) =
+                    Located.unwrap right
+
+                ( leftEquations, id1 ) =
+                    generatePatternEquations currentId left
+
+                ( rightEquations, id2 ) =
+                    generatePatternEquations id1 right
+            in
+            ( -- For expression a :: b:
+              [ equals rightType (Type (List leftType)) -- type of `b` is a `List a`
+              , equals type_ rightType -- type of `a :: b` is `List a`
+              ]
+                ++ leftEquations
+                ++ rightEquations
+            , id2
+            )
+
+        Typed.PBool _ ->
+            ( [ equals type_ (Type Bool) ]
+            , currentId
+            )
+
+        Typed.PChar _ ->
+            ( [ equals type_ (Type Char) ]
+            , currentId
+            )
+
+        Typed.PString _ ->
+            ( [ equals type_ (Type String) ]
+            , currentId
+            )
+
+        Typed.PInt _ ->
+            ( [ equals type_ (Type Int) ]
+            , currentId
+            )
+
+        Typed.PFloat _ ->
+            ( [ equals type_ (Type Float) ]
+            , currentId
+            )

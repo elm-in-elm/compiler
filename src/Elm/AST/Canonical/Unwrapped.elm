@@ -1,4 +1,7 @@
-module Elm.AST.Canonical.Unwrapped exposing (Expr(..))
+module Elm.AST.Canonical.Unwrapped exposing
+    ( Expr(..)
+    , Pattern(..)
+    )
 
 {-| Version of [Canonical AST](Elm.AST.Canonical) without the location info.
 
@@ -38,3 +41,21 @@ type Expr
     | Tuple Expr Expr
     | Tuple3 Expr Expr Expr
     | Record (Dict VarName (Binding Expr))
+    | Case Expr (List { pattern : Pattern, body : Expr })
+
+
+type Pattern
+    = PAnything
+    | PVar VarName
+    | PRecord (List VarName)
+    | PAlias Pattern VarName
+    | PUnit
+    | PTuple Pattern Pattern
+    | PTuple3 Pattern Pattern Pattern
+    | PList (List Pattern)
+    | PCons Pattern Pattern
+    | PBool Bool
+    | PChar Char
+    | PString String
+    | PInt Int
+    | PFloat Float

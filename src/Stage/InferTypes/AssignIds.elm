@@ -43,7 +43,8 @@ import Dict
 import Elm.AST.Canonical as Canonical
 import Elm.AST.Typed as Typed
 import Elm.Data.Located as Located
-import Elm.Data.Type as Type
+import Elm.Data.Qualifiedness exposing (Qualified)
+import Elm.Data.Type as Type exposing (TypeOrId)
 
 
 assignIds : Canonical.LocatedExpr -> ( Typed.LocatedExpr, Int )
@@ -63,7 +64,7 @@ assignIdsWith currentId locatedCanonicalExpr =
     )
 
 
-assignId : Int -> Typed.Expr_ -> ( Typed.Expr, Int )
+assignId : Int -> a -> ( ( a, TypeOrId Qualified ), Int )
 assignId currentId located =
     ( ( located, Type.Id currentId ), currentId + 1 )
 
@@ -275,3 +276,132 @@ assignIdsWithHelp currentId located =
             in
             assignId newId <|
                 Typed.Record (Dict.fromList bindingBodiesList)
+
+        Canonical.Case e branches ->
+            let
+                ( e_, id1 ) =
+                    assignIdsWith currentId e
+
+                ( branches_, newId ) =
+                    List.foldr
+                        (\{ pattern, body } ( acc, runningId ) ->
+                            let
+                                ( typedPattern, bodyId ) =
+                                    assignPatternIdsWith runningId pattern
+
+                                ( typedBody, nextId ) =
+                                    assignIdsWith bodyId body
+                            in
+                            ( { pattern = typedPattern
+                              , body = typedBody
+                              }
+                                :: acc
+                            , nextId
+                            )
+                        )
+                        ( [], id1 )
+                        branches
+            in
+            assignId newId <|
+                Typed.Case e_ branches_
+
+
+assignPatternIdsWith : Int -> Canonical.LocatedPattern -> ( Typed.LocatedPattern, Int )
+assignPatternIdsWith currentId locatedCanonicalPattern =
+    let
+        ( typedPattern, newId ) =
+            assignPatternIdsWithHelp currentId (Located.unwrap locatedCanonicalPattern)
+    in
+    {- Keep location, for error context -}
+    ( Located.replaceWith typedPattern locatedCanonicalPattern
+    , newId
+    )
+
+
+assignPatternIdsWithHelp : Int -> Canonical.Pattern -> ( Typed.Pattern, Int )
+assignPatternIdsWithHelp currentId located =
+    case located of
+        Canonical.PAnything ->
+            assignId currentId Typed.PAnything
+
+        Canonical.PVar varName ->
+            assignId currentId (Typed.PVar varName)
+
+        Canonical.PRecord varNames ->
+            assignId currentId (Typed.PRecord varNames)
+
+        Canonical.PAlias pattern varName ->
+            let
+                ( pattern_, id1 ) =
+                    assignPatternIdsWith currentId pattern
+            in
+            assignId id1 (Typed.PAlias pattern_ varName)
+
+        Canonical.PUnit ->
+            assignId currentId Typed.PUnit
+
+        Canonical.PTuple pattern1 pattern2 ->
+            let
+                ( pattern1_, id1 ) =
+                    assignPatternIdsWith currentId pattern1
+
+                ( pattern2_, id2 ) =
+                    assignPatternIdsWith id1 pattern2
+            in
+            assignId id2 (Typed.PTuple pattern1_ pattern2_)
+
+        Canonical.PTuple3 pattern1 pattern2 pattern3 ->
+            let
+                ( pattern1_, id1 ) =
+                    assignPatternIdsWith currentId pattern1
+
+                ( pattern2_, id2 ) =
+                    assignPatternIdsWith id1 pattern2
+
+                ( pattern3_, id3 ) =
+                    assignPatternIdsWith id2 pattern3
+            in
+            assignId id3 (Typed.PTuple3 pattern1_ pattern2_ pattern3_)
+
+        Canonical.PList items ->
+            let
+                ( items_, newId ) =
+                    List.foldr
+                        (\item ( acc, runningId ) ->
+                            let
+                                ( item_, nextId ) =
+                                    assignPatternIdsWith runningId item
+                            in
+                            ( item_ :: acc
+                            , nextId
+                            )
+                        )
+                        ( [], currentId )
+                        items
+            in
+            assignId newId (Typed.PList items_)
+
+        Canonical.PCons pattern1 pattern2 ->
+            let
+                ( pattern1_, id1 ) =
+                    assignPatternIdsWith currentId pattern1
+
+                ( pattern2_, id2 ) =
+                    assignPatternIdsWith id1 pattern2
+            in
+            assignId id2 (Typed.PCons pattern1_ pattern2_)
+
+        Canonical.PBool bool ->
+            assignId currentId (Typed.PBool bool)
+
+        Canonical.PChar char ->
+            assignId currentId (Typed.PChar char)
+
+        Canonical.PString string ->
+            assignId currentId (Typed.PString string)
+
+        Canonical.PInt int ->
+            assignId currentId (Typed.PInt int)
+
+        Canonical.PFloat float ->
+            assignId currentId (Typed.PFloat float)

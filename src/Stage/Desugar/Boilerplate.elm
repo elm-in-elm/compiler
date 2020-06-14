@@ -19,20 +19,20 @@ import OurExtras.Dict as Dict
 
 
 type alias DesugarExprFn =
-    Module Frontend.LocatedExpr TypeAnnotation (Maybe String)
+    Module Frontend.LocatedExpr TypeAnnotation PossiblyQualified
     -> Frontend.LocatedExpr
     -> Result DesugarError Canonical.LocatedExpr
 
 
 type alias DesugarQualifiednessFn =
-    Maybe String -> String
+    PossiblyQualified -> Qualified
 
 
 {-| Annotation desugaring happens after the declaration desugaring
 -}
 type alias DesugarAnnotationFn =
-    Declaration Canonical.LocatedExpr TypeAnnotation String
-    -> Result DesugarError (Declaration Canonical.LocatedExpr (Type Qualified) String)
+    Declaration Canonical.LocatedExpr TypeAnnotation Qualified
+    -> Result DesugarError (Declaration Canonical.LocatedExpr (Type Qualified) Qualified)
 
 
 desugarProject :
@@ -57,7 +57,7 @@ desugarProject desugarExpr desugarQualifiedness desugarAnnotation project =
 
 projectOfNewType :
     Project Frontend.ProjectFields
-    -> Dict ModuleName (Module Canonical.LocatedExpr (Type Qualified) String)
+    -> Dict ModuleName (Module Canonical.LocatedExpr (Type Qualified) Qualified)
     -> Project Canonical.ProjectFields
 projectOfNewType old modules =
     { elmJson = old.elmJson
@@ -74,8 +74,8 @@ desugarModule :
     DesugarExprFn
     -> DesugarQualifiednessFn
     -> DesugarAnnotationFn
-    -> Module Frontend.LocatedExpr TypeAnnotation (Maybe String)
-    -> Result DesugarError (Module Canonical.LocatedExpr (Type Qualified) String)
+    -> Module Frontend.LocatedExpr TypeAnnotation PossiblyQualified
+    -> Result DesugarError (Module Canonical.LocatedExpr (Type Qualified) Qualified)
 desugarModule desugarExpr desugarQualifiedness desugarAnnotation module_ =
     module_.declarations
         |> Dict.map
@@ -91,9 +91,9 @@ desugarModule desugarExpr desugarQualifiedness desugarAnnotation module_ =
 
 
 moduleOfNewType :
-    Module Frontend.LocatedExpr TypeAnnotation (Maybe String)
-    -> Dict VarName (Declaration Canonical.LocatedExpr (Type Qualified) String)
-    -> Module Canonical.LocatedExpr (Type Qualified) String
+    Module Frontend.LocatedExpr TypeAnnotation PossiblyQualified
+    -> Dict VarName (Declaration Canonical.LocatedExpr (Type Qualified) Qualified)
+    -> Module Canonical.LocatedExpr (Type Qualified) Qualified
 moduleOfNewType old newDecls =
     { imports = old.imports
     , name = old.name
@@ -110,8 +110,8 @@ desugarDeclaration :
     (Frontend.LocatedExpr -> Result DesugarError Canonical.LocatedExpr)
     -> DesugarQualifiednessFn
     -> DesugarAnnotationFn
-    -> Declaration Frontend.LocatedExpr TypeAnnotation (Maybe String)
-    -> Result DesugarError (Declaration Canonical.LocatedExpr (Type Qualified) String)
+    -> Declaration Frontend.LocatedExpr TypeAnnotation PossiblyQualified
+    -> Result DesugarError (Declaration Canonical.LocatedExpr (Type Qualified) Qualified)
 desugarDeclaration desugarExpr desugarQualifiedness desugarAnnotation decl =
     decl.body
         |> Declaration.mapBody desugarExpr desugarQualifiedness

@@ -27,13 +27,13 @@ import Maybe.Extra
 
 
 {-| -}
-type alias Module expr annotation userTypeModule =
+type alias Module expr annotation qualifiedness =
     -- TODO comments? doc comments?
     { -- TODO somewhere check that dependencies' exposing lists contain only what's in that module's exposing list
       imports : Dict ModuleName Import
     , name : ModuleName
     , filePath : FilePath
-    , declarations : Dict VarName (Declaration expr annotation userTypeModule)
+    , declarations : Dict VarName (Declaration expr annotation qualifiedness)
     , type_ : ModuleType
     , exposing_ : Exposing
     }

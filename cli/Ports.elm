@@ -4,6 +4,7 @@ port module Ports exposing
     , println
     , printlnStderr
     , readFile
+    , setExitCode
     , waitForReadFile
     , writeToFile
     )
@@ -28,6 +29,9 @@ port readErrorSubscription : ({ filePath : FilePath, errorCode : String } -> msg
 
 
 port writeToFile : { filePath : FilePath, fileContents : FileContents } -> Cmd msg
+
+
+port setExitCode : Int -> Cmd msg
 
 
 print : String -> Cmd msg

@@ -1,4 +1,7 @@
-module Elm.AST.Frontend.Unwrapped exposing (Expr(..))
+module Elm.AST.Frontend.Unwrapped exposing
+    ( Expr(..)
+    , Pattern(..)
+    )
 
 {-| Version of [Frontend AST](Elm.AST.Frontend) without the location info.
 
@@ -37,3 +40,21 @@ type Expr
     | Tuple Expr Expr
     | Tuple3 Expr Expr Expr
     | Record (List (Binding Expr))
+    | Case Expr (List { pattern : Pattern, body : Expr })
+
+
+type Pattern
+    = PAnything
+    | PVar VarName
+    | PRecord (List VarName)
+    | PAlias Pattern VarName
+    | PUnit
+    | PTuple Pattern Pattern
+    | PTuple3 Pattern Pattern Pattern
+    | PList (List Pattern)
+    | PCons Pattern Pattern
+    | PBool Bool
+    | PChar Char
+    | PString String
+    | PInt Int
+    | PFloat Float

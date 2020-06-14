@@ -174,7 +174,7 @@ desugarExpr modules thisModule located =
 
         Frontend.List items ->
             List.map recurse items
-                |> List.foldr (Result.map2 (::)) (Ok [])
+                |> Result.combine
                 |> map Canonical.List
 
         Frontend.Tuple e1 e2 ->
@@ -207,6 +207,118 @@ desugarExpr modules thisModule located =
                                     |> Dict.fromList
                                     |> Canonical.Record
                             )
+
+        Frontend.Case test branches ->
+            Result.map2
+                (\expr branches_ ->
+                    Located.replaceWith
+                        (Canonical.Case expr branches_)
+                        located
+                )
+                (recurse test)
+                (branches
+                    |> List.map
+                        (\{ pattern, body } ->
+                            Result.map2
+                                (\p b ->
+                                    { pattern = p
+                                    , body = b
+                                    }
+                                )
+                                (desugarPattern pattern)
+                                (recurse body)
+                        )
+                    |> Result.combine
+                )
+
+
+desugarPattern :
+    Frontend.LocatedPattern
+    -> Result DesugarError Canonical.LocatedPattern
+desugarPattern located =
+    let
+        recurse =
+            desugarPattern
+
+        return pattern =
+            Ok (Located.replaceWith pattern located)
+
+        map fn =
+            Result.map
+                (\pattern ->
+                    Located.replaceWith
+                        (fn pattern)
+                        located
+                )
+
+        map2 fn =
+            Result.map2
+                (\pattern1 pattern2 ->
+                    Located.replaceWith
+                        (fn pattern1 pattern2)
+                        located
+                )
+
+        map3 fn =
+            Result.map3
+                (\pattern1 pattern2 pattern3 ->
+                    Located.replaceWith
+                        (fn pattern1 pattern2 pattern3)
+                        located
+                )
+    in
+    case Located.unwrap located of
+        Frontend.PAnything ->
+            return <| Canonical.PAnything
+
+        Frontend.PVar varName ->
+            return <| Canonical.PVar varName
+
+        Frontend.PRecord varNames ->
+            return <| Canonical.PRecord varNames
+
+        Frontend.PAlias pattern varName ->
+            recurse pattern
+                |> map (\p -> Canonical.PAlias p varName)
+
+        Frontend.PUnit ->
+            return <| Canonical.PUnit
+
+        Frontend.PTuple pattern1 pattern2 ->
+            map2 Canonical.PTuple
+                (recurse pattern1)
+                (recurse pattern2)
+
+        Frontend.PTuple3 pattern1 pattern2 pattern3 ->
+            map3 Canonical.PTuple3
+                (recurse pattern1)
+                (recurse pattern2)
+                (recurse pattern3)
+
+        Frontend.PList patterns ->
+            List.map recurse patterns
+                |> List.foldr (Result.map2 (::)) (Ok [])
+                |> map Canonical.PList
+
+        Frontend.PCons pattern1 pattern2 ->
+            map2 Canonical.PCons
+                (recurse pattern1)
+                (recurse pattern2)
+
+        Frontend.PBool bool ->
+            return <| Canonical.PBool bool
+
+        Frontend.PChar char ->
+            return <| Canonical.PChar char
+
+        Frontend.PString string ->
+            return <| Canonical.PString string
+
+        Frontend.PInt int ->
+            return <| Canonical.PInt int
+
+        Frontend.PFloat float ->
+            return <| Canonical.PFloat float
 
 
 desugarQualifiedness : a
@@ -318,7 +430,7 @@ If they don't match, throw an error:
      x : Int
      y = 123 -- "x" /= "y"
 
-TODO Also, in case of unqualified types in the annotation, find their module and
+TODO Also, in case of PossiblyQualified types in the annotation, find their module and
 qualify them. (Example: `Int`'s module would go from `PossiblyQualified Nothing`
 to `Qualified "Basics"`.)
 
@@ -334,7 +446,7 @@ of `Foo` and fail right away.)
 
 TODO For qualified types, the module name must be imported already.
 
-TODO For unqualified types, either the type definition must be in the current
+TODO For PossiblyQualified types, either the type definition must be in the current
 module or imported via `exposing`.
 
 TODO test
@@ -363,7 +475,7 @@ checkAndDesugarTypeAnnotation decl =
         |> Maybe.withDefault (Ok <| throwAwayTypeAnnotationName decl)
 
 
-throwAwayTypeAnnotationName : Declaration a TypeAnnotation (Maybe String) -> Declaration a TypeUnq (Maybe String)
+throwAwayTypeAnnotationName : Declaration a TypeAnnotation (Maybe String) -> Declaration a (Type PossiblyQualified) (Maybe String)
 throwAwayTypeAnnotationName decl =
     { module_ = decl.module_
     , typeAnnotation = Maybe.map .type_ decl.typeAnnotation

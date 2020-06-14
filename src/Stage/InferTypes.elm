@@ -8,7 +8,8 @@ import Elm.Data.Declaration as Declaration exposing (Declaration)
 import Elm.Data.Located as Located
 import Elm.Data.ModuleName exposing (ModuleName)
 import Elm.Data.Project exposing (Project)
-import Elm.Data.Type exposing (Type(..), TypeOrId(..), TypeOrIdQ, TypeQ)
+import Elm.Data.Qualifiedness exposing (Qualified)
+import Elm.Data.Type exposing (Type(..), TypeOrId(..))
 import Stage.InferTypes.AssignIds as AssignIds
 import Stage.InferTypes.Boilerplate as Boilerplate
 import Stage.InferTypes.GenerateEquations as GenerateEquations
@@ -138,7 +139,7 @@ correctly. (Any references not fully resolved are bugs, please report them!)
 Remember to call itself recursively on children Exprs!
 
 -}
-getBetterType : SubstitutionMap -> TypeOrIdQ -> TypeOrIdQ
+getBetterType : SubstitutionMap -> TypeOrId Qualified -> TypeOrId Qualified
 getBetterType substitutionMap typeOrId =
     if SubstitutionMap.isEmpty substitutionMap then
         typeOrId
@@ -213,8 +214,8 @@ getBetterType substitutionMap typeOrId =
 
 unifyWithTypeAnnotation :
     SubstitutionMap
-    -> Declaration Typed.LocatedExpr TypeQ ModuleName
-    -> Result ( TypeError, SubstitutionMap ) ( Declaration Typed.LocatedExpr Never ModuleName, SubstitutionMap )
+    -> Declaration Typed.LocatedExpr (Type Qualified) Qualified
+    -> Result ( TypeError, SubstitutionMap ) ( Declaration Typed.LocatedExpr Never Qualified, SubstitutionMap )
 unifyWithTypeAnnotation substitutionMap decl =
     case ( decl.body, decl.typeAnnotation ) of
         ( Declaration.Value expr, Just annotationType ) ->
@@ -246,7 +247,7 @@ unifyWithTypeAnnotation substitutionMap decl =
                 )
 
 
-throwAwayType : Declaration a TypeQ b -> Declaration a Never b
+throwAwayType : Declaration a (Type Qualified) b -> Declaration a Never b
 throwAwayType decl =
     { module_ = decl.module_
     , typeAnnotation = Nothing

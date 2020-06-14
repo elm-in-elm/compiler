@@ -20,7 +20,7 @@ import Stage.InferTypes.SubstitutionMap as SubstitutionMap exposing ({- TODO may
 
 
 {-| -}
-type alias Declaration expr annotation userTypeModule =
+type alias Declaration expr annotation qualifiedness =
     { module_ : ModuleName
 
     -- What information from the annotation is yet to be used in the current stage?
@@ -37,7 +37,7 @@ type alias Declaration expr annotation userTypeModule =
     --               don't need it anymore)
     , typeAnnotation : Maybe annotation
     , name : VarName
-    , body : DeclarationBody expr userTypeModule
+    , body : DeclarationBody expr qualifiedness
     }
 
 
@@ -53,16 +53,16 @@ type alias Declaration expr annotation userTypeModule =
      --> TypeAlias ["a"] (Maybe (Var 0))
 
 -}
-type DeclarationBody expr userTypeModule
+type DeclarationBody expr qualifiedness
     = Value expr
     | TypeAlias
         { parameters : List VarName -- on the left side of =
         , -- TODO how to map from the parameters to the vars in the definition?
-          definition : Type userTypeModule
+          definition : Type qualifiedness
         }
     | CustomType
         { parameters : List VarName -- on the left side of =
-        , constructors : List (Constructor userTypeModule)
+        , constructors : List (Constructor qualifiedness)
         }
 
 
