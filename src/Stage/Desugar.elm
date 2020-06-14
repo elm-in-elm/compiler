@@ -310,15 +310,32 @@ todoDesugarType modules thisModule typeOrId =
 
 {-| Check the var name in the type annotation is the same as the one in the declaration:
 
-    x : Int
-    x =
-        123
+     x : Int
+     x = 123 -- "x" == "X"
 
 If they don't match, throw an error:
 
      x : Int
-     y =
-         123
+     y = 123 -- "x" /= "y"
+
+TODO Also, in case of unqualified types in the annotation, find their module and
+qualify them. (Example: `Int`'s module would go from `PossiblyQualified Nothing`
+to `Qualified "Basics"`.)
+
+TODO Also, in case of qualified types in the annotation, find their module on
+your own (to verify it exists) and check it's the same as the one in the type
+annotation.
+
+(Example 1: for `Maybe.Maybe` in the source we would first find the module of
+the `Maybe` type ourselves -- "Maybe" -- and then check it agrees. It does.)
+
+(Example 2: for `Nonexistent.Foo` in the source we would try to find the module
+of `Foo` and fail right away.)
+
+TODO For qualified types, the module name must be imported already.
+
+TODO For unqualified types, either the type definition must be in the current
+module or imported via `exposing`.
 
 TODO test
 
