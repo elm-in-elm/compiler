@@ -416,7 +416,7 @@ findDependenciesOfType modules thisModule type_ =
                 (f t2)
                 (f t3)
 
-        Type.UserDefinedType { module_, name, args } ->
+        Type.UserDefinedType { qualifiedness, name, args } ->
             let
                 argsDependencies =
                     args
@@ -425,7 +425,7 @@ findDependenciesOfType modules thisModule type_ =
                         |> Result.map List.concat
 
                 (Qualified moduleName) =
-                    module_
+                    qualifiedness
 
                 typeDependencies =
                     findDependenciesOfVar

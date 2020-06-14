@@ -16,6 +16,7 @@ import Elm.AST.Frontend as Frontend exposing (Expr(..), LocatedExpr, LocatedPatt
 import Elm.Compiler.Error
     exposing
         ( Error(..)
+        , ParseCompilerBug(..)
         , ParseContext(..)
         , ParseError(..)
         , ParseProblem(..)
@@ -195,13 +196,9 @@ effectModuleType =
 moduleName : Parser_ String
 moduleName =
     P.sequence
-        { start =
-            -- TODO is this the right way?
-            P.Token "" (ParseCompilerBug "moduleName start parser failed")
+        { start = P.Token "" (ParseCompilerBug ModuleNameStartParserFailed)
         , separator = P.Token "." ExpectingModuleDot
-        , end =
-            -- TODO is this the right way?
-            P.Token "" (ParseCompilerBug "moduleName start parser failed")
+        , end = P.Token "" (ParseCompilerBug ModuleNameEndParserFailed)
         , spaces = P.succeed ()
         , item = moduleNameWithoutDots
         , trailing = P.Forbidden
@@ -309,7 +306,7 @@ qualifiedTypeOrConstructorName =
                 P.map
                     (\varName_ ->
                         Frontend.Var
-                            { module_ = qualify modules
+                            { qualifiedness = qualify modules
                             , name = varName_
                             }
                     )
@@ -556,7 +553,7 @@ character quotes =
                     string
                         |> String.uncons
                         |> Maybe.map (Tuple.first >> P.succeed)
-                        |> Maybe.withDefault (P.problem (ParseCompilerBug "Multiple characters chomped in `character`"))
+                        |> Maybe.withDefault (P.problem (ParseCompilerBug MultipleCharactersChompedInCharacter))
                 )
         ]
 
@@ -643,7 +640,7 @@ var =
         [ P.map
             (\varName_ ->
                 Frontend.Var
-                    { module_ = PossiblyQualified Nothing
+                    { qualifiedness = PossiblyQualified Nothing
                     , name = varName_
                     }
             )
@@ -666,13 +663,9 @@ varName =
 qualifiers : Parser_ (List ModuleName)
 qualifiers =
     P.sequence
-        { start =
-            -- TODO is this the right way?
-            P.Token "" (ParseCompilerBug "qualifiers start parser failed")
+        { start = P.Token "" (ParseCompilerBug QualifiersStartParserFailed)
         , separator = P.Token "." ExpectingQualifiedVarNameDot
-        , end =
-            -- TODO is this the right way?
-            P.Token "" (ParseCompilerBug "qualifiers end parser failed")
+        , end = P.Token "" (ParseCompilerBug QualifiersEndParserFailed)
         , spaces = P.succeed ()
         , item = moduleNameWithoutDots
         , trailing = P.Mandatory
@@ -697,7 +690,7 @@ qualifiedVar =
                 P.map
                     (\varName_ ->
                         Frontend.Var
-                            { module_ = qualify modules
+                            { qualifiedness = qualify modules
                             , name = varName_
                             }
                     )
@@ -809,7 +802,7 @@ promoteArguments arguments expr_ =
     case expr_ of
         Var var_ ->
             if
-                (var_.module_ == PossiblyQualified Nothing)
+                (var_.qualifiedness == PossiblyQualified Nothing)
                     && List.member var_.name arguments
             then
                 Argument var_.name
@@ -1399,7 +1392,7 @@ userDefinedType =
     P.succeed
         (\modules name args ->
             Type.UserDefinedType
-                { module_ = qualify modules
+                { qualifiedness = qualify modules
                 , name = name
                 , args = args
                 }

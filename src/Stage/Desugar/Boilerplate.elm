@@ -28,7 +28,8 @@ type alias DesugarQualifiednessFn =
     PossiblyQualified -> Qualified
 
 
-{-| Annotation desugaring happens after the declaration desugaring
+{-| Annotation desugaring happens after the declaration desugaring, so the
+"body" contents are already qualified and only the TypeAnnotation type changes.
 -}
 type alias DesugarAnnotationFn =
     Declaration Canonical.LocatedExpr TypeAnnotation Qualified

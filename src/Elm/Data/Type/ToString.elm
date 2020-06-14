@@ -1,6 +1,7 @@
 module Elm.Data.Type.ToString exposing
     ( toString, toStringType
-    , State, fromType, fromTypeOrId, fromTypes, fromTypesOrIds
+    , toStringPossiblyQualified, toStringTypePossiblyQualified
+    , State, fromType, fromTypeOrId, fromTypes, fromTypesOrIds, addType, addTypeOrId
     , niceVarName
     )
 
@@ -38,12 +39,14 @@ If you didn't do that and passed `emptyState` to both cases, you'd get:
 Which would be wrong and misleading!
 
 @docs toString, toStringType
-@docs State, fromType, fromTypeOrId, fromTypes, fromTypesOrIds
+@docs toStringPossiblyQualified, toStringTypePossiblyQualified
+@docs State, fromType, fromTypeOrId, fromTypes, fromTypesOrIds, addType, addTypeOrId
 @docs niceVarName
 
 -}
 
 import Dict exposing (Dict)
+import Elm.Data.Qualifiedness exposing (PossiblyQualified(..), Qualified(..))
 import Elm.Data.Type as Type exposing (Type(..), TypeOrId(..))
 import Set exposing (Set)
 
@@ -102,21 +105,90 @@ fromTypesOrIds typesOrIds =
         }
 
 
+addType : Type a -> State -> State
+addType type_ (State state) =
+    State
+        { state
+            | used =
+                Set.union
+                    (Set.fromList (Type.varNames type_))
+                    state.used
+        }
+
+
+addTypeOrId : TypeOrId a -> State -> State
+addTypeOrId typeOrId (State state) =
+    State
+        { state
+            | used =
+                Set.union
+                    (Set.fromList (Type.varNames_ typeOrId))
+                    state.used
+        }
+
+
+qualifiedToString : Qualified -> String
+qualifiedToString (Qualified moduleName) =
+    moduleName
+
+
+possiblyQualifiedToString : PossiblyQualified -> String
+possiblyQualifiedToString (PossiblyQualified maybeModuleName) =
+    maybeModuleName
+        |> Maybe.withDefault ""
+
+
 {-| The main function of this module. Use the state returned here
 in the subsequent calls (if they're going to end up as part of the same string!)
 -}
-toString : State -> TypeOrId a -> ( String, State )
+toString : State -> TypeOrId Qualified -> ( String, State )
 toString state type_ =
+    toString_
+        qualifiedToString
+        state
+        type_
+
+
+toStringType : State -> Type Qualified -> ( String, State )
+toStringType state type_ =
+    toStringType_
+        qualifiedToString
+        state
+        type_
+
+
+toStringPossiblyQualified : State -> TypeOrId PossiblyQualified -> ( String, State )
+toStringPossiblyQualified state type_ =
+    toString_
+        possiblyQualifiedToString
+        state
+        type_
+
+
+toStringTypePossiblyQualified : State -> Type PossiblyQualified -> ( String, State )
+toStringTypePossiblyQualified state type_ =
+    toStringType_
+        possiblyQualifiedToString
+        state
+        type_
+
+
+toString_ : (qualifiedness -> String) -> State -> TypeOrId qualifiedness -> ( String, State )
+toString_ qualifiednessToString state type_ =
     case type_ of
         Id id ->
             getName state id
 
         Type type__ ->
-            toStringType state type__
+            toStringType_ qualifiednessToString state type__
 
 
-toStringType : State -> Type a -> ( String, State )
-toStringType state type_ =
+toStringType_ : (qualifiedness -> String) -> State -> Type qualifiedness -> ( String, State )
+toStringType_ qualifiednessToString state type_ =
+    let
+        recur state_ type__ =
+            toString_ qualifiednessToString state_ type__
+    in
     case type_ of
         Var string ->
             ( string, state )
@@ -130,11 +202,11 @@ toStringType state type_ =
                     args.to
 
                 ( t1String, state1 ) =
-                    toString state t1
+                    recur state t1
                         |> maybeWrapParens t1
 
                 ( t2String, state2 ) =
-                    toString state1 t2
+                    recur state1 t2
             in
             ( t1String ++ " -> " ++ t2String
             , state2
@@ -143,7 +215,7 @@ toStringType state type_ =
         List param ->
             let
                 ( paramString, state1 ) =
-                    toString state param
+                    recur state param
                         |> maybeWrapParens param
             in
             ( "List " ++ paramString
@@ -171,29 +243,29 @@ toStringType state type_ =
         Tuple t1 t2 ->
             let
                 ( t1String, state1 ) =
-                    toString state t1
+                    recur state t1
 
                 ( t2String, state2 ) =
-                    toString state1 t2
+                    recur state1 t2
             in
             ( "( " ++ t1String ++ ", " ++ t2String ++ " )", state2 )
 
         Tuple3 t1 t2 t3 ->
             let
                 ( t1String, state1 ) =
-                    toString state t1
+                    recur state t1
 
                 ( t2String, state2 ) =
-                    toString state1 t2
+                    recur state1 t2
 
                 ( t3String, state3 ) =
-                    toString state2 t3
+                    recur state2 t3
             in
             ( "( " ++ t1String ++ ", " ++ t2String ++ ", " ++ t3String ++ " )", state3 )
 
-        UserDefinedType { name, args } ->
+        UserDefinedType { qualifiedness, name, args } ->
             let
-                ( argsString, state1 ) =
+                ( spaceAndArgs, state1 ) =
                     if List.isEmpty args then
                         ( "", state )
 
@@ -202,15 +274,25 @@ toStringType state type_ =
                             (\arg ( strings, state2 ) ->
                                 let
                                     ( string, state3 ) =
-                                        toString state2 arg
+                                        recur state2 arg
                                 in
                                 ( string :: strings, state3 )
                             )
                             ( [], state )
                             args
                             |> Tuple.mapFirst (\argStrings -> " " ++ String.join " " argStrings)
+
+                moduleName =
+                    qualifiednessToString qualifiedness
+
+                moduleNameAndDot =
+                    if String.isEmpty moduleName then
+                        moduleName
+
+                    else
+                        moduleName ++ "."
             in
-            ( name ++ argsString
+            ( moduleNameAndDot ++ name ++ spaceAndArgs
             , state1
             )
 
@@ -221,7 +303,7 @@ toStringType state type_ =
                         (\param ( acc, state2 ) ->
                             let
                                 ( string, state3 ) =
-                                    niceRecordBinding state2 param
+                                    niceRecordBinding qualifiednessToString state2 param
                             in
                             ( string :: acc, state3 )
                         )
@@ -312,11 +394,11 @@ letter int =
         |> String.fromChar
 
 
-niceRecordBinding : State -> ( String, TypeOrId a ) -> ( String, State )
-niceRecordBinding state ( varName, typeOrId ) =
+niceRecordBinding : (qualifiedness -> String) -> State -> ( String, TypeOrId qualifiedness ) -> ( String, State )
+niceRecordBinding qualifiednessToString state ( varName, typeOrId ) =
     let
         ( typeStr, state1 ) =
-            toString state typeOrId
+            toString_ qualifiednessToString state typeOrId
     in
     ( varName ++ " : " ++ typeStr, state1 )
 

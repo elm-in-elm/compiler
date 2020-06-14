@@ -1,7 +1,7 @@
 module Stage.Desugar exposing
-    ( checkAndDesugarTypeAnnotation
-    , desugar
+    ( desugar
     , desugarExpr
+    , desugarTypeAnnotation
     )
 
 import Basics.Extra exposing (flip)
@@ -9,15 +9,20 @@ import Dict exposing (Dict)
 import Dict.Extra as Dict
 import Elm.AST.Canonical as Canonical
 import Elm.AST.Frontend as Frontend
-import Elm.Compiler.Error exposing (DesugarError(..), Error(..))
+import Elm.Compiler.Error
+    exposing
+        ( DesugarCompilerBug(..)
+        , DesugarError(..)
+        , Error(..)
+        )
 import Elm.Data.Binding as Binding exposing (Binding)
 import Elm.Data.Declaration exposing (Declaration)
 import Elm.Data.Located as Located
 import Elm.Data.Module as Module exposing (Module)
 import Elm.Data.ModuleName exposing (ModuleName)
 import Elm.Data.Project exposing (Project)
-import Elm.Data.Qualifiedness exposing (PossiblyQualified, Qualified)
-import Elm.Data.Type exposing (Type(..), TypeOrId(..))
+import Elm.Data.Qualifiedness exposing (PossiblyQualified(..), Qualified(..))
+import Elm.Data.Type as Type exposing (Type(..), TypeOrId(..))
 import Elm.Data.TypeAnnotation exposing (TypeAnnotation)
 import Elm.Data.VarName exposing (VarName)
 import Maybe.Extra
@@ -31,7 +36,7 @@ desugar project =
         |> Boilerplate.desugarProject
             (desugarExpr project.modules)
             desugarQualifiedness
-            checkAndDesugarTypeAnnotation
+            desugarTypeAnnotation
         |> Result.mapError DesugarError
 
 
@@ -40,24 +45,24 @@ of them. Thus, we get some separation of concerns - each pass only cares about
 a small subset of the whole process!
 -}
 desugarExpr :
-    Dict ModuleName (Module Frontend.LocatedExpr TypeAnnotation (Maybe String))
-    -> Module Frontend.LocatedExpr TypeAnnotation (Maybe String)
+    Dict ModuleName (Module Frontend.LocatedExpr TypeAnnotation PossiblyQualified)
+    -> Module Frontend.LocatedExpr TypeAnnotation PossiblyQualified
     -> Frontend.LocatedExpr
     -> Result DesugarError Canonical.LocatedExpr
-desugarExpr modules thisModule located =
+desugarExpr modules thisModule locatedExpr =
     let
         recurse =
             desugarExpr modules thisModule
 
         return expr =
-            Ok (Located.replaceWith expr located)
+            Ok (Located.replaceWith expr locatedExpr)
 
         map fn =
             Result.map
                 (\expr ->
                     Located.replaceWith
                         (fn expr)
-                        located
+                        locatedExpr
                 )
 
         map2 fn =
@@ -65,7 +70,7 @@ desugarExpr modules thisModule located =
                 (\expr1 expr2 ->
                     Located.replaceWith
                         (fn expr1 expr2)
-                        located
+                        locatedExpr
                 )
 
         map3 fn =
@@ -73,10 +78,10 @@ desugarExpr modules thisModule located =
                 (\expr1 expr2 expr3 ->
                     Located.replaceWith
                         (fn expr1 expr2 expr3)
-                        located
+                        locatedExpr
                 )
     in
-    case Located.unwrap located of
+    case Located.unwrap locatedExpr of
         Frontend.Int int ->
             return <| Canonical.Int int
 
@@ -94,7 +99,13 @@ desugarExpr modules thisModule located =
 
         Frontend.Var var ->
             Module.findModuleOfVar modules thisModule var
-                |> map (\moduleName -> Canonical.Var { module_ = moduleName, name = var.name })
+                |> map
+                    (\moduleName ->
+                        Canonical.Var
+                            { module_ = moduleName
+                            , name = var.name
+                            }
+                    )
 
         Frontend.Argument varName ->
             return <| Canonical.Argument varName
@@ -112,11 +123,11 @@ desugarExpr modules thisModule located =
         Frontend.ListConcat e1 e2 ->
             let
                 region =
-                    Located.getRegion located
+                    Located.getRegion locatedExpr
 
                 listConcatVar =
                     Frontend.Var
-                        { module_ = Just "List"
+                        { qualifiedness = PossiblyQualified <| Just "List"
                         , name = "append"
                         }
                         |> Located.located region
@@ -131,7 +142,7 @@ desugarExpr modules thisModule located =
 
         Frontend.Lambda { arguments, body } ->
             recurse body
-                |> Result.map (curryLambda located arguments)
+                |> Result.map (curryLambda locatedExpr arguments)
 
         Frontend.Call { fn, argument } ->
             map2
@@ -213,7 +224,7 @@ desugarExpr modules thisModule located =
                 (\expr branches_ ->
                     Located.replaceWith
                         (Canonical.Case expr branches_)
-                        located
+                        locatedExpr
                 )
                 (recurse test)
                 (branches
@@ -326,98 +337,137 @@ desugarQualifiedness =
     Debug.todo "desugarQualifiedness"
 
 
-{-| TODO this should be used somewhere in the checkAndDesugarTypeAnnotation
-function?
-
-TODO or is this even needed? This was `desugarType` before we figured out the
-declaration needs to change the qualifiedness.
-
-We only do stuff in the UserDefinedType case. The rest is boilerplate.
-
--}
-todoDesugarType :
-    Dict ModuleName (Module Frontend.LocatedExpr TypeAnnotation (Maybe String))
-    -> Module Frontend.LocatedExpr TypeAnnotation (Maybe String)
+coerceTypeOrIdToType :
+    Type PossiblyQualified
     -> TypeOrId PossiblyQualified
-    -> Result DesugarError (TypeOrId Qualified)
-todoDesugarType modules thisModule typeOrId =
+    -> Result DesugarError (Type PossiblyQualified)
+coerceTypeOrIdToType parentType typeOrId =
+    typeOrId
+        |> Type.getType
+        |> Result.fromMaybe
+            (DesugarCompilerBug <|
+                DesugaredTypeWasId
+                    { parent = parentType
+                    , id = typeOrId
+                    }
+            )
+
+
+{-| We only do stuff in the UserDefinedType case. The rest is boilerplate.
+-}
+desugarType :
+    Dict ModuleName (Module Frontend.LocatedExpr TypeAnnotation PossiblyQualified)
+    -> Module Frontend.LocatedExpr TypeAnnotation PossiblyQualified
+    -> Type PossiblyQualified
+    -> Result DesugarError (Type Qualified)
+desugarType modules thisModule type_ =
     let
         f =
-            todoDesugarType modules thisModule
+            desugarType modules thisModule
     in
-    case typeOrId of
-        Id id ->
-            Ok <| Id id
+    case type_ of
+        Var s ->
+            Ok <| Var s
 
-        Type type_ ->
-            case type_ of
-                Var s ->
-                    Ok <| Type <| Var s
+        Function { from, to } ->
+            Result.map2
+                (\from_ to_ ->
+                    Function
+                        { from = Type from_
+                        , to = Type to_
+                        }
+                )
+                (from
+                    |> coerceTypeOrIdToType type_
+                    |> Result.andThen f
+                )
+                (to
+                    |> coerceTypeOrIdToType type_
+                    |> Result.andThen f
+                )
 
-                Function { from, to } ->
-                    Result.map2
-                        (\from_ to_ -> Type <| Function { from = from_, to = to_ })
-                        (f from)
-                        (f to)
+        Int ->
+            Ok Int
 
-                Int ->
-                    Ok <| Type Int
+        Float ->
+            Ok Float
 
-                Float ->
-                    Ok <| Type Float
+        Char ->
+            Ok Char
 
-                Char ->
-                    Ok <| Type Char
+        String ->
+            Ok String
 
-                String ->
-                    Ok <| Type String
+        Bool ->
+            Ok Bool
 
-                Bool ->
-                    Ok <| Type Bool
+        List listType ->
+            listType
+                |> coerceTypeOrIdToType type_
+                |> Result.andThen f
+                |> Result.map (Type >> List)
 
-                List listType ->
-                    Result.map (Type << List)
-                        (f listType)
+        Unit ->
+            Ok Unit
 
-                Unit ->
-                    Ok <| Type Unit
+        Tuple a b ->
+            Result.map2 (\a_ b_ -> Tuple (Type a_) (Type b_))
+                (a |> coerceTypeOrIdToType type_ |> Result.andThen f)
+                (b |> coerceTypeOrIdToType type_ |> Result.andThen f)
 
-                Tuple a b ->
-                    Result.map2 (\a_ b_ -> Type <| Tuple a_ b_)
-                        (f a)
-                        (f b)
+        Tuple3 a b c ->
+            Result.map3 (\a_ b_ c_ -> Tuple3 (Type a_) (Type b_) (Type c_))
+                (a |> coerceTypeOrIdToType type_ |> Result.andThen f)
+                (b |> coerceTypeOrIdToType type_ |> Result.andThen f)
+                (c |> coerceTypeOrIdToType type_ |> Result.andThen f)
 
-                Tuple3 a b c ->
-                    Result.map3 (\a_ b_ c_ -> Type <| Tuple3 a_ b_ c_)
-                        (f a)
-                        (f b)
-                        (f c)
+        Record bindings ->
+            bindings
+                |> Dict.toList
+                |> List.map {- pheeew... -} (Result.combineMapSecond f)
+                |> Result.combine
+                |> Result.map (Dict.fromList >> Record)
 
-                Record bindings ->
-                    bindings
-                        |> Dict.toList
-                        |> List.map {- pheeew... -} (Result.combineMapSecond f)
-                        |> Result.combine
-                        |> Result.map (Dict.fromList >> Record >> Type)
+        UserDefinedType { qualifiedness, name, args } ->
+            Result.map2
+                (\foundModuleName desugaredArgs ->
+                    UserDefinedType
+                        { qualifiedness = Qualified foundModuleName
+                        , name = name
+                        , args = desugaredArgs
+                        }
+                )
+                (Module.findModuleOfVar
+                    modules
+                    thisModule
+                    { qualifiedness = qualifiedness
+                    , name = name
+                    }
+                )
+                (Result.combine (List.map f args))
 
-                UserDefinedType { module_, name, args } ->
-                    Result.map2
-                        (\foundModuleName desugaredArgs ->
-                            Type <|
-                                UserDefinedType
-                                    { module_ = foundModuleName
-                                    , name = name
-                                    , args = desugaredArgs
-                                    }
-                        )
-                        (Module.findModuleOfVar
-                            modules
-                            thisModule
-                            { module_ = module_
-                            , name = name
-                            }
-                        )
-                        (Result.combine (List.map f args))
+
+{-| TODO test (make sure the integration tests properly fail/succeed and have snapshots)
+-}
+desugarTypeAnnotation :
+    Declaration a TypeAnnotation b
+    -> Result DesugarError (Declaration a (Type Qualified) b)
+desugarTypeAnnotation decl =
+    decl
+        |> checkNamesAgree
+        |> Result.andThen desugarTypeAnnotationQualifiedness
+
+
+desugarTypeAnnotationQualifiedness :
+    Declaration a (Type PossiblyQualified) b
+    -> Result DesugarError (Declaration a (Type Qualified) b)
+desugarTypeAnnotationQualifiedness decl =
+    decl.typeAnnotation
+        |> Maybe.map
+            (\type_ ->
+                desugarType (Type type_)
+            )
+        |> Maybe.withDefault (Ok decl)
 
 
 {-| Check the var name in the type annotation is the same as the one in the declaration:
@@ -430,36 +480,12 @@ If they don't match, throw an error:
      x : Int
      y = 123 -- "x" /= "y"
 
-TODO Also, in case of PossiblyQualified types in the annotation, find their module and
-qualify them. (Example: `Int`'s module would go from `PossiblyQualified Nothing`
-to `Qualified "Basics"`.)
-
-TODO Also, in case of qualified types in the annotation, find their module on
-your own (to verify it exists) and check it's the same as the one in the type
-annotation.
-
-(Example 1: for `Maybe.Maybe` in the source we would first find the module of
-the `Maybe` type ourselves -- "Maybe" -- and then check it agrees. It does.)
-
-(Example 2: for `Nonexistent.Foo` in the source we would try to find the module
-of `Foo` and fail right away.)
-
-TODO For qualified types, the module name must be imported already.
-
-TODO For PossiblyQualified types, either the type definition must be in the current
-module or imported via `exposing`.
-
-TODO test (make sure the integration tests properly fail/succeed and have snapshots)
-
 -}
-checkAndDesugarTypeAnnotation :
-    Declaration a TypeAnnotation (Maybe String)
-    -> Result DesugarError (Declaration a (Type Qualified) (Maybe String))
-checkAndDesugarTypeAnnotation decl =
-    start here
-        -- TODO find the modules of user types here too
-        -- TODO this can be done using todoDesugarType
-        decl.typeAnnotation
+checkNamesAgree :
+    Declaration a TypeAnnotation b
+    -> Result DesugarError (Declaration a (Type PossiblyQualified) b)
+checkNamesAgree decl =
+    decl.typeAnnotation
         |> Maybe.map
             (\{ varName, type_ } ->
                 if varName == decl.name then
@@ -475,7 +501,9 @@ checkAndDesugarTypeAnnotation decl =
         |> Maybe.withDefault (Ok <| throwAwayTypeAnnotationName decl)
 
 
-throwAwayTypeAnnotationName : Declaration a TypeAnnotation (Maybe String) -> Declaration a (Type PossiblyQualified) (Maybe String)
+throwAwayTypeAnnotationName :
+    Declaration a TypeAnnotation b
+    -> Declaration a (Type PossiblyQualified) b
 throwAwayTypeAnnotationName decl =
     { module_ = decl.module_
     , typeAnnotation = Maybe.map .type_ decl.typeAnnotation

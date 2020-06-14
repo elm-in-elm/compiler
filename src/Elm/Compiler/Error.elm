@@ -1,7 +1,7 @@
 module Elm.Compiler.Error exposing
     ( Error(..), toString
-    , ParseError(..), ParseProblem(..), ParseContext(..)
-    , DesugarError(..)
+    , ParseError(..), ParseCompilerBug(..), ParseProblem(..), ParseContext(..)
+    , DesugarError(..), DesugarCompilerBug(..)
     , TypeError(..)
     , EmitError(..)
     )
@@ -9,8 +9,8 @@ module Elm.Compiler.Error exposing
 {-| All the errors the compiler can encounter.
 
 @docs Error, toString
-@docs ParseError, ParseProblem, ParseContext
-@docs DesugarError
+@docs ParseError, ParseCompilerBug, ParseProblem, ParseContext
+@docs DesugarError, DesugarCompilerBug
 @docs TypeError
 @docs EmitError
 
@@ -21,7 +21,7 @@ import Elm.Data.FileContents exposing (FileContents)
 import Elm.Data.FilePath exposing (FilePath)
 import Elm.Data.Located exposing (Located)
 import Elm.Data.ModuleName exposing (ModuleName)
-import Elm.Data.Qualifiedness exposing (Qualified)
+import Elm.Data.Qualifiedness exposing (PossiblyQualified(..), Qualified)
 import Elm.Data.Type as Type exposing (Type, TypeOrId(..))
 import Elm.Data.Type.ToString as TypeToString
 import Elm.Data.VarName exposing (VarName)
@@ -148,14 +148,25 @@ type ParseProblem
     | InvalidTab
     | InvalidNumber
     | TriedToParseCharacterStoppingDelimiter
-    | ParseCompilerBug String
+    | ParseCompilerBug ParseCompilerBug
+
+
+type ParseCompilerBug
+    = ModuleNameStartParserFailed
+    | ModuleNameEndParserFailed
+    | MultipleCharactersChompedInCharacter
+    | QualifiersStartParserFailed
+    | QualifiersEndParserFailed
 
 
 {-| Errors encountered during [desugaring](Elm.Compiler#desugarExpr) from the [Frontend AST](Elm.AST.Frontend) to [Canonical AST](Elm.AST.Canonical).
 -}
 type DesugarError
     = VarNameNotFound
-        { var : { module_ : Maybe ModuleName, name : VarName }
+        { var :
+            { qualifiedness : PossiblyQualified
+            , name : VarName
+            }
         , insideModule : ModuleName
         }
     | AmbiguousName
@@ -172,6 +183,16 @@ type DesugarError
         , insideModule : ModuleName
         , firstOccurrence : Located ()
         , secondOccurrence : Located ()
+        }
+    | DesugarCompilerBug DesugarCompilerBug
+
+
+{-| TODO it would be great if we could get rid of these
+-}
+type DesugarCompilerBug
+    = DesugaredTypeWasId
+        { id : TypeOrId PossiblyQualified
+        , parent : Type PossiblyQualified
         }
 
 
@@ -255,7 +276,7 @@ toString error =
                                 (\possibleModule ->
                                     " - "
                                         ++ fullVarName
-                                            { module_ = Just possibleModule
+                                            { qualifiedness = PossiblyQualified <| Just possibleModule
                                             , name = name
                                             }
                                 )
@@ -284,6 +305,26 @@ toString error =
                        How can I know which one you want? Rename one of them!
                     -}
                     "This record has multiple `" ++ name ++ "` fields."
+
+                DesugarCompilerBug (DesugaredTypeWasId { id, parent }) ->
+                    let
+                        ( idString, state1 ) =
+                            TypeToString.toStringPossiblyQualified
+                                (TypeToString.fromTypeOrId id
+                                    |> TypeToString.addType parent
+                                )
+                                id
+
+                        ( parentString, _ ) =
+                            TypeToString.toStringTypePossiblyQualified
+                                state1
+                                parent
+                    in
+                    "Type `"
+                        ++ parentString
+                        ++ "` contained a TypeOrId that was supposed to be Type but instead was an Id: `"
+                        ++ idString
+                        ++ "`."
 
         TypeError typeError ->
             case typeError of
@@ -354,9 +395,13 @@ toString error =
                     "Emit stage bug: " ++ bug
 
 
-fullVarName : { module_ : Maybe ModuleName, name : VarName } -> String
-fullVarName { module_, name } =
-    module_
+fullVarName : { qualifiedness : PossiblyQualified, name : VarName } -> String
+fullVarName { qualifiedness, name } =
+    let
+        (PossiblyQualified maybeModule) =
+            qualifiedness
+    in
+    maybeModule
         |> Maybe.map (\moduleAlias -> moduleAlias ++ "." ++ name)
         |> Maybe.withDefault name
 
@@ -560,7 +605,27 @@ parseProblemToString problem =
             "TriedToParseCharacterStoppingDelimiter"
 
         ParseCompilerBug bug ->
-            "Parse stage bug: " ++ bug
+            "Parse compiler bug: "
+                ++ parseCompilerBugToString bug
+
+
+parseCompilerBugToString : ParseCompilerBug -> String
+parseCompilerBugToString bug =
+    case bug of
+        ModuleNameStartParserFailed ->
+            "moduleName start parser failed"
+
+        ModuleNameEndParserFailed ->
+            "moduleName end parser failed"
+
+        MultipleCharactersChompedInCharacter ->
+            "multiple characters chomped in character"
+
+        QualifiersStartParserFailed ->
+            "qualifiers start parser failed"
+
+        QualifiersEndParserFailed ->
+            "qualifiers end parser failed"
 
 
 filenameFromContext : List { a | context : ParseContext } -> Maybe FilePath

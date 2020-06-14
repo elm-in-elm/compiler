@@ -21,9 +21,11 @@ import Elm.Data.Exposing exposing (ExposedItem(..), Exposing(..))
 import Elm.Data.FilePath exposing (FilePath)
 import Elm.Data.Import exposing (Import)
 import Elm.Data.ModuleName exposing (ModuleName)
+import Elm.Data.Qualifiedness exposing (PossiblyQualified(..))
 import Elm.Data.TypeAnnotation exposing (TypeAnnotation)
 import Elm.Data.VarName exposing (VarName)
 import Maybe.Extra
+import Result.Extra
 
 
 {-| -}
@@ -157,23 +159,31 @@ TODO "module name not found" somewhere... maybe here, maybe parsing? dunno yet..
 findModuleOfVar :
     Dict ModuleName (Module expr annotation qualifiedness)
     -> Module expr annotation qualifiedness
-    -> { module_ : Maybe ModuleName, name : VarName }
+    -> { qualifiedness : PossiblyQualified, name : VarName }
     -> Result DesugarError ModuleName
 findModuleOfVar modules thisModule var =
     unqualifiedVarInThisModule thisModule var
         |> Maybe.Extra.orElseLazy (\() -> unqualifiedVarInImportedModule modules thisModule var)
         |> Maybe.Extra.orElseLazy (\() -> qualifiedVarInImportedModule modules var)
         |> Maybe.Extra.orElseLazy (\() -> qualifiedVarInAliasedModule modules thisModule var)
-        |> Result.fromMaybe (VarNameNotFound { var = var, insideModule = thisModule.name })
-        |> Result.andThen identity
+        |> Result.fromMaybe
+            (VarNameNotFound
+                { var = var
+                , insideModule = thisModule.name
+                }
+            )
+        |> Result.Extra.join
 
 
 unqualifiedVarInThisModule :
     Module expr annotation qualifiedness
-    -> { module_ : Maybe ModuleName, name : VarName }
+    -> { qualifiedness : PossiblyQualified, name : VarName }
     -> Maybe (Result DesugarError ModuleName)
-unqualifiedVarInThisModule thisModule { module_, name } =
-    if module_ == Nothing && Dict.member name thisModule.declarations then
+unqualifiedVarInThisModule thisModule { qualifiedness, name } =
+    if
+        (qualifiedness == PossiblyQualified Nothing)
+            && Dict.member name thisModule.declarations
+    then
         Just (Ok thisModule.name)
 
     else
@@ -183,10 +193,10 @@ unqualifiedVarInThisModule thisModule { module_, name } =
 unqualifiedVarInImportedModule :
     Dict ModuleName (Module expr annotation qualifiedness)
     -> Module expr annotation qualifiedness
-    -> { module_ : Maybe ModuleName, name : VarName }
+    -> { qualifiedness : PossiblyQualified, name : VarName }
     -> Maybe (Result DesugarError ModuleName)
-unqualifiedVarInImportedModule modules thisModule { module_, name } =
-    if module_ == Nothing then
+unqualifiedVarInImportedModule modules thisModule { qualifiedness, name } =
+    if qualifiedness == PossiblyQualified Nothing then
         -- find a module which exposes that var
         let
             acceptableImports =
@@ -225,10 +235,14 @@ unqualifiedVarInImportedModule modules thisModule { module_, name } =
 -}
 qualifiedVarInImportedModule :
     Dict ModuleName (Module expr annotation qualifiedness)
-    -> { module_ : Maybe ModuleName, name : VarName }
+    -> { qualifiedness : PossiblyQualified, name : VarName }
     -> Maybe (Result DesugarError ModuleName)
-qualifiedVarInImportedModule modules { module_, name } =
-    module_
+qualifiedVarInImportedModule modules { qualifiedness, name } =
+    let
+        (PossiblyQualified maybeModule) =
+            qualifiedness
+    in
+    maybeModule
         |> Maybe.andThen (\m -> Dict.get m modules)
         |> Maybe.andThen
             (\module__ ->
@@ -243,13 +257,19 @@ qualifiedVarInImportedModule modules { module_, name } =
 qualifiedVarInAliasedModule :
     Dict ModuleName (Module expr annotation qualifiedness)
     -> Module expr annotation qualifiedness
-    -> { module_ : Maybe ModuleName, name : VarName }
+    -> { qualifiedness : PossiblyQualified, name : VarName }
     -> Maybe (Result DesugarError ModuleName)
-qualifiedVarInAliasedModule modules thisModule { module_, name } =
+qualifiedVarInAliasedModule modules thisModule { qualifiedness, name } =
     let
+        (PossiblyQualified maybeModule) =
+            qualifiedness
+
         unaliasedModuleName =
-            Maybe.andThen (unalias thisModule) module_
+            maybeModule
+                |> Maybe.andThen (unalias thisModule)
     in
     qualifiedVarInImportedModule
         modules
-        { module_ = unaliasedModuleName, name = name }
+        { qualifiedness = PossiblyQualified unaliasedModuleName
+        , name = name
+        }

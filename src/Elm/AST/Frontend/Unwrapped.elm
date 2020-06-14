@@ -26,7 +26,7 @@ type Expr
     | Char Char
     | String String
     | Bool Bool
-    | Var { module_ : PossiblyQualified, name : VarName }
+    | Var { qualifiedness : PossiblyQualified, name : VarName }
     | Argument VarName
     | Plus Expr Expr
     | Cons Expr Expr

@@ -36,7 +36,7 @@ An example:
 `MyModule.MyDataStructure` is a qualified type reference, so it will first be:
 
     UserDefinedType
-        { module = PossiblyQualified (Just "MyModule")
+        { qualifiedness = PossiblyQualified (Just "MyModule")
         , name = "MyDataStructure"
         , args = []
         }
@@ -45,7 +45,7 @@ An example:
 in the Frontend stage, and then change into:
 
     UserDefinedType
-        { module = Qualified "MyModule"
+        { qualifiedness = Qualified "MyModule"
         , name = "MyDataStructure"
         , args = []
         }
@@ -54,7 +54,7 @@ in the Frontend stage, and then change into:
 On the other hand, a `MyDataStructure` type in your source code begins as:
 
     UserDefinedType
-        { module = PossiblyQualified Nothing
+        { qualifiedness = PossiblyQualified Nothing
         , name = "MyDataStructure"
         , args = []
         }
@@ -64,7 +64,7 @@ in the Frontend stage, and only then, when desugaring, has the module found for
 it (or error message raised) and becomes:
 
     UserDefinedType
-        { module = Qualified "MyModule"
+        { qualifiedness = Qualified "MyModule"
         , name = "MyDataStructure"
         , args = []
         }
@@ -103,7 +103,7 @@ type Type a
          This constructor encompasses both type aliases and custom types:
       -}
       UserDefinedType
-        { module_ : a
+        { qualifiedness : a
         , name : String
         , args : List (TypeOrId a)
         }
@@ -384,7 +384,7 @@ mapType fn type_ =
 
         UserDefinedType r ->
             UserDefinedType
-                { module_ = fn r.module_
+                { qualifiedness = fn r.qualifiedness
                 , name = r.name
                 , args = List.map (mapTypeOrId fn) r.args
                 }

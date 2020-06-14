@@ -57,7 +57,7 @@ type Expr
     | Char Char
     | String String
     | Bool Bool
-    | Var { module_ : PossiblyQualified, name : VarName }
+    | Var { qualifiedness : PossiblyQualified, name : VarName }
     | Argument VarName
     | Plus LocatedExpr LocatedExpr
     | Cons LocatedExpr LocatedExpr
