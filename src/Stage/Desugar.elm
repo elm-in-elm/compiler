@@ -30,7 +30,7 @@ desugar project =
     project
         |> Boilerplate.desugarProject
             (desugarExpr project.modules)
-            desugarUtm
+            desugarQualifiedness
             checkAndDesugarTypeAnnotation
         |> Result.mapError DesugarError
 
@@ -209,17 +209,16 @@ desugarExpr modules thisModule located =
                             )
 
 
-desugarUtm : a
-desugarUtm =
-    Debug.todo "desugarUtm"
+desugarQualifiedness : a
+desugarQualifiedness =
+    Debug.todo "desugarQualifiedness"
 
 
 {-| TODO this should be used somewhere in the checkAndDesugarTypeAnnotation
 function?
 
 TODO or is this even needed? This was `desugarType` before we figured out the
-declaration needs to change the UTM (params in IdOrType etc. are UTM and not
-types)
+declaration needs to change the qualifiedness.
 
 We only do stuff in the UserDefinedType case. The rest is boilerplate.
 

@@ -94,14 +94,14 @@ type alias Constructor a =
 -}
 map :
     (exprA -> exprB)
-    -> (utmA -> utmB)
-    -> Declaration exprA annotation utmA
-    -> Declaration exprB annotation utmB
-map fnExpr fnUtm declaration =
+    -> (qualifiednessA -> qualifiednessB)
+    -> Declaration exprA annotation qualifiednessA
+    -> Declaration exprB annotation qualifiednessB
+map fnExpr fnQualifiedness declaration =
     { module_ = declaration.module_
     , typeAnnotation = declaration.typeAnnotation
     , name = declaration.name
-    , body = mapBody fnExpr fnUtm declaration.body
+    , body = mapBody fnExpr fnQualifiedness declaration.body
     }
 
 
@@ -109,10 +109,10 @@ map fnExpr fnUtm declaration =
 -}
 mapBody :
     (exprA -> exprB)
-    -> (utmA -> utmB)
-    -> DeclarationBody exprA utmA
-    -> DeclarationBody exprB utmB
-mapBody fnExpr fnUtm body =
+    -> (qualifiednessA -> qualifiednessB)
+    -> DeclarationBody exprA qualifiednessA
+    -> DeclarationBody exprB qualifiednessB
+mapBody fnExpr fnQualifiedness body =
     case body of
         Value expr ->
             Value <| fnExpr expr
@@ -120,13 +120,13 @@ mapBody fnExpr fnUtm body =
         TypeAlias r ->
             TypeAlias
                 { parameters = r.parameters
-                , definition = Type.mapType fnUtm r.definition
+                , definition = Type.mapType fnQualifiedness r.definition
                 }
 
         CustomType r ->
             CustomType
                 { parameters = r.parameters
-                , constructors = List.map (mapConstructor fnUtm) r.constructors
+                , constructors = List.map (mapConstructor fnQualifiedness) r.constructors
                 }
 
 

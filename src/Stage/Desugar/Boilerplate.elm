@@ -24,7 +24,7 @@ type alias DesugarExprFn =
     -> Result DesugarError Canonical.LocatedExpr
 
 
-type alias DesugarUtmFn =
+type alias DesugarQualifiednessFn =
     Maybe String -> String
 
 
@@ -37,17 +37,17 @@ type alias DesugarAnnotationFn =
 
 desugarProject :
     DesugarExprFn
-    -> DesugarUtmFn
+    -> DesugarQualifiednessFn
     -> DesugarAnnotationFn
     -> Project Frontend.ProjectFields
     -> Result DesugarError (Project Canonical.ProjectFields)
-desugarProject desugarExpr desugarUtm desugarAnnotation project =
+desugarProject desugarExpr desugarQualifiedness desugarAnnotation project =
     project.modules
         |> Dict.map
             (always
                 (desugarModule
                     desugarExpr
-                    desugarUtm
+                    desugarQualifiedness
                     desugarAnnotation
                 )
             )
@@ -72,17 +72,17 @@ projectOfNewType old modules =
 
 desugarModule :
     DesugarExprFn
-    -> DesugarUtmFn
+    -> DesugarQualifiednessFn
     -> DesugarAnnotationFn
     -> Module Frontend.LocatedExpr TypeAnnotation (Maybe String)
     -> Result DesugarError (Module Canonical.LocatedExpr (Type Qualified) String)
-desugarModule desugarExpr desugarUtm desugarAnnotation module_ =
+desugarModule desugarExpr desugarQualifiedness desugarAnnotation module_ =
     module_.declarations
         |> Dict.map
             (always
                 (desugarDeclaration
                     (desugarExpr module_)
-                    desugarUtm
+                    desugarQualifiedness
                     desugarAnnotation
                 )
             )
@@ -108,22 +108,22 @@ moduleOfNewType old newDecls =
 
 desugarDeclaration :
     (Frontend.LocatedExpr -> Result DesugarError Canonical.LocatedExpr)
-    -> DesugarUtmFn
+    -> DesugarQualifiednessFn
     -> DesugarAnnotationFn
     -> Declaration Frontend.LocatedExpr TypeAnnotation (Maybe String)
     -> Result DesugarError (Declaration Canonical.LocatedExpr (Type Qualified) String)
-desugarDeclaration desugarExpr desugarUtm desugarAnnotation decl =
+desugarDeclaration desugarExpr desugarQualifiedness desugarAnnotation decl =
     decl.body
-        |> Declaration.mapBody desugarExpr desugarUtm
+        |> Declaration.mapBody desugarExpr desugarQualifiedness
         |> Declaration.combine
         |> Result.map (declarationOfNewType decl)
         |> Result.andThen desugarAnnotation
 
 
 declarationOfNewType :
-    Declaration exprA ann utm1
-    -> DeclarationBody exprB utm2
-    -> Declaration exprB ann utm2
+    Declaration exprA ann qualifiedness1
+    -> DeclarationBody exprB qualifiedness2
+    -> Declaration exprB ann qualifiedness2
 declarationOfNewType old newBody =
     { name = old.name
     , module_ = old.module_

@@ -60,14 +60,14 @@ type ModuleType
 {-| Does this module import this module name?
 (This doesn't take the `as ...` part of the import line into consideration.)
 -}
-imports : ModuleName -> Module expr annotation utm -> Bool
+imports : ModuleName -> Module expr annotation qualifiedness -> Bool
 imports moduleName module_ =
     Dict.member moduleName module_.imports
 
 
 {-| Does this module expose this variable name?
 -}
-exposes : VarName -> Module expr annotation utm -> Bool
+exposes : VarName -> Module expr annotation qualifiedness -> Bool
 exposes varName module_ =
     let
         isInDeclarations =
@@ -113,7 +113,7 @@ Given `import Foo as F`:
     --> Nothing
 
 -}
-unalias : Module expr annotation utm -> ModuleName -> Maybe ModuleName
+unalias : Module expr annotation qualifiedness -> ModuleName -> Maybe ModuleName
 unalias thisModule moduleName =
     thisModule.imports
         |> Dict.find (\_ dep -> dep.as_ == Just moduleName)
@@ -155,8 +155,8 @@ TODO "module name not found" somewhere... maybe here, maybe parsing? dunno yet..
 
 -}
 findModuleOfVar :
-    Dict ModuleName (Module expr annotation utm)
-    -> Module expr annotation utm
+    Dict ModuleName (Module expr annotation qualifiedness)
+    -> Module expr annotation qualifiedness
     -> { module_ : Maybe ModuleName, name : VarName }
     -> Result DesugarError ModuleName
 findModuleOfVar modules thisModule var =
@@ -169,7 +169,7 @@ findModuleOfVar modules thisModule var =
 
 
 unqualifiedVarInThisModule :
-    Module expr annotation utm
+    Module expr annotation qualifiedness
     -> { module_ : Maybe ModuleName, name : VarName }
     -> Maybe (Result DesugarError ModuleName)
 unqualifiedVarInThisModule thisModule { module_, name } =
@@ -181,8 +181,8 @@ unqualifiedVarInThisModule thisModule { module_, name } =
 
 
 unqualifiedVarInImportedModule :
-    Dict ModuleName (Module expr annotation utm)
-    -> Module expr annotation utm
+    Dict ModuleName (Module expr annotation qualifiedness)
+    -> Module expr annotation qualifiedness
     -> { module_ : Maybe ModuleName, name : VarName }
     -> Maybe (Result DesugarError ModuleName)
 unqualifiedVarInImportedModule modules thisModule { module_, name } =
@@ -224,7 +224,7 @@ unqualifiedVarInImportedModule modules thisModule { module_, name } =
 {-| We don't think about module `as` aliasing here.
 -}
 qualifiedVarInImportedModule :
-    Dict ModuleName (Module expr annotation utm)
+    Dict ModuleName (Module expr annotation qualifiedness)
     -> { module_ : Maybe ModuleName, name : VarName }
     -> Maybe (Result DesugarError ModuleName)
 qualifiedVarInImportedModule modules { module_, name } =
@@ -241,8 +241,8 @@ qualifiedVarInImportedModule modules { module_, name } =
 
 
 qualifiedVarInAliasedModule :
-    Dict ModuleName (Module expr annotation utm)
-    -> Module expr annotation utm
+    Dict ModuleName (Module expr annotation qualifiedness)
+    -> Module expr annotation qualifiedness
     -> { module_ : Maybe ModuleName, name : VarName }
     -> Maybe (Result DesugarError ModuleName)
 qualifiedVarInAliasedModule modules thisModule { module_, name } =
