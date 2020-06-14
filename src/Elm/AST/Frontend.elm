@@ -18,6 +18,7 @@ import Elm.Data.Binding as Binding exposing (Binding)
 import Elm.Data.Located as Located exposing (Located)
 import Elm.Data.Module exposing (Module)
 import Elm.Data.ModuleName exposing (ModuleName)
+import Elm.Data.Qualifiedness exposing (PossiblyQualified)
 import Elm.Data.Type as Type
 import Elm.Data.TypeAnnotation exposing (TypeAnnotation)
 import Elm.Data.VarName exposing (VarName)
@@ -55,7 +56,7 @@ type Expr
     | Char Char
     | String String
     | Bool Bool
-    | Var { module_ : Maybe ModuleName, name : VarName }
+    | Var { module_ : PossiblyQualified, name : VarName }
     | Argument VarName
     | Plus LocatedExpr LocatedExpr
     | Cons LocatedExpr LocatedExpr

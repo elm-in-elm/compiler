@@ -28,7 +28,8 @@ import Elm.Data.Import exposing (Import)
 import Elm.Data.Located as Located exposing (Located)
 import Elm.Data.Module exposing (Module, ModuleType(..))
 import Elm.Data.ModuleName exposing (ModuleName)
-import Elm.Data.Type as Type exposing (Type, TypeOrId(..), TypeOrIdUnq, TypeUnq)
+import Elm.Data.Qualifiedness exposing (PossiblyQualified(..))
+import Elm.Data.Type as Type exposing (Type, TypeOrId(..))
 import Elm.Data.TypeAnnotation exposing (TypeAnnotation)
 import Elm.Data.VarName exposing (VarName)
 import Hex
@@ -304,7 +305,7 @@ qualifiedTypeOrConstructorName =
                 P.map
                     (\varName_ ->
                         Frontend.Var
-                            { module_ = qualifiersToString modules
+                            { module_ = qualify modules
                             , name = varName_
                             }
                     )
@@ -631,7 +632,12 @@ var : Parser_ LocatedExpr
 var =
     P.oneOf
         [ P.map
-            (\varName_ -> Frontend.Var { module_ = Nothing, name = varName_ })
+            (\varName_ ->
+                Frontend.Var
+                    { module_ = PossiblyQualified Nothing
+                    , name = varName_
+                    }
+            )
             varName
         , qualifiedVar
         ]
@@ -664,13 +670,14 @@ qualifiers =
         }
 
 
-qualifiersToString : List ModuleName -> Maybe String
-qualifiersToString modules =
-    if List.isEmpty modules then
-        Nothing
+qualify : List ModuleName -> PossiblyQualified
+qualify modules =
+    PossiblyQualified <|
+        if List.isEmpty modules then
+            Nothing
 
-    else
-        Just <| String.join "." modules
+        else
+            Just <| String.join "." modules
 
 
 qualifiedVar : Parser_ Expr
@@ -681,7 +688,7 @@ qualifiedVar =
                 P.map
                     (\varName_ ->
                         Frontend.Var
-                            { module_ = qualifiersToString modules
+                            { module_ = qualify modules
                             , name = varName_
                             }
                     )
@@ -777,7 +784,7 @@ binding config =
         |> P.inContext InLetBinding
 
 
-typeBinding : Parser_ ( VarName, TypeOrIdUnq )
+typeBinding : Parser_ ( VarName, TypeOrId PossiblyQualified )
 typeBinding =
     P.succeed Tuple.pair
         |= varName
@@ -792,7 +799,10 @@ promoteArguments arguments expr_ =
     -- TODO set of arguments instead of list?
     case expr_ of
         Var var_ ->
-            if var_.module_ == Nothing && List.member var_.name arguments then
+            if
+                (var_.module_ == PossiblyQualified Nothing)
+                    && List.member var_.name arguments
+            then
                 Argument var_.name
 
             else
@@ -957,7 +967,7 @@ typeAnnotation =
         |= type_
 
 
-type_ : Parser_ TypeUnq
+type_ : Parser_ (Type PossiblyQualified)
 type_ =
     P.oneOf
         [ varType
@@ -976,17 +986,17 @@ type_ =
         ]
 
 
-lazyType : () -> Parser_ TypeUnq
+lazyType : () -> Parser_ (Type PossiblyQualified)
 lazyType () =
     type_
 
 
-lazyTypeOrId : () -> Parser_ TypeOrIdUnq
+lazyTypeOrId : () -> Parser_ (TypeOrId PossiblyQualified)
 lazyTypeOrId () =
     P.map Type (lazyType ())
 
 
-varType : Parser_ TypeUnq
+varType : Parser_ (Type PossiblyQualified)
 varType =
     {- TODO I think we'll need to do `Var String` instead of `Var Int` ...
        and map from user-written strings to Int Var IDs in some later stage
@@ -999,7 +1009,7 @@ varType =
     Debug.todo "varType"
 
 
-functionType : Parser_ TypeUnq
+functionType : Parser_ (Type PossiblyQualified)
 functionType =
     P.succeed (\from to -> Type.Function { from = from, to = to })
         |= P.lazy lazyTypeOrId
@@ -1009,13 +1019,13 @@ functionType =
         |= P.lazy lazyTypeOrId
 
 
-simpleType : String -> TypeUnq -> Parser_ TypeUnq
+simpleType : String -> Type PossiblyQualified -> Parser_ (Type PossiblyQualified)
 simpleType name parsedType =
     P.succeed parsedType
         |. P.keyword (P.Token name (ExpectingSimpleType name))
 
 
-listType : Parser_ TypeUnq
+listType : Parser_ (Type PossiblyQualified)
 listType =
     P.succeed Type.List
         |. P.keyword (P.Token "List" ExpectingListType)
@@ -1023,7 +1033,7 @@ listType =
         |= P.lazy lazyTypeOrId
 
 
-tupleType : Parser_ TypeUnq
+tupleType : Parser_ (Type PossiblyQualified)
 tupleType =
     P.succeed Type.Tuple
         |. P.keyword (P.Token "(" ExpectingLeftParen)
@@ -1037,7 +1047,7 @@ tupleType =
         |. P.keyword (P.Token ")" ExpectingRightParen)
 
 
-tuple3Type : Parser_ TypeUnq
+tuple3Type : Parser_ (Type PossiblyQualified)
 tuple3Type =
     P.succeed Type.Tuple3
         |. P.keyword (P.Token "(" ExpectingLeftParen)
@@ -1055,7 +1065,7 @@ tuple3Type =
         |. P.keyword (P.Token ")" ExpectingRightParen)
 
 
-recordType : Parser_ TypeUnq
+recordType : Parser_ (Type PossiblyQualified)
 recordType =
     P.succeed (Dict.fromList >> Type.Record)
         |= P.sequence
@@ -1068,16 +1078,17 @@ recordType =
             }
 
 
-userDefinedType : Parser_ TypeUnq
+userDefinedType : Parser_ (Type PossiblyQualified)
 userDefinedType =
     -- Maybe a
     -- List Int
     -- Result Foo.Bar
     -- Browser.Position Int
+    -- MyModule.MyDataStructure
     P.succeed
         (\modules name args ->
             Type.UserDefinedType
-                { module_ = qualifiersToString modules
+                { module_ = qualify modules
                 , name = name
                 , args = args
                 }

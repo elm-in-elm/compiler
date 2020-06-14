@@ -1,5 +1,6 @@
 module Elm.Data.TypeAnnotation exposing (TypeAnnotation)
 
+import Elm.Data.Qualifiedness exposing (PossiblyQualified)
 import Elm.Data.Type exposing (Type)
 import Elm.Data.VarName exposing (VarName)
 
@@ -11,10 +12,15 @@ import Elm.Data.VarName exposing (VarName)
 The user type modules can be unqualified in type annotations:
 
      import Page exposing (Msg)
-     x : Msg -- unqualified
+     x : Msg -- unqualified; `PossiblyQualified Nothing`
+
+but also qualified:
+
+     import Page
+     x : Page.Msg -- qualified; `PossiblyQualified (Just "Page")`
 
 -}
 type alias TypeAnnotation =
     { varName : VarName
-    , type_ : Type (Maybe String)
+    , type_ : Type PossiblyQualified
     }

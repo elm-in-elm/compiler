@@ -5,7 +5,8 @@ module Stage.InferTypes.Unify exposing
 
 import Dict
 import Elm.Compiler.Error exposing (TypeError(..))
-import Elm.Data.Type as Type exposing (Type(..), TypeOrId(..), TypeOrIdQ, TypeQ)
+import Elm.Data.Qualifiedness exposing (Qualified)
+import Elm.Data.Type as Type exposing (Type(..), TypeOrId(..))
 import Stage.InferTypes.SubstitutionMap as SubstitutionMap exposing (SubstitutionMap)
 import Stage.InferTypes.TypeEquation as TypeEquation exposing (TypeEquation)
 
@@ -26,7 +27,7 @@ unifyAllEquations equations substitutionMap =
         equations
 
 
-unify : TypeOrIdQ -> TypeOrIdQ -> SubstitutionMap -> Result ( TypeError, SubstitutionMap ) SubstitutionMap
+unify : TypeOrId Qualified -> TypeOrId Qualified -> SubstitutionMap -> Result ( TypeError, SubstitutionMap ) SubstitutionMap
 unify t1 t2 substitutionMap =
     if t1 == t2 then
         Ok substitutionMap
@@ -43,7 +44,7 @@ unify t1 t2 substitutionMap =
                 unifyTypes t1_ t2_ substitutionMap
 
 
-unifyTypes : TypeQ -> TypeQ -> SubstitutionMap -> Result ( TypeError, SubstitutionMap ) SubstitutionMap
+unifyTypes : Type Qualified -> Type Qualified -> SubstitutionMap -> Result ( TypeError, SubstitutionMap ) SubstitutionMap
 unifyTypes t1 t2 substitutionMap =
     let
         err =
@@ -161,7 +162,7 @@ unifyTypes t1 t2 substitutionMap =
             err
 
 
-unifyVariable : Int -> TypeOrIdQ -> SubstitutionMap -> Result ( TypeError, SubstitutionMap ) SubstitutionMap
+unifyVariable : Int -> TypeOrId Qualified -> SubstitutionMap -> Result ( TypeError, SubstitutionMap ) SubstitutionMap
 unifyVariable id otherTypeOrId substitutionMap =
     case SubstitutionMap.get id substitutionMap of
         Just typeOrId ->
@@ -184,10 +185,10 @@ unifyVariable id otherTypeOrId substitutionMap =
                         Ok (SubstitutionMap.insert id otherTypeOrId substitutionMap)
 
 
-occurs : Int -> TypeOrIdQ -> SubstitutionMap -> Bool
+occurs : Int -> TypeOrId Qualified -> SubstitutionMap -> Bool
 occurs id typeOrId substitutionMap =
     let
-        f : TypeOrIdQ -> Bool
+        f : TypeOrId Qualified -> Bool
         f typeOrId_ =
             occurs id typeOrId_ substitutionMap
     in

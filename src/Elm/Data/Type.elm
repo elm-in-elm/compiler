@@ -1,15 +1,18 @@
 module Elm.Data.Type exposing
-    ( Type(..), TypeOrId(..), isParametric, mapType, mapTypeOrId
-    , TypeUnq, TypeQ, TypeOrIdUnq, TypeOrIdQ
-    , varName, varName_, varNames, getType
-    , getId, varNames_
+    ( Type(..), TypeOrId(..)
+    , isParametric, mapType, mapTypeOrId
+    , varName, varName_, varNames, varNames_
+    , getId, getType
     )
 
 {-| A data structure representing the Elm types.
 
-@docs Type, TypeOrId, isParametric, mapType, mapTypeOrId
-@docs TypeUnq, TypeQ, TypeOrIdUnq, TypeOrIdQ
-@docs varName, varName_, varNames, varNames_ getId, getType
+The main confusion point here is "what is the
+
+@docs Type, TypeOrId
+@docs isParametric, mapType, mapTypeOrId
+@docs varName, varName_, varNames, varNames_
+@docs getId, getType
 
 -}
 
@@ -20,17 +23,58 @@ import Transform
 
 
 {-| -}
-type TypeOrId userTypeModule
+type TypeOrId qualifiedness
     = Id Int
-    | Type (Type userTypeModule)
+    | Type (Type qualifiedness)
 
 
-{-| The `a` here is type of user type modules; usually one of
+{-| The `a` here is the same as the `qualifiedness` in `TypeOrId` above.
+(We're shortening it to `a` for convenience.) See `Elm.Data.Qualifiedness`!
 
-    * Maybe ModuleName (Frontend)
-    * ModuleName (Desugar and onward)
+An example:
 
-We're only really writing it as an `a` for convenience here.
+`MyModule.MyDataStructure` is a qualified type reference, so it will first be:
+
+    UserDefinedType
+        { module = PossiblyQualified (Just "MyModule")
+        , name = "MyDataStructure"
+        , args = []
+        }
+      : Type PossiblyQualified
+
+in the Frontend stage, and then change into:
+
+    UserDefinedType
+        { module = Qualified "MyModule"
+        , name = "MyDataStructure"
+        , args = []
+        }
+      : Type Qualified
+
+On the other hand, a `MyDataStructure` type in your source code begins as:
+
+    UserDefinedType
+        { module = PossiblyQualified Nothing
+        , name = "MyDataStructure"
+        , args = []
+        }
+      : Type PossiblyQualified
+
+in the Frontend stage, and only then, when desugaring, has the module found for
+it (or error message raised) and becomes:
+
+    UserDefinedType
+        { module = Qualified "MyModule"
+        , name = "MyDataStructure"
+        , args = []
+        }
+      : Type Qualified
+
+We hold this possibility of not being optional in the type level (phantom types
+FTW), to make tasks in the stages after desugaring easier (impossible states
+become impossible, and a part of the desugaring task is:
+
+    Type PossiblyQualified -> Type Qualified
 
 -}
 type Type a
@@ -63,31 +107,6 @@ type Type a
         , name : String
         , args : List (TypeOrId a)
         }
-
-
-
-{- These are the two possibilities for `userTypeModule`.
-
-   * Unq = unqualified: Frontend haven't yet looked up the modules of user defined types.
-   * Q = qualified: Canonical and Typed have that information already for all types.
-
--}
-
-
-type alias TypeOrIdUnq =
-    TypeOrId (Maybe ModuleName)
-
-
-type alias TypeOrIdQ =
-    TypeOrId ModuleName
-
-
-type alias TypeUnq =
-    Type (Maybe ModuleName)
-
-
-type alias TypeQ =
-    Type ModuleName
 
 
 {-| Unwrap the string inside the type variable

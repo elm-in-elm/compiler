@@ -21,7 +21,8 @@ import Elm.Data.FileContents exposing (FileContents)
 import Elm.Data.FilePath exposing (FilePath)
 import Elm.Data.Located exposing (Located)
 import Elm.Data.ModuleName exposing (ModuleName)
-import Elm.Data.Type as Type exposing (Type, TypeOrId(..), TypeOrIdQ)
+import Elm.Data.Qualifiedness exposing (Qualified)
+import Elm.Data.Type as Type exposing (Type, TypeOrId(..))
 import Elm.Data.Type.ToString as TypeToString
 import Elm.Data.VarName exposing (VarName)
 import Json.Decode as JD
@@ -164,8 +165,8 @@ type DesugarError
 {-| Errors encountered during [typechecking](Elm.Compiler#inferExpr).
 -}
 type TypeError
-    = TypeMismatch TypeOrIdQ TypeOrIdQ
-    | OccursCheckFailed Int TypeOrIdQ
+    = TypeMismatch (TypeOrId Qualified) (TypeOrId Qualified)
+    | OccursCheckFailed Int (TypeOrId Qualified)
     | -- TODO should this be a parse error instead?
       AnnotationForNonExprDeclaration
 

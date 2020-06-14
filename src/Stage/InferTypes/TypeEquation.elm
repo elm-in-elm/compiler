@@ -4,7 +4,8 @@ module Stage.InferTypes.TypeEquation exposing
     , unwrap
     )
 
-import Elm.Data.Type exposing (TypeOrIdQ)
+import Elm.Data.Qualifiedness exposing (Qualified)
+import Elm.Data.Type exposing (TypeOrId)
 
 
 {-| Could be an alias, but let's go with opaque types:
@@ -15,16 +16,16 @@ the original node this constraint was generated from.
 
 -}
 type TypeEquation
-    = TypeEquation ( TypeOrIdQ, TypeOrIdQ )
+    = TypeEquation ( TypeOrId Qualified, TypeOrId Qualified )
 
 
 {-| Constructor for this type. It tells the constraint solver that t1 == t2.
 -}
-equals : TypeOrIdQ -> TypeOrIdQ -> TypeEquation
+equals : TypeOrId Qualified -> TypeOrId Qualified -> TypeEquation
 equals t1 t2 =
     TypeEquation ( t1, t2 )
 
 
-unwrap : TypeEquation -> ( TypeOrIdQ, TypeOrIdQ )
+unwrap : TypeEquation -> ( TypeOrId Qualified, TypeOrId Qualified )
 unwrap (TypeEquation tuple) =
     tuple

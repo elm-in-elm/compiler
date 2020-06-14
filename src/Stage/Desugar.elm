@@ -16,7 +16,8 @@ import Elm.Data.Located as Located
 import Elm.Data.Module as Module exposing (Module)
 import Elm.Data.ModuleName exposing (ModuleName)
 import Elm.Data.Project exposing (Project)
-import Elm.Data.Type exposing (Type(..), TypeOrId(..), TypeOrIdQ, TypeOrIdUnq, TypeQ, TypeUnq)
+import Elm.Data.Qualifiedness exposing (PossiblyQualified, Qualified)
+import Elm.Data.Type exposing (Type(..), TypeOrId(..))
 import Elm.Data.TypeAnnotation exposing (TypeAnnotation)
 import Elm.Data.VarName exposing (VarName)
 import Maybe.Extra
@@ -226,8 +227,8 @@ We only do stuff in the UserDefinedType case. The rest is boilerplate.
 todoDesugarType :
     Dict ModuleName (Module Frontend.LocatedExpr TypeAnnotation (Maybe String))
     -> Module Frontend.LocatedExpr TypeAnnotation (Maybe String)
-    -> TypeOrIdUnq
-    -> Result DesugarError TypeOrIdQ
+    -> TypeOrId PossiblyQualified
+    -> Result DesugarError (TypeOrId Qualified)
 todoDesugarType modules thisModule typeOrId =
     let
         f =
@@ -325,7 +326,7 @@ TODO test
 -}
 checkAndDesugarTypeAnnotation :
     Declaration a TypeAnnotation (Maybe String)
-    -> Result DesugarError (Declaration a TypeQ (Maybe String))
+    -> Result DesugarError (Declaration a (Type Qualified) (Maybe String))
 checkAndDesugarTypeAnnotation decl =
     start here
         -- TODO find the modules of user types here too
