@@ -449,7 +449,7 @@ TODO For qualified types, the module name must be imported already.
 TODO For PossiblyQualified types, either the type definition must be in the current
 module or imported via `exposing`.
 
-TODO test
+TODO test (make sure the integration tests properly fail/succeed and have snapshots)
 
 -}
 checkAndDesugarTypeAnnotation :
