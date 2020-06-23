@@ -279,7 +279,7 @@ collectDependencies modules remainingDeclarations doneDeclarations doneDependenc
                             Value _ ->
                                 ModuleNotFoundForVar
                                     { module_ = currentDeclaration.module_
-                                    , var = currentDeclaration.name
+                                    , name = currentDeclaration.name
                                     }
 
                             TypeAlias _ ->
@@ -457,7 +457,7 @@ findDependenciesOfVar modules thisModule moduleName varName =
         |> Result.fromMaybe
             (ModuleNotFoundForVar
                 { module_ = moduleName
-                , var = varName
+                , name = varName
                 }
             )
         |> Result.andThen
@@ -498,14 +498,14 @@ findDependenciesOfExpr modules locatedExpr =
         Bool _ ->
             Ok []
 
-        Var { module_, name } ->
+        Var ({ module_, name } as var) ->
             modules
                 |> Dict.get module_
-                |> Result.fromMaybe (ModuleNotFoundForVar { module_ = module_, var = name })
+                |> Result.fromMaybe (ModuleNotFoundForVar var)
                 |> Result.andThen
                     (.declarations
                         >> Dict.get name
-                        >> Result.fromMaybe (DeclarationNotFound { module_ = module_, name = name })
+                        >> Result.fromMaybe (DeclarationNotFound var)
                     )
                 |> Result.map List.singleton
 

@@ -18,14 +18,16 @@ import Elm.Data.VarName exposing (VarName)
 import OurExtras.Dict as Dict
 
 
-type alias DesugarExprFn =
+type alias ThisModule =
     Module Frontend.LocatedExpr TypeAnnotation PossiblyQualified
-    -> Frontend.LocatedExpr
-    -> Result DesugarError Canonical.LocatedExpr
+
+
+type alias DesugarExprFn =
+    Frontend.LocatedExpr -> Result DesugarError Canonical.LocatedExpr
 
 
 type alias DesugarQualifiednessFn =
-    PossiblyQualified -> Qualified
+    VarName -> PossiblyQualified -> Result DesugarError Qualified
 
 
 {-| Annotation desugaring happens after the declaration desugaring, so the
@@ -37,9 +39,9 @@ type alias DesugarAnnotationFn =
 
 
 desugarProject :
-    DesugarExprFn
-    -> DesugarQualifiednessFn
-    -> (Module Frontend.LocatedExpr TypeAnnotation PossiblyQualified -> DesugarAnnotationFn)
+    (ThisModule -> DesugarExprFn)
+    -> (ThisModule -> DesugarQualifiednessFn)
+    -> (ThisModule -> DesugarAnnotationFn)
     -> Project Frontend.ProjectFields
     -> Result DesugarError (Project Canonical.ProjectFields)
 desugarProject desugarExpr desugarQualifiedness desugarAnnotation project =
@@ -72,10 +74,10 @@ projectOfNewType old modules =
 
 
 desugarModule :
-    DesugarExprFn
-    -> DesugarQualifiednessFn
-    -> (Module Frontend.LocatedExpr TypeAnnotation PossiblyQualified -> DesugarAnnotationFn)
-    -> Module Frontend.LocatedExpr TypeAnnotation PossiblyQualified
+    (ThisModule -> DesugarExprFn)
+    -> (ThisModule -> DesugarQualifiednessFn)
+    -> (ThisModule -> DesugarAnnotationFn)
+    -> ThisModule
     -> Result DesugarError (Module Canonical.LocatedExpr (ConcreteType Qualified) Qualified)
 desugarModule desugarExpr desugarQualifiedness desugarAnnotation module_ =
     module_.declarations
@@ -83,7 +85,7 @@ desugarModule desugarExpr desugarQualifiedness desugarAnnotation module_ =
             (always
                 (desugarDeclaration
                     (desugarExpr module_)
-                    desugarQualifiedness
+                    (desugarQualifiedness module_)
                     (desugarAnnotation module_)
                 )
             )
@@ -108,15 +110,16 @@ moduleOfNewType old newDecls =
 
 
 desugarDeclaration :
-    (Frontend.LocatedExpr -> Result DesugarError Canonical.LocatedExpr)
+    DesugarExprFn
     -> DesugarQualifiednessFn
     -> DesugarAnnotationFn
     -> Declaration Frontend.LocatedExpr TypeAnnotation PossiblyQualified
     -> Result DesugarError (Declaration Canonical.LocatedExpr (ConcreteType Qualified) Qualified)
 desugarDeclaration desugarExpr desugarQualifiedness desugarAnnotation decl =
     decl.body
-        |> Declaration.mapBody desugarExpr desugarQualifiedness
-        |> Declaration.combine
+        |> Declaration.mapBody desugarExpr (desugarQualifiedness decl.name)
+        |> Declaration.combineValue
+        |> Result.andThen Declaration.combineType
         |> Result.map (declarationOfNewType decl)
         |> Result.andThen desugarAnnotation
 

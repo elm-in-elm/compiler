@@ -35,7 +35,7 @@ desugar project =
     project
         |> Boilerplate.desugarProject
             (desugarExpr project.modules)
-            desugarQualifiedness
+            (desugarQualifiedness project.modules)
             (desugarTypeAnnotation project.modules)
         |> Result.mapError DesugarError
 
@@ -332,9 +332,20 @@ desugarPattern located =
             return <| Canonical.PFloat float
 
 
-desugarQualifiedness : a
-desugarQualifiedness =
-    Debug.todo "desugarQualifiedness"
+desugarQualifiedness :
+    Dict ModuleName (Module Frontend.LocatedExpr TypeAnnotation PossiblyQualified)
+    -> Module Frontend.LocatedExpr TypeAnnotation PossiblyQualified
+    -> VarName
+    -> PossiblyQualified
+    -> Result DesugarError Qualified
+desugarQualifiedness modules thisModule name qualifiedness =
+    Module.findModuleOfVar
+        modules
+        thisModule
+        { qualifiedness = qualifiedness
+        , name = name
+        }
+        |> Result.map Qualified
 
 
 {-| We only do stuff in the UserDefinedType case. The rest is boilerplate.

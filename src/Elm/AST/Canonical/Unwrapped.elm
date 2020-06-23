@@ -18,6 +18,7 @@ and from it using [`Elm.AST.Canonical.fromUnwrapped`](Elm.AST.Canonical#fromUnwr
 import Dict exposing (Dict)
 import Elm.Data.Binding exposing (Binding)
 import Elm.Data.ModuleName exposing (ModuleName)
+import Elm.Data.Qualifiedness exposing (Qualified)
 import Elm.Data.VarName exposing (VarName)
 
 

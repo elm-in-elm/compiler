@@ -1,7 +1,7 @@
 module Elm.Data.Declaration exposing
     ( Declaration, DeclarationBody(..), Constructor
     , map, mapBody, setAnnotation
-    , combine, combineSubstitutionMap
+    , combineValue, combineType, combineSubstitutionMap
     , getExpr
     )
 
@@ -9,7 +9,7 @@ module Elm.Data.Declaration exposing
 
 @docs Declaration, DeclarationBody, Constructor
 @docs map, mapBody, setAnnotation
-@docs combine, combineSubstitutionMap
+@docs combineValue, combineType, combineSubstitutionMap
 @docs getExpr
 
 -}
@@ -18,6 +18,7 @@ import Elm.Data.ModuleName exposing (ModuleName)
 import Elm.Data.Type as Type exposing (Type, TypeOrId)
 import Elm.Data.TypeAnnotation exposing (TypeAnnotation)
 import Elm.Data.VarName exposing (VarName)
+import Result.Extra
 import Stage.InferTypes.SubstitutionMap as SubstitutionMap exposing ({- TODO maybe move SubstMap module to Elm.Data? -} SubstitutionMap)
 
 
@@ -149,12 +150,12 @@ mapBody fnExpr fnQualifiedness body =
 {-| Switch the Result and the expression inside the declaration body.
 Similar to [`Result.Extra.combine`](/packages/elm-community/result-extra/latest/Result-Extra#combine).
 
-    combine (Value (Ok (Int 5)))
+    combineValue (Value (Ok (Int 5)))
     --> Ok (Value (Int 5))
 
 -}
-combine : DeclarationBody (Result err a) b -> Result err (DeclarationBody a b)
-combine body =
+combineValue : DeclarationBody (Result err a) b -> Result err (DeclarationBody a b)
+combineValue body =
     case body of
         Value result ->
             Result.map Value result
@@ -164,6 +165,36 @@ combine body =
 
         CustomType r ->
             Ok <| CustomType r
+
+
+combineType : DeclarationBody a (Result err b) -> Result err (DeclarationBody a b)
+combineType body =
+    case body of
+        Value expr ->
+            Ok <| Value expr
+
+        TypeAlias r ->
+            r.definition
+                |> Type.combineType
+                |> Result.map
+                    (\definition ->
+                        TypeAlias
+                            { parameters = r.parameters
+                            , definition = definition
+                            }
+                    )
+
+        CustomType r ->
+            r.constructors
+                |> List.map combineConstructor
+                |> Result.Extra.combine
+                |> Result.map
+                    (\constructors ->
+                        CustomType
+                            { parameters = r.parameters
+                            , constructors = constructors
+                            }
+                    )
 
 
 combineSubstitutionMap :
@@ -199,3 +230,8 @@ mapConstructor fn constructor =
     { name = constructor.name
     , arguments = List.map (Type.mapTypeOrId fn) constructor.arguments
     }
+
+
+combineConstructor : Constructor (Result err a) -> Result err (Constructor a)
+combineConstructor constructor =
+    Debug.todo "combineConstructor"

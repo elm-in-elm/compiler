@@ -3,6 +3,7 @@ module Elm.Data.Type exposing
     , isParametric, mapType, mapTypeOrId
     , varName, varName_, varNames, varNames_
     , getId, getType
+    , combineType, combineTypeOrId
     )
 
 {-| A data structure representing the Elm types.
@@ -13,6 +14,7 @@ The main confusion point here is "what is the
 @docs isParametric, mapType, mapTypeOrId
 @docs varName, varName_, varNames, varNames_
 @docs getId, getType
+@docs combineType, combineTypeOrId
 
 -}
 
@@ -388,3 +390,13 @@ mapType fn type_ =
                 , name = r.name
                 , args = List.map (mapTypeOrId fn) r.args
                 }
+
+
+combineType : Type (Result err a) -> Result err (Type a)
+combineType type_ =
+    Debug.todo "combineType"
+
+
+combineTypeOrId : TypeOrId (Result err a) -> Result err (TypeOrId a)
+combineTypeOrId typeOrId =
+    Debug.todo "combineTypeOrId"

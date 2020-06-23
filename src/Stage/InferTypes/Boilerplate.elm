@@ -141,7 +141,7 @@ inferDeclaration inferExpr substitutionMap decl =
         result =
             decl.body
                 |> Declaration.mapBody (inferExpr substitutionMap) identity
-                |> Declaration.combine
+                |> Declaration.combineValue
                 |> Result.map Declaration.combineSubstitutionMap
     in
     result
