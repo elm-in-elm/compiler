@@ -380,7 +380,7 @@ mapType fn type_ =
                 (mapTypeOrId fn c)
 
         Record dict ->
-            Record <| Dict.map (\k v -> mapTypeOrId fn v) dict
+            Record <| Dict.map (\_ v -> mapTypeOrId fn v) dict
 
         UserDefinedType r ->
             UserDefinedType

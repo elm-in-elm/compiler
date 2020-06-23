@@ -6,6 +6,7 @@ import Elm.Data.FileContents exposing (FileContents)
 import Elm.Data.FilePath exposing (FilePath)
 import Elm.Data.Module exposing (Module)
 import Elm.Data.ModuleName as ModuleName exposing (ModuleName)
+import Elm.Data.Qualifiedness exposing (PossiblyQualified)
 import Elm.Data.TypeAnnotation exposing (TypeAnnotation)
 import Parser.Advanced as P
 import Stage.Parse.Parser as Parser
@@ -16,7 +17,7 @@ Maybe we should use it in library/ too?
 -}
 parse :
     { filePath : FilePath, fileContents : FileContents }
-    -> Result Error (Module Frontend.LocatedExpr TypeAnnotation (Maybe String))
+    -> Result Error (Module Frontend.LocatedExpr TypeAnnotation PossiblyQualified)
 parse { filePath, fileContents } =
     Result.mapError
         (\errorList -> ParseError (ParseProblem ( errorList, fileContents )))

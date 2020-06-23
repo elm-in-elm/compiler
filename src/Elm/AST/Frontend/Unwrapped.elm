@@ -14,7 +14,6 @@ Convert to it using the [`Elm.AST.Frontend.unwrap`](Elm.AST.Frontend#unwrap).
 -}
 
 import Elm.Data.Binding exposing (Binding)
-import Elm.Data.ModuleName exposing (ModuleName)
 import Elm.Data.Qualifiedness exposing (PossiblyQualified)
 import Elm.Data.VarName exposing (VarName)
 

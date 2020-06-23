@@ -30,7 +30,7 @@ import Elm.Data.Located as Located exposing (Located)
 import Elm.Data.Module exposing (Module, ModuleType(..))
 import Elm.Data.ModuleName exposing (ModuleName)
 import Elm.Data.Qualifiedness exposing (PossiblyQualified(..))
-import Elm.Data.Type as Type exposing (Type, TypeOrId(..))
+import Elm.Data.Type.Concrete as ConcreteType exposing (ConcreteType)
 import Elm.Data.TypeAnnotation exposing (TypeAnnotation)
 import Elm.Data.VarName exposing (VarName)
 import Hex
@@ -66,7 +66,7 @@ located p =
         |= P.getPosition
 
 
-module_ : FilePath -> Parser_ (Module LocatedExpr TypeAnnotation (Maybe String))
+module_ : FilePath -> Parser_ (Module LocatedExpr TypeAnnotation PossiblyQualified)
 module_ filePath =
     P.succeed
         (\( moduleType_, moduleName_, exposing_ ) imports_ declarations_ ->
@@ -336,7 +336,7 @@ reservedWords =
         ]
 
 
-declarations : Parser_ (List (ModuleName -> Declaration LocatedExpr TypeAnnotation (Maybe String)))
+declarations : Parser_ (List (ModuleName -> Declaration LocatedExpr TypeAnnotation PossiblyQualified))
 declarations =
     oneOrMoreWith P.spaces
         (P.succeed identity
@@ -345,7 +345,7 @@ declarations =
         )
 
 
-declaration : Parser_ (ModuleName -> Declaration LocatedExpr TypeAnnotation (Maybe String))
+declaration : Parser_ (ModuleName -> Declaration LocatedExpr TypeAnnotation PossiblyQualified)
 declaration =
     P.succeed
         (\typeAnnotation_ name body module__ ->
@@ -786,14 +786,14 @@ binding config =
         |> P.inContext InLetBinding
 
 
-typeBinding : Parser_ ( VarName, TypeOrId PossiblyQualified )
+typeBinding : Parser_ ( VarName, ConcreteType PossiblyQualified )
 typeBinding =
     P.succeed Tuple.pair
         |= varName
         |. P.spaces
         |. P.symbol (P.Token ":" ExpectingColon)
         |. P.spaces
-        |= P.lazy lazyTypeOrId
+        |= P.lazy lazyType
 
 
 promoteArguments : List VarName -> Expr -> Expr
@@ -1271,18 +1271,18 @@ typeAnnotation =
         |= type_
 
 
-type_ : Parser_ (Type PossiblyQualified)
+type_ : Parser_ (ConcreteType PossiblyQualified)
 type_ =
     P.oneOf
         [ varType
         , functionType
-        , simpleType "Int" Type.Int
-        , simpleType "Float" Type.Float
-        , simpleType "Char" Type.Char
-        , simpleType "String" Type.String
-        , simpleType "Bool" Type.Bool
+        , simpleType "Int" ConcreteType.Int
+        , simpleType "Float" ConcreteType.Float
+        , simpleType "Char" ConcreteType.Char
+        , simpleType "String" ConcreteType.String
+        , simpleType "Bool" ConcreteType.Bool
         , listType
-        , simpleType "()" Type.Unit
+        , simpleType "()" ConcreteType.Unit
         , tupleType
         , tuple3Type
         , recordType
@@ -1290,17 +1290,12 @@ type_ =
         ]
 
 
-lazyType : () -> Parser_ (Type PossiblyQualified)
+lazyType : () -> Parser_ (ConcreteType PossiblyQualified)
 lazyType () =
     type_
 
 
-lazyTypeOrId : () -> Parser_ (TypeOrId PossiblyQualified)
-lazyTypeOrId () =
-    P.map Type (lazyType ())
-
-
-varType : Parser_ (Type PossiblyQualified)
+varType : Parser_ (ConcreteType PossiblyQualified)
 varType =
     {- TODO I think we'll need to do `Var String` instead of `Var Int` ...
        and map from user-written strings to Int Var IDs in some later stage
@@ -1313,65 +1308,65 @@ varType =
     Debug.todo "varType"
 
 
-functionType : Parser_ (Type PossiblyQualified)
+functionType : Parser_ (ConcreteType PossiblyQualified)
 functionType =
-    P.succeed (\from to -> Type.Function { from = from, to = to })
-        |= P.lazy lazyTypeOrId
+    P.succeed (\from to -> ConcreteType.Function { from = from, to = to })
+        |= P.lazy lazyType
         |. spacesOnly
         |. P.keyword (P.Token "->" ExpectingRightArrow)
         |. spacesOnly
-        |= P.lazy lazyTypeOrId
+        |= P.lazy lazyType
 
 
-simpleType : String -> Type PossiblyQualified -> Parser_ (Type PossiblyQualified)
+simpleType : String -> ConcreteType PossiblyQualified -> Parser_ (ConcreteType PossiblyQualified)
 simpleType name parsedType =
     P.succeed parsedType
         |. P.keyword (P.Token name (ExpectingSimpleType name))
 
 
-listType : Parser_ (Type PossiblyQualified)
+listType : Parser_ (ConcreteType PossiblyQualified)
 listType =
-    P.succeed Type.List
+    P.succeed ConcreteType.List
         |. P.keyword (P.Token "List" ExpectingListType)
         |. spacesOnly
-        |= P.lazy lazyTypeOrId
+        |= P.lazy lazyType
 
 
-tupleType : Parser_ (Type PossiblyQualified)
+tupleType : Parser_ (ConcreteType PossiblyQualified)
 tupleType =
-    P.succeed Type.Tuple
+    P.succeed ConcreteType.Tuple
         |. P.keyword (P.Token "(" ExpectingLeftParen)
         |. spacesOnly
-        |= P.lazy lazyTypeOrId
+        |= P.lazy lazyType
         |. spacesOnly
         |. P.keyword (P.Token "," ExpectingComma)
         |. spacesOnly
-        |= P.lazy lazyTypeOrId
+        |= P.lazy lazyType
         |. spacesOnly
         |. P.keyword (P.Token ")" ExpectingRightParen)
 
 
-tuple3Type : Parser_ (Type PossiblyQualified)
+tuple3Type : Parser_ (ConcreteType PossiblyQualified)
 tuple3Type =
-    P.succeed Type.Tuple3
+    P.succeed ConcreteType.Tuple3
         |. P.keyword (P.Token "(" ExpectingLeftParen)
         |. spacesOnly
-        |= P.lazy lazyTypeOrId
+        |= P.lazy lazyType
         |. spacesOnly
         |. P.keyword (P.Token "," ExpectingComma)
         |. spacesOnly
-        |= P.lazy lazyTypeOrId
+        |= P.lazy lazyType
         |. spacesOnly
         |. P.keyword (P.Token "," ExpectingComma)
         |. spacesOnly
-        |= P.lazy lazyTypeOrId
+        |= P.lazy lazyType
         |. spacesOnly
         |. P.keyword (P.Token ")" ExpectingRightParen)
 
 
-recordType : Parser_ (Type PossiblyQualified)
+recordType : Parser_ (ConcreteType PossiblyQualified)
 recordType =
-    P.succeed (Dict.fromList >> Type.Record)
+    P.succeed (Dict.fromList >> ConcreteType.Record)
         |= P.sequence
             { start = P.Token "{" ExpectingLeftBrace
             , separator = P.Token "," ExpectingComma
@@ -1382,7 +1377,7 @@ recordType =
             }
 
 
-userDefinedType : Parser_ (Type PossiblyQualified)
+userDefinedType : Parser_ (ConcreteType PossiblyQualified)
 userDefinedType =
     -- Maybe a
     -- List Int
@@ -1391,7 +1386,7 @@ userDefinedType =
     -- MyModule.MyDataStructure
     P.succeed
         (\modules name args ->
-            Type.UserDefinedType
+            ConcreteType.UserDefinedType
                 { qualifiedness = qualify modules
                 , name = name
                 , args = args
@@ -1400,7 +1395,7 @@ userDefinedType =
         |= qualifiers
         |= typeOrConstructorName
         |. spacesOnly
-        |= zeroOrMoreWith spacesOnly (P.lazy lazyTypeOrId)
+        |= zeroOrMoreWith spacesOnly (P.lazy lazyType)
 
 
 {-| Taken from [dmy/elm-pratt-parser](https://package.elm-lang.org/packages/dmy/elm-pratt-parser/latest/Pratt-Advanced#postfix),

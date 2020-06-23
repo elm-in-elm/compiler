@@ -10,6 +10,7 @@ import Elm.Data.ModuleName exposing (ModuleName)
 import Elm.Data.Project exposing (Project)
 import Elm.Data.Qualifiedness exposing (Qualified)
 import Elm.Data.Type exposing (Type(..), TypeOrId(..))
+import Elm.Data.Type.Concrete as ConcreteType exposing (ConcreteType)
 import Stage.InferTypes.AssignIds as AssignIds
 import Stage.InferTypes.Boilerplate as Boilerplate
 import Stage.InferTypes.GenerateEquations as GenerateEquations
@@ -214,7 +215,7 @@ getBetterType substitutionMap typeOrId =
 
 unifyWithTypeAnnotation :
     SubstitutionMap
-    -> Declaration Typed.LocatedExpr (Type Qualified) Qualified
+    -> Declaration Typed.LocatedExpr (ConcreteType Qualified) Qualified
     -> Result ( TypeError, SubstitutionMap ) ( Declaration Typed.LocatedExpr Never Qualified, SubstitutionMap )
 unifyWithTypeAnnotation substitutionMap decl =
     case ( decl.body, decl.typeAnnotation ) of
@@ -224,7 +225,10 @@ unifyWithTypeAnnotation substitutionMap decl =
                     Typed.getTypeOrId expr
 
                 unifyResult =
-                    Unify.unify (Type annotationType) realDeclarationType substitutionMap
+                    Unify.unify
+                        (ConcreteType.toTypeOrId annotationType)
+                        realDeclarationType
+                        substitutionMap
             in
             unifyResult
                 |> Result.map
@@ -247,7 +251,7 @@ unifyWithTypeAnnotation substitutionMap decl =
                 )
 
 
-throwAwayType : Declaration a (Type Qualified) b -> Declaration a Never b
+throwAwayType : Declaration a (ConcreteType Qualified) b -> Declaration a Never b
 throwAwayType decl =
     { module_ = decl.module_
     , typeAnnotation = Nothing

@@ -11,18 +11,18 @@ import Elm.AST.Canonical as Canonical
 import Elm.AST.Frontend as Frontend
 import Elm.Compiler.Error
     exposing
-        ( DesugarCompilerBug(..)
-        , DesugarError(..)
+        ( DesugarError(..)
         , Error(..)
         )
 import Elm.Data.Binding as Binding exposing (Binding)
-import Elm.Data.Declaration exposing (Declaration)
+import Elm.Data.Declaration as Declaration exposing (Declaration)
 import Elm.Data.Located as Located
 import Elm.Data.Module as Module exposing (Module)
 import Elm.Data.ModuleName exposing (ModuleName)
 import Elm.Data.Project exposing (Project)
 import Elm.Data.Qualifiedness exposing (PossiblyQualified(..), Qualified(..))
-import Elm.Data.Type as Type exposing (Type(..), TypeOrId(..))
+import Elm.Data.Type as Type exposing (Type, TypeOrId(..))
+import Elm.Data.Type.Concrete as ConcreteType exposing (ConcreteType(..))
 import Elm.Data.TypeAnnotation exposing (TypeAnnotation)
 import Elm.Data.VarName exposing (VarName)
 import Maybe.Extra
@@ -36,7 +36,7 @@ desugar project =
         |> Boilerplate.desugarProject
             (desugarExpr project.modules)
             desugarQualifiedness
-            desugarTypeAnnotation
+            (desugarTypeAnnotation project.modules)
         |> Result.mapError DesugarError
 
 
@@ -337,29 +337,13 @@ desugarQualifiedness =
     Debug.todo "desugarQualifiedness"
 
 
-coerceTypeOrIdToType :
-    Type PossiblyQualified
-    -> TypeOrId PossiblyQualified
-    -> Result DesugarError (Type PossiblyQualified)
-coerceTypeOrIdToType parentType typeOrId =
-    typeOrId
-        |> Type.getType
-        |> Result.fromMaybe
-            (DesugarCompilerBug <|
-                DesugaredTypeWasId
-                    { parent = parentType
-                    , id = typeOrId
-                    }
-            )
-
-
 {-| We only do stuff in the UserDefinedType case. The rest is boilerplate.
 -}
 desugarType :
     Dict ModuleName (Module Frontend.LocatedExpr TypeAnnotation PossiblyQualified)
     -> Module Frontend.LocatedExpr TypeAnnotation PossiblyQualified
-    -> Type PossiblyQualified
-    -> Result DesugarError (Type Qualified)
+    -> ConcreteType PossiblyQualified
+    -> Result DesugarError (ConcreteType Qualified)
 desugarType modules thisModule type_ =
     let
         f =
@@ -373,18 +357,12 @@ desugarType modules thisModule type_ =
             Result.map2
                 (\from_ to_ ->
                     Function
-                        { from = Type from_
-                        , to = Type to_
+                        { from = from_
+                        , to = to_
                         }
                 )
-                (from
-                    |> coerceTypeOrIdToType type_
-                    |> Result.andThen f
-                )
-                (to
-                    |> coerceTypeOrIdToType type_
-                    |> Result.andThen f
-                )
+                (f from)
+                (f to)
 
         Int ->
             Ok Int
@@ -402,24 +380,22 @@ desugarType modules thisModule type_ =
             Ok Bool
 
         List listType ->
-            listType
-                |> coerceTypeOrIdToType type_
-                |> Result.andThen f
-                |> Result.map (Type >> List)
+            f listType
+                |> Result.map List
 
         Unit ->
             Ok Unit
 
         Tuple a b ->
-            Result.map2 (\a_ b_ -> Tuple (Type a_) (Type b_))
-                (a |> coerceTypeOrIdToType type_ |> Result.andThen f)
-                (b |> coerceTypeOrIdToType type_ |> Result.andThen f)
+            Result.map2 Tuple
+                (f a)
+                (f b)
 
         Tuple3 a b c ->
-            Result.map3 (\a_ b_ c_ -> Tuple3 (Type a_) (Type b_) (Type c_))
-                (a |> coerceTypeOrIdToType type_ |> Result.andThen f)
-                (b |> coerceTypeOrIdToType type_ |> Result.andThen f)
-                (c |> coerceTypeOrIdToType type_ |> Result.andThen f)
+            Result.map3 Tuple3
+                (f a)
+                (f b)
+                (f c)
 
         Record bindings ->
             bindings
@@ -450,24 +426,39 @@ desugarType modules thisModule type_ =
 {-| TODO test (make sure the integration tests properly fail/succeed and have snapshots)
 -}
 desugarTypeAnnotation :
-    Declaration a TypeAnnotation b
-    -> Result DesugarError (Declaration a (Type Qualified) b)
-desugarTypeAnnotation decl =
+    Dict ModuleName (Module Frontend.LocatedExpr TypeAnnotation PossiblyQualified)
+    -> Module Frontend.LocatedExpr TypeAnnotation PossiblyQualified
+    -> Declaration a TypeAnnotation b
+    -> Result DesugarError (Declaration a (ConcreteType Qualified) b)
+desugarTypeAnnotation modules thisModule decl =
     decl
         |> checkNamesAgree
-        |> Result.andThen desugarTypeAnnotationQualifiedness
+        |> Result.andThen (desugarTypeAnnotationQualifiedness modules thisModule)
 
 
 desugarTypeAnnotationQualifiedness :
-    Declaration a (Type PossiblyQualified) b
-    -> Result DesugarError (Declaration a (Type Qualified) b)
-desugarTypeAnnotationQualifiedness decl =
+    Dict ModuleName (Module Frontend.LocatedExpr TypeAnnotation PossiblyQualified)
+    -> Module Frontend.LocatedExpr TypeAnnotation PossiblyQualified
+    -> Declaration a (ConcreteType PossiblyQualified) b
+    -> Result DesugarError (Declaration a (ConcreteType Qualified) b)
+desugarTypeAnnotationQualifiedness modules thisModule decl =
     decl.typeAnnotation
         |> Maybe.map
             (\type_ ->
-                desugarType (Type type_)
+                type_
+                    |> desugarType modules thisModule
+                    |> Result.map
+                        (\desugaredType ->
+                            Declaration.setAnnotation
+                                (Just desugaredType)
+                                decl
+                        )
             )
-        |> Maybe.withDefault (Ok decl)
+        |> Maybe.withDefault
+            (decl
+                |> Declaration.setAnnotation Nothing
+                |> Ok
+            )
 
 
 {-| Check the var name in the type annotation is the same as the one in the declaration:
@@ -483,11 +474,11 @@ If they don't match, throw an error:
 -}
 checkNamesAgree :
     Declaration a TypeAnnotation b
-    -> Result DesugarError (Declaration a (Type PossiblyQualified) b)
+    -> Result DesugarError (Declaration a (ConcreteType PossiblyQualified) b)
 checkNamesAgree decl =
     decl.typeAnnotation
         |> Maybe.map
-            (\{ varName, type_ } ->
+            (\{ varName } ->
                 if varName == decl.name then
                     Ok <| throwAwayTypeAnnotationName decl
 
@@ -503,7 +494,7 @@ checkNamesAgree decl =
 
 throwAwayTypeAnnotationName :
     Declaration a TypeAnnotation b
-    -> Declaration a (Type PossiblyQualified) b
+    -> Declaration a (ConcreteType PossiblyQualified) b
 throwAwayTypeAnnotationName decl =
     { module_ = decl.module_
     , typeAnnotation = Maybe.map .type_ decl.typeAnnotation

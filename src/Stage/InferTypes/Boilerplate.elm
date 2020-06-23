@@ -12,7 +12,7 @@ import Elm.Data.Module exposing (Module)
 import Elm.Data.ModuleName exposing (ModuleName)
 import Elm.Data.Project exposing (Project)
 import Elm.Data.Qualifiedness exposing (Qualified)
-import Elm.Data.Type exposing (Type)
+import Elm.Data.Type.Concrete exposing (ConcreteType)
 import Elm.Data.VarName exposing (VarName)
 import OurExtras.Dict as Dict
 import Stage.InferTypes.SubstitutionMap exposing (SubstitutionMap)
@@ -26,7 +26,7 @@ type alias InferExprFn =
 
 type alias UnifyWithTypeAnnotationFn =
     SubstitutionMap
-    -> Declaration Typed.LocatedExpr (Type Qualified) Qualified
+    -> Declaration Typed.LocatedExpr (ConcreteType Qualified) Qualified
     -> SubstResult (Declaration Typed.LocatedExpr Never Qualified)
 
 
@@ -86,7 +86,7 @@ inferModule :
     InferExprFn
     -> UnifyWithTypeAnnotationFn
     -> SubstitutionMap
-    -> Module Canonical.LocatedExpr (Type Qualified) Qualified
+    -> Module Canonical.LocatedExpr (ConcreteType Qualified) Qualified
     -> SubstResult (Module Typed.LocatedExpr Never Qualified)
 inferModule inferExpr unifyWithTypeAnnotation substitutionMap module_ =
     module_.declarations
@@ -115,7 +115,7 @@ inferModule inferExpr unifyWithTypeAnnotation substitutionMap module_ =
 
 
 moduleOfNewType :
-    Module Canonical.LocatedExpr (Type Qualified) Qualified
+    Module Canonical.LocatedExpr (ConcreteType Qualified) Qualified
     -> Dict VarName (Declaration Typed.LocatedExpr Never Qualified)
     -> Module Typed.LocatedExpr Never Qualified
 moduleOfNewType old newDecls =
@@ -133,8 +133,8 @@ moduleOfNewType old newDecls =
 inferDeclaration :
     InferExprFn
     -> SubstitutionMap
-    -> Declaration Canonical.LocatedExpr (Type Qualified) Qualified
-    -> SubstResult (Declaration Typed.LocatedExpr (Type Qualified) Qualified)
+    -> Declaration Canonical.LocatedExpr (ConcreteType Qualified) Qualified
+    -> SubstResult (Declaration Typed.LocatedExpr (ConcreteType Qualified) Qualified)
 inferDeclaration inferExpr substitutionMap decl =
     let
         result : SubstResult (DeclarationBody Typed.LocatedExpr Qualified)

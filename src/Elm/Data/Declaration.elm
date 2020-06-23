@@ -1,13 +1,15 @@
 module Elm.Data.Declaration exposing
     ( Declaration, DeclarationBody(..), Constructor
-    , map, mapBody, combine, combineSubstitutionMap
+    , map, mapBody, setAnnotation
+    , combine, combineSubstitutionMap
     , getExpr
     )
 
 {-| Top-level declaration, be it a function, constant or a type definition.
 
 @docs Declaration, DeclarationBody, Constructor
-@docs map, mapBody, combine, combineSubstitutionMap
+@docs map, mapBody, setAnnotation
+@docs combine, combineSubstitutionMap
 @docs getExpr
 
 -}
@@ -102,6 +104,20 @@ map fnExpr fnQualifiedness declaration =
     , typeAnnotation = declaration.typeAnnotation
     , name = declaration.name
     , body = mapBody fnExpr fnQualifiedness declaration.body
+    }
+
+
+{-| Replace the annotation with another of possibly different type.
+-}
+setAnnotation :
+    Maybe ann2
+    -> Declaration a ann1 b
+    -> Declaration a ann2 b
+setAnnotation annotation declaration =
+    { module_ = declaration.module_
+    , typeAnnotation = annotation
+    , name = declaration.name
+    , body = declaration.body
     }
 
 

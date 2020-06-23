@@ -17,7 +17,7 @@ import Dict exposing (Dict)
 import Elm.Data.Binding exposing (Binding)
 import Elm.Data.ModuleName exposing (ModuleName)
 import Elm.Data.Qualifiedness exposing (Qualified)
-import Elm.Data.Type exposing (Type, TypeOrId)
+import Elm.Data.Type exposing (TypeOrId)
 import Elm.Data.VarName exposing (VarName)
 
 

@@ -126,7 +126,6 @@ import Elm.AST.Canonical.Unwrapped as CanonicalUnwrapped
 import Elm.AST.Frontend as Frontend
 import Elm.AST.Frontend.Unwrapped as FrontendUnwrapped
 import Elm.AST.Typed as Typed
-import Elm.AST.Typed.Unwrapped as TypedUnwrapped
 import Elm.Compiler.Error
     exposing
         ( Error(..)
@@ -138,7 +137,7 @@ import Elm.Data.Declaration exposing (Declaration)
 import Elm.Data.FileContents exposing (FileContents)
 import Elm.Data.FilePath exposing (FilePath)
 import Elm.Data.Import exposing (Import)
-import Elm.Data.Module as Module exposing (Module)
+import Elm.Data.Module exposing (Module)
 import Elm.Data.ModuleName exposing (ModuleName)
 import Elm.Data.Type exposing (Type)
 import Elm.Data.TypeAnnotation exposing (TypeAnnotation)
@@ -149,7 +148,7 @@ import Stage.Desugar
 import Stage.Desugar.Boilerplate
 import Stage.InferTypes
 import Stage.InferTypes.Boilerplate
-import Stage.InferTypes.SubstitutionMap as SubstitutionMap exposing (SubstitutionMap)
+import Stage.InferTypes.SubstitutionMap exposing (SubstitutionMap)
 import Stage.Optimize
 import Stage.Optimize.Boilerplate
 import Stage.Parse.Parser

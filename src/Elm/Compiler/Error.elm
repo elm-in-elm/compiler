@@ -1,7 +1,7 @@
 module Elm.Compiler.Error exposing
     ( Error(..), toString
     , ParseError(..), ParseCompilerBug(..), ParseProblem(..), ParseContext(..)
-    , DesugarError(..), DesugarCompilerBug(..)
+    , DesugarError(..)
     , TypeError(..)
     , EmitError(..)
     )
@@ -10,7 +10,7 @@ module Elm.Compiler.Error exposing
 
 @docs Error, toString
 @docs ParseError, ParseCompilerBug, ParseProblem, ParseContext
-@docs DesugarError, DesugarCompilerBug
+@docs DesugarError
 @docs TypeError
 @docs EmitError
 
@@ -184,16 +184,6 @@ type DesugarError
         , firstOccurrence : Located ()
         , secondOccurrence : Located ()
         }
-    | DesugarCompilerBug DesugarCompilerBug
-
-
-{-| TODO it would be great if we could get rid of these
--}
-type DesugarCompilerBug
-    = DesugaredTypeWasId
-        { id : TypeOrId PossiblyQualified
-        , parent : Type PossiblyQualified
-        }
 
 
 {-| Errors encountered during [typechecking](Elm.Compiler#inferExpr).
@@ -292,7 +282,7 @@ toString error =
                         ++ "  Definition: "
                         ++ varName
 
-                DuplicateRecordField { name, firstOccurrence, secondOccurrence } ->
+                DuplicateRecordField { name } ->
                     {- TODO
                        This record has multiple `a` fields. One here:
 
@@ -305,26 +295,6 @@ toString error =
                        How can I know which one you want? Rename one of them!
                     -}
                     "This record has multiple `" ++ name ++ "` fields."
-
-                DesugarCompilerBug (DesugaredTypeWasId { id, parent }) ->
-                    let
-                        ( idString, state1 ) =
-                            TypeToString.toStringPossiblyQualified
-                                (TypeToString.fromTypeOrId id
-                                    |> TypeToString.addType parent
-                                )
-                                id
-
-                        ( parentString, _ ) =
-                            TypeToString.toStringTypePossiblyQualified
-                                state1
-                                parent
-                    in
-                    "Type `"
-                        ++ parentString
-                        ++ "` contained a TypeOrId that was supposed to be Type but instead was an Id: `"
-                        ++ idString
-                        ++ "`."
 
         TypeError typeError ->
             case typeError of

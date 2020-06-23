@@ -130,7 +130,7 @@ emitExpr located =
             in
             "{" ++ bindingsJS ++ "}"
 
-        Case e branches ->
+        Case _ _ ->
             "TODO"
 
 

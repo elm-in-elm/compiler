@@ -497,7 +497,7 @@ generatePatternEquations currentId located =
 
             -}
             let
-                ( _, aliasPatternType ) =
+                ( _, _ ) =
                     Located.unwrap aliasPattern
 
                 ( aliasPatternEquations, id1 ) =

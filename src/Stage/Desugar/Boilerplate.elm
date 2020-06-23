@@ -12,7 +12,7 @@ import Elm.Data.Module exposing (Module)
 import Elm.Data.ModuleName exposing (ModuleName)
 import Elm.Data.Project exposing (Project)
 import Elm.Data.Qualifiedness exposing (PossiblyQualified, Qualified)
-import Elm.Data.Type exposing (Type, TypeOrId)
+import Elm.Data.Type.Concrete exposing (ConcreteType)
 import Elm.Data.TypeAnnotation exposing (TypeAnnotation)
 import Elm.Data.VarName exposing (VarName)
 import OurExtras.Dict as Dict
@@ -33,13 +33,13 @@ type alias DesugarQualifiednessFn =
 -}
 type alias DesugarAnnotationFn =
     Declaration Canonical.LocatedExpr TypeAnnotation Qualified
-    -> Result DesugarError (Declaration Canonical.LocatedExpr (Type Qualified) Qualified)
+    -> Result DesugarError (Declaration Canonical.LocatedExpr (ConcreteType Qualified) Qualified)
 
 
 desugarProject :
     DesugarExprFn
     -> DesugarQualifiednessFn
-    -> DesugarAnnotationFn
+    -> (Module Frontend.LocatedExpr TypeAnnotation PossiblyQualified -> DesugarAnnotationFn)
     -> Project Frontend.ProjectFields
     -> Result DesugarError (Project Canonical.ProjectFields)
 desugarProject desugarExpr desugarQualifiedness desugarAnnotation project =
@@ -58,7 +58,7 @@ desugarProject desugarExpr desugarQualifiedness desugarAnnotation project =
 
 projectOfNewType :
     Project Frontend.ProjectFields
-    -> Dict ModuleName (Module Canonical.LocatedExpr (Type Qualified) Qualified)
+    -> Dict ModuleName (Module Canonical.LocatedExpr (ConcreteType Qualified) Qualified)
     -> Project Canonical.ProjectFields
 projectOfNewType old modules =
     { elmJson = old.elmJson
@@ -74,9 +74,9 @@ projectOfNewType old modules =
 desugarModule :
     DesugarExprFn
     -> DesugarQualifiednessFn
-    -> DesugarAnnotationFn
+    -> (Module Frontend.LocatedExpr TypeAnnotation PossiblyQualified -> DesugarAnnotationFn)
     -> Module Frontend.LocatedExpr TypeAnnotation PossiblyQualified
-    -> Result DesugarError (Module Canonical.LocatedExpr (Type Qualified) Qualified)
+    -> Result DesugarError (Module Canonical.LocatedExpr (ConcreteType Qualified) Qualified)
 desugarModule desugarExpr desugarQualifiedness desugarAnnotation module_ =
     module_.declarations
         |> Dict.map
@@ -84,7 +84,7 @@ desugarModule desugarExpr desugarQualifiedness desugarAnnotation module_ =
                 (desugarDeclaration
                     (desugarExpr module_)
                     desugarQualifiedness
-                    desugarAnnotation
+                    (desugarAnnotation module_)
                 )
             )
         |> Dict.combine
@@ -93,8 +93,8 @@ desugarModule desugarExpr desugarQualifiedness desugarAnnotation module_ =
 
 moduleOfNewType :
     Module Frontend.LocatedExpr TypeAnnotation PossiblyQualified
-    -> Dict VarName (Declaration Canonical.LocatedExpr (Type Qualified) Qualified)
-    -> Module Canonical.LocatedExpr (Type Qualified) Qualified
+    -> Dict VarName (Declaration Canonical.LocatedExpr (ConcreteType Qualified) Qualified)
+    -> Module Canonical.LocatedExpr (ConcreteType Qualified) Qualified
 moduleOfNewType old newDecls =
     { imports = old.imports
     , name = old.name
@@ -112,7 +112,7 @@ desugarDeclaration :
     -> DesugarQualifiednessFn
     -> DesugarAnnotationFn
     -> Declaration Frontend.LocatedExpr TypeAnnotation PossiblyQualified
-    -> Result DesugarError (Declaration Canonical.LocatedExpr (Type Qualified) Qualified)
+    -> Result DesugarError (Declaration Canonical.LocatedExpr (ConcreteType Qualified) Qualified)
 desugarDeclaration desugarExpr desugarQualifiedness desugarAnnotation decl =
     decl.body
         |> Declaration.mapBody desugarExpr desugarQualifiedness

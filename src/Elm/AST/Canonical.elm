@@ -19,7 +19,8 @@ import Elm.Data.Located as Located exposing (Located)
 import Elm.Data.Module exposing (Module)
 import Elm.Data.ModuleName exposing (ModuleName)
 import Elm.Data.Qualifiedness exposing (Qualified)
-import Elm.Data.Type as Type exposing (Type)
+import Elm.Data.Type exposing (Type)
+import Elm.Data.Type.Concrete as ConcreteType exposing (ConcreteType)
 import Elm.Data.VarName exposing (VarName)
 
 
@@ -32,7 +33,7 @@ that hold [canonical AST expressions](#LocatedExpr).
 
 -}
 type alias ProjectFields =
-    { modules : Dict ModuleName (Module LocatedExpr (Type Qualified) Qualified) }
+    { modules : Dict ModuleName (Module LocatedExpr (ConcreteType Qualified) Qualified) }
 
 
 {-| The main type of this module. Expression with [location metadata](Elm.Data.Located).

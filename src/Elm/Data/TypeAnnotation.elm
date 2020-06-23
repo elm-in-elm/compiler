@@ -21,18 +21,6 @@ but also qualified:
 
 -}
 type alias TypeAnnotation =
-    { varName :
-        VarName
-            -- TODO start here:
-            -- I was implementing stuff around `desugarType`
-            -- it dawned on me that this might be easier if
-            -- I had the guarantee that the type I'm looking at
-            -- is always a Type, never an Id. (See TypeOrId.)
-            -- So I changed this type_ : Type PQ
-            -- into type_ : ConcreteType PQ.
-            -- Now go and see what needs to be changed to propagate
-            -- these changes to `desugarType` etc!
-            start
-            here
+    { varName : VarName
     , type_ : ConcreteType PossiblyQualified
     }
