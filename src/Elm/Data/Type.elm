@@ -20,7 +20,9 @@ The main confusion point here is "what is the
 
 import Dict exposing (Dict)
 import Elm.Data.VarName exposing (VarName)
+import OurExtras.Dict as Dict
 import OurExtras.List as List
+import Result.Extra
 import Transform
 
 
@@ -339,14 +341,18 @@ mapTypeOrId fn typeOrId =
 
 mapType : (a -> b) -> Type a -> Type b
 mapType fn type_ =
+    let
+        f =
+            mapTypeOrId fn
+    in
     case type_ of
         Var str ->
             Var str
 
         Function { from, to } ->
             Function
-                { from = mapTypeOrId fn from
-                , to = mapTypeOrId fn to
+                { from = f from
+                , to = f to
                 }
 
         Int ->
@@ -365,38 +371,115 @@ mapType fn type_ =
             Bool
 
         List typeOrId ->
-            List <| mapTypeOrId fn typeOrId
+            List <| f typeOrId
 
         Unit ->
             Unit
 
         Tuple a b ->
             Tuple
-                (mapTypeOrId fn a)
-                (mapTypeOrId fn b)
+                (f a)
+                (f b)
 
         Tuple3 a b c ->
             Tuple3
-                (mapTypeOrId fn a)
-                (mapTypeOrId fn b)
-                (mapTypeOrId fn c)
+                (f a)
+                (f b)
+                (f c)
 
         Record dict ->
-            Record <| Dict.map (\_ v -> mapTypeOrId fn v) dict
+            Record <| Dict.map (always f) dict
 
         UserDefinedType r ->
             UserDefinedType
                 { qualifiedness = fn r.qualifiedness
                 , name = r.name
-                , args = List.map (mapTypeOrId fn) r.args
+                , args = List.map f r.args
                 }
 
 
 combineType : Type (Result err a) -> Result err (Type a)
 combineType type_ =
-    Debug.todo "combineType"
+    let
+        f =
+            combineTypeOrId
+    in
+    case type_ of
+        Var string ->
+            Ok <| Var string
+
+        Function { from, to } ->
+            Result.map2
+                (\from_ to_ ->
+                    Function
+                        { from = from_
+                        , to = to_
+                        }
+                )
+                (f from)
+                (f to)
+
+        Int ->
+            Ok Int
+
+        Float ->
+            Ok Float
+
+        Char ->
+            Ok Char
+
+        String ->
+            Ok String
+
+        Bool ->
+            Ok Bool
+
+        List listType ->
+            f listType
+                |> Result.map List
+
+        Unit ->
+            Ok Unit
+
+        Tuple a b ->
+            Result.map2 Tuple
+                (f a)
+                (f b)
+
+        Tuple3 a b c ->
+            Result.map3 Tuple3
+                (f a)
+                (f b)
+                (f c)
+
+        Record bindings ->
+            bindings
+                |> Dict.map (always f)
+                |> Dict.combine
+                |> Result.map Record
+
+        UserDefinedType { qualifiedness, name, args } ->
+            Result.map2
+                (\qualifiedness_ args_ ->
+                    UserDefinedType
+                        { qualifiedness = qualifiedness_
+                        , name = name
+                        , args = args_
+                        }
+                )
+                qualifiedness
+                (args
+                    |> List.map f
+                    |> Result.Extra.combine
+                )
 
 
 combineTypeOrId : TypeOrId (Result err a) -> Result err (TypeOrId a)
 combineTypeOrId typeOrId =
-    Debug.todo "combineTypeOrId"
+    case typeOrId of
+        Id int ->
+            Ok <| Id int
+
+        Type type_ ->
+            combineType type_
+                |> Result.map Type

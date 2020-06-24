@@ -233,4 +233,12 @@ mapConstructor fn constructor =
 
 combineConstructor : Constructor (Result err a) -> Result err (Constructor a)
 combineConstructor constructor =
-    Debug.todo "combineConstructor"
+    constructor.arguments
+        |> List.map Type.combineTypeOrId
+        |> Result.Extra.combine
+        |> Result.map
+            (\arguments ->
+                { name = constructor.name
+                , arguments = arguments
+                }
+            )
