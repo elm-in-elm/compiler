@@ -57,9 +57,3 @@ readme_lib:
 readme_gh:
 	mv README.md README-library.md
 	mv README-github.md README.md
-
-# Running elm-review without args can lead to false positives about unused stuff, which is in fact used in tests
-# To fix that, we search for all committed elm files and pass them explicitly to elm-review via xargs
-.PHONY: review
-review:
-	git ls-files '*.elm' | grep -vE "(integration-tests|benchmarks|example-*)" | xargs npx elm-review
