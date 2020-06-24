@@ -483,16 +483,16 @@ niceVarName =
 isParametric : Test
 isParametric =
     let
-        runTest : ( TypeOrId Qualified, Bool ) -> Test
-        runTest ( input, output ) =
-            test (dumpTypeOrId input) <|
+        runTest : Int -> ( TypeOrId Qualified, Bool ) -> Test
+        runTest i ( input, output ) =
+            test (String.fromInt i ++ ": " ++ dumpTypeOrId input) <|
                 \() ->
                     input
                         |> Type.isParametric
                         |> Expect.equal output
     in
     describe "Type.isParametric" <|
-        List.map runTest
+        List.indexedMap runTest
             [ ( Type Unit, False )
             , ( Type Bool, False )
             , ( Type Char, False )
