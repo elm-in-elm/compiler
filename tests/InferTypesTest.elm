@@ -5,7 +5,8 @@ import Elm.AST.Canonical as Canonical
 import Elm.AST.Canonical.Unwrapped as CanonicalU
 import Elm.AST.Typed as Typed
 import Elm.Compiler.Error as Error exposing (Error(..), TypeError(..))
-import Elm.Data.Type as Type exposing (Type(..))
+import Elm.Data.Qualifiedness exposing (Qualified)
+import Elm.Data.Type as Type exposing (Type(..), TypeOrId(..))
 import Elm.Data.Type.ToString as TypeToString
 import Expect
 import Stage.InferTypes
@@ -17,12 +18,12 @@ import TestHelpers exposing (dumpType)
 typeInference : Test
 typeInference =
     let
-        runSection : String -> List ( String, CanonicalU.Expr, Result TypeError Type ) -> Test
+        runSection : String -> List ( String, CanonicalU.Expr, Result TypeError (Type Qualified) ) -> Test
         runSection description tests =
             describe description
                 (List.map runTest tests)
 
-        runTest : ( String, CanonicalU.Expr, Result TypeError Type ) -> Test
+        runTest : ( String, CanonicalU.Expr, Result TypeError (Type Qualified) ) -> Test
         runTest ( description, input, output ) =
             test description <|
                 \() ->
@@ -189,10 +190,10 @@ typeInference =
 typeToString : Test
 typeToString =
     let
-        toStringOnce : Type -> String
-        toStringOnce type_ =
-            type_
-                |> TypeToString.toString TypeToString.emptyState
+        toStringOnce : TypeOrId Qualified -> String
+        toStringOnce typeOrId =
+            typeOrId
+                |> TypeToString.toString (TypeToString.fromTypeOrId typeOrId)
                 |> Tuple.first
 
         runTest ( description, input, output ) =
@@ -210,17 +211,17 @@ typeToString =
         [ describe "list"
             [ runTest
                 ( "empty list"
-                , List (Var 0)
+                , Type (List (Id 0))
                 , "List a"
                 )
             , runTest
                 ( "one item in list"
-                , List Bool
+                , Type (List (Type Bool))
                 , "List Bool"
                 )
             , runTest
                 ( "list of list of String"
-                , List (List String)
+                , Type (List (Type (List (Type String))))
                 , "List (List String)"
                 )
             ]
@@ -228,8 +229,8 @@ typeToString =
             [ runTest
                 ( "function with one param"
                 , Function
-                    { from = Var 99
-                    , to = Int
+                    { from = Id 99
+                    , to = Type Int
                     }
                 , "a -> Int"
                 )
@@ -394,7 +395,7 @@ niceVarName =
 isParametric : Test
 isParametric =
     let
-        runTest : ( Type, Bool ) -> Test
+        runTest : ( Type Qualified, Bool ) -> Test
         runTest ( input, output ) =
             test (dumpType input) <|
                 \() ->

@@ -13,20 +13,33 @@ messages).
 
 To accomplish this, we pass a state around as an argument.
 
+State can be created using functions like `fromType`. (We're explicitly not
+including an `emptyState` to force you to use this API properly and not forget
+to add a type.
+
 This is how the simple case would look:
 
-    toString emptyState (List Int)
+    toString (fromType (List Int)) (List Int)
     --> ("List Int", <state>)
 
 And for cases where you're printing multiple types and they have to make sense
 together, you pass the state returned from first call to the second call:
 
     let
+        type1 =
+            Function (Var 0) (Var 1)
+
+        type2 =
+            Function Int (Var 1)
+
+        state =
+            fromTypes [ type1, type2 ]
+
         (typeString1, state1) =
-            toString emptyState (Function (Var 0) (Var 1))
+            toString state type1
 
         (typeString2, _) =
-            toString state1 (Function Int (Var 1))
+            toString state1 type2
     in
     typeString1 ++ " is not the same as " ++ typeString2
     --> "(a -> b) is not the same as (Int -> b)

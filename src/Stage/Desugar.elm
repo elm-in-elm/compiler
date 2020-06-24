@@ -1,6 +1,7 @@
 module Stage.Desugar exposing
     ( desugar
     , desugarExpr
+    , desugarQualifiedness
     , desugarTypeAnnotation
     )
 

@@ -14,7 +14,9 @@ import Elm.AST.Frontend.Unwrapped exposing (Expr(..), Pattern(..))
 import Elm.Compiler.Error exposing (ParseContext, ParseProblem)
 import Elm.Data.Exposing exposing (ExposedItem(..), Exposing(..))
 import Elm.Data.Module exposing (ModuleType(..))
+import Elm.Data.Qualifiedness exposing (PossiblyQualified(..))
 import Elm.Data.Type as Type exposing (Type)
+import Elm.Data.Type.Concrete as ConcreteType exposing (ConcreteType)
 import Elm.Data.TypeAnnotation exposing (TypeAnnotation)
 import Expect exposing (Expectation)
 import Parser.Advanced as P
@@ -451,10 +453,7 @@ expr =
                   , "\\x y -> x + y"
                   , Just
                         (Lambda
-                            { arguments =
-                                [ "x"
-                                , "y"
-                                ]
+                            { arguments = [ "x", "y" ]
                             , body =
                                 Plus
                                     (Argument "x")
@@ -469,7 +468,7 @@ expr =
                   , "fn 1"
                   , Just
                         (Call
-                            { fn = Var { name = "fn", module_ = Nothing }
+                            { fn = Var { name = "fn", qualifiedness = PossiblyQualified Nothing }
                             , argument = Int 1
                             }
                         )
@@ -478,8 +477,8 @@ expr =
                   , "fn arg"
                   , Just
                         (Call
-                            { fn = Var { name = "fn", module_ = Nothing }
-                            , argument = Var { name = "arg", module_ = Nothing }
+                            { fn = Var { name = "fn", qualifiedness = PossiblyQualified Nothing }
+                            , argument = Var { name = "arg", qualifiedness = PossiblyQualified Nothing }
                             }
                         )
                   )
@@ -489,10 +488,10 @@ expr =
                         (Call
                             { fn =
                                 Call
-                                    { fn = Var { name = "fn", module_ = Nothing }
-                                    , argument = Var { name = "arg1", module_ = Nothing }
+                                    { fn = Var { name = "fn", qualifiedness = PossiblyQualified Nothing }
+                                    , argument = Var { name = "arg1", qualifiedness = PossiblyQualified Nothing }
                                     }
-                            , argument = Var { name = "arg2", module_ = Nothing }
+                            , argument = Var { name = "arg2", qualifiedness = PossiblyQualified Nothing }
                             }
                         )
                   )
@@ -500,8 +499,8 @@ expr =
                   , "fn(arg1)"
                   , Just
                         (Call
-                            { fn = Var { name = "fn", module_ = Nothing }
-                            , argument = Var { name = "arg1", module_ = Nothing }
+                            { fn = Var { name = "fn", qualifiedness = PossiblyQualified Nothing }
+                            , argument = Var { name = "arg1", qualifiedness = PossiblyQualified Nothing }
                             }
                         )
                   )
@@ -1012,7 +1011,7 @@ expr =
                     """
                         |> String.unindent
                   , Just
-                        (Case (Var { name = "arg", module_ = Nothing })
+                        (Case (Var { name = "arg", qualifiedness = PossiblyQualified Nothing })
                             [ { pattern = PTuple (PChar 'c') (PInt 23)
                               , body = Bool True
                               }
@@ -1109,7 +1108,7 @@ contextToString context =
 type_ : Test
 type_ =
     let
-        runTest : ( String, String, Type ) -> Test
+        runTest : ( String, String, ConcreteType PossiblyQualified ) -> Test
         runTest ( description, input, output ) =
             test description <|
                 \() ->
@@ -1120,32 +1119,32 @@ type_ =
     in
     describe "Stage.Parse.Parser.type_"
         (List.map runTest
-            [ ( "int", "Int", Type.Int )
-            , ( "unit", "()", Type.Unit )
+            [ ( "int", "Int", ConcreteType.Int )
+            , ( "unit", "()", ConcreteType.Unit )
+            , ( "var a", "a", ConcreteType.Var "a" )
+            , ( "function"
+              , "Int -> Unit"
+              , ConcreteType.Function
+                    { from = ConcreteType.Int
+                    , to = ConcreteType.Unit
+                    }
+              )
+            , ( "multiple-arg function"
+              , "Int -> Unit -> Char"
+              , ConcreteType.Function
+                    { from = ConcreteType.Int
+                    , to =
+                        ConcreteType.Function
+                            { from = ConcreteType.Unit
+                            , to = ConcreteType.Char
+                            }
+                    }
+              )
+            , ( "float", "Float", ConcreteType.Float )
+            , ( "char", "Char", ConcreteType.Char )
+            , ( "string", "String", ConcreteType.String )
+            , ( "bool", "Bool", ConcreteType.Bool )
 
-            --, ("var a", "a", Type.Var ) -- TODO constructor for Var type that has the letter instead of the var ID?
-            --, ( "function"
-            --  , "Int -> Unit"
-            --  , Type.Function
-            --        { from = Type.Int
-            --        , to = Type.Unit
-            --        }
-            --  )
-            --, ( "multiple-arg function"
-            --  , "Int -> Unit -> Char"
-            --  , Type.Function
-            --        { from = Type.Int
-            --        , to =
-            --            Type.Function
-            --                { from = Type.Unit
-            --                , to = Type.Char
-            --                }
-            --        }
-            --  )
-            -- , ("float", "Float", Type.Float)
-            -- , ("char", "Char", Type.Char)
-            -- , ("string", "String", Type.String)
-            -- , ("bool", "Bool", Type.Bool)
             -- TODO list
             -- TODO tuple
             -- TODO tuple3
@@ -1169,29 +1168,155 @@ typeAnnotation =
 
         xInt : TypeAnnotation
         xInt =
-            { varName = "x", type_ = Type.Int }
+            { varName = "x", type_ = ConcreteType.Int }
     in
     describe "Stage.Parse.Parser.typeAnnotation"
-        [ describe "various cases"
-            [ -- TODO var
-              -- TODO function
-              -- TODO Int
-              -- TODO Float
-              -- TODO Char
-              -- TODO String
-              -- TODO Bool
-              -- TODO List
-              -- TODO List with a different param
-              -- TODO Unit
-              -- TODO Tuple
-              -- TODO Tuple3
-              -- TODO Record
-              -- TODO UserDefinedType
-              runTest ( "x int", "x : Int", Just xInt )
-            , runTest ( "x unit", "x : ()", Just { varName = "x", type_ = Type.Unit } )
-            , runTest ( "y bool", "y : Bool", Just { varName = "y", type_ = Type.Bool } )
-            , runTest ( "foo tuple", "foo : (Int, Bool)", Just { varName = "foo", type_ = Type.Tuple Type.Int Type.Bool } )
-            ]
+        [ describe "various cases" <|
+            List.map runTest <|
+                [ -- TODO extensible record
+                  ( "x int", "x : Int", Just xInt )
+                , ( "x float", "x : Float", Just { varName = "x", type_ = ConcreteType.Float } )
+                , ( "x char", "x : Char", Just { varName = "x", type_ = ConcreteType.Char } )
+                , ( "x string", "x : String", Just { varName = "x", type_ = ConcreteType.String } )
+                , ( "x unit", "x : ()", Just { varName = "x", type_ = ConcreteType.Unit } )
+                , ( "y bool", "y : Bool", Just { varName = "y", type_ = ConcreteType.Bool } )
+                , ( "foo tuple"
+                  , "foo : (Int, Bool)"
+                  , Just
+                        { varName = "foo"
+                        , type_ =
+                            ConcreteType.Tuple
+                                ConcreteType.Int
+                                ConcreteType.Bool
+                        }
+                  )
+                , ( "foo tuple3"
+                  , "foo : (Int, Bool, String)"
+                  , Just
+                        { varName = "foo"
+                        , type_ =
+                            ConcreteType.Tuple3
+                                ConcreteType.Int
+                                ConcreteType.Bool
+                                ConcreteType.String
+                        }
+                  )
+                , -- TODO List should be just another UserDefinedType
+                  ( "x list", "x : List Int", Just { varName = "x", type_ = ConcreteType.List ConcreteType.Int } )
+                , ( "x list 2"
+                  , "x : List (List ())"
+                  , Just
+                        { varName = "x"
+                        , type_ = ConcreteType.List (ConcreteType.List ConcreteType.Unit)
+                        }
+                  )
+                , ( "x record", "x : {}", Just { varName = "x", type_ = ConcreteType.Record Dict.empty } )
+                , ( "x record 2"
+                  , "x : {foo : Int}"
+                  , Just
+                        { varName = "x"
+                        , type_ =
+                            ConcreteType.Record
+                                (Dict.fromList [ ( "foo", ConcreteType.Int ) ])
+                        }
+                  )
+                , ( "x record 3"
+                  , "x : {foo : Int, bar : ()}"
+                  , Just
+                        { varName = "x"
+                        , type_ =
+                            ConcreteType.Record
+                                (Dict.fromList
+                                    [ ( "foo", ConcreteType.Int )
+                                    , ( "bar", ConcreteType.Unit )
+                                    ]
+                                )
+                        }
+                  )
+                , ( "x var 2", "x : abcde1213", Just { varName = "x", type_ = ConcreteType.Var "abcde1213" } )
+                , -- TODO later do something special about comparable etc!
+                  ( "x var special", "x : comparable", Just { varName = "x", type_ = ConcreteType.Var "comparable" } )
+                , ( "x function"
+                  , "x : Int -> Bool"
+                  , Just
+                        { varName = "x"
+                        , type_ =
+                            ConcreteType.Function
+                                { from = ConcreteType.Int
+                                , to = ConcreteType.Bool
+                                }
+                        }
+                  )
+                , ( "x 2-arg function"
+                  , "x : Int -> Bool -> String"
+                  , Just
+                        { varName = "x"
+                        , type_ =
+                            ConcreteType.Function
+                                { from = ConcreteType.Int
+                                , to =
+                                    ConcreteType.Function
+                                        { from = ConcreteType.Bool
+                                        , to = ConcreteType.String
+                                        }
+                                }
+                        }
+                  )
+                , ( "x user defined type unqualified noargs"
+                  , "x : MyType"
+                  , Just
+                        { varName = "x"
+                        , type_ =
+                            ConcreteType.UserDefinedType
+                                { qualifiedness = PossiblyQualified Nothing
+                                , name = "MyType"
+                                , args = []
+                                }
+                        }
+                  )
+                , ( "x user defined type unqualified args"
+                  , "x : MyType Int Float"
+                  , Just
+                        { varName = "x"
+                        , type_ =
+                            ConcreteType.UserDefinedType
+                                { qualifiedness = PossiblyQualified Nothing
+                                , name = "MyType"
+                                , args =
+                                    [ ConcreteType.Int
+                                    , ConcreteType.Float
+                                    ]
+                                }
+                        }
+                  )
+                , ( "x user defined type qualified noargs"
+                  , "x : Foo.MyType"
+                  , Just
+                        { varName = "x"
+                        , type_ =
+                            ConcreteType.UserDefinedType
+                                { qualifiedness = PossiblyQualified (Just "Foo")
+                                , name = "MyType"
+                                , args = []
+                                }
+                        }
+                  )
+                , ( "x user defined type qualified args"
+                  , "x : Foo.MyType Int Float"
+                  , Just
+                        { varName = "x"
+                        , type_ =
+                            ConcreteType.UserDefinedType
+                                { qualifiedness = PossiblyQualified (Just "Foo")
+                                , name = "MyType"
+                                , args =
+                                    [ ConcreteType.Int
+                                    , ConcreteType.Float
+                                    ]
+                                }
+                        }
+                  )
+                ]
         , describe "whitespace behaviour"
             (List.map runTest
                 [ ( "canonical format", "x : Int", Just xInt )

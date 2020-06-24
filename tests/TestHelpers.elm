@@ -10,14 +10,15 @@ module TestHelpers exposing
 
 import Elm.AST.Typed as Typed exposing (Expr_(..))
 import Elm.Data.Located as Located exposing (Located)
-import Elm.Data.Type as Type exposing (Type)
+import Elm.Data.Qualifiedness exposing (Qualified)
+import Elm.Data.Type as Type exposing (Type, TypeOrId(..))
 import Elm.Data.Type.ToString as TypeToString
 
 
-dumpType : Type -> String
+dumpType : Type Qualified -> String
 dumpType type_ =
     type_
-        |> TypeToString.toString TypeToString.emptyState
+        |> TypeToString.toStringType (TypeToString.fromType type_)
         |> Tuple.first
 
 
@@ -27,7 +28,7 @@ typed : Typed.Expr_ -> Typed.LocatedExpr
 typed expr_ =
     Located.located
         Located.dummyRegion
-        ( expr_, Type.Int )
+        ( expr_, Type Type.Int )
 
 
 {-| For when the location doesn't matter
@@ -43,7 +44,7 @@ typedInt : Int -> Typed.LocatedExpr
 typedInt int =
     located
         ( Int int
-        , Type.Int
+        , Type Type.Int
         )
 
 
@@ -51,7 +52,7 @@ typedBool : Bool -> Typed.LocatedExpr
 typedBool bool =
     located
         ( Bool bool
-        , Type.Bool
+        , Type Type.Bool
         )
 
 
@@ -59,7 +60,7 @@ typedString : String -> Typed.LocatedExpr
 typedString str =
     located
         ( String str
-        , Type.String
+        , Type Type.String
         )
 
 
@@ -67,5 +68,5 @@ typedIntList : List Int -> Typed.LocatedExpr
 typedIntList list =
     located
         ( List (List.map typedInt list)
-        , Type.List Type.Int
+        , Type <| Type.List (Type Type.Int)
         )
