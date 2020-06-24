@@ -14,10 +14,8 @@ import Elm.AST.Frontend.Unwrapped exposing (Expr(..), Pattern(..))
 import Elm.Compiler.Error exposing (ParseContext, ParseProblem)
 import Elm.Data.Exposing exposing (ExposedItem(..), Exposing(..))
 import Elm.Data.Module exposing (ModuleType(..))
-import Elm.Data.ModuleName as ModuleName exposing (ModuleName)
 import Elm.Data.Type as Type exposing (Type)
 import Elm.Data.TypeAnnotation exposing (TypeAnnotation)
-import Elm.Data.VarName as VarName exposing (VarName)
 import Expect exposing (Expectation)
 import Parser.Advanced as P
 import Stage.Parse.Parser

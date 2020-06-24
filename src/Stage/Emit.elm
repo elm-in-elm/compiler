@@ -41,13 +41,14 @@ import Elm.Compiler.Error
         )
 import Elm.Data.Declaration exposing (Declaration, DeclarationBody(..))
 import Elm.Data.Exposing as Exposing exposing (ExposedItem(..), Exposing(..))
-import Elm.Data.Module as Module exposing (Module)
+import Elm.Data.Module exposing (Module)
 import Elm.Data.ModuleName exposing (ModuleName)
 import Elm.Data.Project exposing (Project)
-import Elm.Data.Qualifiedness exposing (PossiblyQualified, Qualified(..))
+import Elm.Data.Qualifiedness exposing (Qualified(..))
 import Elm.Data.Type as Type exposing (Type, TypeOrId(..))
 import Elm.Data.VarName exposing (VarName)
 import Graph
+import OurExtras.List as List
 import Result.Extra as Result
 import Set exposing (Set)
 
@@ -94,7 +95,7 @@ findPathForEachModule project graph =
         exposedDeclarations =
             project.modules
                 |> Dict.values
-                |> List.concatMap moduleToExposedDeclarations
+                |> List.fastConcatMap moduleToExposedDeclarations
                 |> List.map (\decl -> ( decl.module_, decl.name ))
                 |> Set.fromList
 
@@ -339,7 +340,7 @@ findDependencies modules thisModule declarationBody =
                variables and not concrete types here
             -}
             constructors
-                |> List.concatMap
+                |> List.fastConcatMap
                     (.arguments
                         >> List.map
                             (findDependenciesOfTypeOrId

@@ -22,7 +22,6 @@ import Elm.Data.FilePath exposing (FilePath)
 import Elm.Data.Import exposing (Import)
 import Elm.Data.ModuleName exposing (ModuleName)
 import Elm.Data.Qualifiedness exposing (PossiblyQualified(..), Qualified(..))
-import Elm.Data.TypeAnnotation exposing (TypeAnnotation)
 import Elm.Data.VarName exposing (VarName)
 import Maybe.Extra
 import Result.Extra

@@ -19,8 +19,8 @@ The main confusion point here is "what is the
 -}
 
 import Dict exposing (Dict)
-import Elm.Data.ModuleName exposing (ModuleName)
 import Elm.Data.VarName exposing (VarName)
+import OurExtras.List as List
 import Transform
 
 
@@ -273,10 +273,10 @@ recursiveChildren fn type_ =
             fn_ t1 ++ fn_ t2 ++ fn_ t3
 
         Record bindings ->
-            List.concatMap fn_ (Dict.values bindings)
+            List.fastConcatMap fn_ (Dict.values bindings)
 
         UserDefinedType { args } ->
-            List.concatMap fn_ args
+            List.fastConcatMap fn_ args
 
 
 {-| Find all the children of this expression (and their children, etc...)
@@ -321,10 +321,10 @@ recursiveChildren_ fn typeOrId =
             fn t1 ++ fn t2 ++ fn t3
 
         Type (Record bindings) ->
-            List.concatMap fn (Dict.values bindings)
+            List.fastConcatMap fn (Dict.values bindings)
 
         Type (UserDefinedType { args }) ->
-            List.concatMap fn args
+            List.fastConcatMap fn args
 
 
 mapTypeOrId : (a -> b) -> TypeOrId a -> TypeOrId b

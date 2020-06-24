@@ -4,7 +4,6 @@ module Stage.Desugar exposing
     , desugarTypeAnnotation
     )
 
-import Basics.Extra exposing (flip)
 import Dict exposing (Dict)
 import Dict.Extra as Dict
 import Elm.AST.Canonical as Canonical
@@ -21,11 +20,10 @@ import Elm.Data.Module as Module exposing (Module)
 import Elm.Data.ModuleName exposing (ModuleName)
 import Elm.Data.Project exposing (Project)
 import Elm.Data.Qualifiedness exposing (PossiblyQualified(..), Qualified(..))
-import Elm.Data.Type as Type exposing (Type, TypeOrId(..))
-import Elm.Data.Type.Concrete as ConcreteType exposing (ConcreteType(..))
+import Elm.Data.Type exposing (TypeOrId(..))
+import Elm.Data.Type.Concrete exposing (ConcreteType(..))
 import Elm.Data.TypeAnnotation exposing (TypeAnnotation)
 import Elm.Data.VarName exposing (VarName)
-import Maybe.Extra
 import Result.Extra as Result
 import Stage.Desugar.Boilerplate as Boilerplate
 

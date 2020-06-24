@@ -48,6 +48,7 @@ Which would be wrong and misleading!
 import Dict exposing (Dict)
 import Elm.Data.Qualifiedness exposing (PossiblyQualified(..), Qualified(..))
 import Elm.Data.Type as Type exposing (Type(..), TypeOrId(..))
+import OurExtras.List as List
 import Set exposing (Set)
 
 
@@ -90,7 +91,7 @@ fromTypes types =
     State
         { mapping = Dict.empty
         , counter = 0
-        , used = Set.fromList (List.concatMap Type.varNames types)
+        , used = Set.fromList (List.fastConcatMap Type.varNames types)
         }
 
 
@@ -101,7 +102,7 @@ fromTypesOrIds typesOrIds =
     State
         { mapping = Dict.empty
         , counter = 0
-        , used = Set.fromList (List.concatMap Type.varNames_ typesOrIds)
+        , used = Set.fromList (List.fastConcatMap Type.varNames_ typesOrIds)
         }
 
 

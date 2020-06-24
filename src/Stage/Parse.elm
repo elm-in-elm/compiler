@@ -5,7 +5,6 @@ import Elm.Compiler.Error exposing (Error(..), ParseError(..))
 import Elm.Data.FileContents exposing (FileContents)
 import Elm.Data.FilePath exposing (FilePath)
 import Elm.Data.Module exposing (Module)
-import Elm.Data.ModuleName as ModuleName exposing (ModuleName)
 import Elm.Data.Qualifiedness exposing (PossiblyQualified)
 import Elm.Data.TypeAnnotation exposing (TypeAnnotation)
 import Parser.Advanced as P

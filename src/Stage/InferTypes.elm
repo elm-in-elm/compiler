@@ -6,7 +6,6 @@ import Elm.AST.Typed as Typed
 import Elm.Compiler.Error exposing (Error(..), TypeError(..))
 import Elm.Data.Declaration as Declaration exposing (Declaration)
 import Elm.Data.Located as Located
-import Elm.Data.ModuleName exposing (ModuleName)
 import Elm.Data.Project exposing (Project)
 import Elm.Data.Qualifiedness exposing (Qualified)
 import Elm.Data.Type exposing (Type(..), TypeOrId(..))

@@ -41,7 +41,7 @@ insert id typeOrId ((SubstitutionMap substitutionMap) as map) =
                 Just another ->
                     insert id another map
 
-        Type type_ ->
+        Type _ ->
             SubstitutionMap (Dict.insert id typeOrId substitutionMap)
 
 

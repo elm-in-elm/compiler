@@ -122,9 +122,7 @@ a move backwards in the compiler phases:
 
 import Dict exposing (Dict)
 import Elm.AST.Canonical as Canonical
-import Elm.AST.Canonical.Unwrapped as CanonicalUnwrapped
 import Elm.AST.Frontend as Frontend
-import Elm.AST.Frontend.Unwrapped as FrontendUnwrapped
 import Elm.AST.Typed as Typed
 import Elm.Compiler.Error
     exposing

@@ -5,11 +5,10 @@ import Elm.AST.Canonical as Canonical
 import Elm.AST.Canonical.Unwrapped as CanonicalU
 import Elm.AST.Frontend as Frontend
 import Elm.Compiler.Error as CompilerError
-import Elm.Data.Binding exposing (Binding)
 import Elm.Data.Declaration as Declaration exposing (Declaration)
 import Elm.Data.Exposing as Exposing
 import Elm.Data.Import exposing (Import)
-import Elm.Data.Located as Located exposing (Located)
+import Elm.Data.Located as Located
 import Elm.Data.Module as Module exposing (Module)
 import Elm.Data.ModuleName exposing (ModuleName)
 import Elm.Data.TypeAnnotation exposing (TypeAnnotation)

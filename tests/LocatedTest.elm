@@ -3,7 +3,7 @@ module LocatedTest exposing (mergeRegions)
 import Elm.Data.Located as Located exposing (Position, Region)
 import Expect
 import Fuzz exposing (Fuzzer)
-import Test exposing (Test, describe, fuzz2, test)
+import Test exposing (Test, describe, fuzz2)
 
 
 mergeRegions : Test
@@ -11,13 +11,6 @@ mergeRegions =
     describe "Elm.Data.Located.mergeRegions"
         [ fuzz2 region region "Always bigger or equal than input regions" <|
             \r1 r2 ->
-                let
-                    rc1 =
-                        Located.regionToComparable r1
-
-                    rc2 =
-                        Located.regionToComparable r2
-                in
                 Located.mergeRegions r1 r2
                     |> Expect.all
                         [ \{ start } -> Located.comparePosition start r1.start |> Expect.notEqual GT

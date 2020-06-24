@@ -16,7 +16,6 @@ module Elm.Data.Declaration exposing
 
 import Elm.Data.ModuleName exposing (ModuleName)
 import Elm.Data.Type as Type exposing (Type, TypeOrId)
-import Elm.Data.TypeAnnotation exposing (TypeAnnotation)
 import Elm.Data.VarName exposing (VarName)
 import Result.Extra
 import Stage.InferTypes.SubstitutionMap as SubstitutionMap exposing ({- TODO maybe move SubstMap module to Elm.Data? -} SubstitutionMap)

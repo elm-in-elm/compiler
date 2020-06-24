@@ -22,7 +22,7 @@ import Elm.Data.FilePath exposing (FilePath)
 import Elm.Data.Located exposing (Located)
 import Elm.Data.ModuleName exposing (ModuleName)
 import Elm.Data.Qualifiedness exposing (PossiblyQualified(..), Qualified)
-import Elm.Data.Type as Type exposing (Type, TypeOrId(..))
+import Elm.Data.Type exposing (TypeOrId(..))
 import Elm.Data.Type.ToString as TypeToString
 import Elm.Data.VarName exposing (VarName)
 import Json.Decode as JD

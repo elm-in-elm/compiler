@@ -314,23 +314,6 @@ typeOrConstructorName =
         |> log "typeOrConstructorName"
 
 
-qualifiedTypeOrConstructorName : Parser_ Expr
-qualifiedTypeOrConstructorName =
-    qualifiers
-        |> P.andThen
-            (\modules ->
-                P.map
-                    (\varName_ ->
-                        Frontend.Var
-                            { qualifiedness = qualify modules
-                            , name = varName_
-                            }
-                    )
-                    varName
-            )
-        |> log "qualifiedTypeOrConstructorName"
-
-
 {-| Taken from the official compiler.
 -}
 reservedWords : Set String
@@ -430,20 +413,6 @@ expr =
         }
         |> P.inContext InExpr
         |> log "expr"
-
-
-checkNotBeginningOfLine : Parser_ ()
-checkNotBeginningOfLine =
-    P.getCol
-        |> P.andThen
-            (\col ->
-                if col /= 1 then
-                    P.succeed ()
-
-                else
-                    P.problem ExpectingNotBeginningOfLine
-            )
-        |> log "checkNotBeginningOfLine"
 
 
 parenthesizedExpr : ExprConfig -> Parser_ LocatedExpr

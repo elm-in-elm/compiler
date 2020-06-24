@@ -26,6 +26,7 @@ import Elm.Data.ModuleName exposing (ModuleName)
 import Elm.Data.Qualifiedness exposing (Qualified)
 import Elm.Data.Type as Type exposing (Type, TypeOrId(..))
 import Elm.Data.VarName exposing (VarName)
+import OurExtras.List as List
 import Transform
 
 
@@ -287,13 +288,13 @@ recursiveChildren fn locatedExpr =
 
         Let { bindings, body } ->
             fn body
-                ++ List.concatMap (.body >> fn) (Dict.values bindings)
+                ++ List.fastConcatMap (.body >> fn) (Dict.values bindings)
 
         Unit ->
             []
 
         List items ->
-            List.concatMap fn items
+            List.fastConcatMap fn items
 
         Tuple e1 e2 ->
             fn e1 ++ fn e2
@@ -302,10 +303,10 @@ recursiveChildren fn locatedExpr =
             fn e1 ++ fn e2 ++ fn e3
 
         Record bindings ->
-            List.concatMap (.body >> fn) (Dict.values bindings)
+            List.fastConcatMap (.body >> fn) (Dict.values bindings)
 
         Case e branches ->
-            fn e ++ List.concatMap (.body >> fn) branches
+            fn e ++ List.fastConcatMap (.body >> fn) branches
 
 
 mapExpr : (Expr_ -> Expr_) -> LocatedExpr -> LocatedExpr

@@ -35,7 +35,6 @@ import Elm.Data.Located as Located
 import Elm.Data.Qualifiedness exposing (Qualified)
 import Elm.Data.Type as Type exposing (Type(..), TypeOrId(..))
 import Elm.Data.VarName exposing (VarName)
-import Stage.InferTypes.AssignIds
 import Stage.InferTypes.TypeEquation exposing (TypeEquation, equals)
 import Transform
 
@@ -474,7 +473,7 @@ generatePatternEquations currentId located =
             -- we can't make any assumptions here
             ( [], currentId )
 
-        Typed.PRecord keys ->
+        Typed.PRecord _ ->
             {- TODO:
                We know it's a record and have at least these keys.
 
@@ -489,7 +488,7 @@ generatePatternEquations currentId located =
             -}
             ( [], currentId )
 
-        Typed.PAlias aliasPattern aliasName ->
+        Typed.PAlias aliasPattern _ ->
             {- TODO:
                aliasPattern and aliasName have the same type.
 
@@ -497,7 +496,7 @@ generatePatternEquations currentId located =
 
             -}
             let
-                ( _, _ ) =
+                _ =
                     Located.unwrap aliasPattern
 
                 ( aliasPatternEquations, id1 ) =
