@@ -1,6 +1,6 @@
 module Main exposing (main)
 
 
-main : ()
+main : (Int, Bool)
 main =
     123

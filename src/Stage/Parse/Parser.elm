@@ -1309,6 +1309,7 @@ typeAnnotation =
         |. P.symbol (P.Token ":" ExpectingColon)
         |. P.spaces
         |= type_
+        |> P.inContext InTypeAnnotation
         |> log "typeAnnotation"
 
 
@@ -1329,6 +1330,7 @@ type_ =
         , userDefinedType
         , functionType
         ]
+        |> P.inContext InType
         |> log "type_"
 
 
@@ -1462,14 +1464,14 @@ postfix precedence operator apply _ =
     )
 
 
-verbose : Bool
-verbose =
-    False
+shouldLog : Bool
+shouldLog =
+    True
 
 
 log : String -> Parser_ a -> Parser_ a
 log message parser =
-    if verbose then
+    if shouldLog then
         P.succeed ()
             |> P.andThen
                 (\() ->
@@ -1485,6 +1487,9 @@ log message parser =
 
                                 _ =
                                     Debug.log "source         " source
+
+                                _ =
+                                    Debug.log "yet to parse   " (String.dropLeft offsetBefore source)
 
                                 _ =
                                     Debug.log "chomped string " (String.slice offsetBefore offsetAfter source)

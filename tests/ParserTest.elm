@@ -1175,6 +1175,7 @@ typeAnnotation =
             List.map runTest <|
                 [ -- TODO extensible record
                   ( "x int", "x : Int", Just xInt )
+                , ( "x int without whitespace", "x:Int", Just xInt )
                 , ( "x float", "x : Float", Just { varName = "x", type_ = ConcreteType.Float } )
                 , ( "x char", "x : Char", Just { varName = "x", type_ = ConcreteType.Char } )
                 , ( "x string", "x : String", Just { varName = "x", type_ = ConcreteType.String } )
@@ -1182,13 +1183,19 @@ typeAnnotation =
                 , ( "y bool", "y : Bool", Just { varName = "y", type_ = ConcreteType.Bool } )
                 , ( "foo tuple"
                   , "foo : (Int, Bool)"
-                  , Just
-                        { varName = "foo"
-                        , type_ =
-                            ConcreteType.Tuple
-                                ConcreteType.Int
-                                ConcreteType.Bool
-                        }
+                  , Just { varName = "foo", type_ = ConcreteType.Tuple ConcreteType.Int ConcreteType.Bool }
+                  )
+                , ( "foo tuple with different whitespace 1"
+                  , "foo : ( Int, Bool )"
+                  , Just { varName = "foo", type_ = ConcreteType.Tuple ConcreteType.Int ConcreteType.Bool }
+                  )
+                , ( "foo tuple with different whitespace 2"
+                  , "foo : ( Int , Bool )"
+                  , Just { varName = "foo", type_ = ConcreteType.Tuple ConcreteType.Int ConcreteType.Bool }
+                  )
+                , ( "foo tuple with different whitespace 3"
+                  , "foo : (Int,Bool)"
+                  , Just { varName = "foo", type_ = ConcreteType.Tuple ConcreteType.Int ConcreteType.Bool }
                   )
                 , ( "foo tuple3"
                   , "foo : (Int, Bool, String)"

@@ -77,6 +77,8 @@ type ParseContext
     | InFile FilePath
     | InCase
     | InPattern
+    | InTypeAnnotation
+    | InType
 
 
 {-| The specific problem the parser encountered. Together with [`ParseContext`](#ParseContext)
