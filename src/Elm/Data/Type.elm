@@ -82,7 +82,25 @@ become impossible, and a part of the desugaring task is:
 
 -}
 type Type a
-    = Var String {- in `foo : a -> Int`, `a` is `Var "a"` -}
+    = {- Example of a `Var`:
+
+             foo : a -> Int
+
+         will be parsed as
+
+            TypeAnnotation
+                { name = "foo"
+                , type_ =
+                    Function
+                        { from = Var "a"
+                        , to = Int
+                        }
+                }
+
+         These are the type variables user has given name to. (There are also
+         `Id 0`-like values which are being given names by the compiler.)
+      -}
+      Var String
     | Function
         { from : TypeOrId a
         , to : TypeOrId a
@@ -159,57 +177,56 @@ getType typeOrId =
 
 {-| Does it contain lower-case type parameters?
 -}
-isParametric : Type a -> Bool
-isParametric type_ =
+isParametric : TypeOrId a -> Bool
+isParametric typeOrId =
     let
-        fn_ : TypeOrId a -> Bool
-        fn_ typeOrId =
-            case typeOrId of
-                Id _ ->
-                    True
-
-                Type t ->
-                    isParametric t
+        f =
+            isParametric
     in
-    case type_ of
-        Var _ ->
+    case typeOrId of
+        Id _ ->
             True
 
-        Function { from, to } ->
-            fn_ from || fn_ to
+        Type type_ ->
+            case type_ of
+                Var _ ->
+                    True
 
-        Int ->
-            False
+                Function { from, to } ->
+                    f from || f to
 
-        Float ->
-            False
+                Int ->
+                    False
 
-        Char ->
-            False
+                Float ->
+                    False
 
-        String ->
-            False
+                Char ->
+                    False
 
-        Bool ->
-            False
+                String ->
+                    False
 
-        Unit ->
-            False
+                Bool ->
+                    False
 
-        List element ->
-            fn_ element
+                Unit ->
+                    False
 
-        Tuple t1 t2 ->
-            fn_ t1 || fn_ t2
+                List element ->
+                    f element
 
-        Tuple3 t1 t2 t3 ->
-            fn_ t1 || fn_ t2 || fn_ t3
+                Tuple t1 t2 ->
+                    f t1 || f t2
 
-        Record bindings ->
-            List.any fn_ (Dict.values bindings)
+                Tuple3 t1 t2 t3 ->
+                    f t1 || f t2 || f t3
 
-        UserDefinedType { args } ->
-            List.any fn_ args
+                Record bindings ->
+                    List.any f (Dict.values bindings)
+
+                UserDefinedType { args } ->
+                    List.any f args
 
 
 varNames : Type a -> List String

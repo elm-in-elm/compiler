@@ -3,6 +3,7 @@ module EmitTest exposing (javascript)
 import Dict
 import Elm.AST.Typed as Typed exposing (Expr_(..))
 import Elm.Data.Declaration exposing (Declaration, DeclarationBody(..))
+import Elm.Data.Qualifiedness exposing (Qualified)
 import Expect
 import Stage.Emit.JavaScript as JS
 import Test exposing (Test, describe, test)
@@ -306,7 +307,7 @@ javascript =
                 )
             ]
         , let
-            runTest : ( String, Declaration Typed.LocatedExpr Never, String ) -> Test
+            runTest : ( String, Declaration Typed.LocatedExpr Never Qualified, String ) -> Test
             runTest ( description, input, output ) =
                 test description <|
                     \() ->

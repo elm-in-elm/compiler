@@ -5,14 +5,14 @@ import Elm.AST.Canonical as Canonical
 import Elm.AST.Canonical.Unwrapped as CanonicalU
 import Elm.AST.Typed as Typed
 import Elm.Compiler.Error as Error exposing (Error(..), TypeError(..))
-import Elm.Data.Qualifiedness exposing (Qualified)
+import Elm.Data.Qualifiedness exposing (PossiblyQualified(..), Qualified(..))
 import Elm.Data.Type as Type exposing (Type(..), TypeOrId(..))
 import Elm.Data.Type.ToString as TypeToString
 import Expect
 import Stage.InferTypes
 import Stage.InferTypes.SubstitutionMap as SubstitutionMap
 import Test exposing (Test, describe, test)
-import TestHelpers exposing (dumpType)
+import TestHelpers exposing (dumpTypeOrId)
 
 
 typeInference : Test
@@ -32,17 +32,17 @@ typeInference =
                         |> Stage.InferTypes.inferExpr SubstitutionMap.empty
                         |> Result.map (Tuple.first >> Typed.getType)
                         |> Result.mapError Tuple.first
-                        |> Expect.equal output
+                        |> Expect.equal (Result.map Just output)
     in
     describe "Stage.InferType"
         [ runSection "list"
             [ ( "empty list"
               , CanonicalU.List []
-              , Ok (List (Var 1))
+              , Ok (List (Id 1))
               )
             , ( "one item"
               , CanonicalU.List [ CanonicalU.Bool True ]
-              , Ok (List Bool)
+              , Ok (List (Type Bool))
               )
             , ( "more items"
               , CanonicalU.List
@@ -50,14 +50,14 @@ typeInference =
                     , CanonicalU.Int 2
                     , CanonicalU.Int 3
                     ]
-              , Ok (List Int)
+              , Ok (List (Type Int))
               )
             , ( "different types"
               , CanonicalU.List
                     [ CanonicalU.Int 1
                     , CanonicalU.String "two"
                     ]
-              , Err (TypeMismatch Int String)
+              , Err (TypeMismatch (Type Int) (Type String))
               )
             , ( "more items with different types"
               , CanonicalU.List
@@ -65,21 +65,21 @@ typeInference =
                     , CanonicalU.String "two"
                     , CanonicalU.Int 3
                     ]
-              , Err (TypeMismatch Bool String)
+              , Err (TypeMismatch (Type Bool) (Type String))
               )
             , ( "List of List of Int"
               , CanonicalU.List
                     [ CanonicalU.List [ CanonicalU.Int 1 ]
                     , CanonicalU.List [ CanonicalU.Int 2 ]
                     ]
-              , Ok (List (List Int))
+              , Ok (List (Type (List (Type Int))))
               )
             , ( "List of List of different types"
               , CanonicalU.List
                     [ CanonicalU.List [ CanonicalU.Int 1 ]
                     , CanonicalU.List [ CanonicalU.Bool False ]
                     ]
-              , Err (TypeMismatch Int Bool)
+              , Err (TypeMismatch (Type Int) (Type Bool))
               )
             ]
         , runSection "tuple"
@@ -87,13 +87,13 @@ typeInference =
               , CanonicalU.Tuple
                     (CanonicalU.String "Hello")
                     (CanonicalU.String "Elm")
-              , Ok (Tuple String String)
+              , Ok (Tuple (Type String) (Type String))
               )
             , ( "items of different types"
               , CanonicalU.Tuple
                     (CanonicalU.Bool True)
                     (CanonicalU.Int 1)
-              , Ok (Tuple Bool Int)
+              , Ok (Tuple (Type Bool) (Type Int))
               )
             ]
         , runSection "tuple3"
@@ -102,14 +102,14 @@ typeInference =
                     (CanonicalU.String "FP")
                     (CanonicalU.String "is")
                     (CanonicalU.String "good")
-              , Ok (Tuple3 String String String)
+              , Ok (Tuple3 (Type String) (Type String) (Type String))
               )
             , ( "different types"
               , CanonicalU.Tuple3
                     (CanonicalU.Bool True)
                     (CanonicalU.Int 1)
                     (CanonicalU.Char 'h')
-              , Ok (Tuple3 Bool Int Char)
+              , Ok (Tuple3 (Type Bool) (Type Int) (Type Char))
               )
             ]
         , runSection "plus"
@@ -125,7 +125,7 @@ typeInference =
               , CanonicalU.Cons
                     (CanonicalU.Int 1)
                     (CanonicalU.List [])
-              , Ok (List Int)
+              , Ok (List (Type Int))
               )
             , ( "advanced case"
               , CanonicalU.Cons
@@ -138,7 +138,7 @@ typeInference =
                             ]
                         )
                     )
-              , Ok (List Int)
+              , Ok (List (Type Int))
               )
             , ( "fail with wrong argument types"
               , CanonicalU.Cons
@@ -154,15 +154,15 @@ typeInference =
                     )
               , Err
                     (TypeMismatch
-                        (List Int)
-                        Int
+                        (Type (List (Type Int)))
+                        (Type Int)
                     )
               )
             , ( "variable and list"
               , CanonicalU.Cons
                     (CanonicalU.Var { module_ = "Main", name = "age" })
                     (CanonicalU.List [ CanonicalU.Int 1 ])
-              , Ok (List Int)
+              , Ok (List (Type Int))
               )
             ]
         , runSection "record"
@@ -172,7 +172,7 @@ typeInference =
               )
             , ( "one field"
               , CanonicalU.Record (Dict.fromList [ ( "a", { name = "a", body = CanonicalU.Int 42 } ) ])
-              , Ok (Record <| Dict.fromList [ ( "a", Int ) ])
+              , Ok (Record <| Dict.fromList [ ( "a", Type Int ) ])
               )
             , ( "two fields"
               , CanonicalU.Record
@@ -181,7 +181,13 @@ typeInference =
                         , ( "b", { name = "b", body = CanonicalU.String "hello" } )
                         ]
                     )
-              , Ok (Record <| Dict.fromList [ ( "a", Int ), ( "b", String ) ])
+              , Ok
+                    (Record <|
+                        Dict.fromList
+                            [ ( "a", Type Int )
+                            , ( "b", Type String )
+                            ]
+                    )
               )
             ]
         ]
@@ -190,16 +196,30 @@ typeInference =
 typeToString : Test
 typeToString =
     let
-        toStringOnce : TypeOrId Qualified -> String
-        toStringOnce typeOrId =
+        toStringQualified : TypeOrId Qualified -> String
+        toStringQualified typeOrId =
             typeOrId
                 |> TypeToString.toString (TypeToString.fromTypeOrId typeOrId)
                 |> Tuple.first
 
+        toStringPossiblyQualified : TypeOrId PossiblyQualified -> String
+        toStringPossiblyQualified typeOrId =
+            typeOrId
+                |> TypeToString.toStringPossiblyQualified (TypeToString.fromTypeOrId typeOrId)
+                |> Tuple.first
+
+        runTest : ( String, TypeOrId Qualified, String ) -> Test
         runTest ( description, input, output ) =
             test description <|
                 \() ->
-                    toStringOnce input
+                    toStringQualified input
+                        |> Expect.equal output
+
+        runTest_ : ( String, TypeOrId PossiblyQualified, String ) -> Test
+        runTest_ ( description, input, output ) =
+            test description <|
+                \() ->
+                    toStringPossiblyQualified input
                         |> Expect.equal output
 
         runEqual ( description, input, output ) =
@@ -208,6 +228,12 @@ typeToString =
                     Expect.equal input output
     in
     describe "Type.toString"
+        {- TODO test that strings given to `Id _` are different from strings
+           given by `Type (Var _)` (eg. if I have type annotation with `List a`
+           and somehow in the larger context there's an `Id 0`, it doesn't
+           collide with the `a` given by the `Var "a"` and instead is given `a0`
+           or something similar.
+        -}
         [ describe "list"
             [ runTest
                 ( "empty list"
@@ -228,67 +254,101 @@ typeToString =
         , describe "lambda"
             [ runTest
                 ( "function with one param"
-                , Function
-                    { from = Id 99
-                    , to = Type Int
-                    }
+                , Type
+                    (Function
+                        { from = Id 99
+                        , to = Type Int
+                        }
+                    )
                 , "a -> Int"
                 )
             , runTest
                 ( "function with two params"
-                , Function
-                    { from = Var 0
-                    , to =
-                        Function
-                            { from = Var 1
-                            , to = Var 1
-                            }
-                    }
+                , Type
+                    (Function
+                        { from = Id 0
+                        , to =
+                            Type
+                                (Function
+                                    { from = Id 1
+                                    , to = Id 1
+                                    }
+                                )
+                        }
+                    )
+                , "a -> b -> b"
+                )
+            , runTest
+                ( "function with two params, but they're vars"
+                , Type
+                    (Function
+                        { from = Type (Var "a")
+                        , to =
+                            Type
+                                (Function
+                                    { from = Type (Var "b")
+                                    , to = Type (Var "b")
+                                    }
+                                )
+                        }
+                    )
                 , "a -> b -> b"
                 )
             , runTest
                 ( "function as param"
-                , Function
-                    { from =
-                        Function
-                            { from = Var 9
-                            , to = Var 9
-                            }
-                    , to = Var 0
-                    }
+                , Type
+                    (Function
+                        { from =
+                            Type
+                                (Function
+                                    { from = Id 9
+                                    , to = Id 9
+                                    }
+                                )
+                        , to = Id 0
+                        }
+                    )
                 , "(a -> a) -> b"
                 )
             , runTest
                 ( "list of functions"
-                , List
-                    (Function
-                        { from = Var 0
-                        , to = Var 0
-                        }
+                , Type
+                    (List
+                        (Type
+                            (Function
+                                { from = Id 0
+                                , to = Id 0
+                                }
+                            )
+                        )
                     )
                 , "List (a -> a)"
                 )
             ]
-        , describe "edges"
+        , describe "edge cases"
             [ runEqual
                 ( "Var number doesn't count"
-                , toStringOnce <| List (Var 0)
-                , toStringOnce <| List (Var 1)
+                , toStringQualified <| Type (List (Id 0))
+                , toStringQualified <| Type (List (Id 1))
                 )
             , runEqual
                 ( "TypeMismatch types share vars index"
                 , Error.toString
                     (TypeError
                         (TypeMismatch
-                            (Function
-                                { from = List (Var 0)
-                                , to = Var 1
-                                }
+                            (Type
+                                (Function
+                                    { from = Type (List (Id 0))
+                                    , to = Id 1
+                                    }
+                                )
                             )
-                            (Function
-                                { from = List (Var 1)
-                                , to = Var 0
-                                }
+                            (Type
+                                (Function
+                                    { from = Type (List (Id 1))
+                                    , to = Id 0
+                                    }
+                                )
                             )
                         )
                     )
@@ -298,62 +358,90 @@ typeToString =
         , describe "tuples"
             [ runTest
                 ( "tuple with two literals"
-                , Tuple Int String
+                , Type (Tuple (Type Int) (Type String))
                 , "( Int, String )"
                 )
             , runTest
                 ( "tuple with two params"
-                , Tuple (Var 0) (Var 1)
+                , Type (Tuple (Id 0) (Id 1))
                 , "( a, b )"
                 )
             , runTest
-                ( "tuple with tree params"
-                , Tuple3 (Var 0) (Var 1) (Var 2)
+                ( "3-tuple with three params"
+                , Type (Tuple3 (Id 0) (Id 1) (Id 2))
                 , "( a, b, c )"
                 )
             ]
         , describe "user defined type"
             [ runTest
                 ( "type without a param"
-                , UserDefinedType
-                    { module_ = "MyModule", name = "MyBool" }
-                    []
+                , Type
+                    (UserDefinedType
+                        { qualifiedness = Qualified "MyModule"
+                        , name = "MyBool"
+                        , args = []
+                        }
+                    )
                 , "MyModule.MyBool"
                 )
             , runTest
                 ( "type with a param"
-                , UserDefinedType
-                    { module_ = "Maybe", name = "Maybe" }
-                    [ Int ]
+                , Type
+                    (UserDefinedType
+                        { qualifiedness = Qualified "Maybe"
+                        , name = "Maybe"
+                        , args = [ Type Int ]
+                        }
+                    )
                 , "Maybe.Maybe Int"
                 )
             , runTest
                 ( "type with a param 2"
-                , UserDefinedType
-                    { module_ = "Maybe", name = "Maybe" }
-                    [ Var 0 ]
+                , Type
+                    (UserDefinedType
+                        { qualifiedness = Qualified "Maybe"
+                        , name = "Maybe"
+                        , args = [ Id 0 ]
+                        }
+                    )
                 , "Maybe.Maybe a"
+                )
+            , runTest_
+                ( "unqualified type"
+                , Type
+                    (UserDefinedType
+                        { qualifiedness = PossiblyQualified Nothing
+                        , name = "Maybe"
+                        , args = [ Id 0 ]
+                        }
+                    )
+                , "Maybe a"
                 )
             ]
         , describe "records"
             [ runTest
                 ( "empty record"
-                , Record Dict.empty
+                , Type (Record Dict.empty)
                 , "{}"
                 )
             , runTest
                 ( "one field record"
-                , Record <| Dict.fromList [ ( "a", Int ) ]
+                , Type <| Record <| Dict.fromList [ ( "a", Type Int ) ]
                 , "{ a : Int }"
                 )
             , runTest
                 ( "two fields record"
-                , Record <| Dict.fromList [ ( "a", Int ), ( "b", String ) ]
+                , Type <|
+                    Record <|
+                        Dict.fromList
+                            [ ( "a", Type Int )
+                            , ( "b", Type String )
+                            ]
                 , "{ a : Int, b : String }"
                 )
             , runTest
                 ( "parametric field in record"
-                , Record <| Dict.fromList [ ( "foo", Var 0 ) ]
+                , Type <| Record <| Dict.fromList [ ( "foo", Id 0 ) ]
                 , "{ foo : a }"
                 )
             ]
@@ -395,9 +483,9 @@ niceVarName =
 isParametric : Test
 isParametric =
     let
-        runTest : ( Type Qualified, Bool ) -> Test
+        runTest : ( TypeOrId Qualified, Bool ) -> Test
         runTest ( input, output ) =
-            test (dumpType input) <|
+            test (dumpTypeOrId input) <|
                 \() ->
                     input
                         |> Type.isParametric
@@ -405,33 +493,38 @@ isParametric =
     in
     describe "Type.isParametric" <|
         List.map runTest
-            [ ( Unit, False )
-            , ( Bool, False )
-            , ( Char, False )
-            , ( Int, False )
-            , ( String, False )
-            , ( Var 0, True )
-            , ( Function { from = Int, to = String }, False )
-            , ( Function { from = Var 0, to = Int }, True )
-            , ( Function { from = String, to = Var 0 }, True )
-            , ( Function { from = Int, to = Function { from = Var 0, to = Var 0 } }, True )
-            , ( List Int, False )
-            , ( List (Var 0), True )
-            , ( List (List Int), False )
-            , ( List (List (Var 0)), True )
-            , ( Tuple Int String, False )
-            , ( Tuple (Var 0) Int, True )
-            , ( Tuple String (Var 0), True )
-            , ( Tuple (List (Var 0)) Int, True )
-            , ( Tuple Char (Tuple Int (Var 0)), True )
-            , ( Tuple3 Int String Bool, False )
-            , ( Tuple3 (Var 0) Int Char, True )
-            , ( Tuple3 String (Var 0) Unit, True )
-            , ( Tuple3 Bool Unit (Var 0), True )
-            , ( Tuple3 (List (Var 0)) Int Char, True )
-            , ( Tuple3 String (Function { from = Var 0, to = Int }) Unit, True )
-            , ( Tuple3 Bool Unit (Tuple (Var 0) Int), True )
-            , ( Record Dict.empty, False )
-            , ( Record <| Dict.fromList [ ( "a", Var 0 ), ( "b", String ) ], True )
-            , ( Record <| Dict.fromList [ ( "a", Int ), ( "b", String ) ], False )
+            [ ( Type Unit, False )
+            , ( Type Bool, False )
+            , ( Type Char, False )
+            , ( Type Int, False )
+            , ( Type String, False )
+            , ( Type <| Var "a", True )
+            , ( Id 0, True )
+            , ( Type <| Function { from = Type Int, to = Type String }, False )
+            , ( Type <| Function { from = Type (Var "bcd"), to = Type Int }, True )
+            , ( Type <| Function { from = Id 102, to = Type Int }, True )
+            , ( Type <| Function { from = Type String, to = Type (Var "xx") }, True )
+            , ( Type <| Function { from = Type String, to = Id 99 }, True )
+            , ( Type <| Function { from = Type Int, to = Type (Function { from = Id 0, to = Id 0 }) }, True )
+            , ( Type <| List (Type Int), False )
+            , ( Type <| List (Id 0), True )
+            , ( Type <| List (Type (Var "ab")), True )
+            , ( Type <| List (Type (List (Type Int))), False )
+            , ( Type <| List (Type (List (Id 0))), True )
+            , ( Type <| List (Type (List (Type (Var "cd")))), True )
+            , ( Type <| Tuple (Type Int) (Type String), False )
+            , ( Type <| Tuple (Id 0) (Type Int), True )
+            , ( Type <| Tuple (Type String) (Id 0), True )
+            , ( Type <| Tuple (Type (List (Id 0))) (Type Int), True )
+            , ( Type <| Tuple (Type Char) (Type (Tuple (Type Int) (Id 0))), True )
+            , ( Type <| Tuple3 (Type Int) (Type String) (Type Bool), False )
+            , ( Type <| Tuple3 (Id 0) (Type Int) (Type Char), True )
+            , ( Type <| Tuple3 (Type String) (Id 0) (Type Unit), True )
+            , ( Type <| Tuple3 (Type Bool) (Type Unit) (Id 0), True )
+            , ( Type <| Tuple3 (Type (List (Id 0))) (Type Int) (Type Char), True )
+            , ( Type <| Tuple3 (Type String) (Type (Function { from = Id 0, to = Type Int })) (Type Unit), True )
+            , ( Type <| Tuple3 (Type Bool) (Type Unit) (Type (Tuple (Id 0) (Type Int))), True )
+            , ( Type <| Record Dict.empty, False )
+            , ( Type <| Record <| Dict.fromList [ ( "a", Id 0 ), ( "b", Type String ) ], True )
+            , ( Type <| Record <| Dict.fromList [ ( "a", Type Int ), ( "b", Type String ) ], False )
             ]
