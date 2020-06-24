@@ -113,6 +113,7 @@ moduleDeclaration =
         |. P.spaces
         |= exposingList
         |. newlines
+        |> log "moduleDeclaration"
 
 
 imports : Parser_ (Dict ModuleName Import)
@@ -122,6 +123,7 @@ imports =
             >> Dict.fromList
         )
         |= oneOrMoreWith P.spaces import_
+        |> log "imports"
 
 
 import_ : Parser_ Import
@@ -159,6 +161,7 @@ import_ =
                 |= exposingList
             , P.succeed Nothing
             ]
+        |> log "import"
 
 
 moduleType : Parser_ ModuleType
@@ -168,12 +171,14 @@ moduleType =
         , portModuleType
         , effectModuleType
         ]
+        |> log "moduleType"
 
 
 plainModuleType : Parser_ ModuleType
 plainModuleType =
     P.succeed PlainModule
         |. P.keyword (P.Token "module" ExpectingModuleKeyword)
+        |> log "plainModuleType"
 
 
 portModuleType : Parser_ ModuleType
@@ -182,6 +187,7 @@ portModuleType =
         |. P.keyword (P.Token "port" ExpectingPortKeyword)
         |. spacesOnly
         |. P.keyword (P.Token "module" ExpectingModuleKeyword)
+        |> log "portModuleType"
 
 
 effectModuleType : Parser_ ModuleType
@@ -191,6 +197,7 @@ effectModuleType =
         |. P.keyword (P.Token "effect" ExpectingEffectKeyword)
         |. spacesOnly
         |. P.keyword (P.Token "module" ExpectingModuleKeyword)
+        |> log "effectModuleType"
 
 
 moduleName : Parser_ String
@@ -211,6 +218,7 @@ moduleName =
                 else
                     P.succeed (String.join "." list_)
             )
+        |> log "moduleName"
 
 
 moduleNameWithoutDots : Parser_ String
@@ -221,6 +229,7 @@ moduleNameWithoutDots =
         , reserved = Set.empty
         , expecting = ExpectingModuleNamePart
         }
+        |> log "moduleNameWithoutDots"
 
 
 exposingList : Parser_ Exposing
@@ -229,12 +238,14 @@ exposingList =
         [ exposingAll
         , exposingSome
         ]
+        |> log "exposingList"
 
 
 exposingAll : Parser_ Exposing
 exposingAll =
     P.symbol (P.Token "(..)" ExpectingExposingAllSymbol)
         |> P.map (always ExposingAll)
+        |> log "exposingAll"
 
 
 exposingSome : Parser_ Exposing
@@ -255,6 +266,7 @@ exposingSome =
                 else
                     P.succeed (ExposingSome list_)
             )
+        |> log "exposingSome"
 
 
 exposedItem : Parser_ ExposedItem
@@ -263,11 +275,13 @@ exposedItem =
         [ exposedValue
         , exposedTypeAndOptionallyAllConstructors
         ]
+        |> log "exposedItem"
 
 
 exposedValue : Parser_ ExposedItem
 exposedValue =
     P.map ExposedValue varName
+        |> log "exposedValue"
 
 
 exposedTypeAndOptionallyAllConstructors : Parser_ ExposedItem
@@ -286,6 +300,7 @@ exposedTypeAndOptionallyAllConstructors =
                 |. P.symbol (P.Token "(..)" ExpectingExposedTypeDoublePeriod)
             , P.succeed False
             ]
+        |> log "exposedTypeAndOptionallyAllConstructors"
 
 
 typeOrConstructorName : Parser_ String
@@ -296,6 +311,7 @@ typeOrConstructorName =
         , reserved = Set.empty
         , expecting = ExpectingTypeOrConstructorName
         }
+        |> log "typeOrConstructorName"
 
 
 qualifiedTypeOrConstructorName : Parser_ Expr
@@ -312,6 +328,7 @@ qualifiedTypeOrConstructorName =
                     )
                     varName
             )
+        |> log "qualifiedTypeOrConstructorName"
 
 
 {-| Taken from the official compiler.
@@ -343,6 +360,7 @@ declarations =
             |= declaration
             |. P.spaces
         )
+        |> log "declarations"
 
 
 declaration : Parser_ (ModuleName -> Declaration LocatedExpr TypeAnnotation PossiblyQualified)
@@ -372,6 +390,7 @@ declaration =
            Add parsers for type alises and custom types!
         -}
         |= P.map Declaration.Value expr
+        |> log "declaration"
 
 
 expr : Parser_ LocatedExpr
@@ -410,6 +429,7 @@ expr =
         , spaces = P.spaces
         }
         |> P.inContext InExpr
+        |> log "expr"
 
 
 checkNotBeginningOfLine : Parser_ ()
@@ -423,6 +443,7 @@ checkNotBeginningOfLine =
                 else
                     P.problem ExpectingNotBeginningOfLine
             )
+        |> log "checkNotBeginningOfLine"
 
 
 parenthesizedExpr : ExprConfig -> Parser_ LocatedExpr
@@ -431,6 +452,7 @@ parenthesizedExpr config =
         |. P.symbol (P.Token "(" ExpectingLeftParen)
         |= PP.subExpression 0 config
         |. P.symbol (P.Token ")" ExpectingRightParen)
+        |> log "parenthesizedExpr"
 
 
 literal : Parser_ LocatedExpr
@@ -441,6 +463,7 @@ literal =
         , literalString
         , literalBool
         ]
+        |> log "literal"
 
 
 literalNumber : Parser_ LocatedExpr
@@ -477,6 +500,7 @@ literalNumber =
         ]
         |> P.inContext InNumber
         |> located
+        |> log "literalNumber"
 
 
 type Quotes
@@ -556,6 +580,7 @@ character quotes =
                         |> Maybe.withDefault (P.problem (ParseCompilerBug MultipleCharactersChompedInCharacter))
                 )
         ]
+        |> log "character"
 
 
 unicodeCharacter : Parser_ Char
@@ -579,6 +604,7 @@ unicodeCharacter =
                         |> Result.withDefault (P.problem InvalidUnicodeCodePoint)
             )
         |> P.inContext InUnicodeCharacter
+        |> log "unicodeCharacter"
 
 
 literalChar : Parser_ LocatedExpr
@@ -589,6 +615,7 @@ literalChar =
         |. P.symbol singleQuote
         |> P.inContext InChar
         |> located
+        |> log "literalChar"
 
 
 literalString : Parser_ LocatedExpr
@@ -600,6 +627,7 @@ literalString =
             ]
         |> P.inContext InString
         |> located
+        |> log "literalString"
 
 
 doubleQuoteString : Parser_ String
@@ -609,6 +637,7 @@ doubleQuoteString =
         |= zeroOrMoreWith (P.succeed ()) (character DoubleQuote)
         |. P.symbol doubleQuote
         |> P.inContext InDoubleQuoteString
+        |> log "doubleQuoteString"
 
 
 tripleQuoteString : Parser_ String
@@ -618,12 +647,14 @@ tripleQuoteString =
         |= zeroOrMoreWith (P.succeed ()) (character TripleQuote)
         |. P.symbol tripleQuote
         |> P.inContext InTripleQuoteString
+        |> log "tripleQuoteString"
 
 
 literalBool : Parser_ LocatedExpr
 literalBool =
     P.map Bool bool
         |> located
+        |> log "literalBool"
 
 
 bool : Parser_ Bool
@@ -632,6 +663,7 @@ bool =
         [ P.map (always True) <| P.keyword (P.Token "True" ExpectingTrue)
         , P.map (always False) <| P.keyword (P.Token "False" ExpectingFalse)
         ]
+        |> log "bool"
 
 
 var : Parser_ LocatedExpr
@@ -648,6 +680,7 @@ var =
         , qualifiedVar
         ]
         |> located
+        |> log "var"
 
 
 varName : Parser_ String
@@ -658,6 +691,7 @@ varName =
         , reserved = reservedWords
         , expecting = ExpectingVarName
         }
+        |> log "varName"
 
 
 qualifiers : Parser_ (List ModuleName)
@@ -670,6 +704,7 @@ qualifiers =
         , item = moduleNameWithoutDots
         , trailing = P.Mandatory
         }
+        |> log "qualifiers"
 
 
 qualify : List ModuleName -> PossiblyQualified
@@ -696,6 +731,7 @@ qualifiedVar =
                     )
                     varName
             )
+        |> log "qualifiedVar"
 
 
 lambda : ExprConfig -> Parser_ LocatedExpr
@@ -732,6 +768,7 @@ lambda config =
         |= PP.subExpression 0 config
         |> P.inContext InLambda
         |> located
+        |> log "lambda"
 
 
 if_ : ExprConfig -> Parser_ LocatedExpr
@@ -752,6 +789,7 @@ if_ config =
         |= PP.subExpression 0 config
         |> P.inContext InIf
         |> located
+        |> log "if"
 
 
 let_ : ExprConfig -> Parser_ LocatedExpr
@@ -773,6 +811,7 @@ let_ config =
         |= PP.subExpression 0 config
         |> P.inContext InLet
         |> located
+        |> log "let_"
 
 
 binding : ExprConfig -> Parser_ (Binding LocatedExpr)
@@ -784,6 +823,7 @@ binding config =
         |. P.spaces
         |= PP.subExpression 0 config
         |> P.inContext InLetBinding
+        |> log "binding"
 
 
 typeBinding : Parser_ ( VarName, ConcreteType PossiblyQualified )
@@ -794,6 +834,7 @@ typeBinding =
         |. P.symbol (P.Token ":" ExpectingColon)
         |. P.spaces
         |= P.lazy lazyType
+        |> log "typeBinding"
 
 
 promoteArguments : List VarName -> Expr -> Expr
@@ -820,6 +861,7 @@ unit _ =
         |. P.keyword (P.Token "()" ExpectingUnit)
         |> P.inContext InUnit
         |> located
+        |> log "unit"
 
 
 list : ExprConfig -> Parser_ LocatedExpr
@@ -835,6 +877,7 @@ list config =
             }
         |> P.inContext InList
         |> located
+        |> log "list"
 
 
 tuple : ExprConfig -> Parser_ LocatedExpr
@@ -853,6 +896,7 @@ tuple config =
             |> P.inContext InTuple
         )
         |> located
+        |> log "tuple"
 
 
 tuple3 : ExprConfig -> Parser_ LocatedExpr
@@ -875,6 +919,7 @@ tuple3 config =
             |> P.inContext InTuple3
         )
         |> located
+        |> log "tuple3"
 
 
 record : ExprConfig -> Parser_ LocatedExpr
@@ -890,6 +935,7 @@ record config =
             }
         |> P.inContext InRecord
         |> located
+        |> log "record"
 
 
 case_ : ExprConfig -> Parser_ LocatedExpr
@@ -910,6 +956,7 @@ case_ config =
         |> P.andThen identity
         |> P.inContext InCase
         |> located
+        |> log "case_"
 
 
 caseBranch : ExprConfig -> Parser_ { pattern : LocatedPattern, body : LocatedExpr }
@@ -926,6 +973,7 @@ caseBranch config =
         |. P.symbol (P.Token "->" ExpectingRightArrow)
         |. ignorablesAndCheckIndent (<) ExpectingCaseBody
         |= PP.subExpression 0 config
+        |> log "caseBranch"
 
 
 pattern : Parser_ LocatedPattern
@@ -954,6 +1002,7 @@ pattern =
         , spaces = ignorables
         }
         |> P.inContext InPattern
+        |> log "pattern"
 
 
 patternLiteral : Parser_ LocatedPattern
@@ -968,6 +1017,7 @@ patternLiteral =
         , patternNumber
         , patternRecord
         ]
+        |> log "patternLiteral"
 
 
 patternAnything : Parser_ LocatedPattern
@@ -975,6 +1025,7 @@ patternAnything =
     P.succeed PAnything
         |. P.symbol (P.Token "_" ExpectingPatternAnything)
         |> located
+        |> log "patternAnything"
 
 
 patternUnit : Parser_ LocatedPattern
@@ -982,6 +1033,7 @@ patternUnit =
     P.succeed PUnit
         |. P.keyword (P.Token "()" ExpectingUnit)
         |> located
+        |> log "patternUnit"
 
 
 patternChar : Parser_ LocatedPattern
@@ -992,6 +1044,7 @@ patternChar =
         |. P.symbol singleQuote
         |> P.inContext InChar
         |> located
+        |> log "patternChar"
 
 
 patternString : Parser_ LocatedPattern
@@ -1003,18 +1056,21 @@ patternString =
             ]
         |> P.inContext InString
         |> located
+        |> log "patternString"
 
 
 patternBool : Parser_ LocatedPattern
 patternBool =
     P.map PBool bool
         |> located
+        |> log "patternBool"
 
 
 patternVar : Parser_ LocatedPattern
 patternVar =
     P.map PVar varName
         |> located
+        |> log "patternVar"
 
 
 patternNumber : Parser_ LocatedPattern
@@ -1051,6 +1107,7 @@ patternNumber =
         ]
         |> P.inContext InNumber
         |> located
+        |> log "patternNumber"
 
 
 patternRecord : Parser_ LocatedPattern
@@ -1066,6 +1123,7 @@ patternRecord =
         |> P.map PRecord
         |> P.inContext InRecord
         |> located
+        |> log "patternRecord"
 
 
 patternList : PatternConfig -> Parser_ LocatedPattern
@@ -1081,6 +1139,7 @@ patternList config =
         |> P.map PList
         |> P.inContext InList
         |> located
+        |> log "patternList"
 
 
 patternTuple : PatternConfig -> Parser_ LocatedPattern
@@ -1115,6 +1174,7 @@ patternTuple config =
                     _ ->
                         P.problem ExpectingMaxThreeTuple
             )
+        |> log "patternTuple"
 
 
 
@@ -1124,11 +1184,13 @@ patternTuple config =
 spacesOnly : Parser_ ()
 spacesOnly =
     P.chompWhile ((==) ' ')
+        |> log "spacesOnly"
 
 
 newlines : Parser_ ()
 newlines =
     P.chompWhile ((==) '\n')
+        |> log "newlines"
 
 
 {-| Parse zero or more ignorables Elm code.
@@ -1145,13 +1207,15 @@ ifProgress helper. It detects if there is no more whitespace to consume.
 -}
 ignorables : Parser_ ()
 ignorables =
-    P.loop 0 <|
+    (P.loop 0 <|
         ifProgress <|
             P.oneOf
                 [ P.symbol (P.Token "\t" InvalidTab)
                     |> P.andThen (\_ -> P.problem InvalidTab)
                 , P.spaces
                 ]
+    )
+        |> log "ignorables"
 
 
 {-| Continues a loop if the parser is making progress (consuming anything).
@@ -1172,6 +1236,7 @@ ifProgress parser offset =
                 else
                     P.Loop newOffset
             )
+        |> log "ifProgress"
 
 
 {-| Check the current indent ([`Parser.getIndent`](https://package.elm-lang.org/packages/elm/parser/latest/Parser#getIndent), previously defined with [`Parser.withIndent`](https://package.elm-lang.org/packages/elm/parser/latest/Parser#withIndent))
@@ -1196,6 +1261,7 @@ checkIndent check error =
         |= P.getIndent
         |= P.getCol
         |> P.andThen identity
+        |> log "checkIndent"
 
 
 {-| Parse ignorable code then check the current defined indentation and the
@@ -1206,6 +1272,7 @@ ignorablesAndCheckIndent check error =
     P.succeed ()
         |. ignorables
         |. checkIndent check error
+        |> log "ignorablesAndCheckIndent"
 
 
 {-| Taken from Punie/elm-parser-extras (original name: `many`), made to work with
@@ -1217,6 +1284,7 @@ Adapted to behave like \* instead of +.
 zeroOrMoreWith : Parser_ () -> Parser_ a -> Parser_ (List a)
 zeroOrMoreWith spaces p =
     P.loop [] (zeroOrMoreHelp spaces p)
+        |> log "zeroOrMoreWith"
 
 
 {-| Taken from Punie/elm-parser-extras (original name: `many`), made to work with
@@ -1236,6 +1304,7 @@ zeroOrMoreHelp spaces p vs =
         , P.succeed ()
             |> P.map (always (P.Done (List.reverse vs)))
         ]
+        |> log "zeroOrMoreHelp"
 
 
 {-| Taken from Punie/elm-parser-extras (original name: `many`), made to work with
@@ -1244,6 +1313,7 @@ Parser.Advanced.Parser instead of the simple one.
 oneOrMoreWith : Parser_ () -> Parser_ a -> Parser_ (List a)
 oneOrMoreWith spaces p =
     P.loop [] (oneOrMoreHelp spaces p)
+        |> log "oneOrMoreWith"
 
 
 {-| Taken from Punie/elm-parser-extras (original name: `many`), made to work with
@@ -1258,6 +1328,7 @@ oneOrMoreHelp spaces p vs =
         , P.succeed ()
             |> P.map (always (P.Done (List.reverse vs)))
         ]
+        |> log "oneOrMoreHelp"
 
 
 typeAnnotation : Parser_ TypeAnnotation
@@ -1269,13 +1340,13 @@ typeAnnotation =
         |. P.symbol (P.Token ":" ExpectingColon)
         |. P.spaces
         |= type_
+        |> log "typeAnnotation"
 
 
 type_ : Parser_ (ConcreteType PossiblyQualified)
 type_ =
     P.oneOf
         [ varType
-        , functionType
         , simpleType "Int" ConcreteType.Int
         , simpleType "Float" ConcreteType.Float
         , simpleType "Char" ConcreteType.Char
@@ -1287,25 +1358,23 @@ type_ =
         , tuple3Type
         , recordType
         , userDefinedType
+        , functionType
         ]
+        |> log "type_"
 
 
 lazyType : () -> Parser_ (ConcreteType PossiblyQualified)
 lazyType () =
     type_
+        |> log "lazyType"
 
 
 varType : Parser_ (ConcreteType PossiblyQualified)
 varType =
-    {- TODO I think we'll need to do `Var String` instead of `Var Int` ...
-       and map from user-written strings to Int Var IDs in some later stage
-    -}
-    {-
-       varName
-           |> P.getChompedString
-           |> P.map Type.Var
-    -}
-    Debug.todo "varType"
+    varName
+        |> P.getChompedString
+        |> P.map ConcreteType.Var
+        |> log "varType"
 
 
 functionType : Parser_ (ConcreteType PossiblyQualified)
@@ -1316,12 +1385,14 @@ functionType =
         |. P.keyword (P.Token "->" ExpectingRightArrow)
         |. spacesOnly
         |= P.lazy lazyType
+        |> log "functionType"
 
 
 simpleType : String -> ConcreteType PossiblyQualified -> Parser_ (ConcreteType PossiblyQualified)
 simpleType name parsedType =
     P.succeed parsedType
         |. P.keyword (P.Token name (ExpectingSimpleType name))
+        |> log "simpleType"
 
 
 listType : Parser_ (ConcreteType PossiblyQualified)
@@ -1330,6 +1401,7 @@ listType =
         |. P.keyword (P.Token "List" ExpectingListType)
         |. spacesOnly
         |= P.lazy lazyType
+        |> log "listType"
 
 
 tupleType : Parser_ (ConcreteType PossiblyQualified)
@@ -1344,6 +1416,7 @@ tupleType =
         |= P.lazy lazyType
         |. spacesOnly
         |. P.keyword (P.Token ")" ExpectingRightParen)
+        |> log "tupleType"
 
 
 tuple3Type : Parser_ (ConcreteType PossiblyQualified)
@@ -1362,6 +1435,7 @@ tuple3Type =
         |= P.lazy lazyType
         |. spacesOnly
         |. P.keyword (P.Token ")" ExpectingRightParen)
+        |> log "tuple3Type"
 
 
 recordType : Parser_ (ConcreteType PossiblyQualified)
@@ -1375,6 +1449,7 @@ recordType =
             , item = typeBinding
             , trailing = P.Forbidden
             }
+        |> log "recordType"
 
 
 userDefinedType : Parser_ (ConcreteType PossiblyQualified)
@@ -1396,6 +1471,7 @@ userDefinedType =
         |= typeOrConstructorName
         |. spacesOnly
         |= zeroOrMoreWith spacesOnly (P.lazy lazyType)
+        |> log "userDefinedType"
 
 
 {-| Taken from [dmy/elm-pratt-parser](https://package.elm-lang.org/packages/dmy/elm-pratt-parser/latest/Pratt-Advanced#postfix),
@@ -1415,3 +1491,45 @@ postfix precedence operator apply _ =
     ( precedence
     , \left -> P.map (apply left) operator
     )
+
+
+verbose : Bool
+verbose =
+    False
+
+
+log : String -> Parser_ a -> Parser_ a
+log message parser =
+    if verbose then
+        P.succeed ()
+            |> P.andThen
+                (\() ->
+                    let
+                        _ =
+                            Debug.log "starting" message
+                    in
+                    P.succeed
+                        (\source offsetBefore parseResult offsetAfter ->
+                            let
+                                _ =
+                                    Debug.log "-----------------------------------------------" message
+
+                                _ =
+                                    Debug.log "source         " source
+
+                                _ =
+                                    Debug.log "chomped string " (String.slice offsetBefore offsetAfter source)
+
+                                _ =
+                                    Debug.log "parsed result  " parseResult
+                            in
+                            parseResult
+                        )
+                        |= P.getSource
+                        |= P.getOffset
+                        |= parser
+                        |= P.getOffset
+                )
+
+    else
+        parser

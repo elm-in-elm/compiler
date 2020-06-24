@@ -42,7 +42,7 @@ insert id typeOrId ((SubstitutionMap substitutionMap) as map) =
                     insert id another map
 
         Type type_ ->
-            insert id typeOrId map
+            SubstitutionMap (Dict.insert id typeOrId substitutionMap)
 
 
 get : Int -> SubstitutionMap -> Maybe (TypeOrId Qualified)

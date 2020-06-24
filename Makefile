@@ -17,7 +17,7 @@ FORMAT_DIRS = \
 run: build
 	tput reset
 	cd example-project && \
-	(node ../cli/index.js --main src/Main.elm || true) \
+	(node $(NODE_FLAGS) ../cli/index.js --main src/Main.elm || true) \
 	# have `make run` succeed even if compilation fails.
 
 .PHONY: json
