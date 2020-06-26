@@ -1353,7 +1353,7 @@ functionType =
     P.succeed (\from to -> ConcreteType.Function { from = from, to = to })
         |= P.lazy lazyType
         |. spacesOnly
-        |. P.keyword (P.Token "->" ExpectingRightArrow)
+        |. P.token (P.Token "->" ExpectingRightArrow)
         |. spacesOnly
         |= P.lazy lazyType
         |> log "functionType"
@@ -1377,35 +1377,39 @@ listType =
 
 tupleType : Parser_ (ConcreteType PossiblyQualified)
 tupleType =
-    P.succeed ConcreteType.Tuple
-        |. P.keyword (P.Token "(" ExpectingLeftParen)
-        |. spacesOnly
-        |= P.lazy lazyType
-        |. spacesOnly
-        |. P.keyword (P.Token "," ExpectingComma)
-        |. spacesOnly
-        |= P.lazy lazyType
-        |. spacesOnly
-        |. P.keyword (P.Token ")" ExpectingRightParen)
+    P.backtrackable
+        (P.succeed ConcreteType.Tuple
+            |. P.token (P.Token "(" ExpectingLeftParen)
+            |. spacesOnly
+            |= P.lazy lazyType
+            |. spacesOnly
+            |. P.token (P.Token "," ExpectingComma)
+            |. spacesOnly
+            |= P.lazy lazyType
+            |. spacesOnly
+            |. P.token (P.Token ")" ExpectingRightParen)
+        )
         |> log "tupleType"
 
 
 tuple3Type : Parser_ (ConcreteType PossiblyQualified)
 tuple3Type =
-    P.succeed ConcreteType.Tuple3
-        |. P.keyword (P.Token "(" ExpectingLeftParen)
-        |. spacesOnly
-        |= P.lazy lazyType
-        |. spacesOnly
-        |. P.keyword (P.Token "," ExpectingComma)
-        |. spacesOnly
-        |= P.lazy lazyType
-        |. spacesOnly
-        |. P.keyword (P.Token "," ExpectingComma)
-        |. spacesOnly
-        |= P.lazy lazyType
-        |. spacesOnly
-        |. P.keyword (P.Token ")" ExpectingRightParen)
+    P.backtrackable
+        (P.succeed ConcreteType.Tuple3
+            |. P.token (P.Token "(" ExpectingLeftParen)
+            |. spacesOnly
+            |= P.lazy lazyType
+            |. spacesOnly
+            |. P.token (P.Token "," ExpectingComma)
+            |. spacesOnly
+            |= P.lazy lazyType
+            |. spacesOnly
+            |. P.token (P.Token "," ExpectingComma)
+            |. spacesOnly
+            |= P.lazy lazyType
+            |. spacesOnly
+            |. P.token (P.Token ")" ExpectingRightParen)
+        )
         |> log "tuple3Type"
 
 
@@ -1464,45 +1468,76 @@ postfix precedence operator apply _ =
     )
 
 
-shouldLog : Bool
-shouldLog =
-    True
+shouldLog : String -> Bool
+shouldLog message =
+    False
 
 
+{-| Beware: what this parser logs might sometimes be a lie.
+
+To work it needs to run `Parser.run` inside itself, and it has no way to
+set the parser state itself to the state it was called in.
+
+So it runs it with a different source string, zeroed offset, indent, position,
+basically with totally different parser state.
+
+Some parsers might not work properly in the "inner" `Parser.run` call as a result
+if they depend on this state, and thus might log lies.
+
+Note: the parser itself will still work as before, since we're not resetting the
+"outer" `Parser.run` state.
+
+-}
 log : String -> Parser_ a -> Parser_ a
 log message parser =
-    if shouldLog then
-        P.succeed ()
+    if shouldLog message then
+        P.succeed
+            (\source offsetBefore ->
+                let
+                    _ =
+                        Debug.log "+++++++++++++++++ starting" message
+                in
+                ( source, offsetBefore )
+            )
+            |= P.getSource
+            |= P.getOffset
             |> P.andThen
-                (\() ->
+                (\( source, offsetBefore ) ->
+                    {- Kinda like that logging decoder from Thoughtbot:
+                       https://thoughtbot.com/blog/debugging-dom-event-handlers-in-elm
+
+                       Basically we run `Parser.run` ourselves so that we can
+                       get at the context and say something more meaningful
+                       about the failure if it happens.
+                    -}
+                    let
+                        remainingSource =
+                            String.dropLeft offsetBefore source
+                                |> Debug.log "yet to parse  "
+                    in
+                    let
+                        parseResult =
+                            -- the side-effecty part; this might log lies
+                            P.run
+                                (P.succeed
+                                    (\parseResult_ innerOffset ->
+                                        let
+                                            _ =
+                                                Debug.log "chomped string" (String.left innerOffset remainingSource)
+                                        in
+                                        parseResult_
+                                    )
+                                    |= parser
+                                    |= P.getOffset
+                                )
+                                remainingSource
+                                |> Debug.log "parse result  "
+                    in
                     let
                         _ =
-                            Debug.log "starting" message
+                            Debug.log "----------------- ending  " message
                     in
-                    P.succeed
-                        (\source offsetBefore parseResult offsetAfter ->
-                            let
-                                _ =
-                                    Debug.log "-----------------------------------------------" message
-
-                                _ =
-                                    Debug.log "source         " source
-
-                                _ =
-                                    Debug.log "yet to parse   " (String.dropLeft offsetBefore source)
-
-                                _ =
-                                    Debug.log "chomped string " (String.slice offsetBefore offsetAfter source)
-
-                                _ =
-                                    Debug.log "parsed result  " parseResult
-                            in
-                            parseResult
-                        )
-                        |= P.getSource
-                        |= P.getOffset
-                        |= parser
-                        |= P.getOffset
+                    parser
                 )
 
     else
