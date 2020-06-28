@@ -1123,14 +1123,14 @@ type_ =
             , ( "unit", "()", ConcreteType.Unit )
             , ( "type var a", "a", ConcreteType.TypeVar "a" )
             , ( "function"
-              , "Int -> Unit"
+              , "Int -> ()"
               , ConcreteType.Function
                     { from = ConcreteType.Int
                     , to = ConcreteType.Unit
                     }
               )
             , ( "multiple-arg function"
-              , "Int -> Unit -> Char"
+              , "Int -> () -> Char"
               , ConcreteType.Function
                     { from = ConcreteType.Int
                     , to =
