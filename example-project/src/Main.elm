@@ -1,6 +1,12 @@
 module Main exposing (main)
 
+import Foo
 
-main : (Int, Bool)
-main =
+
+x : Foo.Bar
+x =
     123
+
+
+main =
+    x

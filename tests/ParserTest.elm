@@ -1,16 +1,21 @@
 module ParserTest exposing
-    ( exposingList
+    ( customTypeDeclaration
+    , exposingList
     , expr
     , imports
     , moduleDeclaration
     , moduleName
-    , typeAnnotation
-    , type_
-    )
+    , typeAliasDeclaration
+    ,  -- TODO
+       typeAnnotation
 
--- TODO value declaration
--- TODO type alias declaration
--- TODO custom type declaration
+    ,  -- TODO
+       type_
+
+    ,  -- TODO
+       valueDeclaration
+
+    )
 
 import Dict
 import Elm.AST.Frontend as Frontend
