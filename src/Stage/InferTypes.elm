@@ -170,7 +170,7 @@ getBetterType substitutionMap typeOrId =
                     Bool ->
                         typeOrId
 
-                    Var _ ->
+                    TypeVar _ ->
                         typeOrId
 
                     Function { from, to } ->

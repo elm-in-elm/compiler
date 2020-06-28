@@ -377,7 +377,7 @@ findDependenciesOfType modules thisModule type_ =
             findDependenciesOfTypeOrId modules thisModule
     in
     case type_ of
-        Type.Var _ ->
+        Type.TypeVar _ ->
             Ok []
 
         Type.Function { from, to } ->

@@ -16,7 +16,7 @@ import Elm.Data.VarName exposing (VarName)
 
 
 type ConcreteType a
-    = Var String
+    = TypeVar String
     | Function
         { from : ConcreteType a
         , to : ConcreteType a
@@ -50,8 +50,8 @@ toType type_ =
             Type << toType
     in
     case type_ of
-        Var string ->
-            Type.Var string
+        TypeVar string ->
+            Type.TypeVar string
 
         Function { from, to } ->
             Type.Function

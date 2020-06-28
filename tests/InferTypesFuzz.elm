@@ -119,7 +119,7 @@ basicExprOfType depthLeft targetType =
             Debug.todo message
     in
     case targetType of
-        Var _ ->
+        TypeVar _ ->
             cannotFuzz "Vars, by definition, cannot be supported"
 
         Int ->

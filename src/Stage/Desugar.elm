@@ -360,8 +360,8 @@ desugarType modules thisModule type_ =
             desugarType modules thisModule
     in
     case type_ of
-        Var s ->
-            Ok <| Var s
+        TypeVar s ->
+            Ok <| TypeVar s
 
         Function { from, to } ->
             Result.map2

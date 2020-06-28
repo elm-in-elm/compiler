@@ -82,7 +82,7 @@ become impossible, and a part of the desugaring task is:
 
 -}
 type Type a
-    = {- Example of a `Var`:
+    = {- Example of a `TypeVar`:
 
              foo : a -> Int
 
@@ -92,7 +92,7 @@ type Type a
                 { name = "foo"
                 , type_ =
                     Function
-                        { from = Var "a"
+                        { from = TypeVar "a"
                         , to = Int
                         }
                 }
@@ -100,7 +100,7 @@ type Type a
          These are the type variables user has given name to. (There are also
          `Id 0`-like values which are being given names by the compiler.)
       -}
-      Var String
+      TypeVar String
     | Function
         { from : TypeOrId a
         , to : TypeOrId a
@@ -136,7 +136,7 @@ type Type a
 varName : Type a -> Maybe String
 varName type_ =
     case type_ of
-        Var string ->
+        TypeVar string ->
             Just string
 
         _ ->
@@ -189,7 +189,7 @@ isParametric typeOrId =
 
         Type type_ ->
             case type_ of
-                Var _ ->
+                TypeVar _ ->
                     True
 
                 Function { from, to } ->
@@ -258,7 +258,7 @@ recursiveChildren fn type_ =
                     fn t
     in
     case type_ of
-        Var _ ->
+        TypeVar _ ->
             []
 
         Function _ ->
@@ -306,7 +306,7 @@ recursiveChildren_ fn typeOrId =
         Id _ ->
             []
 
-        Type (Var _) ->
+        Type (TypeVar _) ->
             []
 
         Type (Function _) ->
@@ -363,8 +363,8 @@ mapType fn type_ =
             mapTypeOrId fn
     in
     case type_ of
-        Var str ->
-            Var str
+        TypeVar str ->
+            TypeVar str
 
         Function { from, to } ->
             Function
@@ -422,8 +422,8 @@ combineType type_ =
             combineTypeOrId
     in
     case type_ of
-        Var string ->
-            Ok <| Var string
+        TypeVar string ->
+            Ok <| TypeVar string
 
         Function { from, to } ->
             Result.map2

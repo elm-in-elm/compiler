@@ -51,7 +51,7 @@ unifyTypes t1 t2 substitutionMap =
             Err ( TypeMismatch (Type t1) (Type t2), substitutionMap )
     in
     case ( t1, t2 ) of
-        ( Var name1, Var name2 ) ->
+        ( TypeVar name1, TypeVar name2 ) ->
             if name1 == name2 then
                 Ok substitutionMap
 
@@ -59,7 +59,7 @@ unifyTypes t1 t2 substitutionMap =
                 -- TODO is this correct?
                 err
 
-        ( Var _, _ ) ->
+        ( TypeVar _, _ ) ->
             err
 
         ( Int, Int ) ->
@@ -199,7 +199,7 @@ occurs id typeOrId substitutionMap =
 
         Type type_ ->
             case type_ of
-                Var _ ->
+                TypeVar _ ->
                     -- TODO ??? what if var "a" got mapped to id 0? we should maybe check some mapping String->Int?
                     False
 

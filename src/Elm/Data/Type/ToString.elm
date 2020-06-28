@@ -204,7 +204,7 @@ toStringType_ qualifiednessToString state type_ =
             toString_ qualifiednessToString state_ type__
     in
     case type_ of
-        Var string ->
+        TypeVar string ->
             ( string, state )
 
         Function args ->
@@ -459,7 +459,7 @@ shouldWrapParens typeOrId =
 
         Type type_ ->
             case type_ of
-                Var _ ->
+                TypeVar _ ->
                     False
 
                 Function _ ->

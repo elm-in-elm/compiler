@@ -79,6 +79,11 @@ type ParseContext
     | InPattern
     | InTypeAnnotation
     | InType
+    | InTypeVarType
+    | InUserDefinedType
+    | InModuleNameWithDot
+    | InQualifiers
+    | InQualifiersAndTypeName
 
 
 {-| The specific problem the parser encountered. Together with [`ParseContext`](#ParseContext)
@@ -89,6 +94,7 @@ type ParseProblem
     | ExpectingEffectKeyword -- `>effect< module ...`
     | ExpectingModuleKeyword -- `>module< Foo.Bar exposing (..)`
     | ExpectingModuleName -- `module >Foo.Bar< exposing (..)`
+    | ExpectingModuleNameDot -- `foo : Bar>.<Baz`
     | ExpectingExposingKeyword -- `module Foo.Bar >exposing< (..)`
     | ExpectingExposingAllSymbol -- `module Foo.Bar exposing >(..)<`
     | ExpectingComma -- `module Foo.Bar exposing (a>,< b, c)`
@@ -147,6 +153,7 @@ type ParseProblem
     | ExpectingIndentation
     | ExpectingPatternAnything -- `>_< ->`
     | ExpectingMaxThreeTuple
+    | ExpectingTypeName
     | InvalidTab
     | InvalidNumber
     | TriedToParseCharacterStoppingDelimiter
@@ -158,6 +165,7 @@ type ParseCompilerBug
     | ModuleNameEndParserFailed
     | MultipleCharactersChompedInCharacter
     | QualifiersStartParserFailed
+    | QualifiersSeparatorParserFailed
     | QualifiersEndParserFailed
 
 
@@ -426,6 +434,9 @@ parseProblemToString problem =
         ExpectingModuleNamePart ->
             "ExpectingModuleNamePart"
 
+        ExpectingModuleNameDot ->
+            "ExpectingModuleNameDot"
+
         ExpectingQualifiedVarNameDot ->
             "ExpectingQualifiedVarNameDot"
 
@@ -567,6 +578,9 @@ parseProblemToString problem =
         ExpectingMaxThreeTuple ->
             "ExpectingMaxThreeTuple"
 
+        ExpectingTypeName ->
+            "ExpectingTypeName"
+
         InvalidTab ->
             "InvalidTab"
 
@@ -595,6 +609,9 @@ parseCompilerBugToString bug =
 
         QualifiersStartParserFailed ->
             "qualifiers start parser failed"
+
+        QualifiersSeparatorParserFailed ->
+            "qualifiers separator parser failed"
 
         QualifiersEndParserFailed ->
             "qualifiers end parser failed"

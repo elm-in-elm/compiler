@@ -51,6 +51,10 @@ type alias PatternConfig =
     PP.Config ParseContext ParseProblem LocatedPattern
 
 
+type alias TypeConfig =
+    PP.Config ParseContext ParseProblem (ConcreteType PossiblyQualified)
+
+
 located : Parser_ p -> Parser_ (Located p)
 located p =
     P.succeed
@@ -230,6 +234,20 @@ moduleNameWithoutDots =
         , expecting = ExpectingModuleNamePart
         }
         |> log "moduleNameWithoutDots"
+
+
+moduleNameWithDot : Parser_ String
+moduleNameWithDot =
+    P.succeed identity
+        |= P.variable
+            { start = Char.isUpper
+            , inner = Char.isAlphaNum
+            , reserved = Set.empty
+            , expecting = ExpectingModuleNamePart
+            }
+        |. P.token (P.Token "." ExpectingModuleNameDot)
+        |> P.inContext InModuleNameWithDot
+        |> log "moduleNameWithDot"
 
 
 exposingList : Parser_ Exposing
@@ -638,14 +656,14 @@ bool =
 var : Parser_ LocatedExpr
 var =
     P.oneOf
-        [ P.map
-            (\varName_ ->
-                Frontend.Var
-                    { qualifiedness = PossiblyQualified Nothing
-                    , name = varName_
-                    }
-            )
-            varName
+        [ varName
+            |> P.map
+                (\varName_ ->
+                    Frontend.Var
+                        { qualifiedness = PossiblyQualified Nothing
+                        , name = varName_
+                        }
+                )
         , qualifiedVar
         ]
         |> located
@@ -673,6 +691,7 @@ qualifiers =
         , item = moduleNameWithoutDots
         , trailing = P.Mandatory
         }
+        |> P.inContext InQualifiers
         |> log "qualifiers"
 
 
@@ -795,14 +814,14 @@ binding config =
         |> log "binding"
 
 
-typeBinding : Parser_ ( VarName, ConcreteType PossiblyQualified )
-typeBinding =
+typeBinding : TypeConfig -> Parser_ ( VarName, ConcreteType PossiblyQualified )
+typeBinding config =
     P.succeed Tuple.pair
         |= varName
         |. P.spaces
         |. P.symbol (P.Token ":" ExpectingColon)
         |. P.spaces
-        |= P.lazy lazyType
+        |= PP.subExpression 0 config
         |> log "typeBinding"
 
 
@@ -1315,21 +1334,28 @@ typeAnnotation =
 
 type_ : Parser_ (ConcreteType PossiblyQualified)
 type_ =
-    P.oneOf
-        [ varType
-        , simpleType "Int" ConcreteType.Int
-        , simpleType "Float" ConcreteType.Float
-        , simpleType "Char" ConcreteType.Char
-        , simpleType "String" ConcreteType.String
-        , simpleType "Bool" ConcreteType.Bool
-        , listType
-        , simpleType "()" ConcreteType.Unit
-        , tupleType
-        , tuple3Type
-        , recordType
-        , userDefinedType
-        , functionType
-        ]
+    PP.expression
+        { oneOf =
+            [ PP.literal varType
+            , simpleType "Int" ConcreteType.Int
+            , simpleType "Float" ConcreteType.Float
+            , simpleType "Char" ConcreteType.Char
+            , simpleType "String" ConcreteType.String
+            , simpleType "Bool" ConcreteType.Bool
+            , simpleType "()" ConcreteType.Unit
+            , listType
+            , tupleType
+            , tuple3Type
+            , recordType
+            , userDefinedType
+            ]
+        , andThenOneOf =
+            [ PP.infixRight 1
+                (P.token (P.Token "->" ExpectingRightArrow))
+                (\from to -> ConcreteType.Function { from = from, to = to })
+            ]
+        , spaces = P.spaces
+        }
         |> P.inContext InType
         |> log "type_"
 
@@ -1344,109 +1370,128 @@ varType : Parser_ (ConcreteType PossiblyQualified)
 varType =
     varName
         |> P.getChompedString
-        |> P.map ConcreteType.Var
+        |> P.map ConcreteType.TypeVar
+        |> P.inContext InTypeVarType
         |> log "varType"
 
 
-functionType : Parser_ (ConcreteType PossiblyQualified)
-functionType =
-    P.succeed (\from to -> ConcreteType.Function { from = from, to = to })
-        |= P.lazy lazyType
-        |. spacesOnly
-        |. P.token (P.Token "->" ExpectingRightArrow)
-        |. spacesOnly
-        |= P.lazy lazyType
-        |> log "functionType"
-
-
-simpleType : String -> ConcreteType PossiblyQualified -> Parser_ (ConcreteType PossiblyQualified)
-simpleType name parsedType =
-    P.succeed parsedType
-        |. P.keyword (P.Token name (ExpectingSimpleType name))
+simpleType : String -> ConcreteType PossiblyQualified -> TypeConfig -> Parser_ (ConcreteType PossiblyQualified)
+simpleType name parsedType config =
+    PP.constant
+        (P.keyword (P.Token name (ExpectingSimpleType name)))
+        parsedType
+        config
         |> log "simpleType"
 
 
-listType : Parser_ (ConcreteType PossiblyQualified)
-listType =
+listType : TypeConfig -> Parser_ (ConcreteType PossiblyQualified)
+listType config =
     P.succeed ConcreteType.List
         |. P.keyword (P.Token "List" ExpectingListType)
         |. spacesOnly
-        |= P.lazy lazyType
+        |= PP.subExpression 0 config
         |> log "listType"
 
 
-tupleType : Parser_ (ConcreteType PossiblyQualified)
-tupleType =
+tupleType : TypeConfig -> Parser_ (ConcreteType PossiblyQualified)
+tupleType config =
     P.backtrackable
         (P.succeed ConcreteType.Tuple
             |. P.token (P.Token "(" ExpectingLeftParen)
             |. spacesOnly
-            |= P.lazy lazyType
+            |= PP.subExpression 0 config
             |. spacesOnly
             |. P.token (P.Token "," ExpectingComma)
             |. spacesOnly
-            |= P.lazy lazyType
+            |= PP.subExpression 0 config
             |. spacesOnly
             |. P.token (P.Token ")" ExpectingRightParen)
         )
         |> log "tupleType"
 
 
-tuple3Type : Parser_ (ConcreteType PossiblyQualified)
-tuple3Type =
+tuple3Type : TypeConfig -> Parser_ (ConcreteType PossiblyQualified)
+tuple3Type config =
     P.backtrackable
         (P.succeed ConcreteType.Tuple3
             |. P.token (P.Token "(" ExpectingLeftParen)
             |. spacesOnly
-            |= P.lazy lazyType
+            |= PP.subExpression 0 config
             |. spacesOnly
             |. P.token (P.Token "," ExpectingComma)
             |. spacesOnly
-            |= P.lazy lazyType
+            |= PP.subExpression 0 config
             |. spacesOnly
             |. P.token (P.Token "," ExpectingComma)
             |. spacesOnly
-            |= P.lazy lazyType
+            |= PP.subExpression 0 config
             |. spacesOnly
             |. P.token (P.Token ")" ExpectingRightParen)
         )
         |> log "tuple3Type"
 
 
-recordType : Parser_ (ConcreteType PossiblyQualified)
-recordType =
+recordType : TypeConfig -> Parser_ (ConcreteType PossiblyQualified)
+recordType config =
     P.succeed (Dict.fromList >> ConcreteType.Record)
         |= P.sequence
             { start = P.Token "{" ExpectingLeftBrace
             , separator = P.Token "," ExpectingComma
             , end = P.Token "}" ExpectingRightBrace
             , spaces = spacesOnly -- TODO what about definitions of type aliases etc?
-            , item = typeBinding
+            , item = typeBinding config
             , trailing = P.Forbidden
             }
         |> log "recordType"
 
 
-userDefinedType : Parser_ (ConcreteType PossiblyQualified)
-userDefinedType =
-    -- Maybe a
-    -- List Int
-    -- Result Foo.Bar
-    -- Browser.Position Int
-    -- MyModule.MyDataStructure
+{-| Examples:
+
+  - Maybe a
+  - List Int
+  - Result Foo.Bar
+  - Browser.Position Int
+  - MyModule.MyDataStructure
+
+-}
+userDefinedType : TypeConfig -> Parser_ (ConcreteType PossiblyQualified)
+userDefinedType config =
     P.succeed
-        (\modules name args ->
+        (\( modules, name ) args ->
             ConcreteType.UserDefinedType
                 { qualifiedness = qualify modules
                 , name = name
                 , args = args
                 }
         )
-        |= qualifiers
-        |= typeOrConstructorName
+        |= qualifiersAndTypeName
         |. spacesOnly
-        |= zeroOrMoreWith spacesOnly (P.lazy lazyType)
+        |= zeroOrMoreWith spacesOnly (PP.subExpression 0 config)
+        |> P.inContext InUserDefinedType
         |> log "userDefinedType"
+
+
+qualifiersAndTypeName : Parser_ ( List ModuleName, String )
+qualifiersAndTypeName =
+    P.sequence
+        { start = P.Token "" (ParseCompilerBug QualifiersStartParserFailed)
+        , separator = P.Token "." ExpectingQualifiedVarNameDot
+        , end = P.Token "" (ParseCompilerBug QualifiersEndParserFailed)
+        , spaces = P.succeed ()
+        , item = moduleNameWithoutDots
+        , trailing = P.Forbidden
+        }
+        |> P.andThen
+            (\names ->
+                case List.reverse names of
+                    typeName :: reversedQualifiers ->
+                        P.succeed ( List.reverse reversedQualifiers, typeName )
+
+                    _ ->
+                        P.problem ExpectingTypeName
+            )
+        |> P.inContext InQualifiersAndTypeName
+        |> log "qualifiersAndTypeName"
 
 
 {-| Taken from [dmy/elm-pratt-parser](https://package.elm-lang.org/packages/dmy/elm-pratt-parser/latest/Pratt-Advanced#postfix),

@@ -229,7 +229,7 @@ typeToString =
     in
     describe "Type.toString"
         {- TODO test that strings given to `Id _` are different from strings
-           given by `Type (Var _)` (eg. if I have type annotation with `List a`
+           given by `Type (TypeVar _)` (eg. if I have type annotation with `List a`
            and somehow in the larger context there's an `Id 0`, it doesn't
            collide with the `a` given by the `Var "a"` and instead is given `a0`
            or something similar.
@@ -282,12 +282,12 @@ typeToString =
                 ( "function with two params, but they're vars"
                 , Type
                     (Function
-                        { from = Type (Var "a")
+                        { from = Type (TypeVar "a")
                         , to =
                             Type
                                 (Function
-                                    { from = Type (Var "b")
-                                    , to = Type (Var "b")
+                                    { from = Type (TypeVar "b")
+                                    , to = Type (TypeVar "b")
                                     }
                                 )
                         }
@@ -498,20 +498,20 @@ isParametric =
             , ( Type Char, False )
             , ( Type Int, False )
             , ( Type String, False )
-            , ( Type <| Var "a", True )
+            , ( Type <| TypeVar "a", True )
             , ( Id 0, True )
             , ( Type <| Function { from = Type Int, to = Type String }, False )
-            , ( Type <| Function { from = Type (Var "bcd"), to = Type Int }, True )
+            , ( Type <| Function { from = Type (TypeVar "bcd"), to = Type Int }, True )
             , ( Type <| Function { from = Id 102, to = Type Int }, True )
-            , ( Type <| Function { from = Type String, to = Type (Var "xx") }, True )
+            , ( Type <| Function { from = Type String, to = Type (TypeVar "xx") }, True )
             , ( Type <| Function { from = Type String, to = Id 99 }, True )
             , ( Type <| Function { from = Type Int, to = Type (Function { from = Id 0, to = Id 0 }) }, True )
             , ( Type <| List (Type Int), False )
             , ( Type <| List (Id 0), True )
-            , ( Type <| List (Type (Var "ab")), True )
+            , ( Type <| List (Type (TypeVar "ab")), True )
             , ( Type <| List (Type (List (Type Int))), False )
             , ( Type <| List (Type (List (Id 0))), True )
-            , ( Type <| List (Type (List (Type (Var "cd")))), True )
+            , ( Type <| List (Type (List (Type (TypeVar "cd")))), True )
             , ( Type <| Tuple (Type Int) (Type String), False )
             , ( Type <| Tuple (Id 0) (Type Int), True )
             , ( Type <| Tuple (Type String) (Id 0), True )

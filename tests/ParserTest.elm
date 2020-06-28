@@ -1121,7 +1121,7 @@ type_ =
         (List.map runTest
             [ ( "int", "Int", ConcreteType.Int )
             , ( "unit", "()", ConcreteType.Unit )
-            , ( "var a", "a", ConcreteType.Var "a" )
+            , ( "type var a", "a", ConcreteType.TypeVar "a" )
             , ( "function"
               , "Int -> Unit"
               , ConcreteType.Function
@@ -1240,9 +1240,15 @@ typeAnnotation =
                                 )
                         }
                   )
-                , ( "x var 2", "x : abcde1213", Just { varName = "x", type_ = ConcreteType.Var "abcde1213" } )
+                , ( "x var 2"
+                  , "x : abcde1213"
+                  , Just { varName = "x", type_ = ConcreteType.TypeVar "abcde1213" }
+                  )
                 , -- TODO later do something special about comparable etc!
-                  ( "x var special", "x : comparable", Just { varName = "x", type_ = ConcreteType.Var "comparable" } )
+                  ( "x var special"
+                  , "x : comparable"
+                  , Just { varName = "x", type_ = ConcreteType.TypeVar "comparable" }
+                  )
                 , ( "x function"
                   , "x : Int -> Bool"
                   , Just
