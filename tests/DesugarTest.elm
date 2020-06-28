@@ -11,7 +11,7 @@ import Elm.Data.Import exposing (Import)
 import Elm.Data.Located as Located
 import Elm.Data.Module as Module exposing (Module)
 import Elm.Data.ModuleName exposing (ModuleName)
-import Elm.Data.Qualifiedness exposing (PossiblyQualified(..), Qualified)
+import Elm.Data.Qualifiedness exposing (PossiblyQualified(..))
 import Elm.Data.TypeAnnotation exposing (TypeAnnotation)
 import Elm.Data.VarName exposing (VarName)
 import Expect

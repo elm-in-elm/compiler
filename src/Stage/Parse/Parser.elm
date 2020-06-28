@@ -233,19 +233,6 @@ moduleNameWithoutDots =
         }
 
 
-moduleNameWithDot : Parser_ String
-moduleNameWithDot =
-    P.succeed identity
-        |= P.variable
-            { start = Char.isUpper
-            , inner = Char.isAlphaNum
-            , reserved = Set.empty
-            , expecting = ExpectingModuleNamePart
-            }
-        |. P.token (P.Token "." ExpectingModuleNameDot)
-        |> P.inContext InModuleNameWithDot
-
-
 exposingList : Parser_ Exposing
 exposingList =
     P.oneOf
@@ -1644,7 +1631,7 @@ log message parser =
                                 |> Debug.log "yet to parse  "
                     in
                     let
-                        parseResult =
+                        _ =
                             -- the side-effecty part; this might log lies
                             P.run
                                 (P.succeed

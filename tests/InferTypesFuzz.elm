@@ -167,7 +167,7 @@ basicExprOfType depthLeft targetType =
         Record bindings ->
             recordExpr depthLeft bindings
 
-        UserDefinedType { qualifiedness, name, args } ->
+        UserDefinedType _ ->
             {- TODO after Exprs contain constructors / record constructors, we
                can try to pick one specific subtype and generate it here
             -}

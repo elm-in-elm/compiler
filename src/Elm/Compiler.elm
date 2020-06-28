@@ -138,7 +138,6 @@ import Elm.Data.Import exposing (Import)
 import Elm.Data.Module exposing (Module)
 import Elm.Data.ModuleName exposing (ModuleName)
 import Elm.Data.Qualifiedness exposing (PossiblyQualified, Qualified)
-import Elm.Data.Type exposing (Type)
 import Elm.Data.Type.Concrete exposing (ConcreteType)
 import Elm.Data.TypeAnnotation exposing (TypeAnnotation)
 import OurExtras.Dict as Dict
