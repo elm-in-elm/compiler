@@ -222,9 +222,12 @@ json =
             (List.map runTest
                 [ ( "simple"
                   , { module_ = "Foo"
-                    , typeAnnotation = Nothing
                     , name = "bar"
-                    , body = Value <| typedInt 1
+                    , body =
+                        Value
+                            { typeAnnotation = Nothing
+                            , expression = typedInt 1
+                            }
                     }
                   , """{"type":"decl","name":"Foo$bar","expr":{"type":"int","value":1}}"""
                   )

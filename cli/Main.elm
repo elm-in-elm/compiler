@@ -342,7 +342,10 @@ compile format project =
                             |> List.map
                                 (\decl ->
                                     decl.body
-                                        |> Declaration.mapBody Frontend.unwrap identity
+                                        |> Declaration.mapBody
+                                            Frontend.unwrap
+                                            identity
+                                            identity
                                         |> Debug.log (decl.module_ ++ "." ++ decl.name)
                                 )
                     )

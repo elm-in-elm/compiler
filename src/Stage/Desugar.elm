@@ -15,7 +15,11 @@ import Elm.Compiler.Error
         , Error(..)
         )
 import Elm.Data.Binding as Binding exposing (Binding)
-import Elm.Data.Declaration as Declaration exposing (Declaration)
+import Elm.Data.Declaration as Declaration
+    exposing
+        ( Declaration
+        , DeclarationBody(..)
+        )
 import Elm.Data.Located as Located
 import Elm.Data.Module as Module exposing (Module)
 import Elm.Data.ModuleName exposing (ModuleName)
@@ -452,23 +456,33 @@ desugarTypeAnnotationQualifiedness :
     -> Declaration a (ConcreteType PossiblyQualified) b
     -> Result DesugarError (Declaration a (ConcreteType Qualified) b)
 desugarTypeAnnotationQualifiedness modules thisModule decl =
-    decl.typeAnnotation
-        |> Maybe.map
-            (\type_ ->
-                type_
-                    |> desugarType modules thisModule
-                    |> Result.map
-                        (\desugaredType ->
-                            Declaration.setAnnotation
-                                (Just desugaredType)
-                                decl
-                        )
-            )
-        |> Maybe.withDefault
-            (decl
+    let
+        default =
+            decl
                 |> Declaration.setAnnotation Nothing
                 |> Ok
-            )
+    in
+    case decl.body of
+        Value r ->
+            r.typeAnnotation
+                |> Maybe.map
+                    (\type_ ->
+                        type_
+                            |> desugarType modules thisModule
+                            |> Result.map
+                                (\desugaredType ->
+                                    Declaration.setAnnotation
+                                        (Just desugaredType)
+                                        decl
+                                )
+                    )
+                |> Maybe.withDefault default
+
+        TypeAlias _ ->
+            default
+
+        CustomType _ ->
+            default
 
 
 {-| Check the var name in the type annotation is the same as the one in the declaration:
@@ -486,20 +500,36 @@ checkNamesAgree :
     Declaration a TypeAnnotation b
     -> Result DesugarError (Declaration a (ConcreteType PossiblyQualified) b)
 checkNamesAgree decl =
-    decl.typeAnnotation
-        |> Maybe.map
-            (\{ varName } ->
-                if varName == decl.name then
-                    Ok <| throwAwayTypeAnnotationName decl
+    case decl.body of
+        Value r ->
+            r.typeAnnotation
+                |> Maybe.map
+                    (\{ varName } ->
+                        if varName == decl.name then
+                            Ok <| throwAwayTypeAnnotationName decl
 
-                else
-                    Err <|
-                        VarNameAndTypeAnnotationDontMatch
-                            { typeAnnotation = varName
-                            , varName = decl.name
-                            }
-            )
-        |> Maybe.withDefault (Ok <| throwAwayTypeAnnotationName decl)
+                        else
+                            Err <|
+                                VarNameAndTypeAnnotationDontMatch
+                                    { typeAnnotation = varName
+                                    , varName = decl.name
+                                    }
+                    )
+                |> Maybe.withDefault (Ok <| throwAwayTypeAnnotationName decl)
+
+        TypeAlias r ->
+            Ok
+                { module_ = decl.module_
+                , name = decl.name
+                , body = TypeAlias r
+                }
+
+        CustomType r ->
+            Ok
+                { module_ = decl.module_
+                , name = decl.name
+                , body = CustomType r
+                }
 
 
 throwAwayTypeAnnotationName :
@@ -507,9 +537,20 @@ throwAwayTypeAnnotationName :
     -> Declaration a (ConcreteType PossiblyQualified) b
 throwAwayTypeAnnotationName decl =
     { module_ = decl.module_
-    , typeAnnotation = Maybe.map .type_ decl.typeAnnotation
     , name = decl.name
-    , body = decl.body
+    , body =
+        case decl.body of
+            Value r ->
+                Value
+                    { expression = r.expression
+                    , typeAnnotation = Maybe.map .type_ r.typeAnnotation
+                    }
+
+            TypeAlias r ->
+                TypeAlias r
+
+            CustomType r ->
+                CustomType r
     }
 
 

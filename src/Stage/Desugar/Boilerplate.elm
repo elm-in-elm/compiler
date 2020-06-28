@@ -117,7 +117,10 @@ desugarDeclaration :
     -> Result DesugarError (Declaration Canonical.LocatedExpr (ConcreteType Qualified) Qualified)
 desugarDeclaration desugarExpr desugarQualifiedness desugarAnnotation decl =
     decl.body
-        |> Declaration.mapBody desugarExpr (desugarQualifiedness decl.name)
+        |> Declaration.mapBody
+            desugarExpr
+            identity
+            (desugarQualifiedness decl.name)
         |> Declaration.combineValue
         |> Result.andThen Declaration.combineType
         |> Result.map (declarationOfNewType decl)
@@ -125,13 +128,12 @@ desugarDeclaration desugarExpr desugarQualifiedness desugarAnnotation decl =
 
 
 declarationOfNewType :
-    Declaration exprA ann qualifiedness1
-    -> DeclarationBody exprB qualifiedness2
-    -> Declaration exprB ann qualifiedness2
+    Declaration expr1 ann1 qualifiedness1
+    -> DeclarationBody expr2 ann2 qualifiedness2
+    -> Declaration expr2 ann2 qualifiedness2
 declarationOfNewType old newBody =
     { name = old.name
     , module_ = old.module_
-    , typeAnnotation = old.typeAnnotation
 
     -- all that code because of this:
     , body = newBody

@@ -55,13 +55,16 @@ optimizeDeclaration :
     -> Declaration Typed.LocatedExpr Never Qualified
 optimizeDeclaration optimizeExpr decl =
     decl.body
-        |> Declaration.mapBody optimizeExpr identity
+        |> Declaration.mapBody
+            optimizeExpr
+            identity
+            identity
         |> asBodyIn decl
 
 
 asBodyIn :
     Declaration Typed.LocatedExpr Never Qualified
-    -> DeclarationBody Typed.LocatedExpr Qualified
+    -> DeclarationBody Typed.LocatedExpr Never Qualified
     -> Declaration Typed.LocatedExpr Never Qualified
 asBodyIn decl body =
     { decl | body = body }

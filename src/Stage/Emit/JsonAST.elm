@@ -159,10 +159,10 @@ emitExpr located =
 emitDeclaration : Declaration Typed.LocatedExpr Never Qualified -> Value
 emitDeclaration { module_, name, body } =
     case body of
-        Value expr ->
+        Value { expression } ->
             encode "decl"
                 [ ( "name", Encode.string (module_ ++ "$" ++ name) )
-                , ( "expr", emitExpr expr )
+                , ( "expr", emitExpr expression )
                 ]
 
         TypeAlias _ ->

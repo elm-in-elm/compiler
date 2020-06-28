@@ -79,6 +79,9 @@ type ParseContext
     | InPattern
     | InTypeAnnotation
     | InType
+    | InTypeAlias
+    | InCustomType
+    | InConstructors
     | InTypeVarType
     | InUserDefinedType
     | InModuleNameWithDot
@@ -110,6 +113,7 @@ type ParseProblem
     | ExpectingExposedTypeDoublePeriod -- `module Foo.Bar exposing (Foo>(..)<)`
     | ExpectingVarName -- eg. `module Foo.Bar exposing (>a<)`
     | ExpectingTypeOrConstructorName -- eg. `module Foo.Bar exposing (>Foo<)`
+    | ExpectingTypeAlias -- eg. `>type alias <X =`
     | ExposingListCantBeEmpty -- `module Foo.Bar exposing >()<`
     | ExpectingImportKeyword -- `>import< Foo as F exposing (..)`
     | ExpectingAsKeyword -- `import Foo >as< F exposing (..)`
@@ -150,6 +154,8 @@ type ParseProblem
     | ExpectingIn
     | ExpectingUnit
     | ExpectingColon
+    | ExpectingSpace
+    | ExpectingPipe -- `Foo >|< Bar`
     | ExpectingSimpleType String
     | ExpectingListType
     | ExpectingRecordLeftBrace
@@ -178,6 +184,9 @@ type ParseCompilerBug
     | QualifiersStartParserFailed
     | QualifiersSeparatorParserFailed
     | QualifiersEndParserFailed
+    | ConstructorsStartParserFailed
+    | ConstructorsSeparatorParserFailed
+    | ConstructorsEndParserFailed
 
 
 {-| Errors encountered during [desugaring](Elm.Compiler#desugarExpr) from the [Frontend AST](Elm.AST.Frontend) to [Canonical AST](Elm.AST.Canonical).
@@ -212,8 +221,6 @@ type DesugarError
 type TypeError
     = TypeMismatch (TypeOrId Qualified) (TypeOrId Qualified)
     | OccursCheckFailed Int (TypeOrId Qualified)
-    | -- TODO should this be a parse error instead?
-      AnnotationForNonExprDeclaration
 
 
 {-| Errors encountered during emitting. As you're free to do the emit phase however
@@ -352,10 +359,6 @@ toString error =
                         ++ " occurs in "
                         ++ type2
 
-                AnnotationForNonExprDeclaration ->
-                    -- TODO more information
-                    "You tried to add a type annotation to a type definition. Only values can have types!"
-
         EmitError emitError ->
             case emitError of
                 MainDeclarationNotFound ->
@@ -429,6 +432,9 @@ parseProblemToString problem =
 
         ExpectingTypeOrConstructorName ->
             "ExpectingTypeOrConstructorName"
+
+        ExpectingTypeAlias ->
+            "ExpectingTypeAlias"
 
         ExposingListCantBeEmpty ->
             "ExposingListCantBeEmpty"
@@ -553,6 +559,12 @@ parseProblemToString problem =
         ExpectingColon ->
             "ExpectingColon"
 
+        ExpectingSpace ->
+            "ExpectingSpace"
+
+        ExpectingPipe ->
+            "ExpectingPipe"
+
         ExpectingSimpleType type_ ->
             "ExpectingSimpleType " ++ type_
 
@@ -632,6 +644,15 @@ parseCompilerBugToString bug =
 
         QualifiersEndParserFailed ->
             "qualifiers end parser failed"
+
+        ConstructorsStartParserFailed ->
+            "constructors start parser failed"
+
+        ConstructorsSeparatorParserFailed ->
+            "constructors separator parser failed"
+
+        ConstructorsEndParserFailed ->
+            "constructors end parser failed"
 
 
 filenameFromContext : List { a | context : ParseContext } -> Maybe FilePath

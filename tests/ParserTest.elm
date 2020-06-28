@@ -8,6 +8,10 @@ module ParserTest exposing
     , type_
     )
 
+-- TODO value declaration
+-- TODO type alias declaration
+-- TODO custom type declaration
+
 import Dict
 import Elm.AST.Frontend as Frontend
 import Elm.AST.Frontend.Unwrapped exposing (Expr(..), Pattern(..))

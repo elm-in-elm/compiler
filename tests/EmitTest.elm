@@ -319,9 +319,12 @@ javascript =
             (List.map runTest
                 [ ( "simple"
                   , { module_ = "Foo"
-                    , typeAnnotation = Nothing
                     , name = "bar"
-                    , body = Value <| typedInt 1
+                    , body =
+                        Value
+                            { typeAnnotation = Nothing
+                            , expression = typedInt 1
+                            }
                     }
                   , "const Foo$bar = 1;"
                   )

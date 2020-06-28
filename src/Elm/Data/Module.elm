@@ -125,14 +125,23 @@ unalias thisModule moduleName =
 -}
 map :
     (exprA -> exprB)
-    -> (typeA -> typeB)
-    -> Module exprA annotation typeA
-    -> Module exprB annotation typeB
-map fnExpr fnType module_ =
+    -> (Maybe annotationA -> Maybe annotationB)
+    -> (qualifiednessA -> qualifiednessB)
+    -> Module exprA annotationA qualifiednessA
+    -> Module exprB annotationB qualifiednessB
+map fnExpr fnAnnotation fnQualifiedness module_ =
     { imports = module_.imports
     , name = module_.name
     , filePath = module_.filePath
-    , declarations = Dict.map (always <| Declaration.map fnExpr fnType) module_.declarations
+    , declarations =
+        Dict.map
+            (always <|
+                Declaration.map
+                    fnExpr
+                    fnAnnotation
+                    fnQualifiedness
+            )
+            module_.declarations
     , type_ = module_.type_
     , exposing_ = module_.exposing_
     }

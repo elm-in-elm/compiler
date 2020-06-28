@@ -46,6 +46,7 @@ import Elm.Data.ModuleName exposing (ModuleName)
 import Elm.Data.Project exposing (Project)
 import Elm.Data.Qualifiedness exposing (Qualified(..))
 import Elm.Data.Type as Type exposing (Type, TypeOrId(..))
+import Elm.Data.Type.Concrete as ConcreteType exposing (ConcreteType)
 import Elm.Data.VarName exposing (VarName)
 import Graph
 import OurExtras.List as List
@@ -322,12 +323,12 @@ collectDependencies modules remainingDeclarations doneDeclarations doneDependenc
 findDependencies :
     Dict ModuleName (Module Typed.LocatedExpr Never Qualified)
     -> Module Typed.LocatedExpr Never Qualified
-    -> DeclarationBody Typed.LocatedExpr Qualified
+    -> DeclarationBody Typed.LocatedExpr Never Qualified
     -> Result EmitError (List (Declaration Typed.LocatedExpr Never Qualified))
 findDependencies modules thisModule declarationBody =
     case declarationBody of
-        Value locatedExpr ->
-            findDependenciesOfExpr modules locatedExpr
+        Value { expression } ->
+            findDependenciesOfExpr modules expression
 
         TypeAlias { definition } ->
             {- we don't have to think about parameters; those are always
@@ -343,7 +344,7 @@ findDependencies modules thisModule declarationBody =
                 |> List.fastConcatMap
                     (.arguments
                         >> List.map
-                            (findDependenciesOfTypeOrId
+                            (findDependenciesOfType
                                 modules
                                 thisModule
                             )
@@ -352,72 +353,58 @@ findDependencies modules thisModule declarationBody =
                 |> Result.map List.concat
 
 
-findDependenciesOfTypeOrId :
-    Dict ModuleName (Module Typed.LocatedExpr Never Qualified)
-    -> Module Typed.LocatedExpr Never Qualified
-    -> TypeOrId Qualified
-    -> Result EmitError (List (Declaration Typed.LocatedExpr Never Qualified))
-findDependenciesOfTypeOrId modules thisModule typeArgument =
-    case typeArgument of
-        Id _ ->
-            Ok []
-
-        Type type_ ->
-            findDependenciesOfType modules thisModule type_
-
-
 findDependenciesOfType :
     Dict ModuleName (Module Typed.LocatedExpr Never Qualified)
     -> Module Typed.LocatedExpr Never Qualified
-    -> Type Qualified
+    -> ConcreteType Qualified
     -> Result EmitError (List (Declaration Typed.LocatedExpr Never Qualified))
 findDependenciesOfType modules thisModule type_ =
     let
         f =
-            findDependenciesOfTypeOrId modules thisModule
+            findDependenciesOfType modules thisModule
     in
     case type_ of
-        Type.TypeVar _ ->
+        ConcreteType.TypeVar _ ->
             Ok []
 
-        Type.Function { from, to } ->
+        ConcreteType.Function { from, to } ->
             Result.map2 (++)
                 (f from)
                 (f to)
 
-        Type.Int ->
+        ConcreteType.Int ->
             Ok []
 
-        Type.Float ->
+        ConcreteType.Float ->
             Ok []
 
-        Type.Char ->
+        ConcreteType.Char ->
             Ok []
 
-        Type.String ->
+        ConcreteType.String ->
             Ok []
 
-        Type.Bool ->
+        ConcreteType.Bool ->
             Ok []
 
-        Type.List t1 ->
+        ConcreteType.List t1 ->
             f t1
 
-        Type.Unit ->
+        ConcreteType.Unit ->
             Ok []
 
-        Type.Tuple t1 t2 ->
+        ConcreteType.Tuple t1 t2 ->
             Result.map2 (++)
                 (f t1)
                 (f t2)
 
-        Type.Tuple3 t1 t2 t3 ->
+        ConcreteType.Tuple3 t1 t2 t3 ->
             Result.map3 (\d1 d2 d3 -> d1 ++ d2 ++ d3)
                 (f t1)
                 (f t2)
                 (f t3)
 
-        Type.UserDefinedType { qualifiedness, name, args } ->
+        ConcreteType.UserDefinedType { qualifiedness, name, args } ->
             let
                 argsDependencies =
                     args
@@ -439,7 +426,7 @@ findDependenciesOfType modules thisModule type_ =
                 typeDependencies
                 argsDependencies
 
-        Type.Record bindings ->
+        ConcreteType.Record bindings ->
             bindings
                 |> Dict.values
                 |> List.map f

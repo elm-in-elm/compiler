@@ -16,6 +16,7 @@ module Elm.Data.Declaration exposing
 
 import Elm.Data.ModuleName exposing (ModuleName)
 import Elm.Data.Type as Type exposing (Type, TypeOrId)
+import Elm.Data.Type.Concrete as ConcreteType exposing (ConcreteType)
 import Elm.Data.VarName exposing (VarName)
 import Result.Extra
 import Stage.InferTypes.SubstitutionMap as SubstitutionMap exposing ({- TODO maybe move SubstMap module to Elm.Data? -} SubstitutionMap)
@@ -24,22 +25,8 @@ import Stage.InferTypes.SubstitutionMap as SubstitutionMap exposing ({- TODO may
 {-| -}
 type alias Declaration expr annotation qualifiedness =
     { module_ : ModuleName
-
-    -- What information from the annotation is yet to be used in the current stage?
-    -----------------------------------
-    -- Nothing: no annotation was given
-    -- Just Never: annotation was given but we successfully used all of it
-    -----------------------------------
-    -- The `annotation` types used are:
-    -- FRONTEND: TypeAnnotation (for which we need to check that the name in the
-    --                           annotation is the same as the name in the declaration)
-    -- CANONICAL: Type (for which we need to check that this advertised type is
-    --                  unifiable with the type of the declaration)
-    -- TYPED: Never (where we've used up all the info from the annotation and
-    --               don't need it anymore)
-    , typeAnnotation : Maybe annotation
     , name : VarName
-    , body : DeclarationBody expr qualifiedness
+    , body : DeclarationBody expr annotation qualifiedness
     }
 
 
@@ -55,12 +42,28 @@ type alias Declaration expr annotation qualifiedness =
      --> TypeAlias ["a"] (Maybe (Var 0))
 
 -}
-type DeclarationBody expr qualifiedness
-    = Value expr
+type DeclarationBody expr annotation qualifiedness
+    = Value
+        { expression : expr
+
+        -- What information from the annotation is yet to be used in the current stage?
+        -----------------------------------
+        -- Nothing: no annotation was given
+        -- Just Never: annotation was given but we successfully used all of it
+        -----------------------------------
+        -- The `annotation` types used are:
+        -- FRONTEND: TypeAnnotation (for which we need to check that the name in the
+        --                           annotation is the same as the name in the declaration)
+        -- CANONICAL: Type (for which we need to check that this advertised type is
+        --                  unifiable with the type of the declaration)
+        -- TYPED: Never (where we've used up all the info from the annotation and
+        --               don't need it anymore)
+        , typeAnnotation : Maybe annotation
+        }
     | TypeAlias
         { parameters : List VarName -- on the left side of =
         , -- TODO how to map from the parameters to the vars in the definition?
-          definition : Type qualifiedness
+          definition : ConcreteType qualifiedness
         }
     | CustomType
         { parameters : List VarName -- on the left side of =
@@ -86,9 +89,9 @@ type DeclarationBody expr qualifiedness
             ]
 
 -}
-type alias Constructor a =
+type alias Constructor qualifiedness =
     { name : String
-    , arguments : List (TypeOrId a)
+    , arguments : List (ConcreteType qualifiedness)
     }
 
 
@@ -96,14 +99,14 @@ type alias Constructor a =
 -}
 map :
     (exprA -> exprB)
+    -> (Maybe annotationA -> Maybe annotationB)
     -> (qualifiednessA -> qualifiednessB)
-    -> Declaration exprA annotation qualifiednessA
-    -> Declaration exprB annotation qualifiednessB
-map fnExpr fnQualifiedness declaration =
+    -> Declaration exprA annotationA qualifiednessA
+    -> Declaration exprB annotationB qualifiednessB
+map fnExpr fnAnnotation fnQualifiedness declaration =
     { module_ = declaration.module_
-    , typeAnnotation = declaration.typeAnnotation
     , name = declaration.name
-    , body = mapBody fnExpr fnQualifiedness declaration.body
+    , body = mapBody fnExpr fnAnnotation fnQualifiedness declaration.body
     }
 
 
@@ -115,9 +118,13 @@ setAnnotation :
     -> Declaration a ann2 b
 setAnnotation annotation declaration =
     { module_ = declaration.module_
-    , typeAnnotation = annotation
     , name = declaration.name
-    , body = declaration.body
+    , body =
+        declaration.body
+            |> mapBody
+                identity
+                (always annotation)
+                identity
     }
 
 
@@ -125,18 +132,22 @@ setAnnotation annotation declaration =
 -}
 mapBody :
     (exprA -> exprB)
+    -> (Maybe annotationA -> Maybe annotationB)
     -> (qualifiednessA -> qualifiednessB)
-    -> DeclarationBody exprA qualifiednessA
-    -> DeclarationBody exprB qualifiednessB
-mapBody fnExpr fnQualifiedness body =
+    -> DeclarationBody exprA annotationA qualifiednessA
+    -> DeclarationBody exprB annotationB qualifiednessB
+mapBody fnExpr fnAnnotation fnQualifiedness body =
     case body of
-        Value expr ->
-            Value <| fnExpr expr
+        Value { expression, typeAnnotation } ->
+            Value
+                { expression = fnExpr expression
+                , typeAnnotation = fnAnnotation typeAnnotation
+                }
 
         TypeAlias r ->
             TypeAlias
                 { parameters = r.parameters
-                , definition = Type.mapType fnQualifiedness r.definition
+                , definition = ConcreteType.map fnQualifiedness r.definition
                 }
 
         CustomType r ->
@@ -153,11 +164,18 @@ Similar to [`Result.Extra.combine`](/packages/elm-community/result-extra/latest/
     --> Ok (Value (Int 5))
 
 -}
-combineValue : DeclarationBody (Result err a) b -> Result err (DeclarationBody a b)
+combineValue : DeclarationBody (Result err a) b c -> Result err (DeclarationBody a b c)
 combineValue body =
     case body of
-        Value result ->
-            Result.map Value result
+        Value r ->
+            r.expression
+                |> Result.map
+                    (\expr ->
+                        Value
+                            { expression = expr
+                            , typeAnnotation = r.typeAnnotation
+                            }
+                    )
 
         TypeAlias r ->
             Ok <| TypeAlias r
@@ -166,7 +184,7 @@ combineValue body =
             Ok <| CustomType r
 
 
-combineType : DeclarationBody a (Result err b) -> Result err (DeclarationBody a b)
+combineType : DeclarationBody a b (Result err c) -> Result err (DeclarationBody a b c)
 combineType body =
     case body of
         Value expr ->
@@ -174,7 +192,7 @@ combineType body =
 
         TypeAlias r ->
             r.definition
-                |> Type.combineType
+                |> ConcreteType.combine
                 |> Result.map
                     (\definition ->
                         TypeAlias
@@ -197,15 +215,22 @@ combineType body =
 
 
 combineSubstitutionMap :
-    DeclarationBody ( expr, SubstitutionMap ) a
-    -> ( DeclarationBody expr a, SubstitutionMap )
+    DeclarationBody ( expr, SubstitutionMap ) a b
+    -> ( DeclarationBody expr a b, SubstitutionMap )
 combineSubstitutionMap body =
     {- TODO very unsure about this. Are we ever merging those empty
        SubstitutionMaps with the non-empty ones?
     -}
     case body of
-        Value ( expr, map_ ) ->
-            ( Value expr, map_ )
+        Value r ->
+            case r.expression of
+                ( expr, map_ ) ->
+                    ( Value
+                        { expression = expr
+                        , typeAnnotation = r.typeAnnotation
+                        }
+                    , map_
+                    )
 
         TypeAlias r ->
             ( TypeAlias r, SubstitutionMap.empty )
@@ -217,8 +242,8 @@ combineSubstitutionMap body =
 getExpr : Declaration expr a b -> Maybe expr
 getExpr decl =
     case decl.body of
-        Value expr ->
-            Just expr
+        Value { expression } ->
+            Just expression
 
         _ ->
             Nothing
@@ -227,14 +252,14 @@ getExpr decl =
 mapConstructor : (a -> b) -> Constructor a -> Constructor b
 mapConstructor fn constructor =
     { name = constructor.name
-    , arguments = List.map (Type.mapTypeOrId fn) constructor.arguments
+    , arguments = List.map (ConcreteType.map fn) constructor.arguments
     }
 
 
 combineConstructor : Constructor (Result err a) -> Result err (Constructor a)
 combineConstructor constructor =
     constructor.arguments
-        |> List.map Type.combineTypeOrId
+        |> List.map ConcreteType.combine
         |> Result.Extra.combine
         |> Result.map
             (\arguments ->

@@ -112,9 +112,6 @@ substituteAllInError ( error, substitutionMap ) =
 
         OccursCheckFailed id type_ ->
             OccursCheckFailed id (getBetterType substitutionMap type_)
-
-        AnnotationForNonExprDeclaration ->
-            AnnotationForNonExprDeclaration
     , substitutionMap
     )
 
@@ -217,43 +214,66 @@ unifyWithTypeAnnotation :
     -> Declaration Typed.LocatedExpr (ConcreteType Qualified) Qualified
     -> Result ( TypeError, SubstitutionMap ) ( Declaration Typed.LocatedExpr Never Qualified, SubstitutionMap )
 unifyWithTypeAnnotation substitutionMap decl =
-    case ( decl.body, decl.typeAnnotation ) of
-        ( Declaration.Value expr, Just annotationType ) ->
-            let
-                realDeclarationType =
-                    Typed.getTypeOrId expr
-
-                unifyResult =
-                    Unify.unify
-                        (ConcreteType.toTypeOrId annotationType)
-                        realDeclarationType
-                        substitutionMap
-            in
-            unifyResult
-                |> Result.map
-                    (\newSubstitutionMap ->
-                        ( throwAwayType decl
-                        , newSubstitutionMap
-                        )
-                    )
-
-        ( _, Nothing ) ->
+    let
+        default =
             Ok
                 ( throwAwayType decl
                 , substitutionMap
                 )
+    in
+    case decl.body of
+        Declaration.Value r ->
+            case r.typeAnnotation of
+                Just annotationType ->
+                    let
+                        realDeclarationType =
+                            Typed.getTypeOrId r.expression
 
-        ( _, Just annotationType ) ->
-            Err
-                ( AnnotationForNonExprDeclaration
-                , substitutionMap
-                )
+                        unifyResult =
+                            Unify.unify
+                                (ConcreteType.toTypeOrId annotationType)
+                                realDeclarationType
+                                substitutionMap
+                    in
+                    unifyResult
+                        |> Result.map
+                            (\newSubstitutionMap ->
+                                ( throwAwayType decl
+                                , newSubstitutionMap
+                                )
+                            )
+
+                Nothing ->
+                    default
+
+        Declaration.TypeAlias _ ->
+            default
+
+        Declaration.CustomType _ ->
+            default
 
 
 throwAwayType : Declaration a (ConcreteType Qualified) b -> Declaration a Never b
 throwAwayType decl =
     { module_ = decl.module_
-    , typeAnnotation = Nothing
     , name = decl.name
-    , body = decl.body
+    , body =
+        case decl.body of
+            Declaration.Value r ->
+                Declaration.Value
+                    { expression = r.expression
+                    , typeAnnotation = Nothing
+                    }
+
+            Declaration.TypeAlias r ->
+                Declaration.TypeAlias
+                    { parameters = r.parameters
+                    , definition = r.definition
+                    }
+
+            Declaration.CustomType r ->
+                Declaration.CustomType
+                    { parameters = r.parameters
+                    , constructors = r.constructors
+                    }
     }

@@ -137,10 +137,13 @@ inferDeclaration :
     -> SubstResult (Declaration Typed.LocatedExpr (ConcreteType Qualified) Qualified)
 inferDeclaration inferExpr substitutionMap decl =
     let
-        result : SubstResult (DeclarationBody Typed.LocatedExpr Qualified)
+        result : SubstResult (DeclarationBody Typed.LocatedExpr (ConcreteType Qualified) Qualified)
         result =
             decl.body
-                |> Declaration.mapBody (inferExpr substitutionMap) identity
+                |> Declaration.mapBody
+                    (inferExpr substitutionMap)
+                    identity
+                    identity
                 |> Declaration.combineValue
                 |> Result.map Declaration.combineSubstitutionMap
     in
@@ -150,12 +153,11 @@ inferDeclaration inferExpr substitutionMap decl =
 
 declarationOfNewType :
     Declaration Canonical.LocatedExpr annotation Qualified
-    -> DeclarationBody Typed.LocatedExpr Qualified
+    -> DeclarationBody Typed.LocatedExpr annotation Qualified
     -> Declaration Typed.LocatedExpr annotation Qualified
 declarationOfNewType old newBody =
     { name = old.name
     , module_ = old.module_
-    , typeAnnotation = old.typeAnnotation
 
     -- all that code because of this:
     , body = newBody

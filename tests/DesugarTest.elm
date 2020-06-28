@@ -299,9 +299,12 @@ addDeclaration varName module_ =
         decl : Declaration Frontend.LocatedExpr TypeAnnotation PossiblyQualified
         decl =
             { module_ = module_.name
-            , typeAnnotation = Nothing
             , name = varName
-            , body = Declaration.Value (located <| Frontend.Int 42)
+            , body =
+                Declaration.Value
+                    { typeAnnotation = Nothing
+                    , expression = located <| Frontend.Int 42
+                    }
             }
     in
     { module_ | declarations = Dict.insert varName decl module_.declarations }

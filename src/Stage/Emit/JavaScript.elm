@@ -136,11 +136,11 @@ emitExpr located =
 emitDeclaration : Declaration Typed.LocatedExpr Never Qualified -> String
 emitDeclaration { module_, name, body } =
     case body of
-        Value expr ->
+        Value { expression } ->
             "const "
                 ++ mangleQualifiedVar { module_ = module_, name = name }
                 ++ " = "
-                ++ emitExpr expr
+                ++ emitExpr expression
                 ++ ";"
 
         TypeAlias _ ->
