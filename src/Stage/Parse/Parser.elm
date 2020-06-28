@@ -23,7 +23,11 @@ import Elm.Compiler.Error
         , ParseProblem(..)
         )
 import Elm.Data.Binding exposing (Binding)
-import Elm.Data.Declaration as Declaration exposing (Declaration)
+import Elm.Data.Declaration as Declaration
+    exposing
+        ( Declaration
+        , DeclarationBody
+        )
 import Elm.Data.Exposing exposing (ExposedItem(..), Exposing(..))
 import Elm.Data.FilePath exposing (FilePath)
 import Elm.Data.Import exposing (Import)
@@ -392,12 +396,18 @@ declaration =
         |. P.spaces
         |. P.symbol (P.Token "=" ExpectingEqualsSign)
         |. P.spaces
-        {- TODO this only parses Data.Declaration.Value, not TypeAlias or CustomType
-           Add parsers for type alises and custom types!
-        -}
-        |= P.map Declaration.Value expr
+        |= declarationBody
         |> P.inContext InDeclaration
         |> log "declaration"
+
+
+declarationBody : Parser_ (DeclarationBody LocatedExpr PossiblyQualified)
+declarationBody =
+    P.oneOf
+        [ -- TODO type alias
+          -- TODO custom type
+          P.map Declaration.Value expr
+        ]
 
 
 expr : Parser_ LocatedExpr
