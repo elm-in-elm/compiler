@@ -1346,6 +1346,7 @@ type_ =
             , listType
             , tupleType
             , tuple3Type
+            , parenthesizedType
             , recordType
             , userDefinedType
             ]
@@ -1360,10 +1361,14 @@ type_ =
         |> log "type_"
 
 
-lazyType : () -> Parser_ (ConcreteType PossiblyQualified)
-lazyType () =
-    type_
-        |> log "lazyType"
+parenthesizedType : TypeConfig -> Parser_ (ConcreteType PossiblyQualified)
+parenthesizedType config =
+    P.succeed identity
+        |. P.symbol (P.Token "(" ExpectingLeftParen)
+        |= PP.subExpression 0 config
+        |. P.symbol (P.Token ")" ExpectingRightParen)
+        |> P.inContext InParenthesizedType
+        |> log "parenthesizedType"
 
 
 varType : Parser_ (ConcreteType PossiblyQualified)

@@ -84,6 +84,7 @@ type ParseContext
     | InModuleNameWithDot
     | InQualifiers
     | InQualifiersAndTypeName
+    | InParenthesizedType
 
 
 {-| The specific problem the parser encountered. Together with [`ParseContext`](#ParseContext)
