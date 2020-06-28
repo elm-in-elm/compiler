@@ -11,13 +11,13 @@ import Parser.Advanced as P
 import Stage.Parse.Parser as Parser
 
 
-{-| This `parse` function is used only by cli/, not by library/.
-Maybe we should use it in library/ too?
+{-| This `parse` function is used only by cli/, not by src/ (library).
+Would it make sense to use it in src/ too?
 -}
 parse :
     { filePath : FilePath, fileContents : FileContents }
     -> Result Error (Module Frontend.LocatedExpr TypeAnnotation PossiblyQualified)
 parse { filePath, fileContents } =
-    Result.mapError
-        (\errorList -> ParseError (ParseProblem ( errorList, fileContents )))
-        (P.run (Parser.module_ filePath) fileContents)
+    P.run (Parser.module_ filePath) fileContents
+        |> Result.mapError
+            (\errorList -> ParseError (ParseProblem ( errorList, fileContents )))

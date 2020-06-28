@@ -1338,6 +1338,30 @@ typeAnnotation =
                 , ( "multiple spaces after", "x :   Int", Just xInt )
                 , ( "newline and space before", "x\n  : Int", Just xInt )
                 , ( "newline and space after", "x :\n Int", Just xInt )
+                , ( "newline and space near UserDefinedType args"
+                  , "x : Foo.Bar\n a"
+                  , Just
+                        { varName = "x"
+                        , type_ =
+                            ConcreteType.UserDefinedType
+                                { qualifiedness = PossiblyQualified (Just "Foo")
+                                , name = "Bar"
+                                , args = [ ConcreteType.TypeVar "a" ]
+                                }
+                        }
+                  )
+                , ( "newline but not a space near UserDefinedType args means the rest is ignored"
+                  , "x : Foo.Bar\na"
+                  , Just
+                        { varName = "x"
+                        , type_ =
+                            ConcreteType.UserDefinedType
+                                { qualifiedness = PossiblyQualified (Just "Foo")
+                                , name = "Bar"
+                                , args = []
+                                }
+                        }
+                  )
 
                 -- TODO , ( "newline before", "x\n: Int", Nothing )
                 -- TODO , ( "newline after", "x :\nInt", Nothing )

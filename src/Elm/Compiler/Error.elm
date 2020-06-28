@@ -85,6 +85,14 @@ type ParseContext
     | InQualifiers
     | InQualifiersAndTypeName
     | InParenthesizedType
+    | InExposedValue
+    | InDeclaration
+    | InVar
+    | InVarName
+    | InQualifiedVar
+    | InTypeBinding
+    | InPatternVar
+    | InPatternRecord
 
 
 {-| The specific problem the parser encountered. Together with [`ParseContext`](#ParseContext)
@@ -155,6 +163,8 @@ type ParseProblem
     | ExpectingPatternAnything -- `>_< ->`
     | ExpectingMaxThreeTuple
     | ExpectingTypeName
+    | ExpectingNewlineAfterTypeAnnotation
+    | ExpectingNonSpaceAfterTypeAnnotationNewlines
     | InvalidTab
     | InvalidNumber
     | TriedToParseCharacterStoppingDelimiter
@@ -581,6 +591,12 @@ parseProblemToString problem =
 
         ExpectingTypeName ->
             "ExpectingTypeName"
+
+        ExpectingNewlineAfterTypeAnnotation ->
+            "ExpectingNewlineAfterTypeAnnotation"
+
+        ExpectingNonSpaceAfterTypeAnnotationNewlines ->
+            "ExpectingNonSpaceAfterTypeAnnotationNewlines"
 
         InvalidTab ->
             "InvalidTab"

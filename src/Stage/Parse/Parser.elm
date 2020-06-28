@@ -7,6 +7,7 @@ module Stage.Parse.Parser exposing
     , moduleDeclaration
     , moduleName
     , module_
+    , spacesOnly
     , typeAnnotation
     , type_
     )
@@ -299,6 +300,7 @@ exposedItem =
 exposedValue : Parser_ ExposedItem
 exposedValue =
     P.map ExposedValue varName
+        |> P.inContext InExposedValue
         |> log "exposedValue"
 
 
@@ -374,15 +376,18 @@ declaration =
             , body = body
             }
         )
-        |= P.oneOf
-            -- TODO refactor the `backtrackable` away
-            -- TODO is it even working correctly?
-            [ P.succeed Just
-                |= typeAnnotation
-                |. P.spaces
-                |> P.backtrackable
-            , P.succeed Nothing
-            ]
+        |= (P.oneOf
+                -- TODO refactor the `backtrackable` away
+                -- TODO is it even working correctly?
+                [ P.backtrackable
+                    (P.succeed Just
+                        |= typeAnnotation
+                        |. P.spaces
+                    )
+                , P.succeed Nothing
+                ]
+                |> log "annotation and newline in decl"
+           )
         |= varName
         |. P.spaces
         |. P.symbol (P.Token "=" ExpectingEqualsSign)
@@ -391,6 +396,7 @@ declaration =
            Add parsers for type alises and custom types!
         -}
         |= P.map Declaration.Value expr
+        |> P.inContext InDeclaration
         |> log "declaration"
 
 
@@ -667,6 +673,7 @@ var =
         , qualifiedVar
         ]
         |> located
+        |> P.inContext InVar
         |> log "var"
 
 
@@ -678,6 +685,7 @@ varName =
         , reserved = reservedWords
         , expecting = ExpectingVarName
         }
+        |> P.inContext InVarName
         |> log "varName"
 
 
@@ -719,6 +727,7 @@ qualifiedVar =
                     )
                     varName
             )
+        |> P.inContext InQualifiedVar
         |> log "qualifiedVar"
 
 
@@ -822,6 +831,7 @@ typeBinding config =
         |. P.symbol (P.Token ":" ExpectingColon)
         |. P.spaces
         |= PP.subExpression 0 config
+        |> P.inContext InTypeBinding
         |> log "typeBinding"
 
 
@@ -1058,6 +1068,7 @@ patternVar : Parser_ LocatedPattern
 patternVar =
     P.map PVar varName
         |> located
+        |> P.inContext InPatternVar
         |> log "patternVar"
 
 
@@ -1109,7 +1120,7 @@ patternRecord =
         , trailing = P.Forbidden
         }
         |> P.map PRecord
-        |> P.inContext InRecord
+        |> P.inContext InPatternRecord
         |> located
         |> log "patternRecord"
 
@@ -1171,7 +1182,8 @@ patternTuple config =
 
 spacesOnly : Parser_ ()
 spacesOnly =
-    P.chompWhile ((==) ' ')
+    P.succeed identity
+        |= P.chompWhile ((==) ' ')
         |> log "spacesOnly"
 
 
@@ -1249,7 +1261,15 @@ checkIndent check error =
         |= P.getIndent
         |= P.getCol
         |> P.andThen identity
-        |> log "checkIndent"
+
+
+{-| Fail if current column <= 1 (these are 1-based, so 1 is leftmost.)
+-}
+onlyIndented : Parser_ a -> Parser_ a
+onlyIndented parser =
+    P.succeed identity
+        |. checkIndent (\_ column -> column > 1) ExpectingIndentation
+        |= parser
 
 
 {-| Parse ignorable code then check the current defined indentation and the
@@ -1471,7 +1491,34 @@ userDefinedType config =
         )
         |= qualifiersAndTypeName
         |. spacesOnly
-        |= zeroOrMoreWith spacesOnly (PP.subExpression 0 config)
+        |= P.oneOf
+            [ {- consider `x : Foo.Bar\nx = 1` vs `x : Foo.Bar\n x`
+
+                 Right now we've chomped the `Bar` and we want to chomp some
+                 arguments.
+
+                 We have to explicitly check whether the next non-newline char is
+                 a space or not.
+
+                 If it is, we have a multi-line type annotation
+                 on our hands and the `x` at the end is a type argument.
+
+                 If it isn't, we have finished the type annotation
+                 parsing and the argument list for the `Foo.Bar` is empty.
+                 And that's this `oneOf` case!
+              -}
+              P.backtrackable
+                (P.succeed []
+                    |. spacesOnly
+                    |. checkNextCharIs '\n' ExpectingNewlineAfterTypeAnnotation
+                    |. newlines
+                    |. checkNextCharIsNot ' ' ExpectingNonSpaceAfterTypeAnnotationNewlines
+                )
+            , {- Here, the next thing to parse isn't the `x = ...` declaration
+                 but a continuation of the type annotation - custom type args!
+              -}
+              zeroOrMoreWith P.spaces (onlyIndented (PP.subExpression 0 config))
+            ]
         |> P.inContext InUserDefinedType
         |> log "userDefinedType"
 
@@ -1592,3 +1639,50 @@ log message parser =
 
     else
         parser
+
+
+simpleLog : String -> Parser_ a -> Parser_ a
+simpleLog msg parser =
+    P.succeed
+        (\offsetBefore result offsetAfter ->
+            let
+                _ =
+                    Debug.log ("[" ++ msg ++ "] before, after") ( offsetBefore, offsetAfter )
+            in
+            result
+        )
+        |= P.getOffset
+        |= parser
+        |= P.getOffset
+
+
+checkNextCharIs : Char -> ParseProblem -> Parser_ ()
+checkNextCharIs mandatoryChar problem =
+    checkNextChar ((==) mandatoryChar) problem
+
+
+checkNextCharIsNot : Char -> ParseProblem -> Parser_ ()
+checkNextCharIsNot forbiddenChar problem =
+    checkNextChar ((/=) forbiddenChar) problem
+
+
+{-| Likely very inefficient...
+-}
+checkNextChar : (Char -> Bool) -> ParseProblem -> Parser_ ()
+checkNextChar charPredicate problem =
+    P.succeed
+        (\source offset ->
+            case String.uncons (String.slice offset (offset + 1) source) of
+                Nothing ->
+                    P.problem problem
+
+                Just ( nextChar, _ ) ->
+                    if charPredicate nextChar then
+                        P.succeed ()
+
+                    else
+                        P.problem problem
+        )
+        |= P.getSource
+        |= P.getOffset
+        |> P.andThen identity
