@@ -8,6 +8,7 @@ module Stage.Parse.Parser exposing
     , moduleName
     , module_
     , spacesOnly
+    , typeAliasDeclaration
     , typeAnnotation
     , type_
     , valueDeclaration

@@ -4,11 +4,11 @@ module ParserTest exposing
     , imports
     , moduleDeclaration
     , moduleName
+    , typeAliasDeclaration
     , typeAnnotation
     , type_
     ,  valueDeclaration
        -- TODO , customTypeDeclaration
-       -- TODO , typeAliasDeclaration
 
     )
 
@@ -1419,6 +1419,91 @@ valueDeclaration =
                             Just
                                 { varName = "y"
                                 , type_ = ConcreteType.Unit
+                                }
+                        }
+                    )
+              )
+            ]
+
+
+typeAliasDeclaration : Test
+typeAliasDeclaration =
+    let
+        runTest : ( String, String, Maybe ( String, DeclarationBody Frontend.LocatedExpr TypeAnnotation PossiblyQualified ) ) -> Test
+        runTest ( description, input, output ) =
+            test description <|
+                \() ->
+                    input
+                        |> P.run Stage.Parse.Parser.typeAliasDeclaration
+                        |> Result.toMaybe
+                        |> Expect.equal output
+    in
+    describe "Stage.Parse.Parser.typeAliasDeclaration" <|
+        List.map runTest <|
+            [ ( "simple"
+              , "type alias Foo = ()"
+              , Just
+                    ( "Foo"
+                    , Declaration.TypeAlias
+                        { parameters = []
+                        , definition = ConcreteType.Unit
+                        }
+                    )
+              )
+            , ( "with params"
+              , "type alias Bar a = ()"
+              , Just
+                    ( "Bar"
+                    , Declaration.TypeAlias
+                        { parameters = [ "a" ]
+                        , definition = ConcreteType.Unit
+                        }
+                    )
+              )
+            , ( "a bit more advanced"
+              , "type alias Foo = Maybe Int"
+              , Just
+                    ( "Foo"
+                    , Declaration.TypeAlias
+                        { parameters = []
+                        , definition =
+                            ConcreteType.UserDefinedType
+                                { qualifiedness = PossiblyQualified Nothing
+                                , name = "Maybe"
+                                , args = [ ConcreteType.Int ]
+                                }
+                        }
+                    )
+              )
+            , {- TODO create integration test that this fails
+                 (`a` on right must be present on the left too)
+              -}
+              ( "to something that itself has params"
+              , "type alias Foo = Maybe a"
+              , Just
+                    ( "Foo"
+                    , Declaration.TypeAlias
+                        { parameters = []
+                        , definition =
+                            ConcreteType.UserDefinedType
+                                { qualifiedness = PossiblyQualified Nothing
+                                , name = "Maybe"
+                                , args = [ ConcreteType.TypeVar "a" ]
+                                }
+                        }
+                    )
+              )
+            , ( "params on both sides"
+              , "type alias Foo a = Maybe a"
+              , Just
+                    ( "Foo"
+                    , Declaration.TypeAlias
+                        { parameters = [ "a" ]
+                        , definition =
+                            ConcreteType.UserDefinedType
+                                { qualifiedness = PossiblyQualified Nothing
+                                , name = "Maybe"
+                                , args = [ ConcreteType.TypeVar "a" ]
                                 }
                         }
                     )
