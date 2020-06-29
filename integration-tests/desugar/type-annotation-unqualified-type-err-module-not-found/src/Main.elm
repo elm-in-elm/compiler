@@ -1,13 +1,11 @@
 module Main exposing (main)
 
-
-type alias Foo =
-    Int
+import Foo exposing (Bar)
 
 
-x : Foo
+x : Bar
 x =
-    "abc"
+    123
 
 
 main =

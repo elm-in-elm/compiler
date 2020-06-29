@@ -2,7 +2,7 @@ module Main exposing (main)
 
 
 type alias Foo =
-    Int
+    String
 
 
 x : Foo
