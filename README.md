@@ -90,9 +90,9 @@ Please yes! :heart: Feel free to look around the [<kbd>help wanted</kbd>](https:
 | record updates    | :x:                  | :x:                  | :x:                  | :x:                  | :x:                | :x:                | :x:                  | :x:                  |
 | unit type         | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark:   | :heavy_check_mark:   |
 | tuples, 3-tuples  | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark:   | :heavy_check_mark:   |
-| type annotations  | :x:                  | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark:   | :heavy_check_mark:   |
-| type aliases      | :x:                  | :x:                  | :x:                  | :x:                  | :x:                | :x:                | :x:                  | :x:                  |
-| custom types      | :x:                  | :x:                  | :x:                  | :x:                  | :x:                | :x:                | :x:                  | :x:                  |
+| type annotations  | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark:   | :heavy_check_mark:   |
+| type aliases      | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark: | :x: [[7]](#f7)     | :heavy_check_mark:   | :heavy_check_mark:   |
+| custom types      | :heavy_check_mark:   | :x:                  | :x:                  | :heavy_check_mark:   | :x:                | :x:                | :x:                  | :x:                  |
 | custom operators  | :x:                  | :x:                  | :x:                  | :x:                  | :x:                | :x:                | :x:                  | :x:                  |
 | shaders (?)       | :x:                  | :x:                  | :x:                  | :x:                  | :x:                | :x:                | :x:                  | :x:                  |
 
@@ -102,6 +102,7 @@ Please yes! :heart: Feel free to look around the [<kbd>help wanted</kbd>](https:
 4. <span id="f4"></span> Custom type patterns aren't supported yet
 5. <span id="f5"></span> To be optimized the same way Ints are
 6. <span id="f6"></span> Not implemented; partially tracked in [#29](https://github.com/elm-in-elm/compiler/issues/29)
+7. <span id="f7"></span> We're currently doing nothing about the type parameters in the type aliases.
 
 
 ## FAQ
