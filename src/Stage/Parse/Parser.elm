@@ -413,7 +413,8 @@ typeAliasDeclaration =
                 }
             )
         )
-        |. P.keyword (P.Token "type alias " ExpectingTypeAlias)
+        |. P.keyword (P.Token "type alias" ExpectingTypeAlias)
+        |. P.spaces
         |= moduleNameWithoutDots
         |. P.symbol (P.Token " " ExpectingSpace)
         |. P.spaces
