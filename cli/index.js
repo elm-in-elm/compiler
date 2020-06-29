@@ -52,10 +52,6 @@ const { registerPort } = require('./utils.js');
         fileContents: contents,
       });
     } catch (e) {
-      process.stderr.write('---------------------------');
-      process.stderr.write('-- DEVELOPMENT ERROR ------');
-      process.stderr.write('---------------------------');
-      process.stderr.write(`\n${e.message}`);
       if (e.code != null) {
         app.ports.readErrorSubscription.send({
           filePath: filename,
