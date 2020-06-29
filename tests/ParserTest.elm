@@ -1,19 +1,14 @@
 module ParserTest exposing
-    ( customTypeDeclaration
-    , exposingList
+    ( exposingList
     , expr
     , imports
     , moduleDeclaration
     , moduleName
-    , typeAliasDeclaration
-    ,  -- TODO
-       typeAnnotation
-
-    ,  -- TODO
-       type_
-
-    ,  -- TODO
-       valueDeclaration
+    , typeAnnotation
+    , type_
+    ,  valueDeclaration
+       -- TODO , customTypeDeclaration
+       -- TODO , typeAliasDeclaration
 
     )
 
@@ -21,6 +16,7 @@ import Dict
 import Elm.AST.Frontend as Frontend
 import Elm.AST.Frontend.Unwrapped exposing (Expr(..), Pattern(..))
 import Elm.Compiler.Error exposing (ParseContext, ParseProblem)
+import Elm.Data.Declaration as Declaration exposing (DeclarationBody)
 import Elm.Data.Exposing exposing (ExposedItem(..), Exposing(..))
 import Elm.Data.Module exposing (ModuleType(..))
 import Elm.Data.Qualifiedness exposing (PossiblyQualified(..))
@@ -1379,3 +1375,52 @@ typeAnnotation =
         -- TODO parentheses behaviour
         -- TODO whitespace behaviour of `->` type (esp. newlines)
         ]
+
+
+valueDeclaration : Test
+valueDeclaration =
+    let
+        runTest : ( String, String, Maybe ( String, DeclarationBody Expr TypeAnnotation PossiblyQualified ) ) -> Test
+        runTest ( description, input, output ) =
+            test description <|
+                \() ->
+                    input
+                        |> P.run Stage.Parse.Parser.valueDeclaration
+                        |> Result.toMaybe
+                        |> Maybe.map
+                            (Tuple.mapSecond
+                                (Declaration.mapBody
+                                    Frontend.unwrap
+                                    identity
+                                    identity
+                                )
+                            )
+                        |> Expect.equal output
+    in
+    describe "Stage.Parse.Parser.valueDeclaration" <|
+        List.map runTest <|
+            [ ( "simple without annotation"
+              , "x = ()"
+              , Just
+                    ( "x"
+                    , Declaration.Value
+                        { expression = Unit
+                        , typeAnnotation = Nothing
+                        }
+                    )
+              )
+            , ( "simple with annotation"
+              , "y : ()\ny = ()"
+              , Just
+                    ( "y"
+                    , Declaration.Value
+                        { expression = Unit
+                        , typeAnnotation =
+                            Just
+                                { varName = "y"
+                                , type_ = ConcreteType.Unit
+                                }
+                        }
+                    )
+              )
+            ]

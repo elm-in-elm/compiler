@@ -10,6 +10,7 @@ module Stage.Parse.Parser exposing
     , spacesOnly
     , typeAnnotation
     , type_
+    , valueDeclaration
     )
 
 import Dict exposing (Dict)
