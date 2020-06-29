@@ -30,7 +30,7 @@ typeInference =
                 \input ->
                     input
                         |> Canonical.fromUnwrapped
-                        |> Stage.InferTypes.inferExpr SubstitutionMap.empty
+                        |> Stage.InferTypes.inferExpr Dict.empty SubstitutionMap.empty
                         |> Result.map (Tuple.first >> Located.unwrap >> Tuple.second)
                         |> Expect.equal (Ok (ConcreteType.toTypeOrId typeWanted))
 

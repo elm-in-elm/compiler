@@ -29,7 +29,7 @@ typeInference =
                 \() ->
                     input
                         |> Canonical.fromUnwrapped
-                        |> Stage.InferTypes.inferExpr SubstitutionMap.empty
+                        |> Stage.InferTypes.inferExpr Dict.empty SubstitutionMap.empty
                         |> Result.map (Tuple.first >> Typed.getType)
                         |> Result.mapError Tuple.first
                         |> Expect.equal (Result.map Just output)

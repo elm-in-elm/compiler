@@ -4,6 +4,7 @@ module Stage.InferTypes.Boilerplate exposing
     )
 
 import Dict exposing (Dict)
+import Dict.Extra
 import Elm.AST.Canonical as Canonical
 import Elm.AST.Typed as Typed
 import Elm.Compiler.Error exposing (TypeError)
@@ -19,19 +20,40 @@ import Stage.InferTypes.SubstitutionMap exposing (SubstitutionMap)
 
 
 type alias InferExprFn =
-    SubstitutionMap
+    Dict ( ModuleName, VarName ) (ConcreteType Qualified)
+    -> SubstitutionMap
     -> Canonical.LocatedExpr
     -> SubstResult Typed.LocatedExpr
 
 
 type alias UnifyWithTypeAnnotationFn =
-    SubstitutionMap
+    Dict ( ModuleName, VarName ) (ConcreteType Qualified)
+    -> SubstitutionMap
     -> Declaration Typed.LocatedExpr (ConcreteType Qualified) Qualified
     -> SubstResult (Declaration Typed.LocatedExpr Never Qualified)
 
 
 type alias SubstResult a =
     Result ( TypeError, SubstitutionMap ) ( a, SubstitutionMap )
+
+
+getAliases :
+    Project Canonical.ProjectFields
+    -> Dict ( ModuleName, VarName ) (ConcreteType Qualified)
+getAliases project =
+    project.modules
+        |> Dict.toList
+        |> List.concatMap
+            (\( moduleName, module_ ) ->
+                module_.declarations
+                    |> Dict.Extra.filterMap (always Declaration.getTypeAlias)
+                    |> Dict.toList
+                    |> List.map
+                        (\( varName, alias_ ) ->
+                            ( ( moduleName, varName ), alias_.definition )
+                        )
+            )
+        |> Dict.fromList
 
 
 inferProject :
@@ -43,6 +65,10 @@ inferProject :
 inferProject inferExpr unifyWithTypeAnnotation substitutionMap project =
     -- TODO would it be benefitial to return the SubstitutionMap in the Err case too?
     let
+        aliases : Dict ( ModuleName, VarName ) (ConcreteType Qualified)
+        aliases =
+            getAliases project
+
         result : SubstResult (Dict ModuleName (Module Typed.LocatedExpr Never Qualified))
         result =
             project.modules
@@ -51,7 +77,7 @@ inferProject inferExpr unifyWithTypeAnnotation substitutionMap project =
                         result_
                             |> Result.andThen
                                 (\( newModules, substMap ) ->
-                                    inferModule inferExpr unifyWithTypeAnnotation substMap module_
+                                    inferModule inferExpr unifyWithTypeAnnotation aliases substMap module_
                                         |> Result.map
                                             (\( newModule, newSubstMap ) ->
                                                 ( Dict.insert moduleName newModule newModules
@@ -85,20 +111,22 @@ projectOfNewType old modules =
 inferModule :
     InferExprFn
     -> UnifyWithTypeAnnotationFn
+    -> Dict ( ModuleName, VarName ) (ConcreteType Qualified)
     -> SubstitutionMap
     -> Module Canonical.LocatedExpr (ConcreteType Qualified) Qualified
     -> SubstResult (Module Typed.LocatedExpr Never Qualified)
-inferModule inferExpr unifyWithTypeAnnotation substitutionMap module_ =
+inferModule inferExpr unifyWithTypeAnnotation aliases substitutionMap module_ =
     module_.declarations
         |> Dict.foldl
             (\varName decl result_ ->
                 result_
                     |> Result.andThen
                         (\( newDecls, substMap ) ->
-                            inferDeclaration inferExpr substMap decl
+                            inferDeclaration inferExpr aliases substMap decl
                                 |> Result.andThen
                                     (\( newDecl, newSubstMap ) ->
                                         unifyWithTypeAnnotation
+                                            aliases
                                             newSubstMap
                                             newDecl
                                     )
@@ -132,16 +160,17 @@ moduleOfNewType old newDecls =
 
 inferDeclaration :
     InferExprFn
+    -> Dict ( ModuleName, VarName ) (ConcreteType Qualified)
     -> SubstitutionMap
     -> Declaration Canonical.LocatedExpr (ConcreteType Qualified) Qualified
     -> SubstResult (Declaration Typed.LocatedExpr (ConcreteType Qualified) Qualified)
-inferDeclaration inferExpr substitutionMap decl =
+inferDeclaration inferExpr aliases substitutionMap decl =
     let
         result : SubstResult (DeclarationBody Typed.LocatedExpr (ConcreteType Qualified) Qualified)
         result =
             decl.body
                 |> Declaration.mapBody
-                    (inferExpr substitutionMap)
+                    (inferExpr aliases substitutionMap)
                     identity
                     identity
                 |> Declaration.combineValue

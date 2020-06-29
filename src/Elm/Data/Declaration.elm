@@ -1,16 +1,16 @@
 module Elm.Data.Declaration exposing
-    ( Declaration, DeclarationBody(..), Constructor
+    ( Declaration, DeclarationBody(..), Constructor, TypeAliasDeclaration
     , map, mapBody, setAnnotation
     , combineValue, combineType, combineSubstitutionMap
-    , getExpr
+    , getExpr, getTypeAlias
     )
 
 {-| Top-level declaration, be it a function, constant or a type definition.
 
-@docs Declaration, DeclarationBody, Constructor
+@docs Declaration, DeclarationBody, Constructor, TypeAliasDeclaration
 @docs map, mapBody, setAnnotation
 @docs combineValue, combineType, combineSubstitutionMap
-@docs getExpr
+@docs getExpr, getTypeAlias
 
 -}
 
@@ -61,15 +61,18 @@ type DeclarationBody expr annotation qualifiedness
         --               don't need it anymore)
         , typeAnnotation : Maybe annotation
         }
-    | TypeAlias
-        { parameters : List VarName -- on the left side of =
-        , -- TODO how to map from the parameters to the vars in the definition?
-          definition : ConcreteType qualifiedness
-        }
+    | TypeAlias (TypeAliasDeclaration qualifiedness)
     | CustomType
         { parameters : List VarName -- on the left side of =
         , constructors : NonEmpty (Constructor qualifiedness)
         }
+
+
+type alias TypeAliasDeclaration qualifiedness =
+    { parameters : List VarName -- on the left side of =
+    , -- TODO how to map from the parameters to the vars in the definition?
+      definition : ConcreteType qualifiedness
+    }
 
 
 {-| Constructor of a custom type.
@@ -246,7 +249,23 @@ getExpr decl =
         Value { expression } ->
             Just expression
 
-        _ ->
+        TypeAlias _ ->
+            Nothing
+
+        CustomType _ ->
+            Nothing
+
+
+getTypeAlias : Declaration a b qualifiedness -> Maybe (TypeAliasDeclaration qualifiedness)
+getTypeAlias decl =
+    case decl.body of
+        Value _ ->
+            Nothing
+
+        TypeAlias r ->
+            Just r
+
+        CustomType _ ->
             Nothing
 
 

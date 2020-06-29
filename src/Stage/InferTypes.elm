@@ -1,15 +1,17 @@
 module Stage.InferTypes exposing (inferExpr, inferTypes, unifyWithTypeAnnotation)
 
-import Dict
+import Dict exposing (Dict)
 import Elm.AST.Canonical as Canonical
 import Elm.AST.Typed as Typed
 import Elm.Compiler.Error exposing (Error(..), TypeError(..))
 import Elm.Data.Declaration as Declaration exposing (Declaration)
 import Elm.Data.Located as Located
+import Elm.Data.ModuleName exposing (ModuleName)
 import Elm.Data.Project exposing (Project)
 import Elm.Data.Qualifiedness exposing (Qualified)
 import Elm.Data.Type exposing (Type(..), TypeOrId(..))
 import Elm.Data.Type.Concrete as ConcreteType exposing (ConcreteType)
+import Elm.Data.VarName exposing (VarName)
 import Stage.InferTypes.AssignIds as AssignIds
 import Stage.InferTypes.Boilerplate as Boilerplate
 import Stage.InferTypes.GenerateEquations as GenerateEquations
@@ -43,10 +45,11 @@ inferTypes project =
 
 
 inferExpr :
-    SubstitutionMap
+    Dict ( ModuleName, VarName ) (ConcreteType Qualified)
+    -> SubstitutionMap
     -> Canonical.LocatedExpr
     -> Result ( TypeError, SubstitutionMap ) ( Typed.LocatedExpr, SubstitutionMap )
-inferExpr substitutionMap located =
+inferExpr aliases substitutionMap located =
     let
         ( exprWithIds, idSource ) =
             AssignIds.assignIds located
@@ -78,7 +81,7 @@ inferExpr substitutionMap located =
         -}
         newSubstitutionMap : Result ( TypeError, SubstitutionMap ) SubstitutionMap
         newSubstitutionMap =
-            Unify.unifyAllEquations typeEquations substitutionMap
+            Unify.unifyAllEquations typeEquations aliases substitutionMap
     in
     newSubstitutionMap
         |> Result.map (\map -> ( substituteAllInExpr exprWithIds map, map ))
@@ -210,10 +213,11 @@ getBetterType substitutionMap typeOrId =
 
 
 unifyWithTypeAnnotation :
-    SubstitutionMap
+    Dict ( ModuleName, VarName ) (ConcreteType Qualified)
+    -> SubstitutionMap
     -> Declaration Typed.LocatedExpr (ConcreteType Qualified) Qualified
     -> Result ( TypeError, SubstitutionMap ) ( Declaration Typed.LocatedExpr Never Qualified, SubstitutionMap )
-unifyWithTypeAnnotation substitutionMap decl =
+unifyWithTypeAnnotation aliases substitutionMap decl =
     let
         default =
             Ok
@@ -233,6 +237,7 @@ unifyWithTypeAnnotation substitutionMap decl =
                             Unify.unify
                                 (ConcreteType.toTypeOrId annotationType)
                                 realDeclarationType
+                                aliases
                                 substitutionMap
                     in
                     unifyResult
