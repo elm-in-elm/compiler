@@ -1,7 +1,7 @@
 const test = require('ava');
 const {exec} = require('../../setup');
 
-test.failing(
+test(
     'desugar: type annotation var name agrees with the declaration var name',
     exec,
     __dirname,
