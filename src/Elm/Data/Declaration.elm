@@ -17,6 +17,8 @@ module Elm.Data.Declaration exposing
 import Elm.Data.ModuleName exposing (ModuleName)
 import Elm.Data.Type.Concrete as ConcreteType exposing (ConcreteType)
 import Elm.Data.VarName exposing (VarName)
+import List.NonEmpty exposing (NonEmpty)
+import OurExtras.List.NonEmpty
 import Result.Extra
 import Stage.InferTypes.SubstitutionMap as SubstitutionMap exposing ({- TODO maybe move SubstMap module to Elm.Data? -} SubstitutionMap)
 
@@ -66,9 +68,7 @@ type DeclarationBody expr annotation qualifiedness
         }
     | CustomType
         { parameters : List VarName -- on the left side of =
-
-        -- TODO nonempty list perhaps?
-        , constructors : List (Constructor qualifiedness)
+        , constructors : NonEmpty (Constructor qualifiedness)
         }
 
 
@@ -154,7 +154,7 @@ mapBody fnExpr fnAnnotation fnQualifiedness body =
         CustomType r ->
             CustomType
                 { parameters = r.parameters
-                , constructors = List.map (mapConstructor fnQualifiedness) r.constructors
+                , constructors = List.NonEmpty.map (mapConstructor fnQualifiedness) r.constructors
                 }
 
 
@@ -204,8 +204,8 @@ combineType body =
 
         CustomType r ->
             r.constructors
-                |> List.map combineConstructor
-                |> Result.Extra.combine
+                |> List.NonEmpty.map combineConstructor
+                |> OurExtras.List.NonEmpty.combine
                 |> Result.map
                     (\constructors ->
                         CustomType

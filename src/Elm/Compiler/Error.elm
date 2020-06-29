@@ -175,6 +175,7 @@ type ParseProblem
     | InvalidNumber
     | TriedToParseCharacterStoppingDelimiter
     | ParseCompilerBug ParseCompilerBug
+    | EmptyListOfConstructors
 
 
 type ParseCompilerBug
@@ -622,6 +623,9 @@ parseProblemToString problem =
         ParseCompilerBug bug ->
             "Parse compiler bug: "
                 ++ parseCompilerBugToString bug
+
+        EmptyListOfConstructors ->
+            "EmptyListOfConstructors"
 
 
 parseCompilerBugToString : ParseCompilerBug -> String

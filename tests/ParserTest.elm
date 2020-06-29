@@ -1531,10 +1531,11 @@ customTypeDeclaration =
                     , Declaration.CustomType
                         { parameters = []
                         , constructors =
-                            [ { name = "Bar"
+                            ( { name = "Bar"
                               , arguments = []
                               }
-                            ]
+                            , []
+                            )
                         }
                     )
               )
@@ -1545,10 +1546,11 @@ customTypeDeclaration =
                     , Declaration.CustomType
                         { parameters = [ "a" ]
                         , constructors =
-                            [ { name = "Baz"
+                            ( { name = "Baz"
                               , arguments = []
                               }
-                            ]
+                            , []
+                            )
                         }
                     )
               )
@@ -1559,10 +1561,11 @@ customTypeDeclaration =
                     , Declaration.CustomType
                         { parameters = []
                         , constructors =
-                            [ { name = "Bar"
+                            ( { name = "Bar"
                               , arguments = [ ConcreteType.Int ]
                               }
-                            ]
+                            , []
+                            )
                         }
                     )
               )
@@ -1576,10 +1579,11 @@ customTypeDeclaration =
                     , Declaration.CustomType
                         { parameters = []
                         , constructors =
-                            [ { name = "Bar"
+                            ( { name = "Bar"
                               , arguments = [ ConcreteType.TypeVar "a" ]
                               }
-                            ]
+                            , []
+                            )
                         }
                     )
               )
@@ -1590,7 +1594,7 @@ customTypeDeclaration =
                     , Declaration.CustomType
                         { parameters = [ "a" ]
                         , constructors =
-                            [ { name = "Bar"
+                            ( { name = "Bar"
                               , arguments =
                                     [ ConcreteType.UserDefinedType
                                         { qualifiedness = PossiblyQualified Nothing
@@ -1599,7 +1603,8 @@ customTypeDeclaration =
                                         }
                                     ]
                               }
-                            ]
+                            , []
+                            )
                         }
                     )
               )
@@ -1610,13 +1615,14 @@ customTypeDeclaration =
                     , Declaration.CustomType
                         { parameters = []
                         , constructors =
-                            [ { name = "Bar"
+                            ( { name = "Bar"
                               , arguments = []
                               }
-                            , { name = "Baz"
-                              , arguments = []
-                              }
-                            ]
+                            , [ { name = "Baz"
+                                , arguments = []
+                                }
+                              ]
+                            )
                         }
                     )
               )

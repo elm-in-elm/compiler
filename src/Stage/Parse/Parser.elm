@@ -43,6 +43,7 @@ import Elm.Data.Type.Concrete as ConcreteType exposing (ConcreteType)
 import Elm.Data.TypeAnnotation exposing (TypeAnnotation)
 import Elm.Data.VarName exposing (VarName)
 import Hex
+import List.NonEmpty exposing (NonEmpty)
 import Parser.Advanced as P exposing ((|.), (|=), Parser)
 import Pratt.Advanced as PP
 import Set exposing (Set)
@@ -463,7 +464,7 @@ customTypeDeclaration =
         |> P.inContext InCustomType
 
 
-constructors : Parser_ (List (Constructor PossiblyQualified))
+constructors : Parser_ (NonEmpty (Constructor PossiblyQualified))
 constructors =
     P.sequence
         { start = P.Token "" (ParseCompilerBug ConstructorsStartParserFailed)
@@ -473,6 +474,15 @@ constructors =
         , item = constructor
         , trailing = P.Forbidden
         }
+        |> P.andThen
+            (\constructors_ ->
+                case List.NonEmpty.fromList constructors_ of
+                    Nothing ->
+                        P.problem EmptyListOfConstructors
+
+                    Just c ->
+                        P.succeed c
+            )
         |> P.inContext InConstructors
 
 

@@ -48,7 +48,9 @@ import Elm.Data.Qualifiedness exposing (Qualified(..))
 import Elm.Data.Type.Concrete as ConcreteType exposing (ConcreteType)
 import Elm.Data.VarName exposing (VarName)
 import Graph
+import List.NonEmpty
 import OurExtras.List as List
+import OurExtras.List.NonEmpty
 import Result.Extra as Result
 import Set exposing (Set)
 
@@ -340,6 +342,7 @@ findDependencies modules thisModule declarationBody =
                variables and not concrete types here
             -}
             constructors
+                |> List.NonEmpty.toList
                 |> List.fastConcatMap
                     (.arguments
                         >> List.map

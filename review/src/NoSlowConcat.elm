@@ -55,6 +55,22 @@ expressionVisitor node =
                         (Node.range node)
                     ]
 
+                FunctionOrValue [ "List", "NonEmpty" ] "concat" ->
+                    [ Rule.error
+                        { message = "Slow List.NonEmpty.concat function used"
+                        , details = [ "Please use OurExtras.List.NonEmpty.fastConcat instead!" ]
+                        }
+                        (Node.range node)
+                    ]
+
+                FunctionOrValue [ "List", "NonEmpty" ] "concatMap" ->
+                    [ Rule.error
+                        { message = "Slow List.NonEmpty.concatMap function used"
+                        , details = [ "Please use OurExtras.List.NonEmpty.fastConcatMap instead!" ]
+                        }
+                        (Node.range node)
+                    ]
+
                 _ ->
                     []
 
