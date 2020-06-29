@@ -1,5 +1,6 @@
 module Stage.Parse.Parser exposing
-    ( declaration
+    ( customTypeDeclaration
+    , declaration
     , exposingList
     , expr
     , import_
@@ -449,7 +450,8 @@ customTypeDeclaration =
                 }
             )
         )
-        |. P.keyword (P.Token "type " ExpectingTypeAlias)
+        |. P.keyword (P.Token "type" ExpectingTypeAlias)
+        |. P.spaces
         |= moduleNameWithoutDots
         |. P.symbol (P.Token " " ExpectingSpace)
         |. P.spaces
@@ -469,7 +471,7 @@ constructors =
         , end = P.Token "" (ParseCompilerBug ConstructorsEndParserFailed)
         , spaces = P.spaces
         , item = constructor
-        , trailing = P.Mandatory
+        , trailing = P.Forbidden
         }
         |> P.inContext InConstructors
 

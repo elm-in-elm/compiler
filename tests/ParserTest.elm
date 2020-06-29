@@ -1,5 +1,6 @@
 module ParserTest exposing
-    ( exposingList
+    ( customTypeDeclaration
+    , exposingList
     , expr
     , imports
     , moduleDeclaration
@@ -7,9 +8,7 @@ module ParserTest exposing
     , typeAliasDeclaration
     , typeAnnotation
     , type_
-    ,  valueDeclaration
-       -- TODO , customTypeDeclaration
-
+    , valueDeclaration
     )
 
 import Dict
@@ -1505,6 +1504,119 @@ typeAliasDeclaration =
                                 , name = "Maybe"
                                 , args = [ ConcreteType.TypeVar "a" ]
                                 }
+                        }
+                    )
+              )
+            ]
+
+
+customTypeDeclaration : Test
+customTypeDeclaration =
+    let
+        runTest : ( String, String, Maybe ( String, DeclarationBody Frontend.LocatedExpr TypeAnnotation PossiblyQualified ) ) -> Test
+        runTest ( description, input, output ) =
+            test description <|
+                \() ->
+                    input
+                        |> P.run Stage.Parse.Parser.customTypeDeclaration
+                        |> Result.toMaybe
+                        |> Expect.equal output
+    in
+    describe "Stage.Parse.Parser.customTypeDeclaration" <|
+        List.map runTest <|
+            [ ( "simple"
+              , "type Foo = Bar"
+              , Just
+                    ( "Foo"
+                    , Declaration.CustomType
+                        { parameters = []
+                        , constructors =
+                            [ { name = "Bar"
+                              , arguments = []
+                              }
+                            ]
+                        }
+                    )
+              )
+            , ( "with params"
+              , "type Bar a = Baz"
+              , Just
+                    ( "Bar"
+                    , Declaration.CustomType
+                        { parameters = [ "a" ]
+                        , constructors =
+                            [ { name = "Baz"
+                              , arguments = []
+                              }
+                            ]
+                        }
+                    )
+              )
+            , ( "a bit more advanced"
+              , "type Foo = Bar Int"
+              , Just
+                    ( "Foo"
+                    , Declaration.CustomType
+                        { parameters = []
+                        , constructors =
+                            [ { name = "Bar"
+                              , arguments = [ ConcreteType.Int ]
+                              }
+                            ]
+                        }
+                    )
+              )
+            , {- TODO create integration test that this fails
+                 (`a` on right must be present on the left too)
+              -}
+              ( "to something that itself has parameters"
+              , "type Foo = Bar a"
+              , Just
+                    ( "Foo"
+                    , Declaration.CustomType
+                        { parameters = []
+                        , constructors =
+                            [ { name = "Bar"
+                              , arguments = [ ConcreteType.TypeVar "a" ]
+                              }
+                            ]
+                        }
+                    )
+              )
+            , ( "params on both sides"
+              , "type Foo a = Bar (Maybe a)"
+              , Just
+                    ( "Foo"
+                    , Declaration.CustomType
+                        { parameters = [ "a" ]
+                        , constructors =
+                            [ { name = "Bar"
+                              , arguments =
+                                    [ ConcreteType.UserDefinedType
+                                        { qualifiedness = PossiblyQualified Nothing
+                                        , name = "Maybe"
+                                        , args = [ ConcreteType.TypeVar "a" ]
+                                        }
+                                    ]
+                              }
+                            ]
+                        }
+                    )
+              )
+            , ( "multiple constructors"
+              , "type Foo = Bar | Baz"
+              , Just
+                    ( "Foo"
+                    , Declaration.CustomType
+                        { parameters = []
+                        , constructors =
+                            [ { name = "Bar"
+                              , arguments = []
+                              }
+                            , { name = "Baz"
+                              , arguments = []
+                              }
+                            ]
                         }
                     )
               )

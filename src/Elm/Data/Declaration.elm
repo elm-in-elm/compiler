@@ -66,6 +66,8 @@ type DeclarationBody expr annotation qualifiedness
         }
     | CustomType
         { parameters : List VarName -- on the left side of =
+
+        -- TODO nonempty list perhaps?
         , constructors : List (Constructor qualifiedness)
         }
 
