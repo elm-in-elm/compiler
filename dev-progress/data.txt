@@ -37,10 +37,10 @@ record accessors|notstarted
 record updates|notstarted
 unit|complete
 tuples and 3-tuples|complete
-type annotations|nearlydone|#65
-custom types|notstarted
-type aliases|notstarted
-pattern matching|notstarted
+type annotations|complete
+custom types|complete
+type aliases|complete
+pattern matching|nearlydone|Some cases still missing
 infix operator definitions|notstarted
 WebGL shaders|notstarted
 comments|notstarted
@@ -49,7 +49,7 @@ comments|notstarted
 
 basic Hindley-Milner|complete
 let polymorphism|notstarted
-type aliases|notstarted
+type aliases|nearlydone|Parameters parsed but we're doing nothing with them
 custom types|notstarted
 extensible records|notstarted
 case...of|nearlydone|A few remaining TODOs for generating equations
