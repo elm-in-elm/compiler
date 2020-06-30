@@ -1147,12 +1147,83 @@ type_ =
             , ( "char", "Char", ConcreteType.Char )
             , ( "string", "String", ConcreteType.String )
             , ( "bool", "Bool", ConcreteType.Bool )
-
-            -- TODO list
-            -- TODO tuple
-            -- TODO tuple3
-            -- TODO parametric type
-            -- TODO record type and all the rest of the possible types...
+            , ( "list", "List ()", ConcreteType.List ConcreteType.Unit )
+            , ( "tuple"
+              , "(Int, String)"
+              , ConcreteType.Tuple
+                    ConcreteType.Int
+                    ConcreteType.String
+              )
+            , ( "tuple with different whitespace"
+              , "( Int,String )"
+              , ConcreteType.Tuple
+                    ConcreteType.Int
+                    ConcreteType.String
+              )
+            , ( "tuple3"
+              , "(Int, String, Bool)"
+              , ConcreteType.Tuple3
+                    ConcreteType.Int
+                    ConcreteType.String
+                    ConcreteType.Bool
+              )
+            , ( "custom type or alias"
+              , "NonemptyList"
+              , ConcreteType.UserDefinedType
+                    { qualifiedness = PossiblyQualified Nothing
+                    , name = "NonemptyList"
+                    , args = []
+                    }
+              )
+            , ( "parametric type"
+              , "Maybe a"
+              , ConcreteType.UserDefinedType
+                    { qualifiedness = PossiblyQualified Nothing
+                    , name = "Maybe"
+                    , args = [ ConcreteType.TypeVar "a" ]
+                    }
+              )
+            , ( "qualified custom type"
+              , "Foo.Bar"
+              , ConcreteType.UserDefinedType
+                    { qualifiedness = PossiblyQualified (Just "Foo")
+                    , name = "Bar"
+                    , args = []
+                    }
+              )
+            , ( "qualified custom type with params"
+              , "Foo.Bar a Int"
+              , ConcreteType.UserDefinedType
+                    { qualifiedness = PossiblyQualified (Just "Foo")
+                    , name = "Bar"
+                    , args =
+                        [ ConcreteType.TypeVar "a"
+                        , ConcreteType.Int
+                        ]
+                    }
+              )
+            , ( "empty record"
+              , "{}"
+              , ConcreteType.Record Dict.empty
+              )
+            , ( "empty record with whitespace"
+              , "{ }"
+              , ConcreteType.Record Dict.empty
+              )
+            , ( "record with one field"
+              , "{ x : Int }"
+              , ConcreteType.Record <|
+                    Dict.fromList
+                        [ ( "x", ConcreteType.Int ) ]
+              )
+            , ( "record with two field"
+              , "{ x : Int, y : String }"
+              , ConcreteType.Record <|
+                    Dict.fromList
+                        [ ( "x", ConcreteType.Int )
+                        , ( "y", ConcreteType.String )
+                        ]
+              )
             ]
         )
 
