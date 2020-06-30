@@ -16,6 +16,7 @@ import Elm.Data.Qualifiedness exposing (Qualified)
 import Elm.Data.Type.Concrete exposing (ConcreteType)
 import Elm.Data.VarName exposing (VarName)
 import OurExtras.Dict as Dict
+import OurExtras.List as List
 import Stage.InferTypes.SubstitutionMap exposing (SubstitutionMap)
 
 
@@ -43,7 +44,7 @@ getAliases :
 getAliases project =
     project.modules
         |> Dict.toList
-        |> List.concatMap
+        |> List.fastConcatMap
             (\( moduleName, module_ ) ->
                 module_.declarations
                     |> Dict.Extra.filterMap (always Declaration.getTypeAlias)

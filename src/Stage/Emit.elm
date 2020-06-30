@@ -50,7 +50,6 @@ import Elm.Data.VarName exposing (VarName)
 import Graph
 import List.NonEmpty
 import OurExtras.List as List
-import OurExtras.List.NonEmpty
 import Result.Extra as Result
 import Set exposing (Set)
 
