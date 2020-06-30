@@ -15,7 +15,7 @@ To accomplish this, we pass a state around as an argument.
 
 State can be created using functions like `fromType`. (We're explicitly not
 including an `emptyState` to force you to use this API properly and not forget
-to add a type.
+to add a type.)
 
 This is how the simple case would look:
 
