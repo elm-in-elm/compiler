@@ -1,4 +1,4 @@
-# Snapshot report for `integration-tests/parser/import/test.test.js`
+# Snapshot report for `integration-tests/desugar/import/test.test.js`
 
 The actual snapshot is saved in `test.test.js.snap`.
 
