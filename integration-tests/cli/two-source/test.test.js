@@ -2,7 +2,7 @@ const test = require('ava');
 const {exec} = require('../../setup');
 
 test.failing(
-    'parser: able to import variable from module',
+    'cli: supports multiple source directories',
     exec,
     __dirname,
     ["-m", "src/Main.elm"],

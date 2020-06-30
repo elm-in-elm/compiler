@@ -2,7 +2,7 @@ const test = require('ava');
 const {exec} = require('../../setup');
 
 test(
-    'cli: able to have two source directories',
+    'parser: able to import variable from module',
     exec,
     __dirname,
     ["-m", "src/Main.elm"],
