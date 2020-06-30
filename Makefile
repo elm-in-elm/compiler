@@ -5,11 +5,6 @@ FORMAT_DIRS = \
 	benchmarks \
 	cli \
 	example-library-usages \
-	example-project \
-	integration-tests/cli \
-	integration-tests/parser \
-	integration-tests/desugar \
-	integration-tests/typecheck \
 	src \
 	tests
 
