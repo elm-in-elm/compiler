@@ -12,8 +12,8 @@ function run {
   echo -en "${COLOR_OFF}";
 
   (pushd cli && elm make Main.elm --optimize --output /dev/null && popd) \
-    && elm-test; # \
-    #&& npx ava;
+    && elm-test \
+    && npx ava;
 }
 
 run;
