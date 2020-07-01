@@ -2,6 +2,7 @@ module ParserTest exposing
     ( customTypeDeclaration
     , exposingList
     , expr
+    , exprComments
     , imports
     , moduleDeclaration
     , moduleName
@@ -17,15 +18,21 @@ import Elm.AST.Frontend.Unwrapped exposing (Expr(..), Pattern(..))
 import Elm.Compiler.Error exposing (ParseContext, ParseProblem)
 import Elm.Data.Declaration as Declaration exposing (DeclarationBody)
 import Elm.Data.Exposing exposing (ExposedItem(..), Exposing(..))
+import Elm.Data.Located as Located
 import Elm.Data.Module exposing (ModuleType(..))
 import Elm.Data.Qualifiedness exposing (PossiblyQualified(..))
 import Elm.Data.Type.Concrete as ConcreteType exposing (ConcreteType)
 import Elm.Data.TypeAnnotation exposing (TypeAnnotation)
 import Expect exposing (Expectation)
-import Parser.Advanced as P
+import Stage.Parse.AdvancedWithState as P
 import Stage.Parse.Parser
 import String.Extra as String
 import Test exposing (Test, describe, test)
+
+
+runWithEmptyState p =
+    P.run p { comments = [] }
+        >> Result.map Tuple.second
 
 
 moduleDeclaration : Test
@@ -35,7 +42,7 @@ moduleDeclaration =
             test description <|
                 \() ->
                     input
-                        |> P.run Stage.Parse.Parser.moduleDeclaration
+                        |> runWithEmptyState Stage.Parse.Parser.moduleDeclaration
                         |> Result.toMaybe
                         |> Expect.equal output
     in
@@ -63,7 +70,7 @@ moduleDeclaration =
                   , Just ( PlainModule, "Foo", ExposingAll )
                   )
                 , ( "allows a newline between the module name and the `exposing` keyword"
-                  , "module Foo\nexposing (..)"
+                  , "module Foo\n exposing (..)"
                   , Just ( PlainModule, "Foo", ExposingAll )
                   )
                 , ( "allows multiple spaces between the `exposing` keyword and the exposing list"
@@ -71,7 +78,7 @@ moduleDeclaration =
                   , Just ( PlainModule, "Foo", ExposingAll )
                   )
                 , ( "allows a newline between the `exposing` keyword and the exposing list"
-                  , "module Foo exposing\n(..)"
+                  , "module Foo exposing\n (..)"
                   , Just ( PlainModule, "Foo", ExposingAll )
                   )
                 , ( "doesn't work without something after the `exposing` keyword"
@@ -106,7 +113,7 @@ exposingList =
             test description <|
                 \() ->
                     input
-                        |> P.run Stage.Parse.Parser.exposingList
+                        |> runWithEmptyState Stage.Parse.Parser.exposingList
                         |> Result.toMaybe
                         |> Expect.equal output
     in
@@ -159,7 +166,7 @@ exposingList =
                             )
                       )
                     , ( "allows for newline"
-                      , "(foo\n,bar)"
+                      , "(foo\n ,bar)"
                       , Just
                             (ExposingSome
                                 [ ExposedValue "foo"
@@ -216,7 +223,7 @@ imports =
             test description <|
                 \() ->
                     input
-                        |> P.run Stage.Parse.Parser.imports
+                        |> runWithEmptyState Stage.Parse.Parser.imports
                         |> Result.toMaybe
                         |> Expect.equal output
     in
@@ -269,13 +276,13 @@ imports =
                         )
                   )
                 , ( "allows for multiple newlines between imports"
-                  , "import Foo\n\nimport Bar"
+                  , "import Foo exposing (..)\n\nimport Bar"
                   , Just
                         (Dict.fromList
                             [ ( "Foo"
                               , { moduleName = "Foo"
                                 , as_ = Nothing
-                                , exposing_ = Nothing
+                                , exposing_ = Just ExposingAll
                                 }
                               )
                             , ( "Bar"
@@ -289,6 +296,10 @@ imports =
                   )
                 , ( "doesn't allow for lower-case import"
                   , "import foo"
+                  , Nothing
+                  )
+                , ( "doesn't allow indentation"
+                  , "import Foo\n import Bar"
                   , Nothing
                   )
                 ]
@@ -373,7 +384,7 @@ moduleName =
             test description <|
                 \() ->
                     input
-                        |> P.run Stage.Parse.Parser.moduleName
+                        |> runWithEmptyState Stage.Parse.Parser.moduleName
                         |> Result.toMaybe
                         |> Expect.equal output
     in
@@ -433,7 +444,7 @@ expr =
             test description <|
                 \() ->
                     input
-                        |> P.run Stage.Parse.Parser.expr
+                        |> runWithEmptyState Stage.Parse.Parser.expr
                         |> Result.map Frontend.unwrap
                         |> expectEqualParseResult input output
     in
@@ -804,6 +815,48 @@ expr =
                             }
                         )
                   )
+                , ( "binding must be indented"
+                  , "let\nx = 1\nin\n 2"
+                  , Nothing
+                  )
+                , ( "two bindings"
+                  , "let\n x = 1\n y = 2\nin\n 2"
+                  , Just
+                        (Let
+                            { bindings =
+                                [ { body = Int 1, name = "x" }
+                                , { body = Int 2, name = "y" }
+                                ]
+                            , body = Int 2
+                            }
+                        )
+                  )
+                , ( "bindings name must be aligned"
+                  , "let\n x = 1\n  y = 2\nin\n 2"
+                  , Nothing
+                  )
+                , ( "'in' can have any indentation"
+                  , "   let\n    x = 1\nin\n 2"
+                  , Just
+                        (Let
+                            { bindings = [ { body = Int 1, name = "x" } ]
+                            , body = Int 2
+                            }
+                        )
+                  )
+                , ( "binding body must be more indented than the name"
+                  , "let\n x =\n  1\nin\n 2"
+                  , Just
+                        (Let
+                            { bindings = [ { body = Int 1, name = "x" } ]
+                            , body = Int 2
+                            }
+                        )
+                  )
+                , ( "binding body equal indented with the name"
+                  , "let\n x =\n 1\nin\n 2"
+                  , Nothing
+                  )
                 ]
               )
             , ( "list"
@@ -1048,6 +1101,82 @@ expr =
         )
 
 
+exprComments : Test
+exprComments =
+    let
+        runSection ( description, tests ) =
+            describe description
+                (List.map runTest tests)
+
+        runTest ( description, input, output ) =
+            test description <|
+                \() ->
+                    input
+                        |> P.run Stage.Parse.Parser.expr { comments = [] }
+                        |> Result.toMaybe
+                        |> Maybe.map
+                            (Tuple.first
+                                >> .comments
+                                >> List.map
+                                    (.content
+                                        >> Located.unwrap
+                                    )
+                                -- Comments are automatically reversed
+                                -- when added to Module in Parser.module_
+                                >> List.reverse
+                            )
+                        |> Expect.equal output
+    in
+    describe "Stage.Parse.Parser.expr comments"
+        (List.map runSection
+            [ ( "lambda comments"
+              , [ ( "accepts comments anywhere"
+                  , "\\x {- ML1 -} y -> {- ML2 -} x {- ML3 -} + {- ML4 -} 1 -- SL1"
+                  , Just [ "{- ML1 -}", "{- ML2 -}", "{- ML3 -}", "{- ML4 -}", "-- SL1" ]
+                  )
+                ]
+              )
+            , ( "case comments"
+              , [ ( "accepts comments anywhere"
+                  , """
+                    case  -- SL1
+                      arg -- SL2
+                      of -- SL3
+                        ('c', 23) -> -- SL4
+                            True -- SL5
+                        ("string") {- ML1 -} ->
+                            True
+                        ((arg1, arg2), {- ML2 -} 435.4) ->
+                            {- ML3 -} False
+                        [45, {- ML4 -} (67.7)] ->
+                            False
+                        fst :: snd {- ML5 -} :: tail ->
+                            False
+                        { count } {- ML6 -} as {- ML7 -} alias ->
+                            False
+                    """
+                        |> String.unindent
+                  , Just
+                        [ "-- SL1"
+                        , "-- SL2"
+                        , "-- SL3"
+                        , "-- SL4"
+                        , "-- SL5"
+                        , "{- ML1 -}"
+                        , "{- ML2 -}"
+                        , "{- ML3 -}"
+                        , "{- ML4 -}"
+                        , "{- ML5 -}"
+                        , "{- ML6 -}"
+                        , "{- ML7 -}"
+                        ]
+                  )
+                ]
+              )
+            ]
+        )
+
+
 expectEqualParseResult :
     String
     -> Maybe a
@@ -1116,7 +1245,7 @@ type_ =
             test description <|
                 \() ->
                     input
-                        |> P.run Stage.Parse.Parser.type_
+                        |> runWithEmptyState Stage.Parse.Parser.type_
                         |> Result.toMaybe
                         |> Expect.equal (Just output)
     in
@@ -1143,11 +1272,41 @@ type_ =
                             }
                     }
               )
+            , ( "multiple-arg function with function as arg"
+              , "Int -> (Int -> Char) -> Char"
+              , ConcreteType.Function
+                    { from = ConcreteType.Int
+                    , to =
+                        ConcreteType.Function
+                            { from =
+                                ConcreteType.Function
+                                    { from = ConcreteType.Int
+                                    , to = ConcreteType.Char
+                                    }
+                            , to = ConcreteType.Char
+                            }
+                    }
+              )
+            , ( "multiline multiple-arg function"
+              , "Int\n ->\n ()\n ->\n Char"
+              , ConcreteType.Function
+                    { from = ConcreteType.Int
+                    , to =
+                        ConcreteType.Function
+                            { from = ConcreteType.Unit
+                            , to = ConcreteType.Char
+                            }
+                    }
+              )
             , ( "float", "Float", ConcreteType.Float )
             , ( "char", "Char", ConcreteType.Char )
             , ( "string", "String", ConcreteType.String )
             , ( "bool", "Bool", ConcreteType.Bool )
             , ( "list", "List ()", ConcreteType.List ConcreteType.Unit )
+            , ( "parenthesized"
+              , "(Int)"
+              , ConcreteType.Int
+              )
             , ( "tuple"
               , "(Int, String)"
               , ConcreteType.Tuple
@@ -1207,7 +1366,7 @@ type_ =
               , ConcreteType.Record Dict.empty
               )
             , ( "empty record with whitespace"
-              , "{ }"
+              , "{ \n }"
               , ConcreteType.Record Dict.empty
               )
             , ( "record with one field"
@@ -1218,6 +1377,14 @@ type_ =
               )
             , ( "record with two field"
               , "{ x : Int, y : String }"
+              , ConcreteType.Record <|
+                    Dict.fromList
+                        [ ( "x", ConcreteType.Int )
+                        , ( "y", ConcreteType.String )
+                        ]
+              )
+            , ( "multiline record"
+              , "{ x : Int\n , y : String\n }"
               , ConcreteType.Record <|
                     Dict.fromList
                         [ ( "x", ConcreteType.Int )
@@ -1236,7 +1403,7 @@ typeAnnotation =
             test description <|
                 \() ->
                     input
-                        |> P.run Stage.Parse.Parser.typeAnnotation
+                        |> runWithEmptyState Stage.Parse.Parser.typeAnnotation
                         |> Result.toMaybe
                         |> Expect.equal output
 
@@ -1436,9 +1603,8 @@ typeAnnotation =
                                 }
                         }
                   )
-
-                -- TODO , ( "newline before", "x\n: Int", Nothing )
-                -- TODO , ( "newline after", "x :\nInt", Nothing )
+                , ( "newline before", "x\n: Int", Nothing )
+                , ( "newline after", "x :\nInt", Nothing )
                 ]
             )
 
@@ -1455,7 +1621,7 @@ valueDeclaration =
             test description <|
                 \() ->
                     input
-                        |> P.run Stage.Parse.Parser.valueDeclaration
+                        |> runWithEmptyState Stage.Parse.Parser.valueDeclaration
                         |> Result.toMaybe
                         |> Maybe.map
                             (Tuple.mapSecond
@@ -1504,7 +1670,7 @@ typeAliasDeclaration =
             test description <|
                 \() ->
                     input
-                        |> P.run Stage.Parse.Parser.typeAliasDeclaration
+                        |> runWithEmptyState Stage.Parse.Parser.typeAliasDeclaration
                         |> Result.toMaybe
                         |> Expect.equal output
     in
@@ -1589,7 +1755,7 @@ customTypeDeclaration =
             test description <|
                 \() ->
                     input
-                        |> P.run Stage.Parse.Parser.customTypeDeclaration
+                        |> runWithEmptyState Stage.Parse.Parser.customTypeDeclaration
                         |> Result.toMaybe
                         |> Expect.equal output
     in

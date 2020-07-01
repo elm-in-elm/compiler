@@ -142,7 +142,6 @@ import Elm.Data.Type.Concrete exposing (ConcreteType)
 import Elm.Data.TypeAnnotation exposing (TypeAnnotation)
 import Elm.Data.VarName exposing (VarName)
 import OurExtras.Dict as Dict
-import Parser.Advanced as P
 import Result.Extra as Result
 import Stage.Desugar
 import Stage.Desugar.Boilerplate
@@ -151,6 +150,7 @@ import Stage.InferTypes.Boilerplate
 import Stage.InferTypes.SubstitutionMap exposing (SubstitutionMap)
 import Stage.Optimize
 import Stage.Optimize.Boilerplate
+import Stage.Parse.AdvancedWithState as P
 import Stage.Parse.Parser
 
 
@@ -162,16 +162,17 @@ import Stage.Parse.Parser
 what ParseContext or ParseProblem means. Don't expose it.
 -}
 type alias Parser a =
-    P.Parser ParseContext ParseProblem a
+    P.Parser ParseContext ParseProblem Stage.Parse.Parser.State a
 
 
 {-| A helper for a common pattern with our Elm parsers. Don't expose it.
 -}
 parse : Parser a -> FileContents -> Result Error a
 parse parser sourceCode =
-    Result.mapError
-        (\errorList -> ParseError (ParseProblem ( errorList, sourceCode )))
-        (P.run parser sourceCode)
+    P.run parser { comments = [] } sourceCode
+        |> Result.map Tuple.second
+        |> Result.mapError
+            (\errorList -> ParseError (ParseProblem ( errorList, sourceCode )))
 
 
 {-| Parse a single expression like

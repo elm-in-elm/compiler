@@ -153,6 +153,7 @@ moduleOfNewType old newDecls =
     , filePath = old.filePath
     , type_ = old.type_
     , exposing_ = old.exposing_
+    , comments = old.comments
 
     -- all that code because of this:
     , declarations = newDecls

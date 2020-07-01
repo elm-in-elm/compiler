@@ -2,6 +2,7 @@ module Elm.Data.Module exposing
     ( Module, ModuleType(..)
     , map
     , unalias, exposes, imports, findModuleOfVar
+    , Comment, CommentKind(..)
     )
 
 {-| Module information (corresponds to a single .elm file).
@@ -20,6 +21,7 @@ import Elm.Data.Declaration as Declaration exposing (Declaration)
 import Elm.Data.Exposing exposing (ExposedItem(..), Exposing(..))
 import Elm.Data.FilePath exposing (FilePath)
 import Elm.Data.Import exposing (Import)
+import Elm.Data.Located exposing (Located)
 import Elm.Data.ModuleName exposing (ModuleName)
 import Elm.Data.Qualifiedness exposing (PossiblyQualified(..), Qualified(..))
 import Elm.Data.VarName exposing (VarName)
@@ -29,7 +31,6 @@ import Result.Extra
 
 {-| -}
 type alias Module expr annotation qualifiedness =
-    -- TODO comments? doc comments?
     { -- TODO somewhere check that dependencies' exposing lists contain only what's in that module's exposing list
       imports : Dict ModuleName Import
     , name : ModuleName
@@ -37,6 +38,7 @@ type alias Module expr annotation qualifiedness =
     , declarations : Dict VarName (Declaration expr annotation qualifiedness)
     , type_ : ModuleType
     , exposing_ : Exposing
+    , comments : List Comment
     }
 
 
@@ -56,6 +58,17 @@ type ModuleType
     = PlainModule
     | PortModule
     | EffectModule
+
+
+type alias Comment =
+    { content : Located String
+    , kind : CommentKind
+    }
+
+
+type CommentKind
+    = SingleLine
+    | MultiLine
 
 
 {-| Does this module import this module name?
@@ -144,6 +157,7 @@ map fnExpr fnAnnotation fnQualifiedness module_ =
             module_.declarations
     , type_ = module_.type_
     , exposing_ = module_.exposing_
+    , comments = module_.comments
     }
 
 
