@@ -281,6 +281,7 @@ moduleFromName name =
     , declarations = Dict.empty
     , type_ = Module.PlainModule
     , exposing_ = Exposing.ExposingSome []
+    , comments = []
     }
 
 

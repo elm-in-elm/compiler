@@ -74,6 +74,7 @@ type ParseContext
     | InTuple
     | InTuple3
     | InRecord
+    | InRecordBinding
     | InFile FilePath
     | InCase
     | InPattern
@@ -102,7 +103,8 @@ type ParseContext
 and the [location info](Elm.Data.Located) this should give you enough info about what's wrong.
 -}
 type ParseProblem
-    = ExpectingPortKeyword -- `>port< module ...`
+    = TooMuchIndentation String
+    | ExpectingPortKeyword -- `>port< module ...`
     | ExpectingEffectKeyword -- `>effect< module ...`
     | ExpectingModuleKeyword -- `>module< Foo.Bar exposing (..)`
     | ExpectingModuleName -- `module >Foo.Bar< exposing (..)`
@@ -151,6 +153,8 @@ type ParseProblem
     | ExpectingTrue
     | ExpectingFalse
     | ExpectingLet
+    | ExpectingLetIndentation
+    | ExpectingLetBindingIndentation
     | ExpectingIn
     | ExpectingUnit
     | ExpectingColon
@@ -404,6 +408,18 @@ fullVarName { qualifiedness, name } =
 parseProblemToString : ParseProblem -> String
 parseProblemToString problem =
     case problem of
+        TooMuchIndentation str ->
+            {- TODO
+               Too Much Indentation
+               Line 1, Column 2
+               This `module` should not have any spaces before it:
+
+               1|  module Main
+                   ^
+               Delete the spaces before `module` until there are none left!
+            -}
+            "TooMuchIndentation " ++ str
+
         ExpectingPortKeyword ->
             "ExpectingPortKeyword"
 
@@ -550,6 +566,51 @@ parseProblemToString problem =
 
         ExpectingLet ->
             "ExpectingLet"
+
+        ExpectingLetIndentation ->
+            {- TODO
+               Unfinished Let
+               Line 20, Column 6
+               I was partway through parsing a `let` expression, but I got stuck here:
+
+               20|   let
+                        ^
+               I was expecting a value to be defined here.
+
+               Note: Here is an example with a valid `let` expression for reference:
+
+                   viewPerson person =
+                     let
+                       fullName =
+                         person.firstName ++ " " ++ person.lastName
+                     in
+                     div [] [ text fullName ]
+
+               Here we defined a `viewPerson` function that turns a person into some HTML. We
+               use a `let` expression to define the `fullName` we want to show. Notice the
+               indentation! The `fullName` is indented more than the `let` keyword, and the
+               actual value of `fullName` is indented a bit more than that. That is important!
+            -}
+            "ExpectingLetIndentation"
+
+        ExpectingLetBindingIndentation ->
+            {- TODO
+               ERRORS
+               Unexpected Equals
+               Line 22, Column 7
+               I was not expecting to see this equals sign:
+
+               22|     y = 2 in { count = 0 }
+                         ^
+               Maybe you want == instead? To check if two values are equal?
+
+               Note: I may be getting confused by your indentation. I think I am still parsing
+               the `x` definition. Is this supposed to be part of a definition after that? If
+               so, the problem may be a bit before the equals sign. I need all definitions to
+               be indented exactly the same amount, so the problem may be that this new
+               definition has too many spaces in front of it.
+            -}
+            "ExpectingLetBindingIndentation"
 
         ExpectingIn ->
             "ExpectingIn"
