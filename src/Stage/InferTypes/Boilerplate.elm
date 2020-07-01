@@ -17,11 +17,13 @@ import Elm.Data.Type.Concrete exposing (ConcreteType)
 import Elm.Data.VarName exposing (VarName)
 import OurExtras.Dict as Dict
 import OurExtras.List as List
-import Stage.InferTypes.SubstitutionMap exposing (SubstitutionMap)
+import OurExtras.Tuple3 as Tuple3
+import Stage.InferTypes.SubstitutionMap as SubstitutionMap exposing (SubstitutionMap)
 
 
 type alias InferExprFn =
     Dict ( ModuleName, VarName ) (ConcreteType Qualified)
+    -> Int
     -> SubstitutionMap
     -> Canonical.LocatedExpr
     -> SubstResult Typed.LocatedExpr
@@ -29,13 +31,14 @@ type alias InferExprFn =
 
 type alias UnifyWithTypeAnnotationFn =
     Dict ( ModuleName, VarName ) (ConcreteType Qualified)
+    -> Int
     -> SubstitutionMap
     -> Declaration Typed.LocatedExpr (ConcreteType Qualified) Qualified
     -> SubstResult (Declaration Typed.LocatedExpr Never Qualified)
 
 
 type alias SubstResult a =
-    Result ( TypeError, SubstitutionMap ) ( a, SubstitutionMap )
+    Result ( TypeError, SubstitutionMap ) ( a, SubstitutionMap, Int )
 
 
 getAliases :
@@ -77,20 +80,27 @@ inferProject inferExpr unifyWithTypeAnnotation substitutionMap project =
                     (\moduleName module_ result_ ->
                         result_
                             |> Result.andThen
-                                (\( newModules, substMap ) ->
-                                    inferModule inferExpr unifyWithTypeAnnotation aliases substMap module_
+                                (\( newModules, substMap, unusedId ) ->
+                                    inferModule
+                                        inferExpr
+                                        unifyWithTypeAnnotation
+                                        aliases
+                                        unusedId
+                                        substMap
+                                        module_
                                         |> Result.map
-                                            (\( newModule, newSubstMap ) ->
+                                            (\( newModule, newSubstMap, newUnusedId ) ->
                                                 ( Dict.insert moduleName newModule newModules
                                                 , newSubstMap
+                                                , newUnusedId
                                                 )
                                             )
                                 )
                     )
-                    (Ok ( Dict.empty, substitutionMap ))
+                    (Ok ( Dict.empty, substitutionMap, 0 ))
     in
     result
-        |> Result.map (Tuple.first >> projectOfNewType project)
+        |> Result.map (Tuple3.first >> projectOfNewType project)
         |> Result.mapError Tuple.first
 
 
@@ -113,34 +123,31 @@ inferModule :
     InferExprFn
     -> UnifyWithTypeAnnotationFn
     -> Dict ( ModuleName, VarName ) (ConcreteType Qualified)
+    -> Int
     -> SubstitutionMap
     -> Module Canonical.LocatedExpr (ConcreteType Qualified) Qualified
     -> SubstResult (Module Typed.LocatedExpr Never Qualified)
-inferModule inferExpr unifyWithTypeAnnotation aliases substitutionMap module_ =
+inferModule inferExpr unifyWithTypeAnnotation aliases unusedId substitutionMap module_ =
     module_.declarations
         |> Dict.foldl
             (\varName decl result_ ->
                 result_
                     |> Result.andThen
-                        (\( newDecls, substMap ) ->
-                            inferDeclaration inferExpr aliases substMap decl
+                        (\( newDecls, substitutionMap1, unusedId1 ) ->
+                            inferDeclaration inferExpr aliases unusedId1 substitutionMap1 decl
                                 |> Result.andThen
-                                    (\( newDecl, newSubstMap ) ->
+                                    (\( newDecl, substitutionMap2, unusedId2 ) ->
                                         unifyWithTypeAnnotation
                                             aliases
-                                            newSubstMap
+                                            unusedId2
+                                            substitutionMap2
                                             newDecl
                                     )
-                                |> Result.map
-                                    (\( newDecl, newSubstMap ) ->
-                                        ( Dict.insert varName newDecl newDecls
-                                        , newSubstMap
-                                        )
-                                    )
+                                |> Result.map (Tuple3.mapFirst (\newDecl -> Dict.insert varName newDecl newDecls))
                         )
             )
-            (Ok ( Dict.empty, substitutionMap ))
-        |> Result.map (Tuple.mapFirst (moduleOfNewType module_))
+            (Ok ( Dict.empty, substitutionMap, unusedId ))
+        |> Result.map (Tuple3.mapFirst (moduleOfNewType module_))
 
 
 moduleOfNewType :
@@ -162,23 +169,28 @@ moduleOfNewType old newDecls =
 inferDeclaration :
     InferExprFn
     -> Dict ( ModuleName, VarName ) (ConcreteType Qualified)
+    -> Int
     -> SubstitutionMap
     -> Declaration Canonical.LocatedExpr (ConcreteType Qualified) Qualified
     -> SubstResult (Declaration Typed.LocatedExpr (ConcreteType Qualified) Qualified)
-inferDeclaration inferExpr aliases substitutionMap decl =
+inferDeclaration inferExpr aliases unusedId substitutionMap decl =
     let
         result : SubstResult (DeclarationBody Typed.LocatedExpr (ConcreteType Qualified) Qualified)
         result =
             decl.body
                 |> Declaration.mapBody
-                    (inferExpr aliases substitutionMap)
+                    (inferExpr aliases unusedId substitutionMap)
                     identity
                     identity
                 |> Declaration.combineValue
-                |> Result.map Declaration.combineSubstitutionMap
+                {- TODO very unsure about this. Are we ever merging those empty
+                   SubstitutionMaps with the non-empty ones?
+                   Are the 0s meaningful?
+                -}
+                |> Result.map (Declaration.combineTuple3 ( SubstitutionMap.empty, 0 ))
     in
     result
-        |> Result.map (Tuple.mapFirst (declarationOfNewType decl))
+        |> Result.map (Tuple3.mapFirst (declarationOfNewType decl))
 
 
 declarationOfNewType :

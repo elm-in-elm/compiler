@@ -1,12 +1,14 @@
 module Main exposing (main)
 
-import Foo
 
+f =
+    \x ->
+        if x then
+            18
 
-x : Foo.Bar
-x =
-    123
+        else
+            2
 
 
 main =
-    x
+    f True + f False

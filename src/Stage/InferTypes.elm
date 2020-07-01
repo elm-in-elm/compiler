@@ -46,26 +46,27 @@ inferTypes project =
 
 inferExpr :
     Dict ( ModuleName, VarName ) (ConcreteType Qualified)
+    -> Int
     -> SubstitutionMap
     -> Canonical.LocatedExpr
-    -> Result ( TypeError, SubstitutionMap ) ( Typed.LocatedExpr, SubstitutionMap )
-inferExpr aliases substitutionMap located =
+    -> Result ( TypeError, SubstitutionMap ) ( Typed.LocatedExpr, SubstitutionMap, Int )
+inferExpr aliases unusedId substitutionMap located =
     let
-        ( exprWithIds, idSource ) =
-            AssignIds.assignIds located
+        _ =
+            Debug.log "---------------------" ()
+    in
+    let
+        ( exprWithIds, unusedId1 ) =
+            AssignIds.assignIds unusedId located
 
-        typeEquations =
-            GenerateEquations.generateEquations idSource exprWithIds
-                {- We throw away the IdSource. It shouldn't be needed anymore!
-
-                   BTW GenerateEquations needed it because in case of some Exprs
-                   (like List) it needed to create a new type ID on the fly.
-
-                   TODO those IDs generated on the fly have bad visibility (you
-                   can only infer their existence from the equations, but can't
-                   clearly see what they belong to). Can we do something about it?
-                -}
-                |> Tuple.first
+        unwrapped =
+            exprWithIds
+                |> Typed.unwrap
+                |> Debug.log "expr with ids"
+    in
+    let
+        ( typeEquations, unusedId2 ) =
+            GenerateEquations.generateEquations unusedId1 exprWithIds
 
         {- We have an interesting dilemma:
 
@@ -82,9 +83,16 @@ inferExpr aliases substitutionMap located =
         newSubstitutionMap : Result ( TypeError, SubstitutionMap ) SubstitutionMap
         newSubstitutionMap =
             Unify.unifyAllEquations typeEquations aliases substitutionMap
+                |> Debug.log "new substitution map"
     in
     newSubstitutionMap
-        |> Result.map (\map -> ( substituteAllInExpr exprWithIds map, map ))
+        |> Result.map
+            (\map ->
+                ( substituteAllInExpr exprWithIds map
+                , map
+                , unusedId2
+                )
+            )
         |> Result.mapError substituteAllInError
 
 
@@ -214,15 +222,17 @@ getBetterType substitutionMap typeOrId =
 
 unifyWithTypeAnnotation :
     Dict ( ModuleName, VarName ) (ConcreteType Qualified)
+    -> Int
     -> SubstitutionMap
     -> Declaration Typed.LocatedExpr (ConcreteType Qualified) Qualified
-    -> Result ( TypeError, SubstitutionMap ) ( Declaration Typed.LocatedExpr Never Qualified, SubstitutionMap )
-unifyWithTypeAnnotation aliases substitutionMap decl =
+    -> Result ( TypeError, SubstitutionMap ) ( Declaration Typed.LocatedExpr Never Qualified, SubstitutionMap, Int )
+unifyWithTypeAnnotation aliases unusedId substitutionMap decl =
     let
         default =
             Ok
                 ( throwAwayType decl
                 , substitutionMap
+                , unusedId
                 )
     in
     case decl.body of
@@ -245,6 +255,7 @@ unifyWithTypeAnnotation aliases substitutionMap decl =
                             (\newSubstitutionMap ->
                                 ( throwAwayType decl
                                 , newSubstitutionMap
+                                , unusedId
                                 )
                             )
 

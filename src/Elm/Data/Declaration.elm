@@ -1,7 +1,7 @@
 module Elm.Data.Declaration exposing
     ( Declaration, DeclarationBody(..), Constructor, TypeAliasDeclaration
     , map, mapBody, setAnnotation
-    , combineValue, combineType, combineSubstitutionMap
+    , combineValue, combineType, combineTuple3
     , getExpr, getTypeAlias
     )
 
@@ -9,7 +9,7 @@ module Elm.Data.Declaration exposing
 
 @docs Declaration, DeclarationBody, Constructor, TypeAliasDeclaration
 @docs map, mapBody, setAnnotation
-@docs combineValue, combineType, combineSubstitutionMap
+@docs combineValue, combineType, combineTuple3
 @docs getExpr, getTypeAlias
 
 -}
@@ -20,7 +20,6 @@ import Elm.Data.VarName exposing (VarName)
 import List.NonEmpty exposing (NonEmpty)
 import OurExtras.List.NonEmpty
 import Result.Extra
-import Stage.InferTypes.SubstitutionMap as SubstitutionMap exposing ({- TODO maybe move SubstMap module to Elm.Data? -} SubstitutionMap)
 
 
 {-| -}
@@ -218,29 +217,28 @@ combineType body =
                     )
 
 
-combineSubstitutionMap :
-    DeclarationBody ( expr, SubstitutionMap ) a b
-    -> ( DeclarationBody expr a b, SubstitutionMap )
-combineSubstitutionMap body =
-    {- TODO very unsure about this. Are we ever merging those empty
-       SubstitutionMaps with the non-empty ones?
-    -}
+combineTuple3 :
+    ( x, y )
+    -> DeclarationBody ( a, x, y ) b c
+    -> ( DeclarationBody a b c, x, y )
+combineTuple3 ( defaultX, defaultY ) body =
     case body of
         Value r ->
             case r.expression of
-                ( expr, map_ ) ->
+                ( expr, x, y ) ->
                     ( Value
                         { expression = expr
                         , typeAnnotation = r.typeAnnotation
                         }
-                    , map_
+                    , x
+                    , y
                     )
 
         TypeAlias r ->
-            ( TypeAlias r, SubstitutionMap.empty )
+            ( TypeAlias r, defaultX, defaultY )
 
         CustomType r ->
-            ( CustomType r, SubstitutionMap.empty )
+            ( CustomType r, defaultX, defaultY )
 
 
 getExpr : Declaration expr a b -> Maybe expr

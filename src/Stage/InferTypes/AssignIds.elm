@@ -47,16 +47,11 @@ import Elm.Data.Qualifiedness exposing (Qualified)
 import Elm.Data.Type as Type exposing (TypeOrId)
 
 
-assignIds : Canonical.LocatedExpr -> ( Typed.LocatedExpr, Int )
-assignIds located =
-    assignIdsWith 0 located
-
-
-assignIdsWith : Int -> Canonical.LocatedExpr -> ( Typed.LocatedExpr, Int )
-assignIdsWith currentId locatedCanonicalExpr =
+assignIds : Int -> Canonical.LocatedExpr -> ( Typed.LocatedExpr, Int )
+assignIds currentId locatedCanonicalExpr =
     let
         ( typedExpr, newId ) =
-            assignIdsWithHelp currentId (Located.unwrap locatedCanonicalExpr)
+            assignIdsHelp currentId (Located.unwrap locatedCanonicalExpr)
     in
     {- Keep location, for error context -}
     ( Located.replaceWith typedExpr locatedCanonicalExpr
@@ -69,8 +64,12 @@ assignId currentId located =
     ( ( located, Type.Id currentId ), currentId + 1 )
 
 
-assignIdsWithHelp : Int -> Canonical.Expr -> ( Typed.Expr, Int )
-assignIdsWithHelp currentId located =
+assignIdsHelp : Int -> Canonical.Expr -> ( Typed.Expr, Int )
+assignIdsHelp currentId located =
+    let
+        f =
+            assignIds
+    in
     {- Be careful when dealing with the ids, they all have to be distinct.
        Enable the "unused variable" warning from elm-analyze may help you
        to detect created but unused ids.
@@ -105,27 +104,27 @@ assignIdsWithHelp currentId located =
         Canonical.Plus e1 e2 ->
             let
                 ( e1_, id1 ) =
-                    assignIdsWith currentId e1
+                    f currentId e1
 
                 ( e2_, id2 ) =
-                    assignIdsWith id1 e2
+                    f id1 e2
             in
             assignId id2 (Typed.Plus e1_ e2_)
 
         Canonical.Cons e1 e2 ->
             let
                 ( e1_, id1 ) =
-                    assignIdsWith currentId e1
+                    f currentId e1
 
                 ( e2_, id2 ) =
-                    assignIdsWith id1 e2
+                    f id1 e2
             in
             assignId id2 (Typed.Cons e1_ e2_)
 
         Canonical.Lambda { argument, body } ->
             let
                 ( body_, id1 ) =
-                    assignIdsWith currentId body
+                    f currentId body
             in
             assignId id1
                 (Typed.Lambda
@@ -138,10 +137,10 @@ assignIdsWithHelp currentId located =
         Canonical.Call { fn, argument } ->
             let
                 ( fn_, id1 ) =
-                    assignIdsWith currentId fn
+                    f currentId fn
 
                 ( argument_, id2 ) =
-                    assignIdsWith id1 argument
+                    f id1 argument
             in
             assignId id2
                 (Typed.Call
@@ -153,13 +152,13 @@ assignIdsWithHelp currentId located =
         Canonical.If { test, then_, else_ } ->
             let
                 ( test_, id1 ) =
-                    assignIdsWith currentId test
+                    f currentId test
 
                 ( then__, id2 ) =
-                    assignIdsWith id1 then_
+                    f id1 then_
 
                 ( else__, id3 ) =
-                    assignIdsWith id2 else_
+                    f id2 else_
             in
             assignId id3
                 (Typed.If
@@ -181,14 +180,14 @@ assignIdsWithHelp currentId located =
                     Dict.toList bindings
 
                 ( body_, id1 ) =
-                    assignIdsWith currentId body
+                    f currentId body
 
                 ( bindingBodiesList, id2 ) =
                     List.foldl
                         (\( name, binding ) ( acc, runningId ) ->
                             let
                                 ( body__, nextId ) =
-                                    assignIdsWith runningId binding.body
+                                    f runningId binding.body
 
                                 newElt =
                                     ( name, { name = name, body = body__ } )
@@ -218,7 +217,7 @@ assignIdsWithHelp currentId located =
                         (\item ( acc, runningId ) ->
                             let
                                 ( item_, nextId ) =
-                                    assignIdsWith runningId item
+                                    f runningId item
                             in
                             ( item_ :: acc
                             , nextId
@@ -232,23 +231,23 @@ assignIdsWithHelp currentId located =
         Canonical.Tuple e1 e2 ->
             let
                 ( e1_, id1 ) =
-                    assignIdsWith currentId e1
+                    f currentId e1
 
                 ( e2_, id2 ) =
-                    assignIdsWith id1 e2
+                    f id1 e2
             in
             assignId id2 (Typed.Tuple e1_ e2_)
 
         Canonical.Tuple3 e1 e2 e3 ->
             let
                 ( e1_, id1 ) =
-                    assignIdsWith currentId e1
+                    f currentId e1
 
                 ( e2_, id2 ) =
-                    assignIdsWith id1 e2
+                    f id1 e2
 
                 ( e3_, id3 ) =
-                    assignIdsWith id2 e3
+                    f id2 e3
             in
             assignId id3 (Typed.Tuple3 e1_ e2_ e3_)
 
@@ -262,7 +261,7 @@ assignIdsWithHelp currentId located =
                         (\( name, binding ) ( acc, runningId ) ->
                             let
                                 ( body__, nextId ) =
-                                    assignIdsWith runningId binding.body
+                                    f runningId binding.body
 
                                 newElt =
                                     ( name, { name = name, body = body__ } )
@@ -280,17 +279,17 @@ assignIdsWithHelp currentId located =
         Canonical.Case e branches ->
             let
                 ( e_, id1 ) =
-                    assignIdsWith currentId e
+                    f currentId e
 
                 ( branches_, newId ) =
                     List.foldr
                         (\{ pattern, body } ( acc, runningId ) ->
                             let
                                 ( typedPattern, bodyId ) =
-                                    assignPatternIdsWith runningId pattern
+                                    assignPatternIds runningId pattern
 
                                 ( typedBody, nextId ) =
-                                    assignIdsWith bodyId body
+                                    f bodyId body
                             in
                             ( { pattern = typedPattern
                               , body = typedBody
@@ -306,11 +305,11 @@ assignIdsWithHelp currentId located =
                 Typed.Case e_ branches_
 
 
-assignPatternIdsWith : Int -> Canonical.LocatedPattern -> ( Typed.LocatedPattern, Int )
-assignPatternIdsWith currentId locatedCanonicalPattern =
+assignPatternIds : Int -> Canonical.LocatedPattern -> ( Typed.LocatedPattern, Int )
+assignPatternIds currentId locatedCanonicalPattern =
     let
         ( typedPattern, newId ) =
-            assignPatternIdsWithHelp currentId (Located.unwrap locatedCanonicalPattern)
+            assignPatternIdsHelp currentId (Located.unwrap locatedCanonicalPattern)
     in
     {- Keep location, for error context -}
     ( Located.replaceWith typedPattern locatedCanonicalPattern
@@ -318,8 +317,12 @@ assignPatternIdsWith currentId locatedCanonicalPattern =
     )
 
 
-assignPatternIdsWithHelp : Int -> Canonical.Pattern -> ( Typed.Pattern, Int )
-assignPatternIdsWithHelp currentId located =
+assignPatternIdsHelp : Int -> Canonical.Pattern -> ( Typed.Pattern, Int )
+assignPatternIdsHelp currentId located =
+    let
+        f =
+            assignPatternIds
+    in
     case located of
         Canonical.PAnything ->
             assignId currentId Typed.PAnything
@@ -333,7 +336,7 @@ assignPatternIdsWithHelp currentId located =
         Canonical.PAlias pattern varName ->
             let
                 ( pattern_, id1 ) =
-                    assignPatternIdsWith currentId pattern
+                    f currentId pattern
             in
             assignId id1 (Typed.PAlias pattern_ varName)
 
@@ -343,23 +346,23 @@ assignPatternIdsWithHelp currentId located =
         Canonical.PTuple pattern1 pattern2 ->
             let
                 ( pattern1_, id1 ) =
-                    assignPatternIdsWith currentId pattern1
+                    f currentId pattern1
 
                 ( pattern2_, id2 ) =
-                    assignPatternIdsWith id1 pattern2
+                    f id1 pattern2
             in
             assignId id2 (Typed.PTuple pattern1_ pattern2_)
 
         Canonical.PTuple3 pattern1 pattern2 pattern3 ->
             let
                 ( pattern1_, id1 ) =
-                    assignPatternIdsWith currentId pattern1
+                    f currentId pattern1
 
                 ( pattern2_, id2 ) =
-                    assignPatternIdsWith id1 pattern2
+                    f id1 pattern2
 
                 ( pattern3_, id3 ) =
-                    assignPatternIdsWith id2 pattern3
+                    f id2 pattern3
             in
             assignId id3 (Typed.PTuple3 pattern1_ pattern2_ pattern3_)
 
@@ -370,7 +373,7 @@ assignPatternIdsWithHelp currentId located =
                         (\item ( acc, runningId ) ->
                             let
                                 ( item_, nextId ) =
-                                    assignPatternIdsWith runningId item
+                                    f runningId item
                             in
                             ( item_ :: acc
                             , nextId
@@ -384,10 +387,10 @@ assignPatternIdsWithHelp currentId located =
         Canonical.PCons pattern1 pattern2 ->
             let
                 ( pattern1_, id1 ) =
-                    assignPatternIdsWith currentId pattern1
+                    f currentId pattern1
 
                 ( pattern2_, id2 ) =
-                    assignPatternIdsWith id1 pattern2
+                    f id1 pattern2
             in
             assignId id2 (Typed.PCons pattern1_ pattern2_)
 
