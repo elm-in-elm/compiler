@@ -7,7 +7,7 @@ LOCKNAME=$(cat /dev/urandom | tr -cd 'a-f0-9' | head -c 16);
 LOCKFILE="/tmp/elm-lock-${LOCKNAME}"
 
 function compile {
-  elm make --output /dev/null && cd cli && elm make Main.elm --output /dev/null && cd ..;
+	cd cli && elm make Main.elm --output ../build/elm.js
 }
 
 function run {
@@ -28,6 +28,6 @@ function run {
 
 run;
 
-inotifywait -mqr -e close_write --format '%w %e %f' src/**/*.elm cli/*.elm example-library-usages/*.elm | while read DIR EVENT FILE; do
+find . -name '*.elm' | xargs inotifywait -mqr -e close_write --format '%w %e %f' | while read DIR EVENT FILE; do
   run;
 done;

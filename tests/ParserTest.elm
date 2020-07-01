@@ -1,17 +1,26 @@
 module ParserTest exposing
-    ( exposingList
+    ( customTypeDeclaration
+    , exposingList
     , expr
     , imports
     , moduleDeclaration
     , moduleName
+    , typeAliasDeclaration
+    , typeAnnotation
+    , type_
+    , valueDeclaration
     )
 
 import Dict
 import Elm.AST.Frontend as Frontend
 import Elm.AST.Frontend.Unwrapped exposing (Expr(..), Pattern(..))
 import Elm.Compiler.Error exposing (ParseContext, ParseProblem)
+import Elm.Data.Declaration as Declaration exposing (DeclarationBody)
 import Elm.Data.Exposing exposing (ExposedItem(..), Exposing(..))
 import Elm.Data.Module exposing (ModuleType(..))
+import Elm.Data.Qualifiedness exposing (PossiblyQualified(..))
+import Elm.Data.Type.Concrete as ConcreteType exposing (ConcreteType)
+import Elm.Data.TypeAnnotation exposing (TypeAnnotation)
 import Expect exposing (Expectation)
 import Parser.Advanced as P
 import Stage.Parse.Parser
@@ -447,10 +456,7 @@ expr =
                   , "\\x y -> x + y"
                   , Just
                         (Lambda
-                            { arguments =
-                                [ "x"
-                                , "y"
-                                ]
+                            { arguments = [ "x", "y" ]
                             , body =
                                 Plus
                                     (Argument "x")
@@ -465,7 +471,7 @@ expr =
                   , "fn 1"
                   , Just
                         (Call
-                            { fn = Var { name = "fn", module_ = Nothing }
+                            { fn = Var { name = "fn", qualifiedness = PossiblyQualified Nothing }
                             , argument = Int 1
                             }
                         )
@@ -474,8 +480,8 @@ expr =
                   , "fn arg"
                   , Just
                         (Call
-                            { fn = Var { name = "fn", module_ = Nothing }
-                            , argument = Var { name = "arg", module_ = Nothing }
+                            { fn = Var { name = "fn", qualifiedness = PossiblyQualified Nothing }
+                            , argument = Var { name = "arg", qualifiedness = PossiblyQualified Nothing }
                             }
                         )
                   )
@@ -485,10 +491,10 @@ expr =
                         (Call
                             { fn =
                                 Call
-                                    { fn = Var { name = "fn", module_ = Nothing }
-                                    , argument = Var { name = "arg1", module_ = Nothing }
+                                    { fn = Var { name = "fn", qualifiedness = PossiblyQualified Nothing }
+                                    , argument = Var { name = "arg1", qualifiedness = PossiblyQualified Nothing }
                                     }
-                            , argument = Var { name = "arg2", module_ = Nothing }
+                            , argument = Var { name = "arg2", qualifiedness = PossiblyQualified Nothing }
                             }
                         )
                   )
@@ -496,8 +502,8 @@ expr =
                   , "fn(arg1)"
                   , Just
                         (Call
-                            { fn = Var { name = "fn", module_ = Nothing }
-                            , argument = Var { name = "arg1", module_ = Nothing }
+                            { fn = Var { name = "fn", qualifiedness = PossiblyQualified Nothing }
+                            , argument = Var { name = "arg1", qualifiedness = PossiblyQualified Nothing }
                             }
                         )
                   )
@@ -1008,7 +1014,7 @@ expr =
                     """
                         |> String.unindent
                   , Just
-                        (Case (Var { name = "arg", module_ = Nothing })
+                        (Case (Var { name = "arg", qualifiedness = PossiblyQualified Nothing })
                             [ { pattern = PTuple (PChar 'c') (PInt 23)
                               , body = Bool True
                               }
@@ -1100,3 +1106,595 @@ contextToString context =
         ++ String.fromInt (context.col - 1)
         ++ ") "
         ++ Debug.toString context.context
+
+
+type_ : Test
+type_ =
+    let
+        runTest : ( String, String, ConcreteType PossiblyQualified ) -> Test
+        runTest ( description, input, output ) =
+            test description <|
+                \() ->
+                    input
+                        |> P.run Stage.Parse.Parser.type_
+                        |> Result.toMaybe
+                        |> Expect.equal (Just output)
+    in
+    describe "Stage.Parse.Parser.type_"
+        (List.map runTest
+            [ ( "int", "Int", ConcreteType.Int )
+            , ( "unit", "()", ConcreteType.Unit )
+            , ( "type var a", "a", ConcreteType.TypeVar "a" )
+            , ( "function"
+              , "Int -> ()"
+              , ConcreteType.Function
+                    { from = ConcreteType.Int
+                    , to = ConcreteType.Unit
+                    }
+              )
+            , ( "multiple-arg function"
+              , "Int -> () -> Char"
+              , ConcreteType.Function
+                    { from = ConcreteType.Int
+                    , to =
+                        ConcreteType.Function
+                            { from = ConcreteType.Unit
+                            , to = ConcreteType.Char
+                            }
+                    }
+              )
+            , ( "float", "Float", ConcreteType.Float )
+            , ( "char", "Char", ConcreteType.Char )
+            , ( "string", "String", ConcreteType.String )
+            , ( "bool", "Bool", ConcreteType.Bool )
+            , ( "list", "List ()", ConcreteType.List ConcreteType.Unit )
+            , ( "tuple"
+              , "(Int, String)"
+              , ConcreteType.Tuple
+                    ConcreteType.Int
+                    ConcreteType.String
+              )
+            , ( "tuple with different whitespace"
+              , "( Int,String )"
+              , ConcreteType.Tuple
+                    ConcreteType.Int
+                    ConcreteType.String
+              )
+            , ( "tuple3"
+              , "(Int, String, Bool)"
+              , ConcreteType.Tuple3
+                    ConcreteType.Int
+                    ConcreteType.String
+                    ConcreteType.Bool
+              )
+            , ( "custom type or alias"
+              , "NonemptyList"
+              , ConcreteType.UserDefinedType
+                    { qualifiedness = PossiblyQualified Nothing
+                    , name = "NonemptyList"
+                    , args = []
+                    }
+              )
+            , ( "parametric type"
+              , "Maybe a"
+              , ConcreteType.UserDefinedType
+                    { qualifiedness = PossiblyQualified Nothing
+                    , name = "Maybe"
+                    , args = [ ConcreteType.TypeVar "a" ]
+                    }
+              )
+            , ( "qualified custom type"
+              , "Foo.Bar"
+              , ConcreteType.UserDefinedType
+                    { qualifiedness = PossiblyQualified (Just "Foo")
+                    , name = "Bar"
+                    , args = []
+                    }
+              )
+            , ( "qualified custom type with params"
+              , "Foo.Bar a Int"
+              , ConcreteType.UserDefinedType
+                    { qualifiedness = PossiblyQualified (Just "Foo")
+                    , name = "Bar"
+                    , args =
+                        [ ConcreteType.TypeVar "a"
+                        , ConcreteType.Int
+                        ]
+                    }
+              )
+            , ( "empty record"
+              , "{}"
+              , ConcreteType.Record Dict.empty
+              )
+            , ( "empty record with whitespace"
+              , "{ }"
+              , ConcreteType.Record Dict.empty
+              )
+            , ( "record with one field"
+              , "{ x : Int }"
+              , ConcreteType.Record <|
+                    Dict.fromList
+                        [ ( "x", ConcreteType.Int ) ]
+              )
+            , ( "record with two field"
+              , "{ x : Int, y : String }"
+              , ConcreteType.Record <|
+                    Dict.fromList
+                        [ ( "x", ConcreteType.Int )
+                        , ( "y", ConcreteType.String )
+                        ]
+              )
+            ]
+        )
+
+
+typeAnnotation : Test
+typeAnnotation =
+    let
+        runTest : ( String, String, Maybe TypeAnnotation ) -> Test
+        runTest ( description, input, output ) =
+            test description <|
+                \() ->
+                    input
+                        |> P.run Stage.Parse.Parser.typeAnnotation
+                        |> Result.toMaybe
+                        |> Expect.equal output
+
+        xInt : TypeAnnotation
+        xInt =
+            { varName = "x", type_ = ConcreteType.Int }
+    in
+    describe "Stage.Parse.Parser.typeAnnotation"
+        [ describe "various cases" <|
+            List.map runTest <|
+                [ -- TODO extensible record
+                  ( "x int", "x : Int", Just xInt )
+                , ( "x int without whitespace", "x:Int", Just xInt )
+                , ( "x float", "x : Float", Just { varName = "x", type_ = ConcreteType.Float } )
+                , ( "x char", "x : Char", Just { varName = "x", type_ = ConcreteType.Char } )
+                , ( "x string", "x : String", Just { varName = "x", type_ = ConcreteType.String } )
+                , ( "x unit", "x : ()", Just { varName = "x", type_ = ConcreteType.Unit } )
+                , ( "y bool", "y : Bool", Just { varName = "y", type_ = ConcreteType.Bool } )
+                , ( "foo tuple"
+                  , "foo : (Int, Bool)"
+                  , Just { varName = "foo", type_ = ConcreteType.Tuple ConcreteType.Int ConcreteType.Bool }
+                  )
+                , ( "foo tuple with different whitespace 1"
+                  , "foo : ( Int, Bool )"
+                  , Just { varName = "foo", type_ = ConcreteType.Tuple ConcreteType.Int ConcreteType.Bool }
+                  )
+                , ( "foo tuple with different whitespace 2"
+                  , "foo : ( Int , Bool )"
+                  , Just { varName = "foo", type_ = ConcreteType.Tuple ConcreteType.Int ConcreteType.Bool }
+                  )
+                , ( "foo tuple with different whitespace 3"
+                  , "foo : (Int,Bool)"
+                  , Just { varName = "foo", type_ = ConcreteType.Tuple ConcreteType.Int ConcreteType.Bool }
+                  )
+                , ( "foo tuple3"
+                  , "foo : (Int, Bool, String)"
+                  , Just
+                        { varName = "foo"
+                        , type_ =
+                            ConcreteType.Tuple3
+                                ConcreteType.Int
+                                ConcreteType.Bool
+                                ConcreteType.String
+                        }
+                  )
+                , -- TODO List should be just another UserDefinedType
+                  ( "x list", "x : List Int", Just { varName = "x", type_ = ConcreteType.List ConcreteType.Int } )
+                , ( "x list 2"
+                  , "x : List (List ())"
+                  , Just
+                        { varName = "x"
+                        , type_ = ConcreteType.List (ConcreteType.List ConcreteType.Unit)
+                        }
+                  )
+                , ( "x record", "x : {}", Just { varName = "x", type_ = ConcreteType.Record Dict.empty } )
+                , ( "x record 2"
+                  , "x : {foo : Int}"
+                  , Just
+                        { varName = "x"
+                        , type_ =
+                            ConcreteType.Record
+                                (Dict.fromList [ ( "foo", ConcreteType.Int ) ])
+                        }
+                  )
+                , ( "x record 3"
+                  , "x : {foo : Int, bar : ()}"
+                  , Just
+                        { varName = "x"
+                        , type_ =
+                            ConcreteType.Record
+                                (Dict.fromList
+                                    [ ( "foo", ConcreteType.Int )
+                                    , ( "bar", ConcreteType.Unit )
+                                    ]
+                                )
+                        }
+                  )
+                , ( "x var 2"
+                  , "x : abcde1213"
+                  , Just { varName = "x", type_ = ConcreteType.TypeVar "abcde1213" }
+                  )
+                , -- TODO later do something special about comparable etc!
+                  ( "x var special"
+                  , "x : comparable"
+                  , Just { varName = "x", type_ = ConcreteType.TypeVar "comparable" }
+                  )
+                , ( "x function"
+                  , "x : Int -> Bool"
+                  , Just
+                        { varName = "x"
+                        , type_ =
+                            ConcreteType.Function
+                                { from = ConcreteType.Int
+                                , to = ConcreteType.Bool
+                                }
+                        }
+                  )
+                , ( "x 2-arg function"
+                  , "x : Int -> Bool -> String"
+                  , Just
+                        { varName = "x"
+                        , type_ =
+                            ConcreteType.Function
+                                { from = ConcreteType.Int
+                                , to =
+                                    ConcreteType.Function
+                                        { from = ConcreteType.Bool
+                                        , to = ConcreteType.String
+                                        }
+                                }
+                        }
+                  )
+                , ( "x user defined type unqualified noargs"
+                  , "x : MyType"
+                  , Just
+                        { varName = "x"
+                        , type_ =
+                            ConcreteType.UserDefinedType
+                                { qualifiedness = PossiblyQualified Nothing
+                                , name = "MyType"
+                                , args = []
+                                }
+                        }
+                  )
+                , ( "x user defined type unqualified args"
+                  , "x : MyType Int Float"
+                  , Just
+                        { varName = "x"
+                        , type_ =
+                            ConcreteType.UserDefinedType
+                                { qualifiedness = PossiblyQualified Nothing
+                                , name = "MyType"
+                                , args =
+                                    [ ConcreteType.Int
+                                    , ConcreteType.Float
+                                    ]
+                                }
+                        }
+                  )
+                , ( "x user defined type qualified noargs"
+                  , "x : Foo.MyType"
+                  , Just
+                        { varName = "x"
+                        , type_ =
+                            ConcreteType.UserDefinedType
+                                { qualifiedness = PossiblyQualified (Just "Foo")
+                                , name = "MyType"
+                                , args = []
+                                }
+                        }
+                  )
+                , ( "x user defined type qualified args"
+                  , "x : Foo.MyType Int Float"
+                  , Just
+                        { varName = "x"
+                        , type_ =
+                            ConcreteType.UserDefinedType
+                                { qualifiedness = PossiblyQualified (Just "Foo")
+                                , name = "MyType"
+                                , args =
+                                    [ ConcreteType.Int
+                                    , ConcreteType.Float
+                                    ]
+                                }
+                        }
+                  )
+                ]
+        , describe "whitespace behaviour"
+            (List.map runTest
+                [ ( "canonical format", "x : Int", Just xInt )
+                , ( "no spaces", "x:Int", Just xInt )
+                , ( "multiple spaces before", "x   : Int", Just xInt )
+                , ( "multiple spaces after", "x :   Int", Just xInt )
+                , ( "newline and space before", "x\n  : Int", Just xInt )
+                , ( "newline and space after", "x :\n Int", Just xInt )
+                , ( "newline and space near UserDefinedType args"
+                  , "x : Foo.Bar\n a"
+                  , Just
+                        { varName = "x"
+                        , type_ =
+                            ConcreteType.UserDefinedType
+                                { qualifiedness = PossiblyQualified (Just "Foo")
+                                , name = "Bar"
+                                , args = [ ConcreteType.TypeVar "a" ]
+                                }
+                        }
+                  )
+                , ( "newline but not a space near UserDefinedType args means the rest is ignored"
+                  , "x : Foo.Bar\na"
+                  , Just
+                        { varName = "x"
+                        , type_ =
+                            ConcreteType.UserDefinedType
+                                { qualifiedness = PossiblyQualified (Just "Foo")
+                                , name = "Bar"
+                                , args = []
+                                }
+                        }
+                  )
+
+                -- TODO , ( "newline before", "x\n: Int", Nothing )
+                -- TODO , ( "newline after", "x :\nInt", Nothing )
+                ]
+            )
+
+        -- TODO parentheses behaviour
+        -- TODO whitespace behaviour of `->` type (esp. newlines)
+        ]
+
+
+valueDeclaration : Test
+valueDeclaration =
+    let
+        runTest : ( String, String, Maybe ( String, DeclarationBody Expr TypeAnnotation PossiblyQualified ) ) -> Test
+        runTest ( description, input, output ) =
+            test description <|
+                \() ->
+                    input
+                        |> P.run Stage.Parse.Parser.valueDeclaration
+                        |> Result.toMaybe
+                        |> Maybe.map
+                            (Tuple.mapSecond
+                                (Declaration.mapBody
+                                    Frontend.unwrap
+                                    identity
+                                    identity
+                                )
+                            )
+                        |> Expect.equal output
+    in
+    describe "Stage.Parse.Parser.valueDeclaration" <|
+        List.map runTest <|
+            [ ( "simple without annotation"
+              , "x = ()"
+              , Just
+                    ( "x"
+                    , Declaration.Value
+                        { expression = Unit
+                        , typeAnnotation = Nothing
+                        }
+                    )
+              )
+            , ( "simple with annotation"
+              , "y : ()\ny = ()"
+              , Just
+                    ( "y"
+                    , Declaration.Value
+                        { expression = Unit
+                        , typeAnnotation =
+                            Just
+                                { varName = "y"
+                                , type_ = ConcreteType.Unit
+                                }
+                        }
+                    )
+              )
+            ]
+
+
+typeAliasDeclaration : Test
+typeAliasDeclaration =
+    let
+        runTest : ( String, String, Maybe ( String, DeclarationBody Frontend.LocatedExpr TypeAnnotation PossiblyQualified ) ) -> Test
+        runTest ( description, input, output ) =
+            test description <|
+                \() ->
+                    input
+                        |> P.run Stage.Parse.Parser.typeAliasDeclaration
+                        |> Result.toMaybe
+                        |> Expect.equal output
+    in
+    describe "Stage.Parse.Parser.typeAliasDeclaration" <|
+        List.map runTest <|
+            [ ( "simple"
+              , "type alias Foo = ()"
+              , Just
+                    ( "Foo"
+                    , Declaration.TypeAlias
+                        { parameters = []
+                        , definition = ConcreteType.Unit
+                        }
+                    )
+              )
+            , ( "with params"
+              , "type alias Bar a = ()"
+              , Just
+                    ( "Bar"
+                    , Declaration.TypeAlias
+                        { parameters = [ "a" ]
+                        , definition = ConcreteType.Unit
+                        }
+                    )
+              )
+            , ( "a bit more advanced"
+              , "type alias Foo = Maybe Int"
+              , Just
+                    ( "Foo"
+                    , Declaration.TypeAlias
+                        { parameters = []
+                        , definition =
+                            ConcreteType.UserDefinedType
+                                { qualifiedness = PossiblyQualified Nothing
+                                , name = "Maybe"
+                                , args = [ ConcreteType.Int ]
+                                }
+                        }
+                    )
+              )
+            , {- TODO create integration test that this fails
+                 (`a` on right must be present on the left too)
+              -}
+              ( "to something that itself has params"
+              , "type alias Foo = Maybe a"
+              , Just
+                    ( "Foo"
+                    , Declaration.TypeAlias
+                        { parameters = []
+                        , definition =
+                            ConcreteType.UserDefinedType
+                                { qualifiedness = PossiblyQualified Nothing
+                                , name = "Maybe"
+                                , args = [ ConcreteType.TypeVar "a" ]
+                                }
+                        }
+                    )
+              )
+            , ( "params on both sides"
+              , "type alias Foo a = Maybe a"
+              , Just
+                    ( "Foo"
+                    , Declaration.TypeAlias
+                        { parameters = [ "a" ]
+                        , definition =
+                            ConcreteType.UserDefinedType
+                                { qualifiedness = PossiblyQualified Nothing
+                                , name = "Maybe"
+                                , args = [ ConcreteType.TypeVar "a" ]
+                                }
+                        }
+                    )
+              )
+            ]
+
+
+customTypeDeclaration : Test
+customTypeDeclaration =
+    let
+        runTest : ( String, String, Maybe ( String, DeclarationBody Frontend.LocatedExpr TypeAnnotation PossiblyQualified ) ) -> Test
+        runTest ( description, input, output ) =
+            test description <|
+                \() ->
+                    input
+                        |> P.run Stage.Parse.Parser.customTypeDeclaration
+                        |> Result.toMaybe
+                        |> Expect.equal output
+    in
+    describe "Stage.Parse.Parser.customTypeDeclaration" <|
+        List.map runTest <|
+            [ ( "simple"
+              , "type Foo = Bar"
+              , Just
+                    ( "Foo"
+                    , Declaration.CustomType
+                        { parameters = []
+                        , constructors =
+                            ( { name = "Bar"
+                              , arguments = []
+                              }
+                            , []
+                            )
+                        }
+                    )
+              )
+            , ( "with params"
+              , "type Bar a = Baz"
+              , Just
+                    ( "Bar"
+                    , Declaration.CustomType
+                        { parameters = [ "a" ]
+                        , constructors =
+                            ( { name = "Baz"
+                              , arguments = []
+                              }
+                            , []
+                            )
+                        }
+                    )
+              )
+            , ( "a bit more advanced"
+              , "type Foo = Bar Int"
+              , Just
+                    ( "Foo"
+                    , Declaration.CustomType
+                        { parameters = []
+                        , constructors =
+                            ( { name = "Bar"
+                              , arguments = [ ConcreteType.Int ]
+                              }
+                            , []
+                            )
+                        }
+                    )
+              )
+            , {- TODO create integration test that this fails
+                 (`a` on right must be present on the left too)
+              -}
+              ( "to something that itself has parameters"
+              , "type Foo = Bar a"
+              , Just
+                    ( "Foo"
+                    , Declaration.CustomType
+                        { parameters = []
+                        , constructors =
+                            ( { name = "Bar"
+                              , arguments = [ ConcreteType.TypeVar "a" ]
+                              }
+                            , []
+                            )
+                        }
+                    )
+              )
+            , ( "params on both sides"
+              , "type Foo a = Bar (Maybe a)"
+              , Just
+                    ( "Foo"
+                    , Declaration.CustomType
+                        { parameters = [ "a" ]
+                        , constructors =
+                            ( { name = "Bar"
+                              , arguments =
+                                    [ ConcreteType.UserDefinedType
+                                        { qualifiedness = PossiblyQualified Nothing
+                                        , name = "Maybe"
+                                        , args = [ ConcreteType.TypeVar "a" ]
+                                        }
+                                    ]
+                              }
+                            , []
+                            )
+                        }
+                    )
+              )
+            , ( "multiple constructors"
+              , "type Foo = Bar | Baz"
+              , Just
+                    ( "Foo"
+                    , Declaration.CustomType
+                        { parameters = []
+                        , constructors =
+                            ( { name = "Bar"
+                              , arguments = []
+                              }
+                            , [ { name = "Baz"
+                                , arguments = []
+                                }
+                              ]
+                            )
+                        }
+                    )
+              )
+            ]

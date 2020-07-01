@@ -5,7 +5,9 @@ import Elm.AST.Canonical as Canonical
 import Elm.AST.Canonical.Unwrapped as CanonicalU
 import Elm.Compiler.Error exposing (TypeError(..))
 import Elm.Data.Located as Located
-import Elm.Data.Type as Type exposing (Type)
+import Elm.Data.Qualifiedness exposing (Qualified)
+import Elm.Data.Type as Type
+import Elm.Data.Type.Concrete as ConcreteType exposing (ConcreteType(..))
 import Elm.Data.VarName exposing (VarName)
 import Expect
 import Fuzz exposing (Fuzzer)
@@ -14,25 +16,25 @@ import Random.Extra as Random
 import Shrink exposing (Shrinker)
 import Shrink.Extra as Shrink
 import Stage.InferTypes
+import Stage.InferTypes.SubstitutionMap as SubstitutionMap
 import Test exposing (Test, describe, fuzz)
-import TestHelpers exposing (dumpType)
+import TestHelpers exposing (dumpConcreteType)
 
 
 typeInference : Test
 typeInference =
     let
-        fuzzExpr : Type -> Test
+        fuzzExpr : ConcreteType Qualified -> Test
         fuzzExpr typeWanted =
-            fuzz (exprOfType typeWanted) (dumpType typeWanted) <|
+            fuzz (exprOfType typeWanted) (dumpConcreteType typeWanted) <|
                 \input ->
                     input
                         |> Canonical.fromUnwrapped
-                        |> Stage.InferTypes.inferExpr
-                        |> Result.map Located.unwrap
-                        |> Result.map Tuple.second
-                        |> Expect.equal (Ok typeWanted)
+                        |> Stage.InferTypes.inferExpr Dict.empty SubstitutionMap.empty
+                        |> Result.map (Tuple.first >> Located.unwrap >> Tuple.second)
+                        |> Expect.equal (Ok (ConcreteType.toTypeOrId typeWanted))
 
-        fuzzExpressions : String -> List Type -> Test
+        fuzzExpressions : String -> List (ConcreteType Qualified) -> Test
         fuzzExpressions description types =
             types
                 |> List.map fuzzExpr
@@ -41,48 +43,48 @@ typeInference =
     describe "Stage.InferType"
         [ describe "inferExpr"
             [ fuzzExpressions "fuzz literals"
-                [ Type.Int
-                , Type.Float
-                , Type.Bool
-                , Type.Char
-                , Type.String
-                , Type.Unit
+                [ Int
+                , Float
+                , Bool
+                , Char
+                , String
+                , Unit
                 ]
             , fuzzExpressions "fuzz lists"
-                [ Type.List Type.Unit
-                , Type.List Type.Int
-                , Type.List (Type.List Type.String)
+                [ List Unit
+                , List Int
+                , List (List String)
                 ]
             , fuzzExpressions "fuzz functions"
-                [ Type.Function Type.Int Type.Int
+                [ Function { from = Int, to = Int }
                 ]
             , fuzzExpressions "fuzz tuples"
-                [ Type.Tuple Type.Int Type.String
-                , Type.Tuple Type.Bool Type.Char
-                , Type.Tuple3 Type.Int Type.String Type.Bool
-                , Type.Tuple3 Type.Unit Type.Char Type.Float
+                [ Tuple Int String
+                , Tuple Bool Char
+                , Tuple3 Int String Bool
+                , Tuple3 Unit Char Float
                 ]
             , fuzzExpressions "fuzz records"
-                [ Type.Record Dict.empty
-                , Type.Record (Dict.fromList [ ( "a", Type.Int ) ])
-                , Type.Record (Dict.fromList [ ( "a", Type.Int ), ( "b", Type.String ) ])
+                [ Record Dict.empty
+                , Record (Dict.fromList [ ( "a", Int ) ])
+                , Record (Dict.fromList [ ( "a", Int ), ( "b", String ) ])
                 ]
             ]
         ]
 
 
-exprOfType : Type -> Fuzzer CanonicalU.Expr
+exprOfType : ConcreteType Qualified -> Fuzzer CanonicalU.Expr
 exprOfType targetType =
     Fuzz.custom
         (exprOfTypeWithDepth 3 targetType)
         shrinkExpr
 
 
-exprOfTypeWithDepth : Int -> Type -> Generator CanonicalU.Expr
+exprOfTypeWithDepth : Int -> ConcreteType Qualified -> Generator CanonicalU.Expr
 exprOfTypeWithDepth depthLeft targetType =
     let
         basicExpr =
-            targetType |> basicExprOfType depthLeft
+            basicExprOfType depthLeft targetType
 
         pickAffordable ( cost, generator ) =
             if cost <= depthLeft then
@@ -99,13 +101,13 @@ exprOfTypeWithDepth depthLeft targetType =
         |> Random.choices basicExpr
 
 
-basicExprOfType : Int -> Type -> Generator CanonicalU.Expr
+basicExprOfType : Int -> ConcreteType Qualified -> Generator CanonicalU.Expr
 basicExprOfType depthLeft targetType =
     let
         cannotFuzz details =
             let
                 prefix =
-                    "Cannot fuzz `" ++ dumpType targetType ++ "` expressions."
+                    "Cannot fuzz `" ++ dumpConcreteType targetType ++ "` expressions."
 
                 message =
                     if String.isEmpty details then
@@ -117,53 +119,62 @@ basicExprOfType depthLeft targetType =
             Debug.todo message
     in
     case targetType of
-        Type.Int ->
+        TypeVar _ ->
+            cannotFuzz "Vars, by definition, cannot be supported"
+
+        Int ->
             intExpr
 
-        Type.Float ->
+        Float ->
             floatExpr
 
-        Type.Bool ->
+        Bool ->
             boolExpr
 
-        Type.Char ->
+        Char ->
             charExpr
 
-        Type.String ->
+        String ->
             stringExpr
 
-        Type.Unit ->
+        Unit ->
             unitExpr
 
-        Type.List elementType ->
-            if Type.isParametric elementType then
-                -- Supporting parametric types might have weird interplay with recursive generation.
-                -- We are leaving it off, at least for now.
+        List elementType ->
+            if Type.isParametric (ConcreteType.toTypeOrId elementType) then
+                {- Supporting parametric types might have weird interplay with recursive generation.
+                   We are leaving it off, at least for now.
+                -}
                 cannotFuzz "Only lists with non-parametric element types are supported."
 
             else
-                elementType |> listExpr depthLeft
+                listExpr depthLeft elementType
 
-        Type.Function Type.Int Type.Int ->
-            intToIntFunctionExpr
+        Function { from, to } ->
+            case ( from, to ) of
+                ( Int, Int ) ->
+                    intToIntFunctionExpr
 
-        Type.Function _ _ ->
-            cannotFuzz "Only `Int -> Int` functions are supported."
+                _ ->
+                    cannotFuzz "Only `Int -> Int` functions are supported."
 
-        Type.Tuple firstType secondType ->
-            ( firstType, secondType ) |> tupleExpr depthLeft
+        Tuple firstType secondType ->
+            tupleExpr depthLeft ( firstType, secondType )
 
-        Type.Tuple3 firstType secondType thirdType ->
-            ( firstType, secondType, thirdType ) |> tuple3Expr depthLeft
+        Tuple3 firstType secondType thirdType ->
+            tuple3Expr depthLeft ( firstType, secondType, thirdType )
 
-        Type.Record bindings ->
+        Record bindings ->
             recordExpr depthLeft bindings
 
-        _ ->
-            cannotFuzz ""
+        UserDefinedType _ ->
+            {- TODO after Exprs contain constructors / record constructors, we
+               can try to pick one specific subtype and generate it here
+            -}
+            cannotFuzz "TODO: Custom type constructors don't exist in Expr types yet"
 
 
-ifExpr : Int -> Type -> Generator CanonicalU.Expr
+ifExpr : Int -> ConcreteType Qualified -> Generator CanonicalU.Expr
 ifExpr depth targetType =
     let
         combine test then_ else_ =
@@ -177,7 +188,7 @@ ifExpr depth targetType =
             exprOfTypeWithDepth (depth - 1)
     in
     Random.map3 combine
-        (subexpr Type.Bool)
+        (subexpr Bool)
         (subexpr targetType)
         (subexpr targetType)
 
@@ -223,7 +234,7 @@ unitExpr =
         |> Random.constant
 
 
-listExpr : Int -> Type -> Generator CanonicalU.Expr
+listExpr : Int -> ConcreteType Qualified -> Generator CanonicalU.Expr
 listExpr depthLeft elementType =
     elementType
         |> exprOfTypeWithDepth depthLeft
@@ -241,7 +252,7 @@ intToIntFunctionExpr =
                     intPart
 
         intSubExpr =
-            Type.Int |> exprOfTypeWithDepth 0
+            exprOfTypeWithDepth 0 Int
     in
     Random.map2 combine
         -- TODO: Later we will need something better to avoid shadowing.
@@ -249,14 +260,14 @@ intToIntFunctionExpr =
         intSubExpr
 
 
-tupleExpr : Int -> ( Type, Type ) -> Generator CanonicalU.Expr
+tupleExpr : Int -> ( ConcreteType Qualified, ConcreteType Qualified ) -> Generator CanonicalU.Expr
 tupleExpr depthLeft ( firstType, secondType ) =
     Random.map2 CanonicalU.Tuple
         (firstType |> exprOfTypeWithDepth depthLeft)
         (secondType |> exprOfTypeWithDepth depthLeft)
 
 
-tuple3Expr : Int -> ( Type, Type, Type ) -> Generator CanonicalU.Expr
+tuple3Expr : Int -> ( ConcreteType Qualified, ConcreteType Qualified, ConcreteType Qualified ) -> Generator CanonicalU.Expr
 tuple3Expr depthLeft ( firstType, secondType, thirdType ) =
     Random.map3 CanonicalU.Tuple3
         (firstType |> exprOfTypeWithDepth depthLeft)
@@ -264,7 +275,7 @@ tuple3Expr depthLeft ( firstType, secondType, thirdType ) =
         (thirdType |> exprOfTypeWithDepth depthLeft)
 
 
-recordExpr : Int -> Dict VarName Type -> Generator CanonicalU.Expr
+recordExpr : Int -> Dict VarName (ConcreteType Qualified) -> Generator CanonicalU.Expr
 recordExpr depthLeft bindings =
     let
         typesGenerator =
@@ -323,7 +334,11 @@ randomVarName =
 -}
 shrinkExpr : Shrinker CanonicalU.Expr
 shrinkExpr expr =
-    case expr |> Debug.log "\nshrinking... " of
+    let
+        nope =
+            Shrink.noShrink expr
+    in
+    case Debug.log "\nshrinking..." expr of
         CanonicalU.Int i ->
             i |> Shrink.int |> Shrink.map CanonicalU.Int
 
@@ -333,14 +348,36 @@ shrinkExpr expr =
         CanonicalU.Char c ->
             c |> Shrink.char |> Shrink.map CanonicalU.Char
 
-        CanonicalU.Bool b ->
-            b |> Shrink.bool |> Shrink.map CanonicalU.Bool
-
         CanonicalU.String s ->
             s |> Shrink.string |> Shrink.map CanonicalU.String
 
+        CanonicalU.Bool b ->
+            b |> Shrink.bool |> Shrink.map CanonicalU.Bool
+
+        CanonicalU.Var _ ->
+            nope
+
+        CanonicalU.Argument _ ->
+            nope
+
         CanonicalU.Plus left right ->
             shrinkPlus left right
+
+        CanonicalU.Cons x xs ->
+            shrinkCons x xs
+
+        CanonicalU.Lambda { argument, body } ->
+            shrinkLambda argument body
+
+        CanonicalU.Call { fn, argument } ->
+            shrinkCall fn argument
+
+        CanonicalU.If { test, then_, else_ } ->
+            shrinkIf test then_ else_
+
+        CanonicalU.Let _ ->
+            -- TODO take a stab at this? Do we actually even generate these?
+            nope
 
         CanonicalU.List elements ->
             -- We are not using the default list shrinker here.
@@ -350,11 +387,9 @@ shrinkExpr expr =
                 |> Shrink.listWithoutEmptying shrinkExpr
                 |> Shrink.map CanonicalU.List
 
-        CanonicalU.If { test, then_, else_ } ->
-            shrinkIf test then_ else_
-
-        CanonicalU.Lambda { argument, body } ->
-            shrinkLambda argument body
+        CanonicalU.Unit ->
+            -- not possible
+            nope
 
         CanonicalU.Tuple first second ->
             shrinkTuple first second
@@ -362,8 +397,13 @@ shrinkExpr expr =
         CanonicalU.Tuple3 first second third ->
             shrinkTuple3 first second third
 
-        _ ->
-            Shrink.noShrink expr
+        CanonicalU.Record _ ->
+            -- TODO take a stab at this? Do we actually even generate these?
+            nope
+
+        CanonicalU.Case _ _ ->
+            -- TODO take a stab at this? Do we actually even generate these?
+            nope
 
 
 {-| Shrinks a plus expression.
@@ -390,6 +430,58 @@ shrinkPlus left right =
         -- The value built up to this point is a shrinker.
         -- We need to call it with an CanonicalU.Expr to get a lazy list.
         left
+
+
+{-| Shrinks a cons expression.
+
+---
+
+We cannot write a type annotation here.
+The `LazyList a` type used by shrinkers is not exposed outside `elm-explorations/test`.
+
+    shrinkCons : CanonicalU.Expr -> CanonicalU.Expr -> LazyList CanonicalU.Expr
+
+-}
+shrinkCons x xs =
+    ([ Shrink.map2 CanonicalU.Cons
+        (shrinkExpr x)
+        (Shrink.singleton xs)
+     , Shrink.map2 CanonicalU.Cons
+        (Shrink.singleton x)
+        (shrinkExpr xs)
+     ]
+        |> List.map always
+        |> Shrink.mergeMany
+    )
+        -- The value built up to this point is a shrinker.
+        -- We need to call it with an CanonicalU.Expr to get a lazy list.
+        x
+
+
+{-| Shrinks a call expression.
+
+---
+
+We cannot write a type annotation here.
+The `LazyList a` type used by shrinkers is not exposed outside `elm-explorations/test`.
+
+    shrinkCall : CanonicalU.Expr -> CanonicalU.Expr -> LazyList CanonicalU.Expr
+
+-}
+shrinkCall fn arg =
+    ([ Shrink.map2 call
+        (shrinkExpr fn)
+        (Shrink.singleton arg)
+     , Shrink.map2 call
+        (Shrink.singleton fn)
+        (shrinkExpr arg)
+     ]
+        |> List.map always
+        |> Shrink.mergeMany
+    )
+        -- The value built up to this point is a shrinker.
+        -- We need to call it with an CanonicalU.Expr to get a lazy list.
+        fn
 
 
 {-| We cannot write a type annotation here.
@@ -486,4 +578,12 @@ lambda argument body =
     CanonicalU.Lambda
         { argument = argument
         , body = body
+        }
+
+
+call : CanonicalU.Expr -> CanonicalU.Expr -> CanonicalU.Expr
+call fn argument =
+    CanonicalU.Call
+        { fn = fn
+        , argument = argument
         }

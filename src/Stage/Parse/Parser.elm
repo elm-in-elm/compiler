@@ -1,5 +1,6 @@
 module Stage.Parse.Parser exposing
-    ( declaration
+    ( customTypeDeclaration
+    , declaration
     , exposingList
     , expr
     , import_
@@ -7,6 +8,11 @@ module Stage.Parse.Parser exposing
     , moduleDeclaration
     , moduleName
     , module_
+    , spacesOnly
+    , typeAliasDeclaration
+    , typeAnnotation
+    , type_
+    , valueDeclaration
     )
 
 import Dict exposing (Dict)
@@ -14,20 +20,30 @@ import Elm.AST.Frontend as Frontend exposing (Expr(..), LocatedExpr, LocatedPatt
 import Elm.Compiler.Error
     exposing
         ( Error(..)
+        , ParseCompilerBug(..)
         , ParseContext(..)
         , ParseError(..)
         , ParseProblem(..)
         )
 import Elm.Data.Binding exposing (Binding)
-import Elm.Data.Declaration as Declaration exposing (Declaration)
+import Elm.Data.Declaration as Declaration
+    exposing
+        ( Constructor
+        , Declaration
+        , DeclarationBody
+        )
 import Elm.Data.Exposing exposing (ExposedItem(..), Exposing(..))
 import Elm.Data.FilePath exposing (FilePath)
 import Elm.Data.Import exposing (Import)
 import Elm.Data.Located as Located exposing (Located)
 import Elm.Data.Module exposing (Module, ModuleType(..))
 import Elm.Data.ModuleName exposing (ModuleName)
+import Elm.Data.Qualifiedness exposing (PossiblyQualified(..))
+import Elm.Data.Type.Concrete as ConcreteType exposing (ConcreteType)
+import Elm.Data.TypeAnnotation exposing (TypeAnnotation)
 import Elm.Data.VarName exposing (VarName)
 import Hex
+import List.NonEmpty exposing (NonEmpty)
 import Parser.Advanced as P exposing ((|.), (|=), Parser)
 import Pratt.Advanced as PP
 import Set exposing (Set)
@@ -45,6 +61,10 @@ type alias PatternConfig =
     PP.Config ParseContext ParseProblem LocatedPattern
 
 
+type alias TypeConfig =
+    PP.Config ParseContext ParseProblem (ConcreteType PossiblyQualified)
+
+
 located : Parser_ p -> Parser_ (Located p)
 located p =
     P.succeed
@@ -60,7 +80,7 @@ located p =
         |= P.getPosition
 
 
-module_ : FilePath -> Parser_ (Module LocatedExpr)
+module_ : FilePath -> Parser_ (Module LocatedExpr TypeAnnotation PossiblyQualified)
 module_ filePath =
     P.succeed
         (\( moduleType_, moduleName_, exposing_ ) imports_ declarations_ ->
@@ -190,9 +210,9 @@ effectModuleType =
 moduleName : Parser_ String
 moduleName =
     P.sequence
-        { start = P.Token "" (CompilerBug "moduleName start parser failed") -- TODO is this the right way?
+        { start = P.Token "" (ParseCompilerBug ModuleNameStartParserFailed)
         , separator = P.Token "." ExpectingModuleDot
-        , end = P.Token "" (CompilerBug "moduleName start parser failed") -- TODO is this the right way?
+        , end = P.Token "" (ParseCompilerBug ModuleNameEndParserFailed)
         , spaces = P.succeed ()
         , item = moduleNameWithoutDots
         , trailing = P.Forbidden
@@ -234,9 +254,9 @@ exposingAll =
 exposingSome : Parser_ Exposing
 exposingSome =
     P.sequence
-        { start = P.Token "(" ExpectingExposingListLeftParen
-        , separator = P.Token "," ExpectingExposingListSeparatorComma
-        , end = P.Token ")" ExpectingExposingListRightParen
+        { start = P.Token "(" ExpectingLeftParen
+        , separator = P.Token "," ExpectingComma
+        , end = P.Token ")" ExpectingRightParen
         , spaces = P.spaces
         , item = exposedItem
         , trailing = P.Forbidden
@@ -262,6 +282,7 @@ exposedItem =
 exposedValue : Parser_ ExposedItem
 exposedValue =
     P.map ExposedValue varName
+        |> P.inContext InExposedValue
 
 
 exposedTypeAndOptionallyAllConstructors : Parser_ ExposedItem
@@ -314,7 +335,7 @@ reservedWords =
         ]
 
 
-declarations : Parser_ (List (ModuleName -> Declaration LocatedExpr))
+declarations : Parser_ (List (ModuleName -> Declaration LocatedExpr TypeAnnotation PossiblyQualified))
 declarations =
     oneOrMoreWith P.spaces
         (P.succeed identity
@@ -323,23 +344,154 @@ declarations =
         )
 
 
-declaration : Parser_ (ModuleName -> Declaration LocatedExpr)
+declaration : Parser_ (ModuleName -> Declaration LocatedExpr TypeAnnotation PossiblyQualified)
 declaration =
     P.succeed
-        (\name body module__ ->
+        (\( name, body ) module__ ->
             { module_ = module__
             , name = name
             , body = body
             }
         )
+        |= declarationBody
+        |> P.inContext InDeclaration
+
+
+declarationBody : Parser_ ( String, DeclarationBody LocatedExpr TypeAnnotation PossiblyQualified )
+declarationBody =
+    P.oneOf
+        [ typeAliasDeclaration
+        , customTypeDeclaration
+        , valueDeclaration
+        ]
+
+
+valueDeclaration : Parser_ ( String, DeclarationBody LocatedExpr TypeAnnotation PossiblyQualified )
+valueDeclaration =
+    P.succeed
+        (\annotation name expr_ ->
+            ( name
+            , Declaration.Value
+                { typeAnnotation = annotation
+                , expression = expr_
+                }
+            )
+        )
+        |= P.oneOf
+            -- TODO refactor the `backtrackable` away
+            -- TODO is it even working correctly?
+            [ P.backtrackable
+                (P.succeed Just
+                    |= typeAnnotation
+                    |. P.spaces
+                )
+            , P.succeed Nothing
+            ]
         |= varName
         |. P.spaces
         |. P.symbol (P.Token "=" ExpectingEqualsSign)
         |. P.spaces
-        {- TODO this only parses Data.Declaration.Value, not TypeAlias or CustomType
-           Add parsers for type alises and custom types!
-        -}
-        |= P.map Declaration.Value expr
+        |= expr
+
+
+{-|
+
+     type alias X = Int
+     type alias X a = Maybe a
+
+More generally,
+
+     type alias <UserDefinedType> <VarType>* = <Type>
+
+-}
+typeAliasDeclaration : Parser_ ( String, DeclarationBody LocatedExpr TypeAnnotation PossiblyQualified )
+typeAliasDeclaration =
+    P.succeed
+        (\name parameters type__ ->
+            ( name
+            , Declaration.TypeAlias
+                { parameters = parameters
+                , definition = type__
+                }
+            )
+        )
+        |. P.keyword (P.Token "type alias" ExpectingTypeAlias)
+        |. P.spaces
+        |= moduleNameWithoutDots
+        |. P.symbol (P.Token " " ExpectingSpace)
+        |. P.spaces
+        |= zeroOrMoreWith P.spaces varName
+        |. P.spaces
+        |. P.symbol (P.Token "=" ExpectingEqualsSign)
+        |. P.spaces
+        |= type_
+        |> P.inContext InTypeAlias
+
+
+{-|
+
+     type X = Foo | Bar
+     type X a = Foo a | Bar String
+
+More generally,
+
+     type <UserDefinedType> <VarType>* = <Constructor>[ | <Constructor>]*
+
+     Constructor := <Name>[ <Type>]*
+
+-}
+customTypeDeclaration : Parser_ ( String, DeclarationBody LocatedExpr TypeAnnotation PossiblyQualified )
+customTypeDeclaration =
+    P.succeed
+        (\name parameters constructors_ ->
+            ( name
+            , Declaration.CustomType
+                { parameters = parameters
+                , constructors = constructors_
+                }
+            )
+        )
+        |. P.keyword (P.Token "type" ExpectingTypeAlias)
+        |. P.spaces
+        |= moduleNameWithoutDots
+        |. P.symbol (P.Token " " ExpectingSpace)
+        |. P.spaces
+        |= zeroOrMoreWith P.spaces varName
+        |. P.spaces
+        |. P.symbol (P.Token "=" ExpectingEqualsSign)
+        |. P.spaces
+        |= constructors
+        |> P.inContext InCustomType
+
+
+constructors : Parser_ (NonEmpty (Constructor PossiblyQualified))
+constructors =
+    P.sequence
+        { start = P.Token "" (ParseCompilerBug ConstructorsStartParserFailed)
+        , separator = P.Token "|" ExpectingPipe
+        , end = P.Token "" (ParseCompilerBug ConstructorsEndParserFailed)
+        , spaces = P.spaces
+        , item = constructor
+        , trailing = P.Forbidden
+        }
+        |> P.andThen
+            (\constructors_ ->
+                case List.NonEmpty.fromList constructors_ of
+                    Nothing ->
+                        P.problem EmptyListOfConstructors
+
+                    Just c ->
+                        P.succeed c
+            )
+        |> P.inContext InConstructors
+
+
+constructor : Parser_ (Constructor PossiblyQualified)
+constructor =
+    P.succeed Declaration.Constructor
+        |= moduleNameWithoutDots
+        |. P.spaces
+        |= oneOrMoreWith P.spaces type_
 
 
 expr : Parser_ LocatedExpr
@@ -378,19 +530,6 @@ expr =
         , spaces = P.spaces
         }
         |> P.inContext InExpr
-
-
-checkNotBeginningOfLine : Parser_ ()
-checkNotBeginningOfLine =
-    P.getCol
-        |> P.andThen
-            (\col ->
-                if col /= 1 then
-                    P.succeed ()
-
-                else
-                    P.problem ExpectingNotBeginningOfLine
-            )
 
 
 parenthesizedExpr : ExprConfig -> Parser_ LocatedExpr
@@ -496,9 +635,9 @@ character quotes =
                 , P.map (\_ -> '\u{000D}') (P.token (P.Token "r" (ExpectingEscapeCharacter 'r')))
                 , P.succeed identity
                     |. P.token (P.Token "u" (ExpectingEscapeCharacter 'u'))
-                    |. P.token (P.Token "{" ExpectingUnicodeEscapeLeftBrace)
+                    |. P.token (P.Token "{" ExpectingLeftBrace)
                     |= unicodeCharacter
-                    |. P.token (P.Token "}" ExpectingUnicodeEscapeRightBrace)
+                    |. P.token (P.Token "}" ExpectingRightBrace)
                 ]
             |> P.inContext InCharEscapeMode
         , -- we don't want to eat the closing delimiter
@@ -521,7 +660,7 @@ character quotes =
                     string
                         |> String.uncons
                         |> Maybe.map (Tuple.first >> P.succeed)
-                        |> Maybe.withDefault (P.problem (CompilerBug "Multiple characters chomped in `character`"))
+                        |> Maybe.withDefault (P.problem (ParseCompilerBug MultipleCharactersChompedInCharacter))
                 )
         ]
 
@@ -605,12 +744,18 @@ bool =
 var : Parser_ LocatedExpr
 var =
     P.oneOf
-        [ P.map
-            (\varName_ -> Frontend.Var { module_ = Nothing, name = varName_ })
-            varName
+        [ varName
+            |> P.map
+                (\varName_ ->
+                    Frontend.Var
+                        { qualifiedness = PossiblyQualified Nothing
+                        , name = varName_
+                        }
+                )
         , qualifiedVar
         ]
         |> located
+        |> P.inContext InVar
 
 
 varName : Parser_ String
@@ -621,32 +766,47 @@ varName =
         , reserved = reservedWords
         , expecting = ExpectingVarName
         }
+        |> P.inContext InVarName
+
+
+qualifiers : Parser_ (List ModuleName)
+qualifiers =
+    P.sequence
+        { start = P.Token "" (ParseCompilerBug QualifiersStartParserFailed)
+        , separator = P.Token "." ExpectingQualifiedVarNameDot
+        , end = P.Token "" (ParseCompilerBug QualifiersEndParserFailed)
+        , spaces = P.succeed ()
+        , item = moduleNameWithoutDots
+        , trailing = P.Mandatory
+        }
+        |> P.inContext InQualifiers
+
+
+qualify : List ModuleName -> PossiblyQualified
+qualify modules =
+    PossiblyQualified <|
+        if List.isEmpty modules then
+            Nothing
+
+        else
+            Just <| String.join "." modules
 
 
 qualifiedVar : Parser_ Expr
 qualifiedVar =
-    P.sequence
-        { start = P.Token "" (CompilerBug "qualifiedVar start parser failed") -- TODO is this the right way?
-        , separator = P.Token "." ExpectingQualifiedVarNameDot
-        , end = P.Token "" (CompilerBug "qualifiedVar end parser failed") -- TODO is this the right way?
-        , spaces = P.succeed ()
-        , item = moduleNameWithoutDots
-        , trailing = P.Mandatory -- this is the difference from `moduleName`
-        }
+    qualifiers
         |> P.andThen
-            (\list_ ->
-                let
-                    maybeModuleName =
-                        if List.isEmpty list_ then
-                            Nothing
-
-                        else
-                            Just <| String.join "." list_
-                in
+            (\modules ->
                 P.map
-                    (\varName_ -> Frontend.Var { module_ = maybeModuleName, name = varName_ })
+                    (\varName_ ->
+                        Frontend.Var
+                            { qualifiedness = qualify modules
+                            , name = varName_
+                            }
+                    )
                     varName
             )
+        |> P.inContext InQualifiedVar
 
 
 lambda : ExprConfig -> Parser_ LocatedExpr
@@ -737,12 +897,26 @@ binding config =
         |> P.inContext InLetBinding
 
 
+typeBinding : TypeConfig -> Parser_ ( VarName, ConcreteType PossiblyQualified )
+typeBinding config =
+    P.succeed Tuple.pair
+        |= varName
+        |. P.spaces
+        |. P.symbol (P.Token ":" ExpectingColon)
+        |. P.spaces
+        |= PP.subExpression 0 config
+        |> P.inContext InTypeBinding
+
+
 promoteArguments : List VarName -> Expr -> Expr
 promoteArguments arguments expr_ =
     -- TODO set of arguments instead of list?
     case expr_ of
         Var var_ ->
-            if var_.module_ == Nothing && List.member var_.name arguments then
+            if
+                (var_.qualifiedness == PossiblyQualified Nothing)
+                    && List.member var_.name arguments
+            then
                 Argument var_.name
 
             else
@@ -819,9 +993,9 @@ record : ExprConfig -> Parser_ LocatedExpr
 record config =
     P.succeed Frontend.Record
         |= P.sequence
-            { start = P.Token "{" ExpectingRecordLeftBrace
-            , separator = P.Token "," ExpectingRecordSeparator
-            , end = P.Token "}" ExpectingRecordRightBrace
+            { start = P.Token "{" ExpectingLeftBrace
+            , separator = P.Token "," ExpectingComma
+            , end = P.Token "}" ExpectingRightBrace
             , spaces = spacesOnly
             , item = binding config
             , trailing = P.Forbidden
@@ -953,6 +1127,7 @@ patternVar : Parser_ LocatedPattern
 patternVar =
     P.map PVar varName
         |> located
+        |> P.inContext InPatternVar
 
 
 patternNumber : Parser_ LocatedPattern
@@ -1002,7 +1177,7 @@ patternRecord =
         , trailing = P.Forbidden
         }
         |> P.map PRecord
-        |> P.inContext InRecord
+        |> P.inContext InPatternRecord
         |> located
 
 
@@ -1061,7 +1236,8 @@ patternTuple config =
 
 spacesOnly : Parser_ ()
 spacesOnly =
-    P.chompWhile ((==) ' ')
+    P.succeed identity
+        |= P.chompWhile ((==) ' ')
 
 
 newlines : Parser_ ()
@@ -1136,6 +1312,15 @@ checkIndent check error =
         |> P.andThen identity
 
 
+{-| Fail if current column <= 1 (these are 1-based, so 1 is leftmost.)
+-}
+onlyIndented : Parser_ a -> Parser_ a
+onlyIndented parser =
+    P.succeed identity
+        |. checkIndent (\_ column -> column > 1) ExpectingIndentation
+        |= parser
+
+
 {-| Parse ignorable code then check the current defined indentation and the
 current column.
 -}
@@ -1198,6 +1383,202 @@ oneOrMoreHelp spaces p vs =
         ]
 
 
+typeAnnotation : Parser_ TypeAnnotation
+typeAnnotation =
+    -- TODO don't support newline without a space afterward... see the commented out tests
+    P.succeed TypeAnnotation
+        |= varName
+        |. P.spaces
+        |. P.symbol (P.Token ":" ExpectingColon)
+        |. P.spaces
+        |= type_
+        |> P.inContext InTypeAnnotation
+
+
+type_ : Parser_ (ConcreteType PossiblyQualified)
+type_ =
+    PP.expression
+        { oneOf =
+            [ PP.literal varType
+            , simpleType "Int" ConcreteType.Int
+            , simpleType "Float" ConcreteType.Float
+            , simpleType "Char" ConcreteType.Char
+            , simpleType "String" ConcreteType.String
+            , simpleType "Bool" ConcreteType.Bool
+            , simpleType "()" ConcreteType.Unit
+            , listType
+            , tupleType
+            , tuple3Type
+            , parenthesizedType
+            , recordType
+            , userDefinedType
+            ]
+        , andThenOneOf =
+            [ PP.infixRight 1
+                (P.token (P.Token "->" ExpectingRightArrow))
+                (\from to -> ConcreteType.Function { from = from, to = to })
+            ]
+        , spaces = P.spaces
+        }
+        |> P.inContext InType
+
+
+parenthesizedType : TypeConfig -> Parser_ (ConcreteType PossiblyQualified)
+parenthesizedType config =
+    P.succeed identity
+        |. P.symbol (P.Token "(" ExpectingLeftParen)
+        |= PP.subExpression 0 config
+        |. P.symbol (P.Token ")" ExpectingRightParen)
+        |> P.inContext InParenthesizedType
+
+
+varType : Parser_ (ConcreteType PossiblyQualified)
+varType =
+    varName
+        |> P.getChompedString
+        |> P.map ConcreteType.TypeVar
+        |> P.inContext InTypeVarType
+
+
+simpleType : String -> ConcreteType PossiblyQualified -> TypeConfig -> Parser_ (ConcreteType PossiblyQualified)
+simpleType name parsedType config =
+    PP.constant
+        (P.keyword (P.Token name (ExpectingSimpleType name)))
+        parsedType
+        config
+
+
+listType : TypeConfig -> Parser_ (ConcreteType PossiblyQualified)
+listType config =
+    P.succeed ConcreteType.List
+        |. P.keyword (P.Token "List" ExpectingListType)
+        |. spacesOnly
+        |= PP.subExpression 0 config
+
+
+tupleType : TypeConfig -> Parser_ (ConcreteType PossiblyQualified)
+tupleType config =
+    P.backtrackable
+        (P.succeed ConcreteType.Tuple
+            |. P.token (P.Token "(" ExpectingLeftParen)
+            |. spacesOnly
+            |= PP.subExpression 0 config
+            |. spacesOnly
+            |. P.token (P.Token "," ExpectingComma)
+            |. spacesOnly
+            |= PP.subExpression 0 config
+            |. spacesOnly
+            |. P.token (P.Token ")" ExpectingRightParen)
+        )
+
+
+tuple3Type : TypeConfig -> Parser_ (ConcreteType PossiblyQualified)
+tuple3Type config =
+    P.backtrackable
+        (P.succeed ConcreteType.Tuple3
+            |. P.token (P.Token "(" ExpectingLeftParen)
+            |. spacesOnly
+            |= PP.subExpression 0 config
+            |. spacesOnly
+            |. P.token (P.Token "," ExpectingComma)
+            |. spacesOnly
+            |= PP.subExpression 0 config
+            |. spacesOnly
+            |. P.token (P.Token "," ExpectingComma)
+            |. spacesOnly
+            |= PP.subExpression 0 config
+            |. spacesOnly
+            |. P.token (P.Token ")" ExpectingRightParen)
+        )
+
+
+recordType : TypeConfig -> Parser_ (ConcreteType PossiblyQualified)
+recordType config =
+    P.succeed (Dict.fromList >> ConcreteType.Record)
+        |= P.sequence
+            { start = P.Token "{" ExpectingLeftBrace
+            , separator = P.Token "," ExpectingComma
+            , end = P.Token "}" ExpectingRightBrace
+            , spaces = spacesOnly -- TODO what about definitions of type aliases etc?
+            , item = typeBinding config
+            , trailing = P.Forbidden
+            }
+
+
+{-| Examples:
+
+  - Maybe a
+  - List Int
+  - Result Foo.Bar
+  - Browser.Position Int
+  - MyModule.MyDataStructure
+
+-}
+userDefinedType : TypeConfig -> Parser_ (ConcreteType PossiblyQualified)
+userDefinedType config =
+    P.succeed
+        (\( modules, name ) args ->
+            ConcreteType.UserDefinedType
+                { qualifiedness = qualify modules
+                , name = name
+                , args = args
+                }
+        )
+        |= qualifiersAndTypeName
+        |. spacesOnly
+        |= P.oneOf
+            [ {- consider `x : Foo.Bar\nx = 1` vs `x : Foo.Bar\n x`
+
+                 Right now we've chomped the `Bar` and we want to chomp some
+                 arguments.
+
+                 We have to explicitly check whether the next non-newline char is
+                 a space or not.
+
+                 If it is, we have a multi-line type annotation
+                 on our hands and the `x` at the end is a type argument.
+
+                 If it isn't, we have finished the type annotation
+                 parsing and the argument list for the `Foo.Bar` is empty.
+                 And that's this `oneOf` case!
+              -}
+              P.backtrackable
+                (P.succeed []
+                    |. spacesOnly
+                    |. checkNextCharIs '\n' ExpectingNewlineAfterTypeAnnotation
+                    |. newlines
+                    |. checkNextCharIsNot ' ' ExpectingNonSpaceAfterTypeAnnotationNewlines
+                )
+            , {- Here, the next thing to parse isn't the `x = ...` declaration
+                 but a continuation of the type annotation - custom type args!
+              -}
+              zeroOrMoreWith P.spaces (onlyIndented (PP.subExpression 0 config))
+            ]
+        |> P.inContext InUserDefinedType
+
+
+qualifiersAndTypeName : Parser_ ( List ModuleName, String )
+qualifiersAndTypeName =
+    P.sequence
+        { start = P.Token "" (ParseCompilerBug QualifiersStartParserFailed)
+        , separator = P.Token "." ExpectingQualifiedVarNameDot
+        , end = P.Token "" (ParseCompilerBug QualifiersEndParserFailed)
+        , spaces = P.succeed ()
+        , item = moduleNameWithoutDots
+        , trailing = P.Forbidden
+        }
+        |> P.andThen
+            (\names ->
+                case List.reverse names of
+                    typeName :: reversedQualifiers ->
+                        P.succeed ( List.reverse reversedQualifiers, typeName )
+
+                    _ ->
+                        P.problem ExpectingTypeName
+            )
+        |> P.inContext InQualifiersAndTypeName
+
+
 {-| Taken from [dmy/elm-pratt-parser](https://package.elm-lang.org/packages/dmy/elm-pratt-parser/latest/Pratt-Advanced#postfix),
 made to accept the operator parser result.
 
@@ -1215,3 +1596,126 @@ postfix precedence operator apply _ =
     ( precedence
     , \left -> P.map (apply left) operator
     )
+
+
+shouldLog : String -> Bool
+shouldLog message =
+    False
+
+
+{-| Beware: what this parser logs might sometimes be a lie.
+
+To work it needs to run `Parser.run` inside itself, and it has no way to
+set the parser state itself to the state it was called in.
+
+So it runs it with a different source string, zeroed offset, indent, position,
+basically with totally different parser state.
+
+Some parsers might not work properly in the "inner" `Parser.run` call as a result
+if they depend on this state, and thus might log lies.
+
+Note: the parser itself will still work as before, since we're not resetting the
+"outer" `Parser.run` state.
+
+-}
+log : String -> Parser_ a -> Parser_ a
+log message parser =
+    if shouldLog message then
+        P.succeed
+            (\source offsetBefore ->
+                let
+                    _ =
+                        Debug.log "+++++++++++++++++ starting" message
+                in
+                ( source, offsetBefore )
+            )
+            |= P.getSource
+            |= P.getOffset
+            |> P.andThen
+                (\( source, offsetBefore ) ->
+                    {- Kinda like that logging decoder from Thoughtbot:
+                       https://thoughtbot.com/blog/debugging-dom-event-handlers-in-elm
+
+                       Basically we run `Parser.run` ourselves so that we can
+                       get at the context and say something more meaningful
+                       about the failure if it happens.
+                    -}
+                    let
+                        remainingSource =
+                            String.dropLeft offsetBefore source
+                                |> Debug.log "yet to parse  "
+                    in
+                    let
+                        _ =
+                            -- the side-effecty part; this might log lies
+                            P.run
+                                (P.succeed
+                                    (\parseResult_ innerOffset ->
+                                        let
+                                            _ =
+                                                Debug.log "chomped string" (String.left innerOffset remainingSource)
+                                        in
+                                        parseResult_
+                                    )
+                                    |= parser
+                                    |= P.getOffset
+                                )
+                                remainingSource
+                                |> Debug.log "parse result  "
+                    in
+                    let
+                        _ =
+                            Debug.log "----------------- ending  " message
+                    in
+                    parser
+                )
+
+    else
+        parser
+
+
+simpleLog : String -> Parser_ a -> Parser_ a
+simpleLog msg parser =
+    P.succeed
+        (\offsetBefore result offsetAfter ->
+            let
+                _ =
+                    Debug.log ("[" ++ msg ++ "] before, after") ( offsetBefore, offsetAfter )
+            in
+            result
+        )
+        |= P.getOffset
+        |= parser
+        |= P.getOffset
+
+
+checkNextCharIs : Char -> ParseProblem -> Parser_ ()
+checkNextCharIs mandatoryChar problem =
+    checkNextChar ((==) mandatoryChar) problem
+
+
+checkNextCharIsNot : Char -> ParseProblem -> Parser_ ()
+checkNextCharIsNot forbiddenChar problem =
+    checkNextChar ((/=) forbiddenChar) problem
+
+
+{-| Likely very inefficient...
+-}
+checkNextChar : (Char -> Bool) -> ParseProblem -> Parser_ ()
+checkNextChar charPredicate problem =
+    P.succeed
+        (\source offset ->
+            case String.uncons (String.slice offset (offset + 1) source) of
+                Nothing ->
+                    P.problem problem
+
+                Just ( nextChar, _ ) ->
+                    if charPredicate nextChar then
+                        P.succeed ()
+
+                    else
+                        P.problem problem
+        )
+        |= P.getSource
+        |= P.getOffset
+        |> P.andThen identity

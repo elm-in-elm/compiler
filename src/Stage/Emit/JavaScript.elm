@@ -24,11 +24,12 @@ import Elm.Data.Declaration exposing (Declaration, DeclarationBody(..))
 import Elm.Data.FileContents exposing (FileContents)
 import Elm.Data.FilePath exposing (FilePath)
 import Elm.Data.Project exposing (Project)
+import Elm.Data.Qualifiedness exposing (Qualified)
 import Stage.Emit.Common exposing (mangleQualifiedVar, mangleVarName, prepareProjectFields)
 
 
 type alias ProjectFields =
-    { declarationList : List (Declaration Typed.LocatedExpr) }
+    { declarationList : List (Declaration Typed.LocatedExpr Never Qualified) }
 
 
 emitProject : Project Typed.ProjectFields -> Result Error (Dict FilePath FileContents)
@@ -128,18 +129,18 @@ emitExpr located =
             in
             "{" ++ bindingsJS ++ "}"
 
-        Case e branches ->
+        Case _ _ ->
             "TODO"
 
 
-emitDeclaration : Declaration Typed.LocatedExpr -> String
+emitDeclaration : Declaration Typed.LocatedExpr Never Qualified -> String
 emitDeclaration { module_, name, body } =
     case body of
-        Value expr ->
+        Value { expression } ->
             "const "
                 ++ mangleQualifiedVar { module_ = module_, name = name }
                 ++ " = "
-                ++ emitExpr expr
+                ++ emitExpr expression
                 ++ ";"
 
         TypeAlias _ ->

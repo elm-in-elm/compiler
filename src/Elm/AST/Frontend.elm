@@ -19,6 +19,8 @@ import Elm.Data.Binding as Binding exposing (Binding)
 import Elm.Data.Located as Located exposing (Located)
 import Elm.Data.Module exposing (Module)
 import Elm.Data.ModuleName exposing (ModuleName)
+import Elm.Data.Qualifiedness exposing (PossiblyQualified)
+import Elm.Data.TypeAnnotation exposing (TypeAnnotation)
 import Elm.Data.VarName exposing (VarName)
 import Transform
 
@@ -32,7 +34,7 @@ that hold [frontend AST expressions](#LocatedExpr).
 
 -}
 type alias ProjectFields =
-    { modules : Dict ModuleName (Module LocatedExpr) }
+    { modules : Dict ModuleName (Module LocatedExpr TypeAnnotation PossiblyQualified) }
 
 
 {-| The main type of this module. Expression with [location metadata](Elm.Data.Located).
@@ -54,7 +56,7 @@ type Expr
     | Char Char
     | String String
     | Bool Bool
-    | Var { module_ : Maybe ModuleName, name : VarName }
+    | Var { qualifiedness : PossiblyQualified, name : VarName }
     | Argument VarName
     | Plus LocatedExpr LocatedExpr
     | Cons LocatedExpr LocatedExpr

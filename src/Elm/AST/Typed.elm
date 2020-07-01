@@ -1,13 +1,18 @@
 module Elm.AST.Typed exposing
     ( ProjectFields
-    , LocatedExpr, Expr, Expr_(..), getExpr, getType, unwrap, dropTypes, transformAll, transformOnce, recursiveChildren, setExpr
+    , LocatedExpr, Expr, Expr_(..)
     , LocatedPattern, Pattern, Pattern_(..)
+    , getExpr, unwrap, transformAll, transformOnce, recursiveChildren, setExpr
+    , dropTypes, getTypeOrId, getType
     )
 
 {-| Typed AST holds the inferred [types](Elm.Data.Type) for every expression.
 
 @docs ProjectFields
-@docs LocatedExpr, Expr, Expr_, getExpr, getType, unwrap, dropTypes, transformAll, transformOnce, recursiveChildren, setExpr
+@docs LocatedExpr, Expr, Expr_
+@docs LocatedPattern, Pattern, Pattern_
+@docs getExpr, unwrap, transformAll, transformOnce, recursiveChildren, setExpr
+@docs dropTypes, getTypeOrId, getType
 
 -}
 
@@ -18,8 +23,10 @@ import Elm.Data.Binding as Binding exposing (Binding)
 import Elm.Data.Located as Located exposing (Located)
 import Elm.Data.Module exposing (Module)
 import Elm.Data.ModuleName exposing (ModuleName)
-import Elm.Data.Type exposing (Type)
+import Elm.Data.Qualifiedness exposing (Qualified)
+import Elm.Data.Type as Type exposing (Type, TypeOrId(..))
 import Elm.Data.VarName exposing (VarName)
+import OurExtras.List as List
 import Transform
 
 
@@ -32,7 +39,7 @@ that hold [typed AST expressions](#LocatedExpr).
 
 -}
 type alias ProjectFields =
-    { modules : Dict ModuleName (Module LocatedExpr) }
+    { modules : Dict ModuleName (Module LocatedExpr Never Qualified) }
 
 
 {-| The main type of this module. Expression with [location metadata](Elm.Data.Located).
@@ -53,7 +60,7 @@ type alias LocatedExpr =
 
 -}
 type alias Expr =
-    ( Expr_, Type )
+    ( Expr_, TypeOrId Qualified )
 
 
 {-| -}
@@ -89,7 +96,7 @@ type alias LocatedPattern =
 
 -}
 type alias Pattern =
-    ( Pattern_, Type )
+    ( Pattern_, TypeOrId Qualified )
 
 
 type Pattern_
@@ -281,13 +288,13 @@ recursiveChildren fn locatedExpr =
 
         Let { bindings, body } ->
             fn body
-                ++ List.concatMap (.body >> fn) (Dict.values bindings)
+                ++ List.fastConcatMap (.body >> fn) (Dict.values bindings)
 
         Unit ->
             []
 
         List items ->
-            List.concatMap fn items
+            List.fastConcatMap fn items
 
         Tuple e1 e2 ->
             fn e1 ++ fn e2
@@ -296,10 +303,10 @@ recursiveChildren fn locatedExpr =
             fn e1 ++ fn e2 ++ fn e3
 
         Record bindings ->
-            List.concatMap (.body >> fn) (Dict.values bindings)
+            List.fastConcatMap (.body >> fn) (Dict.values bindings)
 
         Case e branches ->
-            fn e ++ List.concatMap (.body >> fn) branches
+            fn e ++ List.fastConcatMap (.body >> fn) branches
 
 
 mapExpr : (Expr_ -> Expr_) -> LocatedExpr -> LocatedExpr
@@ -319,14 +326,25 @@ setExpr expr locatedExpr =
 -}
 getExpr : LocatedExpr -> Expr_
 getExpr locatedExpr =
-    Tuple.first <| Located.unwrap locatedExpr
+    locatedExpr
+        |> Located.unwrap
+        |> Tuple.first
 
 
 {-| Extract the type (remove the location information and the expression).
 -}
-getType : LocatedExpr -> Type
+getTypeOrId : LocatedExpr -> TypeOrId Qualified
+getTypeOrId locatedExpr =
+    locatedExpr
+        |> Located.unwrap
+        |> Tuple.second
+
+
+getType : LocatedExpr -> Maybe (Type Qualified)
 getType locatedExpr =
-    Tuple.second <| Located.unwrap locatedExpr
+    locatedExpr
+        |> getTypeOrId
+        |> Type.getType
 
 
 {-| Discard the [location metadata](Elm.Data.Located#Located).

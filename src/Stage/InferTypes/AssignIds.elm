@@ -1,4 +1,4 @@
-module Stage.InferTypes.AssignIds exposing (Id, assignIds)
+module Stage.InferTypes.AssignIds exposing (assignIds)
 
 {-| Stage 1
 
@@ -43,19 +43,16 @@ import Dict
 import Elm.AST.Canonical as Canonical
 import Elm.AST.Typed as Typed
 import Elm.Data.Located as Located
-import Elm.Data.Type as Type
+import Elm.Data.Qualifiedness exposing (Qualified)
+import Elm.Data.Type as Type exposing (TypeOrId)
 
 
-type alias Id =
-    Int
-
-
-assignIds : Canonical.LocatedExpr -> ( Typed.LocatedExpr, Id )
+assignIds : Canonical.LocatedExpr -> ( Typed.LocatedExpr, Int )
 assignIds located =
     assignIdsWith 0 located
 
 
-assignIdsWith : Id -> Canonical.LocatedExpr -> ( Typed.LocatedExpr, Id )
+assignIdsWith : Int -> Canonical.LocatedExpr -> ( Typed.LocatedExpr, Int )
 assignIdsWith currentId locatedCanonicalExpr =
     let
         ( typedExpr, newId ) =
@@ -67,12 +64,12 @@ assignIdsWith currentId locatedCanonicalExpr =
     )
 
 
-assignId : Id -> a -> ( ( a, Type.Type ), Id )
+assignId : Int -> a -> ( ( a, TypeOrId Qualified ), Int )
 assignId currentId located =
-    ( ( located, Type.Var currentId ), currentId + 1 )
+    ( ( located, Type.Id currentId ), currentId + 1 )
 
 
-assignIdsWithHelp : Id -> Canonical.Expr -> ( Typed.Expr, Id )
+assignIdsWithHelp : Int -> Canonical.Expr -> ( Typed.Expr, Int )
 assignIdsWithHelp currentId located =
     {- Be careful when dealing with the ids, they all have to be distinct.
        Enable the "unused variable" warning from elm-analyze may help you
@@ -309,7 +306,7 @@ assignIdsWithHelp currentId located =
                 Typed.Case e_ branches_
 
 
-assignPatternIdsWith : Id -> Canonical.LocatedPattern -> ( Typed.LocatedPattern, Id )
+assignPatternIdsWith : Int -> Canonical.LocatedPattern -> ( Typed.LocatedPattern, Int )
 assignPatternIdsWith currentId locatedCanonicalPattern =
     let
         ( typedPattern, newId ) =
@@ -321,7 +318,7 @@ assignPatternIdsWith currentId locatedCanonicalPattern =
     )
 
 
-assignPatternIdsWithHelp : Id -> Canonical.Pattern -> ( Typed.Pattern, Id )
+assignPatternIdsWithHelp : Int -> Canonical.Pattern -> ( Typed.Pattern, Int )
 assignPatternIdsWithHelp currentId located =
     case located of
         Canonical.PAnything ->

@@ -10,12 +10,13 @@ import Elm.Compiler.Error exposing (Error(..))
 import Elm.Data.Declaration exposing (Declaration, DeclarationBody(..))
 import Elm.Data.ModuleName exposing (ModuleName)
 import Elm.Data.Project exposing (Project)
+import Elm.Data.Qualifiedness exposing (Qualified)
 import Elm.Data.VarName exposing (VarName)
 import Stage.Emit as Emit
 
 
 type alias ProjectFields =
-    { declarationList : List (Declaration Typed.LocatedExpr) }
+    { declarationList : List (Declaration Typed.LocatedExpr Never Qualified) }
 
 
 prepareProjectFields : Project Typed.ProjectFields -> Result Error (Project ProjectFields)

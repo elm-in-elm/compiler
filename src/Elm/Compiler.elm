@@ -4,7 +4,6 @@ module Elm.Compiler exposing
     , inferExpr, inferModule, inferModules
     , defaultOptimizations
     , optimizeExpr, optimizeExprWith, optimizeModule, optimizeModuleWith, optimizeModules, optimizeModulesWith
-    , dropTypesExpr, dropTypesModule, dropTypesModules
     )
 
 {-| Functions for working with Elm source code.
@@ -123,11 +122,8 @@ a move backwards in the compiler phases:
 
 import Dict exposing (Dict)
 import Elm.AST.Canonical as Canonical
-import Elm.AST.Canonical.Unwrapped as CanonicalUnwrapped
 import Elm.AST.Frontend as Frontend
-import Elm.AST.Frontend.Unwrapped as FrontendUnwrapped
 import Elm.AST.Typed as Typed
-import Elm.AST.Typed.Unwrapped as TypedUnwrapped
 import Elm.Compiler.Error
     exposing
         ( Error(..)
@@ -139,8 +135,12 @@ import Elm.Data.Declaration exposing (Declaration)
 import Elm.Data.FileContents exposing (FileContents)
 import Elm.Data.FilePath exposing (FilePath)
 import Elm.Data.Import exposing (Import)
-import Elm.Data.Module as Module exposing (Module)
+import Elm.Data.Module exposing (Module)
 import Elm.Data.ModuleName exposing (ModuleName)
+import Elm.Data.Qualifiedness exposing (PossiblyQualified, Qualified)
+import Elm.Data.Type.Concrete exposing (ConcreteType)
+import Elm.Data.TypeAnnotation exposing (TypeAnnotation)
+import Elm.Data.VarName exposing (VarName)
 import OurExtras.Dict as Dict
 import Parser.Advanced as P
 import Result.Extra as Result
@@ -148,6 +148,7 @@ import Stage.Desugar
 import Stage.Desugar.Boilerplate
 import Stage.InferTypes
 import Stage.InferTypes.Boilerplate
+import Stage.InferTypes.SubstitutionMap exposing (SubstitutionMap)
 import Stage.Optimize
 import Stage.Optimize.Boilerplate
 import Stage.Parse.Parser
@@ -240,7 +241,7 @@ will get parsed into
 -}
 parseModule :
     { filePath : FilePath, sourceCode : FileContents }
-    -> Result Error (Module Frontend.LocatedExpr)
+    -> Result Error (Module Frontend.LocatedExpr TypeAnnotation PossiblyQualified)
 parseModule { filePath, sourceCode } =
     -- TODO maybe we can think of a way to not force the user to give us `filePath`?
     parse (Stage.Parse.Parser.module_ filePath) sourceCode
@@ -250,7 +251,7 @@ parseModule { filePath, sourceCode } =
 -}
 parseModules :
     List { filePath : FilePath, sourceCode : FileContents }
-    -> Result Error (Dict ModuleName (Module Frontend.LocatedExpr))
+    -> Result Error (Dict ModuleName (Module Frontend.LocatedExpr TypeAnnotation PossiblyQualified))
 parseModules files =
     {- TODO same as with `parseModule` - maybe we can think of a way to not force
        the user to give us `filePath`?
@@ -302,7 +303,9 @@ into
     }
 
 -}
-parseDeclaration : { moduleName : ModuleName, declaration : FileContents } -> Result Error (Declaration Frontend.LocatedExpr)
+parseDeclaration :
+    { moduleName : ModuleName, declaration : FileContents }
+    -> Result Error (Declaration Frontend.LocatedExpr TypeAnnotation PossiblyQualified)
 parseDeclaration { moduleName, declaration } =
     parse Stage.Parse.Parser.declaration declaration
         |> Result.map (\toDeclaration -> toDeclaration moduleName)
@@ -331,17 +334,13 @@ into AST like
         }
 
 We're hitting limitations of the Elm Packages website, and the type shown isn't
-very descriptive. **The real type of this function is:**
-
-    Dict ModuleName (Module Frontend.LocatedExpr)
-    -> Module Frontend.LocatedExpr
-    -> Frontend.LocatedExpr
-    -> Result Error Canonical.LocatedExpr
+very descriptive. **We're going from Frontend expressions to Canonical
+expressions.**
 
 -}
 desugarExpr :
-    Dict ModuleName (Module Frontend.LocatedExpr)
-    -> Module Frontend.LocatedExpr
+    Dict ModuleName (Module Frontend.LocatedExpr TypeAnnotation PossiblyQualified)
+    -> Module Frontend.LocatedExpr TypeAnnotation PossiblyQualified
     -> Frontend.LocatedExpr
     -> Result Error Canonical.LocatedExpr
 desugarExpr modules thisModule locatedExpr =
@@ -352,37 +351,43 @@ desugarExpr modules thisModule locatedExpr =
 {-| Desugar a module (one `*.elm` file).
 
 We're hitting limitations of the Elm Packages website, and the type shown isn't
-very descriptive. **The real type of this function is:**
-
-    Dict ModuleName (Module Frontend.LocatedExpr)
-    -> Module Frontend.LocatedExpr
-    -> Result Error (Module Canonical.LocatedExpr)
+very descriptive. **We're going from Frontend expressions to Canonical
+expressions.**
 
 -}
 desugarModule :
-    Dict ModuleName (Module Frontend.LocatedExpr)
-    -> Module Frontend.LocatedExpr
-    -> Result Error (Module Canonical.LocatedExpr)
+    Dict ModuleName (Module Frontend.LocatedExpr TypeAnnotation PossiblyQualified)
+    -> Module Frontend.LocatedExpr TypeAnnotation PossiblyQualified
+    -> Result Error (Module Canonical.LocatedExpr (ConcreteType Qualified) Qualified)
 desugarModule modules thisModule =
-    Stage.Desugar.Boilerplate.desugarModule (Stage.Desugar.desugarExpr modules) thisModule
+    Stage.Desugar.Boilerplate.desugarModule
+        (Stage.Desugar.desugarExpr modules)
+        (Stage.Desugar.desugarQualifiedness modules)
+        (Stage.Desugar.desugarTypeAnnotation modules)
+        thisModule
         |> Result.mapError DesugarError
 
 
 {-| Desugar multiple modules (`*.elm` files) - see [`desugarModule`](#desugarModule) for details.
 
 We're hitting limitations of the Elm Packages website, and the type shown isn't
-very descriptive. **The real type of this function is:**
-
-    Dict ModuleName (Module Frontend.LocatedExpr)
-    -> Result Error (Dict ModuleName (Module Canonical.LocatedExpr))
+very descriptive. **We're going from Frontend expressions to Canonical
+expressions.**
 
 -}
 desugarModules :
-    Dict ModuleName (Module Frontend.LocatedExpr)
-    -> Result Error (Dict ModuleName (Module Canonical.LocatedExpr))
+    Dict ModuleName (Module Frontend.LocatedExpr TypeAnnotation PossiblyQualified)
+    -> Result Error (Dict ModuleName (Module Canonical.LocatedExpr (ConcreteType Qualified) Qualified))
 desugarModules modules =
     modules
-        |> Dict.map (always (Stage.Desugar.Boilerplate.desugarModule (Stage.Desugar.desugarExpr modules)))
+        |> Dict.map
+            (always
+                (Stage.Desugar.Boilerplate.desugarModule
+                    (Stage.Desugar.desugarExpr modules)
+                    (Stage.Desugar.desugarQualifiedness modules)
+                    (Stage.Desugar.desugarTypeAnnotation modules)
+                )
+            )
         |> Dict.combine
         |> Result.mapError DesugarError
 
@@ -391,15 +396,13 @@ desugarModules modules =
 another one.
 
 We're hitting limitations of the Elm Packages website, and the type shown isn't
-very descriptive. **The real type of this function is:**
-
-    Module Frontend.LocatedExpr
-    -> Result Error (Module Canonical.LocatedExpr)
+very descriptive. **We're going from Frontend expressions to Canonical
+expressions.**
 
 -}
 desugarOnlyModule :
-    Module Frontend.LocatedExpr
-    -> Result Error (Module Canonical.LocatedExpr)
+    Module Frontend.LocatedExpr TypeAnnotation PossiblyQualified
+    -> Result Error (Module Canonical.LocatedExpr (ConcreteType Qualified) Qualified)
 desugarOnlyModule module_ =
     desugarModule
         (Dict.singleton module_.name module_)
@@ -418,45 +421,65 @@ very descriptive. **The real type of this function is:**
     Canonical.LocatedExpr -> Result Error Typed.LocatedExpr
 
 -}
-inferExpr : Canonical.LocatedExpr -> Result Error Typed.LocatedExpr
-inferExpr locatedExpr =
-    Stage.InferTypes.inferExpr locatedExpr
-        |> Result.mapError TypeError
+inferExpr :
+    Dict ( ModuleName, VarName ) (ConcreteType Qualified)
+    -> SubstitutionMap
+    -> Canonical.LocatedExpr
+    -> Result Error ( Typed.LocatedExpr, SubstitutionMap )
+inferExpr aliases substitutionMap locatedExpr =
+    Stage.InferTypes.inferExpr aliases substitutionMap locatedExpr
+        |> Result.mapError (Tuple.first >> TypeError)
 
 
 {-| Infer the types of expressions in a module (a single `*.elm` file).
 
 We're hitting limitations of the Elm Packages website, and the type shown isn't
-very descriptive. **The real type of this function is:**
-
-    Module Canonical.LocatedExpr
-    -> Result Error (Module Typed.LocatedExpr)
+very descriptive. **We're going from Canonical expressions to Typed expressions.**
 
 -}
 inferModule :
-    Module Canonical.LocatedExpr
-    -> Result Error (Module Typed.LocatedExpr)
-inferModule thisModule =
-    Stage.InferTypes.Boilerplate.inferModule Stage.InferTypes.inferExpr thisModule
-        |> Result.mapError TypeError
+    Dict ( ModuleName, VarName ) (ConcreteType Qualified)
+    -> SubstitutionMap
+    -> Module Canonical.LocatedExpr (ConcreteType Qualified) Qualified
+    -> Result Error ( Module Typed.LocatedExpr Never Qualified, SubstitutionMap )
+inferModule aliases substitutionMap thisModule =
+    Stage.InferTypes.Boilerplate.inferModule
+        Stage.InferTypes.inferExpr
+        Stage.InferTypes.unifyWithTypeAnnotation
+        aliases
+        substitutionMap
+        thisModule
+        |> Result.mapError (Tuple.first >> TypeError)
 
 
 {-| Infer the types of expressions in multiple modules (`*.elm` files).
 
 We're hitting limitations of the Elm Packages website, and the type shown isn't
-very descriptive. **The real type of this function is:**
-
-    Dict ModuleName (Module Canonical.LocatedExpr)
-    -> Result Error (Dict ModuleName (Module Typed.LocatedExpr))
+very descriptive. **We're going from Canonical expressions to Typed expressions.**
 
 -}
 inferModules :
-    Dict ModuleName (Module Canonical.LocatedExpr)
-    -> Result Error (Dict ModuleName (Module Typed.LocatedExpr))
-inferModules modules =
+    Dict ( ModuleName, VarName ) (ConcreteType Qualified)
+    -> SubstitutionMap
+    -> Dict ModuleName (Module Canonical.LocatedExpr (ConcreteType Qualified) Qualified)
+    -> Result Error ( Dict ModuleName (Module Typed.LocatedExpr Never Qualified), SubstitutionMap )
+inferModules aliases substitutionMap modules =
     modules
-        |> Dict.map (always inferModule)
-        |> Dict.combine
+        |> Dict.foldl
+            (\moduleName module_ acc ->
+                acc
+                    |> Result.andThen
+                        (\( accDict, accSubstMap ) ->
+                            inferModule aliases accSubstMap module_
+                                |> Result.map
+                                    (Tuple.mapFirst
+                                        (\newModule_ ->
+                                            Dict.insert moduleName newModule_ accDict
+                                        )
+                                    )
+                        )
+            )
+            (Ok ( Dict.empty, substitutionMap ))
 
 
 
@@ -521,7 +544,9 @@ For using your own optimizations instead of or in addition to the default ones,
 look at the [`optimizeModuleWith`](#optimizeModuleWith) function.
 
 -}
-optimizeModule : Module Typed.LocatedExpr -> Module Typed.LocatedExpr
+optimizeModule :
+    Module Typed.LocatedExpr Never Qualified
+    -> Module Typed.LocatedExpr Never Qualified
 optimizeModule thisModule =
     Stage.Optimize.Boilerplate.optimizeModule optimizeExpr thisModule
 
@@ -535,8 +560,8 @@ only the optimizations on each separate expression.
 -}
 optimizeModuleWith :
     List ( String, Typed.LocatedExpr -> Maybe Typed.LocatedExpr )
-    -> Module Typed.LocatedExpr
-    -> Module Typed.LocatedExpr
+    -> Module Typed.LocatedExpr Never Qualified
+    -> Module Typed.LocatedExpr Never Qualified
 optimizeModuleWith optimizations thisModule =
     Stage.Optimize.Boilerplate.optimizeModule (optimizeExprWith optimizations) thisModule
 
@@ -549,8 +574,8 @@ look at the [`optimizeModulesWith`](#optimizeModulesWith) function.
 
 -}
 optimizeModules :
-    Dict ModuleName (Module Typed.LocatedExpr)
-    -> Dict ModuleName (Module Typed.LocatedExpr)
+    Dict ModuleName (Module Typed.LocatedExpr Never Qualified)
+    -> Dict ModuleName (Module Typed.LocatedExpr Never Qualified)
 optimizeModules modules =
     Dict.map (always optimizeModule) modules
 
@@ -560,76 +585,7 @@ optimizations.
 -}
 optimizeModulesWith :
     List ( String, Typed.LocatedExpr -> Maybe Typed.LocatedExpr )
-    -> Dict ModuleName (Module Typed.LocatedExpr)
-    -> Dict ModuleName (Module Typed.LocatedExpr)
+    -> Dict ModuleName (Module Typed.LocatedExpr Never Qualified)
+    -> Dict ModuleName (Module Typed.LocatedExpr Never Qualified)
 optimizeModulesWith optimizations modules =
     Dict.map (always (optimizeModuleWith optimizations)) modules
-
-
-
--- DROP TYPES
-
-
-{-| Drop types from a single expression.
-
-We're hitting limitations of the Elm Packages website, and the type shown isn't
-very descriptive. **The real type of this function is:**
-
-    Typed.LocatedExpr -> Canonical.LocatedExpr
-
-Example usage:
-
-    Located
-        { start = ..., end = ... }
-        ( Tuple
-            (Located ... ( Int 12, Type.Int ))
-            (Located ... ( String "Hello", Type.String ))
-        , Type.Tuple Type.Int Type.String
-        )
-
-becomes
-
-    Located
-        { start = ..., end = ... }
-        (Tuple
-            (Located ... (Int 12)
-            (Located ... (String "Hello")
-        )
-
-If location info is not useful to you either, look for the `unwrap` functions
-in the various `Elm.AST.*` modules.
-
--}
-dropTypesExpr : Typed.LocatedExpr -> Canonical.LocatedExpr
-dropTypesExpr locatedExpr =
-    Typed.dropTypes locatedExpr
-
-
-{-| Drop types from all expressions in the module.
-
-We're hitting limitations of the Elm Packages website, and the type shown isn't
-very descriptive. **The real type of this function is:**
-
-    Module Typed.LocatedExpr
-    -> Module Canonical.LocatedExpr
-
--}
-dropTypesModule : Module Typed.LocatedExpr -> Module Canonical.LocatedExpr
-dropTypesModule module_ =
-    Module.map dropTypesExpr module_
-
-
-{-| Drop types from all expressions in all the modules.
-
-We're hitting limitations of the Elm Packages website, and the type shown isn't
-very descriptive. **The real type of this function is:**
-
-    Dict ModuleName (Module Typed.LocatedExpr)
-    -> Dict ModuleName (Module Canonical.LocatedExpr)
-
--}
-dropTypesModules :
-    Dict ModuleName (Module Typed.LocatedExpr)
-    -> Dict ModuleName (Module Canonical.LocatedExpr)
-dropTypesModules modules =
-    Dict.map (always dropTypesModule) modules
