@@ -1,10 +1,14 @@
 const test = require('ava');
 const {exec} = require('../../setup');
 
-test.failing(
+test(
     "desugar: module for the qualified type in the type annotation is not found",
     exec,
     __dirname,
     ["-m", "src/Main.elm"],
-    async program => ({snapshot: await program})
+    async (program, t) => {
+        const snapshot = await t.throwsAsync(program);
+        t.is(snapshot.code, 1);
+        return snapshot;
+    }
 );
