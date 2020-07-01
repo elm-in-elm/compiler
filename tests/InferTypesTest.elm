@@ -9,6 +9,7 @@ import Elm.Data.Qualifiedness exposing (PossiblyQualified(..), Qualified(..))
 import Elm.Data.Type as Type exposing (Type(..), TypeOrId(..))
 import Elm.Data.Type.ToString as TypeToString
 import Expect
+import OurExtras.Tuple3 as Tuple3
 import Stage.InferTypes
 import Stage.InferTypes.SubstitutionMap as SubstitutionMap
 import Test exposing (Test, describe, test)
@@ -29,8 +30,8 @@ typeInference =
                 \() ->
                     input
                         |> Canonical.fromUnwrapped
-                        |> Stage.InferTypes.inferExpr Dict.empty SubstitutionMap.empty
-                        |> Result.map (Tuple.first >> Typed.getType)
+                        |> Stage.InferTypes.inferExpr Dict.empty 0 SubstitutionMap.empty
+                        |> Result.map (Tuple3.first >> Typed.getType)
                         |> Result.mapError Tuple.first
                         |> Expect.equal (Result.map Just output)
     in

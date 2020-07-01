@@ -142,6 +142,7 @@ import Elm.Data.Type.Concrete exposing (ConcreteType)
 import Elm.Data.TypeAnnotation exposing (TypeAnnotation)
 import Elm.Data.VarName exposing (VarName)
 import OurExtras.Dict as Dict
+import OurExtras.Tuple3 as Tuple3
 import Parser.Advanced as P
 import Result.Extra as Result
 import Stage.Desugar
@@ -423,11 +424,12 @@ very descriptive. **The real type of this function is:**
 -}
 inferExpr :
     Dict ( ModuleName, VarName ) (ConcreteType Qualified)
+    -> Int
     -> SubstitutionMap
     -> Canonical.LocatedExpr
-    -> Result Error ( Typed.LocatedExpr, SubstitutionMap )
-inferExpr aliases substitutionMap locatedExpr =
-    Stage.InferTypes.inferExpr aliases substitutionMap locatedExpr
+    -> Result Error ( Typed.LocatedExpr, SubstitutionMap, Int )
+inferExpr aliases unusedId substitutionMap locatedExpr =
+    Stage.InferTypes.inferExpr aliases unusedId substitutionMap locatedExpr
         |> Result.mapError (Tuple.first >> TypeError)
 
 
@@ -439,14 +441,16 @@ very descriptive. **We're going from Canonical expressions to Typed expressions.
 -}
 inferModule :
     Dict ( ModuleName, VarName ) (ConcreteType Qualified)
+    -> Int
     -> SubstitutionMap
     -> Module Canonical.LocatedExpr (ConcreteType Qualified) Qualified
-    -> Result Error ( Module Typed.LocatedExpr Never Qualified, SubstitutionMap )
-inferModule aliases substitutionMap thisModule =
+    -> Result Error ( Module Typed.LocatedExpr Never Qualified, SubstitutionMap, Int )
+inferModule aliases unusedId substitutionMap thisModule =
     Stage.InferTypes.Boilerplate.inferModule
         Stage.InferTypes.inferExpr
         Stage.InferTypes.unifyWithTypeAnnotation
         aliases
+        unusedId
         substitutionMap
         thisModule
         |> Result.mapError (Tuple.first >> TypeError)
@@ -460,26 +464,27 @@ very descriptive. **We're going from Canonical expressions to Typed expressions.
 -}
 inferModules :
     Dict ( ModuleName, VarName ) (ConcreteType Qualified)
+    -> Int
     -> SubstitutionMap
     -> Dict ModuleName (Module Canonical.LocatedExpr (ConcreteType Qualified) Qualified)
-    -> Result Error ( Dict ModuleName (Module Typed.LocatedExpr Never Qualified), SubstitutionMap )
-inferModules aliases substitutionMap modules =
+    -> Result Error ( Dict ModuleName (Module Typed.LocatedExpr Never Qualified), SubstitutionMap, Int )
+inferModules aliases unusedId substitutionMap modules =
     modules
         |> Dict.foldl
             (\moduleName module_ acc ->
                 acc
                     |> Result.andThen
-                        (\( accDict, accSubstMap ) ->
-                            inferModule aliases accSubstMap module_
+                        (\( accDict, accSubstMap, accUnusedId ) ->
+                            inferModule aliases accUnusedId accSubstMap module_
                                 |> Result.map
-                                    (Tuple.mapFirst
+                                    (Tuple3.mapFirst
                                         (\newModule_ ->
                                             Dict.insert moduleName newModule_ accDict
                                         )
                                     )
                         )
             )
-            (Ok ( Dict.empty, substitutionMap ))
+            (Ok ( Dict.empty, substitutionMap, unusedId ))
 
 
 

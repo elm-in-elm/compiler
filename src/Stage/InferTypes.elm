@@ -52,19 +52,9 @@ inferExpr :
     -> Result ( TypeError, SubstitutionMap ) ( Typed.LocatedExpr, SubstitutionMap, Int )
 inferExpr aliases unusedId substitutionMap located =
     let
-        _ =
-            Debug.log "---------------------" ()
-    in
-    let
         ( exprWithIds, unusedId1 ) =
             AssignIds.assignIds unusedId located
 
-        unwrapped =
-            exprWithIds
-                |> Typed.unwrap
-                |> Debug.log "expr with ids"
-    in
-    let
         ( typeEquations, unusedId2 ) =
             GenerateEquations.generateEquations unusedId1 exprWithIds
 
@@ -83,7 +73,6 @@ inferExpr aliases unusedId substitutionMap located =
         newSubstitutionMap : Result ( TypeError, SubstitutionMap ) SubstitutionMap
         newSubstitutionMap =
             Unify.unifyAllEquations typeEquations aliases substitutionMap
-                |> Debug.log "new substitution map"
     in
     newSubstitutionMap
         |> Result.map

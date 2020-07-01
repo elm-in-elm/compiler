@@ -11,6 +11,7 @@ import Elm.Data.Type.Concrete as ConcreteType exposing (ConcreteType(..))
 import Elm.Data.VarName exposing (VarName)
 import Expect
 import Fuzz exposing (Fuzzer)
+import OurExtras.Tuple3 as Tuple3
 import Random exposing (Generator)
 import Random.Extra as Random
 import Shrink exposing (Shrinker)
@@ -30,8 +31,8 @@ typeInference =
                 \input ->
                     input
                         |> Canonical.fromUnwrapped
-                        |> Stage.InferTypes.inferExpr Dict.empty SubstitutionMap.empty
-                        |> Result.map (Tuple.first >> Located.unwrap >> Tuple.second)
+                        |> Stage.InferTypes.inferExpr Dict.empty 0 SubstitutionMap.empty
+                        |> Result.map (Tuple3.first >> Located.unwrap >> Tuple.second)
                         |> Expect.equal (Ok (ConcreteType.toTypeOrId typeWanted))
 
         fuzzExpressions : String -> List (ConcreteType Qualified) -> Test
