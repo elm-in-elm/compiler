@@ -9,7 +9,13 @@ type MyMaybe =
 type MyMaybe2 =
   MyJust2
               Int
-      | Nothing
+      | MyNothing2
+
+
+type MyMaybe3
+  = MyJust3
+              Int
+      | MyNothing3
 
 
 main = 7

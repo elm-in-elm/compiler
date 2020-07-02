@@ -454,7 +454,10 @@ customTypeDeclaration =
         |. P.keyword (P.Token "type" ExpectingTypeAlias)
         |. P.spaces
         |= moduleNameWithoutDots
-        |. P.symbol (P.Token " " ExpectingSpace)
+        |. P.oneOf
+            [ P.symbol (P.Token " " ExpectingSpace)
+            , P.symbol (P.Token "\n" ExpectingSpace)
+            ]
         |. P.spaces
         |= zeroOrMoreWith P.spaces varName
         |. P.spaces
