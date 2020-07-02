@@ -469,23 +469,25 @@ customTypeDeclaration =
 
 constructors : Parser_ (NonEmpty (Constructor PossiblyQualified))
 constructors =
-    P.sequence
-        { start = P.Token "" (ParseCompilerBug ConstructorsStartParserFailed)
-        , separator = P.Token "|" ExpectingPipe
-        , end = P.Token "" (ParseCompilerBug ConstructorsEndParserFailed)
-        , spaces = P.spaces
-        , item = constructor
-        , trailing = P.Forbidden
-        }
-        |> P.andThen
-            (\constructors_ ->
-                case List.NonEmpty.fromList constructors_ of
-                    Nothing ->
-                        P.problem EmptyListOfConstructors
-
-                    Just c ->
-                        P.succeed c
-            )
+    let
+        subsequentConstructorsLoop reversedCtors =
+            P.succeed (\x -> x)
+                |. P.spaces
+                |= P.oneOf
+                    [ P.succeed (\newCtor -> P.Loop (newCtor :: reversedCtors))
+                        |. P.token (P.Token "|" ExpectingPipe)
+                        |. P.spaces
+                        |= constructor
+                    , P.succeed (P.Done (List.reverse reversedCtors))
+                    ]
+    in
+    P.succeed
+        (\first rest ->
+            List.NonEmpty.fromCons first rest
+        )
+        |. P.spaces
+        |= constructor
+        |= P.loop [] subsequentConstructorsLoop
         |> P.inContext InConstructors
 
 
