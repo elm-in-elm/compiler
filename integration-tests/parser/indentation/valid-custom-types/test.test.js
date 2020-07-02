@@ -2,7 +2,7 @@ const test = require('ava');
 const {exec} = require('../../../setup');
 
 test(
-    'parser: custom types',
+    'parser: indentation: valid custom types',
     exec,
     __dirname,
     ["-m", "src/Main.elm"],

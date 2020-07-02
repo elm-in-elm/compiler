@@ -1,4 +1,4 @@
-# Snapshot report for `integration-tests/parser/indentation/custom-types/test.test.js`
+# Snapshot report for `integration-tests/parser/indentation/valid-custom-types/test.test.js`
 
 The actual snapshot is saved in `test.test.js.snap`.
 
