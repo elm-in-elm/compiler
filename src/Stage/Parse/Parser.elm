@@ -463,7 +463,7 @@ customTypeDeclaration =
         |. P.spaces
         |. P.symbol (P.Token "=" ExpectingEqualsSign)
         |. P.spaces
-        |= constructors
+        |= onlyIndented constructors
         |> P.inContext InCustomType
 
 
@@ -485,7 +485,6 @@ constructors =
         (\first rest ->
             List.NonEmpty.fromCons first rest
         )
-        |. P.spaces
         |= constructor
         |= P.loop [] subsequentConstructorsLoop
         |> P.inContext InConstructors
