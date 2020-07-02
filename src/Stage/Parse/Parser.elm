@@ -337,10 +337,15 @@ reservedWords =
 
 declarations : Parser_ (List (ModuleName -> Declaration LocatedExpr TypeAnnotation PossiblyQualified))
 declarations =
-    oneOrMoreWith P.spaces
-        (P.succeed identity
-            |= declaration
-            |. P.spaces
+    P.loop []
+        (\decls ->
+            P.oneOf
+                [ P.succeed (\decl -> P.Loop (decl :: decls))
+                    |= declaration
+                    |. P.spaces
+                , P.end ExpectingEnd
+                    |> P.map (\() -> P.Done (List.reverse decls))
+                ]
         )
 
 
@@ -454,35 +459,39 @@ customTypeDeclaration =
         |. P.keyword (P.Token "type" ExpectingTypeAlias)
         |. P.spaces
         |= moduleNameWithoutDots
-        |. P.symbol (P.Token " " ExpectingSpace)
+        |. P.oneOf
+            [ P.symbol (P.Token " " ExpectingSpace)
+            , P.symbol (P.Token "\n" ExpectingSpace)
+            ]
         |. P.spaces
         |= zeroOrMoreWith P.spaces varName
         |. P.spaces
         |. P.symbol (P.Token "=" ExpectingEqualsSign)
         |. P.spaces
-        |= constructors
+        |= onlyIndented constructors
         |> P.inContext InCustomType
 
 
 constructors : Parser_ (NonEmpty (Constructor PossiblyQualified))
 constructors =
-    P.sequence
-        { start = P.Token "" (ParseCompilerBug ConstructorsStartParserFailed)
-        , separator = P.Token "|" ExpectingPipe
-        , end = P.Token "" (ParseCompilerBug ConstructorsEndParserFailed)
-        , spaces = P.spaces
-        , item = constructor
-        , trailing = P.Forbidden
-        }
-        |> P.andThen
-            (\constructors_ ->
-                case List.NonEmpty.fromList constructors_ of
-                    Nothing ->
-                        P.problem EmptyListOfConstructors
-
-                    Just c ->
-                        P.succeed c
-            )
+    let
+        subsequentConstructorsLoop reversedCtors =
+            P.succeed (\x -> x)
+                |. P.spaces
+                |= P.oneOf
+                    [ P.succeed (\newCtor -> P.Loop (newCtor :: reversedCtors))
+                        |. onlyIndented (P.token (P.Token "|" ExpectingPipe))
+                        |. P.spaces
+                        |= onlyIndented constructor
+                    , P.succeed (P.Done (List.reverse reversedCtors))
+                    ]
+    in
+    P.succeed
+        (\first rest ->
+            List.NonEmpty.fromCons first rest
+        )
+        |= constructor
+        |= P.loop [] subsequentConstructorsLoop
         |> P.inContext InConstructors
 
 
@@ -491,7 +500,7 @@ constructor =
     P.succeed Declaration.Constructor
         |= moduleNameWithoutDots
         |. P.spaces
-        |= oneOrMoreWith P.spaces type_
+        |= oneOrMoreWith P.spaces (onlyIndented type_)
 
 
 expr : Parser_ LocatedExpr
@@ -1239,8 +1248,7 @@ patternTuple config =
 
 spacesOnly : Parser_ ()
 spacesOnly =
-    P.succeed identity
-        |= P.chompWhile ((==) ' ')
+    P.chompWhile ((==) ' ')
 
 
 newlines : Parser_ ()

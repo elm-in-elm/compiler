@@ -9,6 +9,6 @@ test(
     async (program, t) => {
         const snapshot = await t.throwsAsync(program);
         t.is(snapshot.code, 1);
-        return snapshot;
+        return {snapshot};
     }
 );

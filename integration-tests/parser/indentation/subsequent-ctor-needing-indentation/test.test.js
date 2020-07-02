@@ -1,8 +1,8 @@
 const test = require('ava');
-const {exec} = require('../../setup');
+const {exec} = require('../../../setup');
 
 test(
-    "desugar: type annotation var name doesn't agree with the declaration var name",
+    'parser: indentation: first constructor needing indentation',
     exec,
     __dirname,
     ["-m", "src/Main.elm"],

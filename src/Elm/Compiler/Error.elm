@@ -176,6 +176,7 @@ type ParseProblem
     | TriedToParseCharacterStoppingDelimiter
     | ParseCompilerBug ParseCompilerBug
     | EmptyListOfConstructors
+    | ExpectingEnd
 
 
 type ParseCompilerBug
@@ -626,6 +627,9 @@ parseProblemToString problem =
 
         EmptyListOfConstructors ->
             "EmptyListOfConstructors"
+
+        ExpectingEnd ->
+            "ExpectingEnd"
 
 
 parseCompilerBugToString : ParseCompilerBug -> String

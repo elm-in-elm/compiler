@@ -1,6 +1,7 @@
 const childProcess = require ('child_process');
 const util = require ('util');
 const path = require('path');
+const { default: test } = require('ava');
 const fs = require('fs').promises; // needs Node.JS v10+
 
 const cliPath = path.join(__dirname, '..', 'cli', 'index.js');
@@ -25,7 +26,10 @@ async function exec(t, cwd, args, func) {
             throw e;
         }
     }
-    const {snapshot} = await func(runCompiler(cwd, args), t);
+    const testOutput = await func(runCompiler(cwd, args), t);
+
+    t.true(Object.prototype.hasOwnProperty.call(testOutput, 'snapshot'))
+    const {snapshot} = testOutput;
 
     if (snapshot !== undefined) {
         t.snapshot(`elm-in-elm ${args.join(' ')}`, {id: `Invocation`});
