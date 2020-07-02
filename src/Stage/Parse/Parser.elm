@@ -477,7 +477,7 @@ constructors =
                     [ P.succeed (\newCtor -> P.Loop (newCtor :: reversedCtors))
                         |. onlyIndented (P.token (P.Token "|" ExpectingPipe))
                         |. P.spaces
-                        |= constructor
+                        |= onlyIndented constructor
                     , P.succeed (P.Done (List.reverse reversedCtors))
                     ]
     in
