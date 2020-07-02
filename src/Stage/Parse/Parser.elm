@@ -557,7 +557,7 @@ literalNumber =
             P.backtrackable <|
                 P.number
                     { int = Ok Int
-                    , hex = Ok Int
+                    , hex = Ok HexInt
                     , octal = Err InvalidNumber -- Elm does not support octal notation
                     , binary = Err InvalidNumber -- Elm does not support binary notation
                     , float = Ok Float
@@ -569,6 +569,9 @@ literalNumber =
             case toBeNegated of
                 Int int ->
                     Int (negate int)
+
+                HexInt int ->
+                    HexInt (negate int)
 
                 Float float ->
                     Float (negate float)

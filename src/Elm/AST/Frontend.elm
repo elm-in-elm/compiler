@@ -52,6 +52,7 @@ type alias LocatedExpr =
 {-| -}
 type Expr
     = Int Int
+    | HexInt Int
     | Float Float
     | Char Char
     | String String
@@ -105,6 +106,9 @@ recurse f expr =
     in
     case expr of
         Int _ ->
+            expr
+
+        HexInt _ ->
             expr
 
         Float _ ->
@@ -211,6 +215,9 @@ unwrap expr =
     case Located.unwrap expr of
         Int int ->
             Unwrapped.Int int
+
+        HexInt int ->
+            Unwrapped.HexInt int
 
         Float float ->
             Unwrapped.Float float

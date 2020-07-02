@@ -21,6 +21,7 @@ import Elm.Data.VarName exposing (VarName)
 {-| -}
 type Expr
     = Int Int
+    | HexInt Int
     | Float Float
     | Char Char
     | String String

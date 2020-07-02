@@ -547,11 +547,11 @@ expr =
                   )
                 , ( "hexadecimal int"
                   , "0x123abc"
-                  , Just (Int 1194684)
+                  , Just (HexInt 1194684)
                   )
                 , ( "hexadecimal int - uppercase"
                   , "0x789DEF"
-                  , Just (Int 7904751)
+                  , Just (HexInt 7904751)
                   )
                 , ( "negative int"
                   , "-42"
@@ -559,7 +559,7 @@ expr =
                   )
                 , ( "negative hexadecimal"
                   , "-0x123abc"
-                  , Just (Int -1194684)
+                  , Just (HexInt -1194684)
                   )
                 ]
               )

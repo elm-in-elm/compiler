@@ -88,6 +88,9 @@ desugarExpr modules thisModule locatedExpr =
         Frontend.Int int ->
             return <| Canonical.Int int
 
+        Frontend.HexInt int ->
+            return <| Canonical.Int int
+
         Frontend.Float float ->
             return <| Canonical.Float float
 
