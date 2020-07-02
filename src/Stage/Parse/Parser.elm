@@ -491,7 +491,7 @@ constructor =
     P.succeed Declaration.Constructor
         |= moduleNameWithoutDots
         |. P.spaces
-        |= oneOrMoreWith P.spaces type_
+        |= oneOrMoreWith P.spaces (onlyIndented type_)
 
 
 expr : Parser_ LocatedExpr
@@ -1236,8 +1236,7 @@ patternTuple config =
 
 spacesOnly : Parser_ ()
 spacesOnly =
-    P.succeed identity
-        |= P.chompWhile ((==) ' ')
+    P.chompWhile ((==) ' ')
 
 
 newlines : Parser_ ()
