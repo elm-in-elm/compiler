@@ -337,10 +337,15 @@ reservedWords =
 
 declarations : Parser_ (List (ModuleName -> Declaration LocatedExpr TypeAnnotation PossiblyQualified))
 declarations =
-    oneOrMoreWith P.spaces
-        (P.succeed identity
-            |= declaration
-            |. P.spaces
+    P.loop []
+        (\decls ->
+            P.oneOf
+                [ P.succeed (\decl -> P.Loop (decl :: decls))
+                    |= declaration
+                    |. P.spaces
+                , P.end ExpectingEnd
+                    |> P.map (\() -> P.Done (List.reverse decls))
+                ]
         )
 
 
