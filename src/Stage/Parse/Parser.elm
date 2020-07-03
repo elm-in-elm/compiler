@@ -1396,13 +1396,12 @@ oneOrMoreHelp spaces p vs =
 
 typeAnnotation : Parser_ TypeAnnotation
 typeAnnotation =
-    -- TODO don't support newline without a space afterward... see the commented out tests
     P.succeed TypeAnnotation
         |= varName
         |. P.spaces
-        |. P.symbol (P.Token ":" ExpectingColon)
+        |. onlyIndented (P.symbol (P.Token ":" ExpectingColon))
         |. P.spaces
-        |= type_
+        |= onlyIndented type_
         |> P.inContext InTypeAnnotation
 
 

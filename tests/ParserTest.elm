@@ -22,6 +22,7 @@ import Elm.Data.Qualifiedness exposing (PossiblyQualified(..))
 import Elm.Data.Type.Concrete as ConcreteType exposing (ConcreteType)
 import Elm.Data.TypeAnnotation exposing (TypeAnnotation)
 import Expect exposing (Expectation)
+import OurExtras.String as String
 import Parser.Advanced as P
 import Stage.Parse.Parser
 import String.Extra as String
@@ -844,7 +845,14 @@ expr =
                         )
                   )
                 , ( "one binding, generous whitespace"
-                  , "let\n  x =\n      1\nin\n  2"
+                  , """
+                    let
+                      x =
+                          1
+                    in
+                      2
+                    """
+                        |> String.unindent
                   , Just
                         (Let
                             { bindings =
@@ -1492,10 +1500,31 @@ typeAnnotation =
                 , ( "no spaces", "x:Int", Just xInt )
                 , ( "multiple spaces before", "x   : Int", Just xInt )
                 , ( "multiple spaces after", "x :   Int", Just xInt )
-                , ( "newline and space before", "x\n  : Int", Just xInt )
-                , ( "newline and space after", "x :\n Int", Just xInt )
+                , ( "newline and space before"
+                  , """
+                    x
+                      : Int
+                    """
+                        |> String.unindent
+                        |> String.removeNewlinesAtEnds
+                  , Just xInt
+                  )
+                , ( "newline and space after"
+                  , """
+                    x :
+                     Int
+                    """
+                        |> String.unindent
+                        |> String.removeNewlinesAtEnds
+                  , Just xInt
+                  )
                 , ( "newline and space near UserDefinedType args"
-                  , "x : Foo.Bar\n a"
+                  , """
+                    x : Foo.Bar
+                     a
+                    """
+                        |> String.unindent
+                        |> String.removeNewlinesAtEnds
                   , Just
                         { varName = "x"
                         , type_ =
@@ -1507,7 +1536,12 @@ typeAnnotation =
                         }
                   )
                 , ( "newline but not a space near UserDefinedType args means the rest is ignored"
-                  , "x : Foo.Bar\na"
+                  , """
+                    x : Foo.Bar
+                    a
+                    """
+                        |> String.unindent
+                        |> String.removeNewlinesAtEnds
                   , Just
                         { varName = "x"
                         , type_ =
@@ -1518,9 +1552,24 @@ typeAnnotation =
                                 }
                         }
                   )
-
-                -- TODO , ( "newline before", "x\n: Int", Nothing )
-                -- TODO , ( "newline after", "x :\nInt", Nothing )
+                , ( "newline but not space before colon fails"
+                  , """
+                    x 
+                    : Int
+                    """
+                        |> String.unindent
+                        |> String.removeNewlinesAtEnds
+                  , Nothing
+                  )
+                , ( "newline but not space after colon fails"
+                  , """
+                    x :
+                    Int
+                    """
+                        |> String.unindent
+                        |> String.removeNewlinesAtEnds
+                  , Nothing
+                  )
                 ]
             )
 
