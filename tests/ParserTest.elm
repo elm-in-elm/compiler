@@ -564,6 +564,24 @@ expr =
                             }
                         )
                   )
+                , ( "multiline"
+                  , """
+                    if 1 then
+                        2
+
+                    else
+                        3
+
+                    """
+                        |> String.unindent
+                  , Just
+                        (If
+                            { test = Int 1
+                            , then_ = Int 2
+                            , else_ = Int 3
+                            }
+                        )
+                  )
                 ]
               )
             , ( "literal int"

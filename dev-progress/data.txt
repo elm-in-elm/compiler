@@ -29,7 +29,7 @@ list literals|complete
 binary operators|inprogress|Multi-line support missing
 lambdas|complete
 function calls|complete
-if...then...else|nearlydone|Multi-line support missing
+if...then...else|complete
 let...in|nearlydone|Multi-line support missing
 case...of|nearlydone|Custom type destructuring missing
 records|nearlydone|Multi-line support missing
