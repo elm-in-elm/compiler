@@ -452,6 +452,22 @@ expr =
                             }
                         )
                   )
+                , ( "multiline"
+                  , """
+                    \\x ->
+                        x + 1
+                    """
+                        |> String.unindent
+                  , Just
+                        (Lambda
+                            { arguments = [ "x" ]
+                            , body =
+                                Plus
+                                    (Argument "x")
+                                    (Int 1)
+                            }
+                        )
+                  )
                 , ( "works with multiple arguments"
                   , "\\x y -> x + y"
                   , Just
@@ -847,9 +863,21 @@ expr =
                   , "[] ++ []"
                   , Just (ListConcat (List []) (List []))
                   )
-                , ( "list concat did not mess up the simple addition"
-                  , "1 + 2"
-                  , Just (Plus (Int 1) (Int 2))
+                , ( "multiline"
+                  , """
+                    [ 1
+                    , 2
+                    , 3
+                    ]
+                    """
+                        |> String.unindent
+                  , Just
+                        (List
+                            [ Int 1
+                            , Int 2
+                            , Int 3
+                            ]
+                        )
                   )
                 ]
               )

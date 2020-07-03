@@ -25,7 +25,7 @@ chars|complete
 strings|complete
 booleans|complete
 variables|complete
-list literals|nearlydone|Multi-line support missing
+list literals|complete
 binary operators|inprogress|Multi-line support missing
 lambdas|complete
 function calls|nearlydone|Multi-line support missing
