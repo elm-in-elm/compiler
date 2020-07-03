@@ -1516,8 +1516,8 @@ recordType config =
             { start = P.Token "{" ExpectingLeftBrace
             , separator = P.Token "," ExpectingComma
             , end = P.Token "}" ExpectingRightBrace
-            , spaces = spacesOnly -- TODO what about definitions of type aliases etc?
-            , item = typeBinding config
+            , spaces = P.spaces
+            , item = onlyIndented (typeBinding config)
             , trailing = P.Forbidden
             }
 

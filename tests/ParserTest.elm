@@ -1315,6 +1315,19 @@ type_ =
                         , ( "y", ConcreteType.String )
                         ]
               )
+            , ( "multiline record"
+              , """
+                { x : Int
+                , y : String 
+                }
+                """
+                    |> String.unindent
+              , ConcreteType.Record <|
+                    Dict.fromList
+                        [ ( "x", ConcreteType.Int )
+                        , ( "y", ConcreteType.String )
+                        ]
+              )
             , ( "parenthesized type"
               , "(Int)"
               , ConcreteType.Int
