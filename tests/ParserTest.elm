@@ -1031,7 +1031,25 @@ expr =
                   )
                 , ( "two fields record"
                   , """{ a = 42, b = "hello" }"""
-                  , Just (Record [ { name = "a", body = Int 42 }, { name = "b", body = String "hello" } ])
+                  , Just
+                        (Record
+                            [ { name = "a", body = Int 42 }
+                            , { name = "b", body = String "hello" }
+                            ]
+                        )
+                  )
+                , ( "multiline"
+                  , """
+                    { a = 42
+                    , b = "hello" 
+                    }
+                    """
+                  , Just
+                        (Record
+                            [ { name = "a", body = Int 42 }
+                            , { name = "b", body = String "hello" }
+                            ]
+                        )
                   )
                 ]
               )

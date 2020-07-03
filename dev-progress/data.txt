@@ -32,7 +32,7 @@ function calls|complete
 if...then...else|complete
 let...in|nearlydone|Multi-line support missing
 case...of|nearlydone|Custom type destructuring missing
-records|nearlydone|Multi-line support missing
+records|complete
 record accessors|notstarted
 record updates|notstarted
 unit|complete

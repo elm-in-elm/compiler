@@ -85,7 +85,7 @@ Please yes! :heart: Feel free to look around the [<kbd>help wanted</kbd>](https:
 | if...then...else  | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark: | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark:   |
 | let..in           | :warning: [[3]](#3)  | :heavy_check_mark:   | :heavy_check_mark:   | :warning: [[3]](#3)  | :heavy_check_mark: | :warning:            | :heavy_check_mark:   | :warning:            |
 | case...of         | :warning: [[4]](#4)  | :x:                  | :x:                  | :warning: [[4]](#4)  | :x:                | :x:                  | :x:                  | :x:                  |
-| records           | :warning: [[3]](#3)  | :heavy_check_mark:   | :heavy_check_mark:   | :warning: [[3]](#3)  | :heavy_check_mark: | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark:   |
+| records           | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark: | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark:   |
 | record accessors  | :x:                  | :x:                  | :x:                  | :x:                  | :x:                | :x:                  | :x:                  | :x:                  |
 | record updates    | :x:                  | :x:                  | :x:                  | :x:                  | :x:                | :x:                  | :x:                  | :x:                  |
 | unit type         | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark: | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark:   |
