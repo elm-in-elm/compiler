@@ -1306,13 +1306,21 @@ type_ =
                     Dict.fromList
                         [ ( "x", ConcreteType.Int ) ]
               )
-            , ( "record with two field"
+            , ( "record with two fields"
               , "{ x : Int, y : String }"
               , ConcreteType.Record <|
                     Dict.fromList
                         [ ( "x", ConcreteType.Int )
                         , ( "y", ConcreteType.String )
                         ]
+              )
+            , ( "parenthesized type"
+              , "(Int)"
+              , ConcreteType.Int
+              )
+            , ( "parenthesized type with whitespace"
+              , "( Int )"
+              , ConcreteType.Int
               )
             ]
         )
@@ -1573,7 +1581,6 @@ typeAnnotation =
                 ]
             )
 
-        -- TODO parentheses behaviour
         -- TODO whitespace behaviour of `->` type (esp. newlines)
         ]
 
