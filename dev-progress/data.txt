@@ -28,7 +28,7 @@ variables|complete
 list literals|complete
 binary operators|inprogress|Multi-line support missing
 lambdas|complete
-function calls|nearlydone|Multi-line support missing
+function calls|complete
 if...then...else|nearlydone|Multi-line support missing
 let...in|nearlydone|Multi-line support missing
 case...of|nearlydone|Custom type destructuring missing

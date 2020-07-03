@@ -523,6 +523,24 @@ expr =
                             }
                         )
                   )
+                , ( "multiline"
+                  , """
+                    fn
+                        arg1
+                        arg2
+                    """
+                        |> String.unindent
+                  , Just
+                        (Call
+                            { fn =
+                                Call
+                                    { fn = Var { name = "fn", qualifiedness = PossiblyQualified Nothing }
+                                    , argument = Var { name = "arg1", qualifiedness = PossiblyQualified Nothing }
+                                    }
+                            , argument = Var { name = "arg2", qualifiedness = PossiblyQualified Nothing }
+                            }
+                        )
+                  )
                 ]
               )
             , ( "if"
