@@ -27,7 +27,7 @@ booleans|complete
 variables|complete
 list literals|nearlydone|Multi-line support missing
 binary operators|inprogress|Multi-line support missing
-lambdas|nearlydone|Multi-line support missing
+lambdas|complete
 function calls|nearlydone|Multi-line support missing
 if...then...else|nearlydone|Multi-line support missing
 let...in|nearlydone|Multi-line support missing

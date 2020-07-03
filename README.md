@@ -80,7 +80,7 @@ Please yes! :heart: Feel free to look around the [<kbd>help wanted</kbd>](https:
 | variables         | :warning:            | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark: | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark:   |
 | lists             | :warning: [[3]](#3)  | :x: [[6]](#f6)       | :warning: [[1]](#f1) | :warning: [[3]](#3)  | :heavy_check_mark: | :heavy_check_mark:   | :x: [[6]](#f6)       | :warning: [[1]](#f1) |
 | binary operators  | :warning: [[3]](#3)  | :heavy_check_mark:   | :heavy_check_mark:   | :warning: [[3]](#3)  | :heavy_check_mark: | :x:                  | :warning:            | :warning:            |
-| lambdas           | :warning: [[3]](#3)  | :heavy_check_mark:   | :heavy_check_mark:   | :warning: [[3]](#3)  | :heavy_check_mark: | :heavy_check_mark:   | :warning:            | :heavy_check_mark:   |
+| lambdas           | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark: | :heavy_check_mark:   | :warning:            | :heavy_check_mark:   |
 | function calls    | :warning: [[3]](#3)  | :heavy_check_mark:   | :heavy_check_mark:   | :warning: [[3]](#3)  | :heavy_check_mark: | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark:   |
 | if...then...else  | :warning: [[3]](#3)  | :heavy_check_mark:   | :heavy_check_mark:   | :warning: [[3]](#3)  | :heavy_check_mark: | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark:   |
 | let..in           | :warning: [[3]](#3)  | :heavy_check_mark:   | :heavy_check_mark:   | :warning: [[3]](#3)  | :heavy_check_mark: | :warning:            | :heavy_check_mark:   | :warning:            |
@@ -98,7 +98,7 @@ Please yes! :heart: Feel free to look around the [<kbd>help wanted</kbd>](https:
 
 1. <span id="f1"></span> Lists' `emit` will have to change a bit: conversion from target platform lists to Elm "custom type" lists is now missing; tracked in [#29](https://github.com/elm-in-elm/compiler/issues/29)
 2. <span id="f2"></span> To be optimized with multiplication, subtraction, division, modulo, exponentiation... maybe more?
-3. <span id="f3"></span> Multi-line lists, binops, lambdas, fn calls, ifs, lets don't work correctly now
+3. <span id="f3"></span> Multi-line lists, binops, fn calls, ifs, lets don't work correctly now
 4. <span id="f4"></span> Custom type patterns aren't supported yet
 5. <span id="f5"></span> To be optimized the same way Ints are
 6. <span id="f6"></span> Not implemented; partially tracked in [#29](https://github.com/elm-in-elm/compiler/issues/29)
