@@ -4,7 +4,11 @@ import Dict exposing (Dict)
 import Elm.AST.Canonical as Canonical
 import Elm.AST.Typed as Typed
 import Elm.Compiler.Error exposing (Error(..), TypeError(..))
-import Elm.Data.Declaration as Declaration exposing (Declaration)
+import Elm.Data.Declaration as Declaration
+    exposing
+        ( Declaration
+        , DeclarationBody(..)
+        )
 import Elm.Data.Located as Located
 import Elm.Data.ModuleName exposing (ModuleName)
 import Elm.Data.Project exposing (Project)
@@ -225,7 +229,7 @@ unifyWithTypeAnnotation aliases unusedId substitutionMap decl =
                 )
     in
     case decl.body of
-        Declaration.Value r ->
+        Value r ->
             case r.typeAnnotation of
                 Just annotationType ->
                     let
@@ -251,10 +255,13 @@ unifyWithTypeAnnotation aliases unusedId substitutionMap decl =
                 Nothing ->
                     default
 
-        Declaration.TypeAlias _ ->
+        TypeAlias _ ->
             default
 
-        Declaration.CustomType _ ->
+        CustomType _ ->
+            default
+
+        Port _ ->
             default
 
 
@@ -264,21 +271,24 @@ throwAwayType decl =
     , name = decl.name
     , body =
         case decl.body of
-            Declaration.Value r ->
-                Declaration.Value
+            Value r ->
+                Value
                     { expression = r.expression
                     , typeAnnotation = Nothing
                     }
 
-            Declaration.TypeAlias r ->
-                Declaration.TypeAlias
+            TypeAlias r ->
+                TypeAlias
                     { parameters = r.parameters
                     , definition = r.definition
                     }
 
-            Declaration.CustomType r ->
-                Declaration.CustomType
+            CustomType r ->
+                CustomType
                     { parameters = r.parameters
                     , constructors = r.constructors
                     }
+
+            Port type_ ->
+                Port type_
     }

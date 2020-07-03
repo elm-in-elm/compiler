@@ -65,6 +65,7 @@ type DeclarationBody expr annotation qualifiedness
         { parameters : List VarName -- on the left side of =
         , constructors : NonEmpty (Constructor qualifiedness)
         }
+    | Port (ConcreteType qualifiedness)
 
 
 type alias TypeAliasDeclaration qualifiedness =
@@ -76,20 +77,19 @@ type alias TypeAliasDeclaration qualifiedness =
 
 {-| Constructor of a custom type.
 
-     type Foo = Bar
-     --> CustomType [] [Constructor "Bar" []]
+type Foo = Bar
+--> CustomType [][Constructor "Bar" []]
 
-     type Foo a = Bar
-     --> CustomType [] [Constructor "Bar" []]
+type Foo a = Bar
+--> CustomType [][Constructor "Bar" []]
 
-     type Foo a = Bar a
-     --> CustomType ["a"] [Constructor "Bar" ["a"]]
+type Foo a = Bar a
+--> CustomType ["a"][Constructor "Bar" ["a"]]
 
-     type Foo = Bar | Baz
-     --> CustomType []
-            [ Constructor "Bar" []
-            , Constructor "Baz" []
-            ]
+type Foo = Bar | Baz
+--> CustomType [][ Constructor "Bar" []
+, Constructor "Baz" []
+]
 
 -}
 type alias Constructor qualifiedness =
@@ -159,6 +159,9 @@ mapBody fnExpr fnAnnotation fnQualifiedness body =
                 , constructors = List.NonEmpty.map (mapConstructor fnQualifiedness) r.constructors
                 }
 
+        Port type_ ->
+            Port (ConcreteType.map fnQualifiedness type_)
+
 
 {-| Switch the Result and the expression inside the declaration body.
 Similar to [`Result.Extra.combine`](/packages/elm-community/result-extra/latest/Result-Extra#combine).
@@ -185,6 +188,9 @@ combineValue body =
 
         CustomType r ->
             Ok <| CustomType r
+
+        Port type_ ->
+            Ok <| Port type_
 
 
 combineType : DeclarationBody a b (Result err c) -> Result err (DeclarationBody a b c)
@@ -216,6 +222,11 @@ combineType body =
                             }
                     )
 
+        Port type_ ->
+            type_
+                |> ConcreteType.combine
+                |> Result.map Port
+
 
 combineTuple3 :
     ( x, y )
@@ -240,6 +251,9 @@ combineTuple3 ( defaultX, defaultY ) body =
         CustomType r ->
             ( CustomType r, defaultX, defaultY )
 
+        Port type_ ->
+            ( Port type_, defaultX, defaultY )
+
 
 getExpr : Declaration expr a b -> Maybe expr
 getExpr decl =
@@ -253,6 +267,9 @@ getExpr decl =
         CustomType _ ->
             Nothing
 
+        Port _ ->
+            Nothing
+
 
 getTypeAlias : Declaration a b qualifiedness -> Maybe (TypeAliasDeclaration qualifiedness)
 getTypeAlias decl =
@@ -264,6 +281,9 @@ getTypeAlias decl =
             Just r
 
         CustomType _ ->
+            Nothing
+
+        Port _ ->
             Nothing
 
 

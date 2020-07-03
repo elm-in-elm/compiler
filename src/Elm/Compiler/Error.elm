@@ -235,7 +235,6 @@ you want, this is only returned from the helpers in Stage.Emit in the compiler C
 type EmitError
     = MainDeclarationNotFound
     | ModuleNotFoundForVar { module_ : ModuleName, name : VarName }
-    | ModuleNotFoundForType { module_ : ModuleName, type_ : VarName }
     | DeclarationNotFound { module_ : ModuleName, name : VarName }
     | EmitCompilerBug String
 
@@ -371,13 +370,6 @@ toString error =
                         ++ module_
                         ++ "` when looking at the usage of variable `"
                         ++ name
-                        ++ "`."
-
-                ModuleNotFoundForType { module_, type_ } ->
-                    "Couldn't find the module `"
-                        ++ module_
-                        ++ "` when looking at the usage of type `"
-                        ++ type_
                         ++ "`."
 
                 DeclarationNotFound { module_, name } ->

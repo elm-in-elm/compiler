@@ -269,34 +269,19 @@ collectDependencies modules remainingDeclarations doneDeclarations doneDependenc
 
             else
                 Dict.get currentDeclaration.module_ modules
-                    |> Maybe.map
+                    |> Result.fromMaybe
+                        (ModuleNotFoundForVar
+                            { module_ = currentDeclaration.module_
+                            , name = currentDeclaration.name
+                            }
+                        )
+                    |> Result.andThen
                         (\currentModule ->
                             findDependencies
                                 modules
                                 currentModule
                                 currentDeclaration.body
                         )
-                    |> Result.fromMaybe
-                        (case currentDeclaration.body of
-                            Value _ ->
-                                ModuleNotFoundForVar
-                                    { module_ = currentDeclaration.module_
-                                    , name = currentDeclaration.name
-                                    }
-
-                            TypeAlias _ ->
-                                ModuleNotFoundForType
-                                    { module_ = currentDeclaration.module_
-                                    , type_ = currentDeclaration.name
-                                    }
-
-                            CustomType _ ->
-                                ModuleNotFoundForType
-                                    { module_ = currentDeclaration.module_
-                                    , type_ = currentDeclaration.name
-                                    }
-                        )
-                    |> Result.join
                     |> Result.andThen
                         (\newDeclarations ->
                             let
@@ -352,6 +337,9 @@ findDependencies modules thisModule declarationBody =
                     )
                 |> Result.combine
                 |> Result.map List.concat
+
+        Port _ ->
+            Ok []
 
 
 findDependenciesOfType :

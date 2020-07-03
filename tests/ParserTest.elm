@@ -5,6 +5,7 @@ module ParserTest exposing
     , imports
     , moduleDeclaration
     , moduleName
+    , portDeclaration
     , typeAliasDeclaration
     , typeAnnotation
     , type_
@@ -1834,5 +1835,75 @@ customTypeDeclaration =
                             )
                         }
                     )
+              )
+            ]
+
+
+portDeclaration : Test
+portDeclaration =
+    let
+        runTest : ( String, String, Maybe ( String, DeclarationBody Frontend.LocatedExpr TypeAnnotation PossiblyQualified ) ) -> Test
+        runTest ( description, input, output ) =
+            test description <|
+                \() ->
+                    input
+                        |> P.run Stage.Parse.Parser.portDeclaration
+                        |> Result.toMaybe
+                        |> Expect.equal output
+
+        outgoing : Maybe ( String, DeclarationBody Frontend.LocatedExpr TypeAnnotation PossiblyQualified )
+        outgoing =
+            Just
+                ( "foo"
+                , Declaration.Port
+                    (ConcreteType.Function
+                        { from = ConcreteType.String
+                        , to =
+                            ConcreteType.UserDefinedType
+                                { qualifiedness = PossiblyQualified Nothing
+                                , name = "Cmd"
+                                , args = [ ConcreteType.TypeVar "msg" ]
+                                }
+                        }
+                    )
+                )
+    in
+    describe "Stage.Parse.Parser.portDeclaration" <|
+        List.map runTest <|
+            [ ( "outgoing"
+              , "port foo : String -> Cmd msg"
+              , outgoing
+              )
+            , ( "incoming"
+              , "port bar : (String -> msg) -> Sub msg"
+              , Just
+                    ( "bar"
+                    , Declaration.Port
+                        (ConcreteType.Function
+                            { from =
+                                ConcreteType.Function
+                                    { from = ConcreteType.String
+                                    , to = ConcreteType.TypeVar "msg"
+                                    }
+                            , to =
+                                ConcreteType.UserDefinedType
+                                    { qualifiedness = PossiblyQualified Nothing
+                                    , name = "Sub"
+                                    , args = [ ConcreteType.TypeVar "msg" ]
+                                    }
+                            }
+                        )
+                    )
+              )
+            , ( "wacky multiline"
+              , """
+                port
+                 foo
+                 :
+                 String -> Cmd msg
+                """
+                    |> String.unindent
+                    |> String.removeNewlinesAtEnds
+              , outgoing
               )
             ]

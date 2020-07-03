@@ -148,3 +148,7 @@ emitDeclaration { module_, name, body } =
 
         CustomType _ ->
             ""
+
+        Port _ ->
+            -- TODO somehow emit ports!
+            ""

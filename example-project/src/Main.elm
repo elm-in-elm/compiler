@@ -1,7 +1,11 @@
-module Main exposing (MyMaybe)
+port module Main exposing (main)
 
 
-type MyMaybe = MyJust Int | Nothing
+port
+ x 
+ :
+ String -> Cmd msg
 
 
-main = 7
+main =
+    7

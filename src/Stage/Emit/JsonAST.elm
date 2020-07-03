@@ -166,7 +166,13 @@ emitDeclaration { module_, name, body } =
                 ]
 
         TypeAlias _ ->
+            -- We don't emit these structures. Typechecking has already been done!
             Encode.string ""
 
         CustomType _ ->
+            -- We don't emit these structures. Typechecking has already been done!
+            Encode.string ""
+
+        Port _ ->
+            -- TODO maybe there's a reasonable way to use ports with the Truffle?
             Encode.string ""

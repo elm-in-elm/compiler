@@ -18,7 +18,7 @@ cli|juststarted|Very rudimentary, almost no customization
 # Parsing
 
 module declarations|nearlydone|Effect modules missing
-port declarations|notstarted
+port declarations|complete
 integers|complete
 floats|complete
 chars|complete

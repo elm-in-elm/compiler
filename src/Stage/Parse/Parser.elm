@@ -8,6 +8,7 @@ module Stage.Parse.Parser exposing
     , moduleDeclaration
     , moduleName
     , module_
+    , portDeclaration
     , spacesOnly
     , typeAliasDeclaration
     , typeAnnotation
@@ -368,6 +369,7 @@ declarationBody =
         [ typeAliasDeclaration
         , customTypeDeclaration
         , valueDeclaration
+        , portDeclaration
         ]
 
 
@@ -909,12 +911,17 @@ binding config =
         |> P.inContext InLetBinding
 
 
+colon : Parser_ ()
+colon =
+    P.symbol (P.Token ":" ExpectingColon)
+
+
 typeBinding : TypeConfig -> Parser_ ( VarName, ConcreteType PossiblyQualified )
 typeBinding config =
     P.succeed Tuple.pair
         |= varName
         |. P.spaces
-        |. P.symbol (P.Token ":" ExpectingColon)
+        |. colon
         |. P.spaces
         |= PP.subExpression 0 config
         |> P.inContext InTypeBinding
@@ -1399,7 +1406,7 @@ typeAnnotation =
     P.succeed TypeAnnotation
         |= varName
         |. P.spaces
-        |. onlyIndented (P.symbol (P.Token ":" ExpectingColon))
+        |. onlyIndented colon
         |. P.spaces
         |= onlyIndented type_
         |> P.inContext InTypeAnnotation
@@ -1729,3 +1736,15 @@ checkNextChar charPredicate problem =
         |= P.getSource
         |= P.getOffset
         |> P.andThen identity
+
+
+portDeclaration : Parser_ ( String, DeclarationBody LocatedExpr TypeAnnotation PossiblyQualified )
+portDeclaration =
+    P.succeed (\name type__ -> ( name, Declaration.Port type__ ))
+        |. P.keyword (P.Token "port" ExpectingPortKeyword)
+        |. P.spaces
+        |= onlyIndented varName
+        |. P.spaces
+        |. onlyIndented colon
+        |. P.spaces
+        |= onlyIndented type_

@@ -449,7 +449,7 @@ desugarTypeAnnotation :
     -> Result DesugarError (Declaration a (ConcreteType Qualified) b)
 desugarTypeAnnotation modules thisModule decl =
     decl
-        |> checkNamesAgree
+        |> checkAndDropTypeAnnotationName
         |> Result.andThen (desugarTypeAnnotationQualifiedness modules thisModule)
 
 
@@ -487,6 +487,9 @@ desugarTypeAnnotationQualifiedness modules thisModule decl =
         CustomType _ ->
             default
 
+        Port _ ->
+            default
+
 
 {-| Check the var name in the type annotation is the same as the one in the declaration:
 
@@ -499,10 +502,10 @@ If they don't match, throw an error:
      y = 123 -- "x" /= "y"
 
 -}
-checkNamesAgree :
+checkAndDropTypeAnnotationName :
     Declaration a TypeAnnotation b
     -> Result DesugarError (Declaration a (ConcreteType PossiblyQualified) b)
-checkNamesAgree decl =
+checkAndDropTypeAnnotationName decl =
     case decl.body of
         Value r ->
             r.typeAnnotation
@@ -534,6 +537,13 @@ checkNamesAgree decl =
                 , body = CustomType r
                 }
 
+        Port type_ ->
+            Ok
+                { module_ = decl.module_
+                , name = decl.name
+                , body = Port type_
+                }
+
 
 throwAwayTypeAnnotationName :
     Declaration a TypeAnnotation b
@@ -554,6 +564,9 @@ throwAwayTypeAnnotationName decl =
 
             CustomType r ->
                 CustomType r
+
+            Port type_ ->
+                Port type_
     }
 
 
