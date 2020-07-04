@@ -1,7 +1,7 @@
 const test = require('ava');
 const {exec} = require('../../setup');
 
-test.failing(
+test(
     'cli: supports multiple source directories',
     exec,
     __dirname,

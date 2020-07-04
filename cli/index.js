@@ -29,10 +29,14 @@ const { registerPort } = require('./utils.js');
   console.log('-- STARTING THE COMPILER --');
   console.log('---------------------------');
 
+  const mainFileContents = await fs.readFile(argv.main, { encoding: 'utf8' });
+  const elmJson = await fs.readFile('./elm.json', { encoding: 'utf8' });
+
   const app = Elm.Main.init({
     flags: {
       mainFilePath: argv.main,
-      elmJson: await fs.readFile(`./elm.json`, { encoding: 'utf8' }),
+      mainFileContents,
+      elmJson,
       outputFormat: argv.output
     }
   });
@@ -44,17 +48,18 @@ const { registerPort } = require('./utils.js');
     process.stderr.write('\n---------------------------');
     process.stderr.write(`\n${string}`);
   });
-  registerPort(app, 'read', async function (filename) {
+  registerPort(app, 'read', async function ({moduleName, filePath}) {
     try {
-      const contents = await fs.readFile(filename, { encoding: 'utf8' });
+      const fileContents = await fs.readFile(filePath, { encoding: 'utf8' });
       app.ports.readSubscription.send({
-        filePath: filename,
-        fileContents: contents,
+        filePath,
+        fileContents,
       });
     } catch (e) {
       if (e.code != null) {
         app.ports.readErrorSubscription.send({
-          filePath: filename,
+          moduleName,
+          filePath,
           errorCode: e.code,
         });
       }

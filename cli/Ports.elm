@@ -11,6 +11,7 @@ port module Ports exposing
 
 import Elm.Data.FileContents exposing (FileContents)
 import Elm.Data.FilePath exposing (FilePath)
+import Elm.Data.ModuleName exposing (ModuleName)
 
 
 port stdout : String -> Cmd msg
@@ -19,16 +20,37 @@ port stdout : String -> Cmd msg
 port stderr : String -> Cmd msg
 
 
-port read : String -> Cmd msg
+port read :
+    { moduleName : ModuleName
+    , filePath : FilePath
+    }
+    -> Cmd msg
 
 
-port readSubscription : ({ filePath : FilePath, fileContents : FileContents } -> msg) -> Sub msg
+port readSubscription :
+    ({ filePath : FilePath
+     , fileContents : FileContents
+     }
+     -> msg
+    )
+    -> Sub msg
 
 
-port readErrorSubscription : ({ filePath : FilePath, errorCode : String } -> msg) -> Sub msg
+port readErrorSubscription :
+    ({ moduleName : ModuleName
+     , filePath : FilePath
+     , errorCode : String
+     }
+     -> msg
+    )
+    -> Sub msg
 
 
-port writeToFile : { filePath : FilePath, fileContents : FileContents } -> Cmd msg
+port writeToFile :
+    { filePath : FilePath
+    , fileContents : FileContents
+    }
+    -> Cmd msg
 
 
 port setExitCode : Int -> Cmd msg
@@ -54,12 +76,29 @@ printlnStderr string =
     stderr (string ++ "\n")
 
 
-readFile : FilePath -> Cmd msg
-readFile filePath =
-    read filePath
+readFile :
+    { moduleName : ModuleName
+    , filePath : FilePath
+    }
+    -> Cmd msg
+readFile r =
+    read r
 
 
-waitForReadFile : ({ errorCode : String, filePath : FilePath } -> msg) -> ({ filePath : FilePath, fileContents : FileContents } -> msg) -> Sub msg
+waitForReadFile :
+    ({ moduleName : ModuleName
+     , filePath : FilePath
+     , errorCode : String
+     }
+     -> msg
+    )
+    ->
+        ({ filePath : FilePath
+         , fileContents : FileContents
+         }
+         -> msg
+        )
+    -> Sub msg
 waitForReadFile toErrorMsg toMsg =
     Sub.batch
         [ readSubscription toMsg

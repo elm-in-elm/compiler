@@ -28,7 +28,7 @@ prepareProjectFields project =
                 { mainFilePath = project.mainFilePath
                 , mainModuleName = project.mainModuleName
                 , elmJson = project.elmJson
-                , sourceDirectory = project.sourceDirectory
+                , sourceDirectories = project.sourceDirectories
                 , declarationList = declarationList
                 }
             )

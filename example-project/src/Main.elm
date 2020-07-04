@@ -1,11 +1,7 @@
-port module Main exposing (main)
+module Main exposing (main)
 
-
-port
- x 
- :
- String -> Cmd msg
+import Lib
 
 
 main =
-    7
+    1 + Lib.x

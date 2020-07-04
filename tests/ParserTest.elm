@@ -60,20 +60,66 @@ moduleDeclaration =
                   , "module  Foo exposing (..)"
                   , Just ( PlainModule, "Foo", ExposingAll )
                   )
+                , ( "doesn't allow a newline between the `module` keyword and the module name"
+                  , """
+                    module
+                    Foo exposing (..)
+                    """
+                        |> String.unindent
+                        |> String.removeNewlinesAtEnds
+                  , Nothing
+                  )
+                , ( "allows a newline and space between the `module` keyword and the module name"
+                  , """
+                    module
+                     Foo exposing (..)
+                    """
+                        |> String.unindent
+                        |> String.removeNewlinesAtEnds
+                  , Just ( PlainModule, "Foo", ExposingAll )
+                  )
                 , ( "allows multiple spaces between the module name and the `exposing` keyword"
                   , "module Foo  exposing (..)"
                   , Just ( PlainModule, "Foo", ExposingAll )
                   )
-                , ( "allows a newline between the module name and the `exposing` keyword"
-                  , "module Foo\nexposing (..)"
+                , ( "doesn't allow a newline between the module name and the `exposing` keyword"
+                  , """
+                    module Foo
+                    exposing (..)
+                    """
+                        |> String.unindent
+                        |> String.removeNewlinesAtEnds
+                  , Nothing
+                  )
+                , ( "allows newline and space between the module name and the `exposing` keyword"
+                  , """
+                    module Foo
+                     exposing (..)
+                    """
+                        |> String.unindent
+                        |> String.removeNewlinesAtEnds
                   , Just ( PlainModule, "Foo", ExposingAll )
                   )
                 , ( "allows multiple spaces between the `exposing` keyword and the exposing list"
                   , "module Foo exposing  (..)"
                   , Just ( PlainModule, "Foo", ExposingAll )
                   )
-                , ( "allows a newline between the `exposing` keyword and the exposing list"
-                  , "module Foo exposing\n(..)"
+                , ( "doesn't allow a newline between the `exposing` keyword and the exposing list"
+                  , """
+                    module Foo exposing
+                    (..)
+                    """
+                        |> String.unindent
+                        |> String.removeNewlinesAtEnds
+                  , Nothing
+                  )
+                , ( "allows a newline and space between the `exposing` keyword and the exposing list"
+                  , """
+                    module Foo exposing
+                     (..)
+                    """
+                        |> String.unindent
+                        |> String.removeNewlinesAtEnds
                   , Just ( PlainModule, "Foo", ExposingAll )
                   )
                 , ( "doesn't work without something after the `exposing` keyword"

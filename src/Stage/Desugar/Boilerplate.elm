@@ -66,7 +66,7 @@ projectOfNewType old modules =
     { elmJson = old.elmJson
     , mainFilePath = old.mainFilePath
     , mainModuleName = old.mainModuleName
-    , sourceDirectory = old.sourceDirectory
+    , sourceDirectories = old.sourceDirectories
 
     -- all that code because of this:
     , modules = modules

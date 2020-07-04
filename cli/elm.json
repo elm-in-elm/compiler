@@ -17,6 +17,7 @@
             "elm-community/graph": "6.0.0",
             "elm-community/maybe-extra": "5.2.0",
             "elm-community/result-extra": "2.4.0",
+            "elm-community/string-extra": "4.0.1",
             "erlandsona/assoc-set": "1.1.0",
             "pzp1997/assoc-list": "1.0.0",
             "rtfeldman/elm-hex": "1.0.0",
@@ -24,6 +25,7 @@
         },
         "indirect": {
             "avh4/elm-fifo": "1.0.4",
+            "elm/regex": "1.0.0",
             "elm-community/intdict": "3.0.0"
         }
     },

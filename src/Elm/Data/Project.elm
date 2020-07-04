@@ -19,13 +19,10 @@ Eg. on the frontend we have `program : Modules Frontend.Expr`
 and on the backend we have `graph : Backend.Graph`.
 -}
 type alias Project projectFields =
-    {- TODO holds the source directory twice - once in sourceDirectory and once
-       in the parsed elm.json info in elmJson?
-    -}
     -- TODO mainFilePath and mainModuleName should live in CLI instead of here?
     { projectFields
-        | elmJson : Elm.Project.Project
+        | elmJson : Elm.Project.Project -- TODO perhaps we can delete it
         , mainFilePath : FilePath
         , mainModuleName : ModuleName
-        , sourceDirectory : FilePath
+        , sourceDirectories : List FilePath
     }

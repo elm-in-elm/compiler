@@ -34,15 +34,20 @@ Returns `Nothing` if the source directory doesn't agree with the file path.
 -}
 expectedModuleName : { sourceDirectory : String, filePath : String } -> Maybe ModuleName
 expectedModuleName { sourceDirectory, filePath } =
-    {- TODO Doesn't use the FilePath type to avoid cycles.
-       Maybe we can prevent it with a different module structure?
-    -}
-    -- TODO Doesn't work with multiple source directories!
     if String.startsWith sourceDirectory filePath then
         let
             lengthToDrop : Int
             lengthToDrop =
-                -- don't forget the `/` which isn't part of the sourceDirectory but is in the filePath
+                {- sourceDirectory has been normalized to not end with `/`.
+                   filePath ends with a file, so there definitely is a `/`.
+
+                   We need to drop everything before the filename, so that's
+                   length of the source directory + 1 for the extra slash.
+
+                      "src/Foo.elm"
+                       ^^^^
+
+                -}
                 String.length sourceDirectory + 1
         in
         filePath

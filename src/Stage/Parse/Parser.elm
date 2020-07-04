@@ -104,6 +104,7 @@ module_ filePath =
             }
         )
         |= moduleDeclaration
+        |. P.spaces
         -- TODO what about module doc comment? is it before the imports or after?
         |= imports
         |= declarations
@@ -120,14 +121,12 @@ moduleDeclaration =
             )
         )
         |= moduleType
-        |. spacesOnly
-        -- TODO check the assumption... does Elm allow newlines there?
-        |= moduleName
         |. P.spaces
-        |. P.keyword (P.Token "exposing" ExpectingExposingKeyword)
+        |= onlyIndented moduleName
         |. P.spaces
-        |= exposingList
-        |. newlines
+        |. onlyIndented (P.keyword (P.Token "exposing" ExpectingExposingKeyword))
+        |. P.spaces
+        |= onlyIndented exposingList
 
 
 imports : Parser_ (Dict ModuleName Import)
@@ -148,7 +147,7 @@ import_ =
             , exposing_ = exposing_
             }
         )
-        |. P.keyword (P.Token "import" ExpectingImportKeyword)
+        |. onlyNonIndented (P.keyword (P.Token "import" ExpectingImportKeyword))
         |. spacesOnly
         -- TODO check expectation ... what about newlines here?
         |= moduleName
@@ -1336,6 +1335,15 @@ onlyIndented : Parser_ a -> Parser_ a
 onlyIndented parser =
     P.succeed identity
         |. checkIndent (\_ column -> column > 1) ExpectingIndentation
+        |= parser
+
+
+{-| Fail if current column != 1 (these are 1-based, so 1 is leftmost.)
+-}
+onlyNonIndented : Parser_ a -> Parser_ a
+onlyNonIndented parser =
+    P.succeed identity
+        |. checkIndent (\_ column -> column == 1) ExpectingNoIndentation
         |= parser
 
 
