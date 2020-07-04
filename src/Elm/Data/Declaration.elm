@@ -77,19 +77,20 @@ type alias TypeAliasDeclaration qualifiedness =
 
 {-| Constructor of a custom type.
 
-type Foo = Bar
---> CustomType [][Constructor "Bar" []]
+    type Foo = Bar
+    --> CustomType [] [ Constructor "Bar" [] ]
 
-type Foo a = Bar
---> CustomType [][Constructor "Bar" []]
+    type Foo a = Bar
+    --> CustomType [] [ Constructor "Bar" [] ]
 
-type Foo a = Bar a
---> CustomType ["a"][Constructor "Bar" ["a"]]
+    type Foo a = Bar a
+    --> CustomType [ "a" ] [ Constructor "Bar" [ "a" ] ]
 
-type Foo = Bar | Baz
---> CustomType [][ Constructor "Bar" []
-, Constructor "Baz" []
-]
+    type Foo = Bar | Baz
+    --> CustomType []
+            [ Constructor "Bar" []
+            , Constructor "Baz" []
+            ]
 
 -}
 type alias Constructor qualifiedness =
