@@ -911,6 +911,35 @@ expr =
                             }
                         )
                   )
+                , ( "doesn't allow bindings on the same indentation level as `let`"
+                  , """
+                    let
+                    x = 1
+                    in
+                      2
+                    """
+                        |> String.unindent
+                  , Nothing
+                  )
+                , ( "allows result expr on the same indentation level as `let`"
+                  , """
+                    let
+                     x = 1
+                    in
+                    2
+                    """
+                        |> String.unindent
+                  , Just
+                        (Let
+                            { bindings =
+                                [ { name = "x"
+                                  , body = Int 1
+                                  }
+                                ]
+                            , body = Int 2
+                            }
+                        )
+                  )
                 ]
               )
             , ( "list"

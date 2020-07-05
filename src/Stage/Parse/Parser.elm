@@ -104,7 +104,7 @@ module_ filePath =
             }
         )
         |= moduleDeclaration
-        |. P.spaces
+        |. ignorables
         -- TODO what about module doc comment? is it before the imports or after?
         |= imports
         |= declarations
@@ -121,12 +121,12 @@ moduleDeclaration =
             )
         )
         |= moduleType
-        |. P.spaces
-        |= onlyIndented moduleName
-        |. P.spaces
-        |. onlyIndented (P.keyword (P.Token "exposing" ExpectingExposingKeyword))
-        |. P.spaces
-        |= onlyIndented exposingList
+        |. ignorables
+        |= notAtBeginningOfLine moduleName
+        |. ignorables
+        |. notAtBeginningOfLine (P.keyword (P.Token "exposing" ExpectingExposingKeyword))
+        |. ignorables
+        |= notAtBeginningOfLine exposingList
 
 
 imports : Parser_ (Dict ModuleName Import)
@@ -135,7 +135,7 @@ imports =
         (List.map (\dep -> ( dep.moduleName, dep ))
             >> Dict.fromList
         )
-        |= oneOrMoreWith P.spaces import_
+        |= oneOrMoreWith ignorables import_
 
 
 import_ : Parser_ Import
@@ -147,15 +147,15 @@ import_ =
             , exposing_ = exposing_
             }
         )
-        |. onlyNonIndented (P.keyword (P.Token "import" ExpectingImportKeyword))
+        |. onlyAtBeginningOfLine (P.keyword (P.Token "import" ExpectingImportKeyword))
         |. spacesOnly
         -- TODO check expectation ... what about newlines here?
         |= moduleName
-        |. P.spaces
+        |. ignorables
         |= P.oneOf
             [ P.succeed Just
                 |. P.keyword (P.Token "as" ExpectingAsKeyword)
-                |. P.spaces
+                |. ignorables
                 |= moduleNameWithoutDots
             , P.succeed Nothing
             ]
@@ -163,13 +163,13 @@ import_ =
             [ -- not sure if this is idiomatic
               P.symbol (P.Token "." ExpectingModuleNameWithoutDots)
                 |. P.problem ExpectingModuleNameWithoutDots
-            , P.spaces
+            , ignorables
             ]
-        |. P.spaces
+        |. ignorables
         |= P.oneOf
             [ P.succeed Just
                 |. P.keyword (P.Token "exposing" ExpectingExposingKeyword)
-                |. P.spaces
+                |. ignorables
                 |= exposingList
             , P.succeed Nothing
             ]
@@ -257,7 +257,7 @@ exposingSome =
         { start = P.Token "(" ExpectingLeftParen
         , separator = P.Token "," ExpectingComma
         , end = P.Token ")" ExpectingRightParen
-        , spaces = P.spaces
+        , spaces = ignorables
         , item = exposedItem
         , trailing = P.Forbidden
         }
@@ -342,7 +342,7 @@ declarations =
             P.oneOf
                 [ P.succeed (\decl -> P.Loop (decl :: decls))
                     |= declaration
-                    |. P.spaces
+                    |. ignorables
                 , P.end ExpectingEnd
                     |> P.map (\() -> P.Done (List.reverse decls))
                 ]
@@ -389,14 +389,14 @@ valueDeclaration =
             [ P.backtrackable
                 (P.succeed Just
                     |= typeAnnotation
-                    |. P.spaces
+                    |. ignorables
                 )
             , P.succeed Nothing
             ]
         |= varName
-        |. P.spaces
+        |. ignorables
         |. P.symbol (P.Token "=" ExpectingEqualsSign)
-        |. P.spaces
+        |. ignorables
         |= expr
 
 
@@ -422,14 +422,14 @@ typeAliasDeclaration =
             )
         )
         |. P.keyword (P.Token "type alias" ExpectingTypeAlias)
-        |. P.spaces
+        |. ignorables
         |= moduleNameWithoutDots
         |. P.symbol (P.Token " " ExpectingSpace)
-        |. P.spaces
-        |= zeroOrMoreWith P.spaces varName
-        |. P.spaces
+        |. ignorables
+        |= zeroOrMoreWith ignorables varName
+        |. ignorables
         |. P.symbol (P.Token "=" ExpectingEqualsSign)
-        |. P.spaces
+        |. ignorables
         |= type_
         |> P.inContext InTypeAlias
 
@@ -458,18 +458,18 @@ customTypeDeclaration =
             )
         )
         |. P.keyword (P.Token "type" ExpectingTypeAlias)
-        |. P.spaces
+        |. ignorables
         |= moduleNameWithoutDots
         |. P.oneOf
             [ P.symbol (P.Token " " ExpectingSpace)
             , P.symbol (P.Token "\n" ExpectingSpace)
             ]
-        |. P.spaces
-        |= zeroOrMoreWith P.spaces varName
-        |. P.spaces
+        |. ignorables
+        |= zeroOrMoreWith ignorables varName
+        |. ignorables
         |. P.symbol (P.Token "=" ExpectingEqualsSign)
-        |. P.spaces
-        |= onlyIndented constructors
+        |. ignorables
+        |= notAtBeginningOfLine constructors
         |> P.inContext InCustomType
 
 
@@ -478,12 +478,12 @@ constructors =
     let
         subsequentConstructorsLoop reversedCtors =
             P.succeed (\x -> x)
-                |. P.spaces
+                |. ignorables
                 |= P.oneOf
                     [ P.succeed (\newCtor -> P.Loop (newCtor :: reversedCtors))
-                        |. onlyIndented (P.token (P.Token "|" ExpectingPipe))
-                        |. P.spaces
-                        |= onlyIndented constructor
+                        |. notAtBeginningOfLine (P.token (P.Token "|" ExpectingPipe))
+                        |. ignorables
+                        |= notAtBeginningOfLine constructor
                     , P.succeed (P.Done (List.reverse reversedCtors))
                     ]
     in
@@ -500,8 +500,8 @@ constructor : Parser_ (Constructor PossiblyQualified)
 constructor =
     P.succeed Declaration.Constructor
         |= moduleNameWithoutDots
-        |. P.spaces
-        |= oneOrMoreWith P.spaces (onlyIndented type_)
+        |. ignorables
+        |= oneOrMoreWith ignorables (notAtBeginningOfLine type_)
 
 
 expr : Parser_ LocatedExpr
@@ -537,7 +537,7 @@ expr =
             , PP.infixLeft 1 (P.symbol (P.Token "+" ExpectingPlusOperator)) (Located.merge Plus)
             , PP.infixRight 1 (P.symbol (P.Token "::" ExpectingConsOperator)) (Located.merge Cons)
             ]
-        , spaces = P.spaces
+        , spaces = ignorables
         }
         |> P.inContext InExpr
 
@@ -852,7 +852,7 @@ lambda config =
         |= oneOrMoreWith spacesOnly varName
         |. spacesOnly
         |. P.symbol (P.Token "->" ExpectingRightArrow)
-        |. P.spaces
+        |. ignorables
         |= PP.subExpression 0 config
         |> P.inContext InLambda
         |> located
@@ -878,34 +878,52 @@ if_ config =
         |> located
 
 
+rememberIndentation : Parser_ a -> Parser_ a
+rememberIndentation parser =
+    P.getCol
+        |> P.andThen (\col -> P.withIndent col parser)
+
+
 let_ : ExprConfig -> Parser_ LocatedExpr
 let_ config =
-    P.succeed
-        (\binding_ body ->
-            Frontend.Let
-                -- TODO multiple let bindings
-                { bindings = [ binding_ ]
-                , body = body
-                }
+    rememberIndentation
+        (P.succeed
+            (\binding_ body ->
+                Frontend.Let
+                    -- TODO multiple let bindings
+                    { bindings = [ binding_ ]
+                    , body = body
+                    }
+            )
+            |. P.keyword (P.Token "let" ExpectingLet)
+            |. ignorables
+            |= binding config
+            |. ignorables
+            |. P.keyword (P.Token "in" ExpectingIn)
+            |. ignorables
+            |= PP.subExpression 0 config
+            |> P.inContext InLet
+            |> located
         )
-        |. P.keyword (P.Token "let" ExpectingLet)
-        |. P.spaces
-        |= binding config
-        |. P.spaces
-        |. P.keyword (P.Token "in" ExpectingIn)
-        |. P.spaces
-        |= PP.subExpression 0 config
-        |> P.inContext InLet
-        |> located
 
 
 binding : ExprConfig -> Parser_ (Binding LocatedExpr)
 binding config =
     P.succeed Binding
+        {- Not allowed:
+
+               let
+               x = 1
+               in
+                   2
+
+           The `x` must be more indented than the `let`.
+        -}
+        |. checkIndent (<) ExpectingIndentation
         |= varName
-        |. P.spaces
+        |. ignorables
         |. P.symbol (P.Token "=" ExpectingEqualsSign)
-        |. P.spaces
+        |. ignorables
         |= PP.subExpression 0 config
         |> P.inContext InLetBinding
 
@@ -919,9 +937,9 @@ typeBinding : TypeConfig -> Parser_ ( VarName, ConcreteType PossiblyQualified )
 typeBinding config =
     P.succeed Tuple.pair
         |= varName
-        |. P.spaces
+        |. ignorables
         |. colon
-        |. P.spaces
+        |. ignorables
         |= PP.subExpression 0 config
         |> P.inContext InTypeBinding
 
@@ -972,13 +990,13 @@ tuple config =
     P.backtrackable
         (P.succeed Tuple
             |. P.symbol (P.Token "(" ExpectingLeftParen)
-            |. P.spaces
+            |. ignorables
             |= PP.subExpression 0 config
-            |. P.spaces
+            |. ignorables
             |. P.symbol (P.Token "," ExpectingTupleSeparator)
-            |. P.spaces
+            |. ignorables
             |= PP.subExpression 0 config
-            |. P.spaces
+            |. ignorables
             |. P.symbol (P.Token ")" ExpectingRightParen)
             |> P.inContext InTuple
         )
@@ -990,17 +1008,17 @@ tuple3 config =
     P.backtrackable
         (P.succeed Frontend.Tuple3
             |. P.symbol (P.Token "(" ExpectingLeftParen)
-            |. P.spaces
+            |. ignorables
             |= PP.subExpression 0 config
-            |. P.spaces
+            |. ignorables
             |. P.symbol (P.Token "," ExpectingTupleSeparator)
-            |. P.spaces
+            |. ignorables
             |= PP.subExpression 0 config
-            |. P.spaces
+            |. ignorables
             |. P.symbol (P.Token "," ExpectingTupleSeparator)
-            |. P.spaces
+            |. ignorables
             |= PP.subExpression 0 config
-            |. P.spaces
+            |. ignorables
             |. P.symbol (P.Token ")" ExpectingRightParen)
             |> P.inContext InTuple3
         )
@@ -1331,8 +1349,8 @@ checkIndent check error =
 
 {-| Fail if current column <= 1 (these are 1-based, so 1 is leftmost.)
 -}
-onlyIndented : Parser_ a -> Parser_ a
-onlyIndented parser =
+notAtBeginningOfLine : Parser_ a -> Parser_ a
+notAtBeginningOfLine parser =
     P.succeed identity
         |. checkIndent (\_ column -> column > 1) ExpectingIndentation
         |= parser
@@ -1340,8 +1358,8 @@ onlyIndented parser =
 
 {-| Fail if current column != 1 (these are 1-based, so 1 is leftmost.)
 -}
-onlyNonIndented : Parser_ a -> Parser_ a
-onlyNonIndented parser =
+onlyAtBeginningOfLine : Parser_ a -> Parser_ a
+onlyAtBeginningOfLine parser =
     P.succeed identity
         |. checkIndent (\_ column -> column == 1) ExpectingNoIndentation
         |= parser
@@ -1413,10 +1431,10 @@ typeAnnotation : Parser_ TypeAnnotation
 typeAnnotation =
     P.succeed TypeAnnotation
         |= varName
-        |. P.spaces
-        |. onlyIndented colon
-        |. P.spaces
-        |= onlyIndented type_
+        |. ignorables
+        |. notAtBeginningOfLine colon
+        |. ignorables
+        |= notAtBeginningOfLine type_
         |> P.inContext InTypeAnnotation
 
 
@@ -1443,7 +1461,7 @@ type_ =
                 (P.token (P.Token "->" ExpectingRightArrow))
                 (\from to -> ConcreteType.Function { from = from, to = to })
             ]
-        , spaces = P.spaces
+        , spaces = ignorables
         }
         |> P.inContext InType
 
@@ -1524,8 +1542,8 @@ recordType config =
             { start = P.Token "{" ExpectingLeftBrace
             , separator = P.Token "," ExpectingComma
             , end = P.Token "}" ExpectingRightBrace
-            , spaces = P.spaces
-            , item = onlyIndented (typeBinding config)
+            , spaces = ignorables
+            , item = notAtBeginningOfLine (typeBinding config)
             , trailing = P.Forbidden
             }
 
@@ -1577,7 +1595,7 @@ userDefinedType config =
             , {- Here, the next thing to parse isn't the `x = ...` declaration
                  but a continuation of the type annotation - custom type args!
               -}
-              zeroOrMoreWith P.spaces (onlyIndented (PP.subExpression 0 config))
+              zeroOrMoreWith ignorables (notAtBeginningOfLine (PP.subExpression 0 config))
             ]
         |> P.inContext InUserDefinedType
 
@@ -1750,9 +1768,9 @@ portDeclaration : Parser_ ( String, DeclarationBody LocatedExpr TypeAnnotation P
 portDeclaration =
     P.succeed (\name type__ -> ( name, Declaration.Port type__ ))
         |. P.keyword (P.Token "port" ExpectingPortKeyword)
-        |. P.spaces
-        |= onlyIndented varName
-        |. P.spaces
-        |. onlyIndented colon
-        |. P.spaces
-        |= onlyIndented type_
+        |. ignorables
+        |= notAtBeginningOfLine varName
+        |. ignorables
+        |. notAtBeginningOfLine colon
+        |. ignorables
+        |= notAtBeginningOfLine type_
