@@ -228,6 +228,23 @@ javascript =
                             }
                       , "((() => {const x = 2; const y = 3; return 1;})())"
                       )
+                    , ( "one binding used in the body"
+                      , Let
+                            { bindings =
+                                Dict.singleton
+                                    "x"
+                                    { name = "x"
+                                    , body = typedInt 2
+                                    }
+                            , body =
+                                typed
+                                    (Plus
+                                        (typedInt 1)
+                                        (typed (Argument "x"))
+                                    )
+                            }
+                      , "((() => {const x = 2; return (1 + x);})())"
+                      )
                     ]
                 )
             , describe "Tuple"

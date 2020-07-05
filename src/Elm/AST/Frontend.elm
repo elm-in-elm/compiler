@@ -58,7 +58,8 @@ type Expr
     | String String
     | Bool Bool
     | Var { qualifiedness : PossiblyQualified, name : VarName }
-    | Argument VarName
+    | -- Both lambda arguments and let..in bindings
+      Argument VarName
     | Plus LocatedExpr LocatedExpr
     | Cons LocatedExpr LocatedExpr
     | ListConcat LocatedExpr LocatedExpr

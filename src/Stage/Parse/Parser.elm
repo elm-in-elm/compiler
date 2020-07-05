@@ -26,7 +26,7 @@ import Elm.Compiler.Error
         , ParseError(..)
         , ParseProblem(..)
         )
-import Elm.Data.Binding exposing (Binding)
+import Elm.Data.Binding as Binding exposing (Binding)
 import Elm.Data.Declaration as Declaration
     exposing
         ( Constructor
@@ -845,7 +845,11 @@ lambda config =
 
                        TODO add a fuzz test for this invariant?
                     -}
-                    Located.map (Frontend.transform (promoteArguments arguments)) body
+                    body
+                        |> Located.map
+                            (Frontend.transform
+                                (promoteArguments arguments)
+                            )
                 }
         )
         |. P.symbol (P.Token "\\" ExpectingBackslash)
@@ -889,9 +893,27 @@ let_ config =
     rememberIndentation
         (P.succeed
             (\bindings body ->
+                let
+                    bindingNames =
+                        List.map .name bindings
+                in
                 Frontend.Let
-                    { bindings = bindings
-                    , body = body
+                    { bindings =
+                        bindings
+                            |> List.map
+                                (Binding.map
+                                    (Located.map
+                                        (Frontend.transform
+                                            (promoteArguments bindingNames)
+                                        )
+                                    )
+                                )
+                    , body =
+                        body
+                            |> Located.map
+                                (Frontend.transform
+                                    (promoteArguments bindingNames)
+                                )
                     }
             )
             |. P.keyword (P.Token "let" ExpectingLet)
