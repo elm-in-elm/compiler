@@ -981,6 +981,28 @@ expr =
                         |> String.unindent
                   , Nothing
                   )
+                , ( "one binding that's used in the body"
+                  , """
+                    let
+                      x = 2
+                    in
+                      1 + x
+                    """
+                        |> String.unindent
+                  , Just
+                        (Let
+                            { bindings =
+                                [ { name = "x"
+                                  , body = Int 2
+                                  }
+                                ]
+                            , body =
+                                Plus
+                                    (Int 1)
+                                    (Argument "x")
+                            }
+                        )
+                  )
                 ]
               )
             , ( "list"
