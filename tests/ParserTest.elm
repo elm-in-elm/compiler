@@ -38,8 +38,7 @@ moduleDeclaration =
                 \() ->
                     input
                         |> P.run Stage.Parse.Parser.moduleDeclaration
-                        |> Result.toMaybe
-                        |> Expect.equal output
+                        |> expectEqualParseResult input output
     in
     describe "Stage.Parse.Parser.moduleDeclaration"
         [ describe "general"
@@ -155,8 +154,7 @@ exposingList =
                 \() ->
                     input
                         |> P.run Stage.Parse.Parser.exposingList
-                        |> Result.toMaybe
-                        |> Expect.equal output
+                        |> expectEqualParseResult input output
     in
     describe "Stage.Parse.Parser.exposingList"
         [ describe "exposing all"
@@ -265,8 +263,7 @@ imports =
                 \() ->
                     input
                         |> P.run Stage.Parse.Parser.imports
-                        |> Result.toMaybe
-                        |> Expect.equal output
+                        |> expectEqualParseResult input output
     in
     describe "Stage.Parse.Parser.imports"
         [ describe "general"
@@ -422,8 +419,7 @@ moduleName =
                 \() ->
                     input
                         |> P.run Stage.Parse.Parser.moduleName
-                        |> Result.toMaybe
-                        |> Expect.equal output
+                        |> expectEqualParseResult input output
     in
     describe "Stage.Parse.Parser.moduleName"
         (List.map runTest
@@ -1283,8 +1279,7 @@ type_ =
                 \() ->
                     input
                         |> P.run Stage.Parse.Parser.type_
-                        |> Result.toMaybe
-                        |> Expect.equal (Just output)
+                        |> expectEqualParseResult input (Just output)
     in
     describe "Stage.Parse.Parser.type_"
         (List.map runTest
@@ -1424,8 +1419,7 @@ typeAnnotation =
                 \() ->
                     input
                         |> P.run Stage.Parse.Parser.typeAnnotation
-                        |> Result.toMaybe
-                        |> Expect.equal output
+                        |> expectEqualParseResult input output
 
         xInt : TypeAnnotation
         xInt =
@@ -1683,8 +1677,7 @@ valueDeclaration =
                 \() ->
                     input
                         |> P.run Stage.Parse.Parser.valueDeclaration
-                        |> Result.toMaybe
-                        |> Maybe.map
+                        |> Result.map
                             (Tuple.mapSecond
                                 (Declaration.mapBody
                                     Frontend.unwrap
@@ -1692,7 +1685,7 @@ valueDeclaration =
                                     identity
                                 )
                             )
-                        |> Expect.equal output
+                        |> expectEqualParseResult input output
     in
     describe "Stage.Parse.Parser.valueDeclaration" <|
         List.map runTest <|
@@ -1732,8 +1725,7 @@ typeAliasDeclaration =
                 \() ->
                     input
                         |> P.run Stage.Parse.Parser.typeAliasDeclaration
-                        |> Result.toMaybe
-                        |> Expect.equal output
+                        |> expectEqualParseResult input output
     in
     describe "Stage.Parse.Parser.typeAliasDeclaration" <|
         List.map runTest <|
@@ -1817,8 +1809,7 @@ customTypeDeclaration =
                 \() ->
                     input
                         |> P.run Stage.Parse.Parser.customTypeDeclaration
-                        |> Result.toMaybe
-                        |> Expect.equal output
+                        |> expectEqualParseResult input output
     in
     describe "Stage.Parse.Parser.customTypeDeclaration" <|
         List.map runTest <|
@@ -1936,8 +1927,7 @@ portDeclaration =
                 \() ->
                     input
                         |> P.run Stage.Parse.Parser.portDeclaration
-                        |> Result.toMaybe
-                        |> Expect.equal output
+                        |> expectEqualParseResult input output
 
         outgoing : Maybe ( String, DeclarationBody Frontend.LocatedExpr TypeAnnotation PossiblyQualified )
         outgoing =
