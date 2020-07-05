@@ -888,16 +888,32 @@ let_ : ExprConfig -> Parser_ LocatedExpr
 let_ config =
     rememberIndentation
         (P.succeed
-            (\binding_ body ->
+            (\bindings body ->
                 Frontend.Let
-                    -- TODO multiple let bindings
-                    { bindings = [ binding_ ]
+                    { bindings = bindings
                     , body = body
                     }
             )
             |. P.keyword (P.Token "let" ExpectingLet)
             |. ignorables
-            |= binding config
+            {- Not allowed:
+
+                   let
+                   x = 1
+                   in
+                       2
+
+               The `x` must be more indented than the `let`.
+               This `checkIndent` checks that.
+            -}
+            |. checkIndent (<) ExpectingIndentation
+            |= rememberIndentation
+                {- Here's another indentation trick for `let`:
+                   All the bindings have to start at the same column.
+                   So we remember the indentation here and then check it in the
+                   `binding` parser.
+                -}
+                (oneOrMoreWith ignorables (letBinding config))
             |. ignorables
             |. P.keyword (P.Token "in" ExpectingIn)
             |. ignorables
@@ -907,25 +923,27 @@ let_ config =
         )
 
 
-binding : ExprConfig -> Parser_ (Binding LocatedExpr)
-binding config =
+letBinding : ExprConfig -> Parser_ (Binding LocatedExpr)
+letBinding config =
     P.succeed Binding
-        {- Not allowed:
+        |. checkIndent (==) ExpectingIndentation
+        |= varName
+        |. ignorables
+        |. notAtBeginningOfLine (P.symbol (P.Token "=" ExpectingEqualsSign))
+        |. ignorables
+        |= notAtBeginningOfLine (PP.subExpression 0 config)
+        |> P.inContext InLetBinding
 
-               let
-               x = 1
-               in
-                   2
 
-           The `x` must be more indented than the `let`.
-        -}
-        |. checkIndent (<) ExpectingIndentation
+recordBinding : ExprConfig -> Parser_ (Binding LocatedExpr)
+recordBinding config =
+    P.succeed Binding
         |= varName
         |. ignorables
         |. P.symbol (P.Token "=" ExpectingEqualsSign)
         |. ignorables
         |= PP.subExpression 0 config
-        |> P.inContext InLetBinding
+        |> P.inContext InRecordBinding
 
 
 colon : Parser_ ()
@@ -1033,7 +1051,7 @@ record config =
             , separator = P.Token "," ExpectingComma
             , end = P.Token "}" ExpectingRightBrace
             , spaces = spacesOnly
-            , item = binding config
+            , item = recordBinding config
             , trailing = P.Forbidden
             }
         |> P.inContext InRecord

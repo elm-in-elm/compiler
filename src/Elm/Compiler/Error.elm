@@ -68,6 +68,7 @@ type ParseContext
     | InIf
     | InLet
     | InLetBinding
+    | InRecordBinding
     | InLambda
     | InList
     | InUnit

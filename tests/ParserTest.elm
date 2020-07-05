@@ -936,6 +936,51 @@ expr =
                             }
                         )
                   )
+                , ( "multiple bindings"
+                  , """
+                    let
+                      x = 1
+                      y = 2
+                    in
+                    3
+                    """
+                        |> String.unindent
+                  , Just
+                        (Let
+                            { bindings =
+                                [ { name = "x"
+                                  , body = Int 1
+                                  }
+                                , { name = "y"
+                                  , body = Int 2
+                                  }
+                                ]
+                            , body = Int 3
+                            }
+                        )
+                  )
+                , ( "doesn't allow bindings to have different indentation from each other"
+                  , """
+                    let
+                      x = 1
+                       y = 2
+                    in
+                      3
+                    """
+                        |> String.unindent
+                  , Nothing
+                  )
+                , ( "doesn't allow bindings to have different indentation from each other - the other way"
+                  , """
+                    let
+                       x = 1
+                      y = 2
+                    in
+                      3
+                    """
+                        |> String.unindent
+                  , Nothing
+                  )
                 ]
               )
             , ( "list"
