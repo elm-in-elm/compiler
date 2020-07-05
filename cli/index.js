@@ -66,11 +66,13 @@ const { registerPort } = require('./utils.js');
     }
   });
   registerPort(app, 'writeToFile', async function ({ filePath, fileContents }) {
-    console.log('---------------------------');
-    console.log('-- WRITING TO FS ----------');
-    console.log('---------------------------');
-    console.log(fileContents);
-    await fs.writeFile(`${filePath}`, fileContents);
+    setTimeout(() => {
+      process.stdout.write('---------------------------\n');
+      process.stdout.write('-- WRITING TO FS ----------\n');
+      process.stdout.write('---------------------------\n');
+      process.stdout.write(`${fileContents}\n`);
+    }, 0);
+    await fs.writeFile(filePath, fileContents);
   });
   registerPort(app, 'setExitCode', code => {
     process.exitCode = code;
