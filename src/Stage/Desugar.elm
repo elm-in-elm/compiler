@@ -54,7 +54,7 @@ desugarExpr :
     -> Result DesugarError Canonical.LocatedExpr
 desugarExpr modules thisModule locatedExpr =
     let
-        recurse =
+        f =
             desugarExpr modules thisModule
 
         return expr =
@@ -118,13 +118,13 @@ desugarExpr modules thisModule locatedExpr =
 
         Frontend.Plus e1 e2 ->
             map2 Canonical.Plus
-                (recurse e1)
-                (recurse e2)
+                (f e1)
+                (f e2)
 
         Frontend.Cons e1 e2 ->
             map2 Canonical.Cons
-                (recurse e1)
-                (recurse e2)
+                (f e1)
+                (f e2)
 
         Frontend.ListConcat e1 e2 ->
             let
@@ -144,10 +144,10 @@ desugarExpr modules thisModule locatedExpr =
                 expr =
                     Frontend.Call { fn = firstCall, argument = e2 } |> Located.located region
             in
-            recurse expr
+            f expr
 
         Frontend.Lambda { arguments, body } ->
-            recurse body
+            f body
                 |> Result.map (curryLambda locatedExpr arguments)
 
         Frontend.Call { fn, argument } ->
@@ -158,8 +158,8 @@ desugarExpr modules thisModule locatedExpr =
                         , argument = argument_
                         }
                 )
-                (recurse fn)
-                (recurse argument)
+                (f fn)
+                (f argument)
 
         Frontend.If { test, then_, else_ } ->
             map3
@@ -170,9 +170,9 @@ desugarExpr modules thisModule locatedExpr =
                         , else_ = else__
                         }
                 )
-                (recurse test)
-                (recurse then_)
-                (recurse else_)
+                (f test)
+                (f then_)
+                (f else_)
 
         Frontend.Let { bindings, body } ->
             map2
@@ -186,24 +186,24 @@ desugarExpr modules thisModule locatedExpr =
                         }
                 )
                 -- TODO a bit mouthful:
-                (Result.combine (List.map (Binding.map recurse >> Binding.combine) bindings))
-                (recurse body)
+                (Result.combine (List.map (Binding.map f >> Binding.combine) bindings))
+                (f body)
 
         Frontend.List items ->
-            List.map recurse items
+            List.map f items
                 |> Result.combine
                 |> map Canonical.List
 
         Frontend.Tuple e1 e2 ->
             map2 Canonical.Tuple
-                (recurse e1)
-                (recurse e2)
+                (f e1)
+                (f e2)
 
         Frontend.Tuple3 e1 e2 e3 ->
             map3 Canonical.Tuple3
-                (recurse e1)
-                (recurse e2)
-                (recurse e3)
+                (f e1)
+                (f e2)
+                (f e3)
 
         Frontend.Unit ->
             return Canonical.Unit
@@ -215,7 +215,7 @@ desugarExpr modules thisModule locatedExpr =
 
                 Nothing ->
                     bindings
-                        |> List.map (Binding.map recurse >> Binding.combine)
+                        |> List.map (Binding.map f >> Binding.combine)
                         |> Result.combine
                         |> map
                             (\canonicalBindings ->
@@ -232,7 +232,7 @@ desugarExpr modules thisModule locatedExpr =
                         (Canonical.Case expr branches_)
                         locatedExpr
                 )
-                (recurse test)
+                (f test)
                 (branches
                     |> List.map
                         (\{ pattern, body } ->
@@ -243,7 +243,7 @@ desugarExpr modules thisModule locatedExpr =
                                     }
                                 )
                                 (desugarPattern pattern)
-                                (recurse body)
+                                (f body)
                         )
                     |> Result.combine
                 )
@@ -254,7 +254,7 @@ desugarPattern :
     -> Result DesugarError Canonical.LocatedPattern
 desugarPattern located =
     let
-        recurse =
+        f =
             desugarPattern
 
         return pattern =
@@ -295,7 +295,7 @@ desugarPattern located =
             return <| Canonical.PRecord varNames
 
         Frontend.PAlias pattern varName ->
-            recurse pattern
+            f pattern
                 |> map (\p -> Canonical.PAlias p varName)
 
         Frontend.PUnit ->
@@ -303,24 +303,24 @@ desugarPattern located =
 
         Frontend.PTuple pattern1 pattern2 ->
             map2 Canonical.PTuple
-                (recurse pattern1)
-                (recurse pattern2)
+                (f pattern1)
+                (f pattern2)
 
         Frontend.PTuple3 pattern1 pattern2 pattern3 ->
             map3 Canonical.PTuple3
-                (recurse pattern1)
-                (recurse pattern2)
-                (recurse pattern3)
+                (f pattern1)
+                (f pattern2)
+                (f pattern3)
 
         Frontend.PList patterns ->
-            List.map recurse patterns
+            List.map f patterns
                 |> List.foldr (Result.map2 (::)) (Ok [])
                 |> map Canonical.PList
 
         Frontend.PCons pattern1 pattern2 ->
             map2 Canonical.PCons
-                (recurse pattern1)
-                (recurse pattern2)
+                (f pattern1)
+                (f pattern2)
 
         Frontend.PBool bool ->
             return <| Canonical.PBool bool

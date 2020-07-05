@@ -52,6 +52,18 @@ type alias LocatedExpr =
   - having fully qualified variables
   - having only single argument lambdas
 
+We'd love to simplify the `let..in` expressions to only contain one binding
+instead of a list or a dict, but to do that we would need to sort them in the
+topological order. To do _that_ (see `Stage.Emit.findDependencies`), we need the
+vars to be all qualified, to be able to follow them to their definitions.
+
+And, well, the qualification process happens in the desugaring phase - right
+when we'd like to "curry" the `let..in` expressions.
+
+So, perhaps we could do this by splitting the Desugar phase into two (qualify
+the vars and then curry the lets). For now, we're not doing that and instead we
+bite the bullet and keep the bindings together.
+
 -}
 type Expr
     = Int Int
@@ -102,6 +114,10 @@ type Pattern
 -}
 unwrap : LocatedExpr -> Unwrapped.Expr
 unwrap expr =
+    let
+        f =
+            unwrap
+    in
     case Located.unwrap expr of
         Int int ->
             Unwrapped.Int int
@@ -126,59 +142,59 @@ unwrap expr =
 
         Plus e1 e2 ->
             Unwrapped.Plus
-                (unwrap e1)
-                (unwrap e2)
+                (f e1)
+                (f e2)
 
         Cons e1 e2 ->
             Unwrapped.Cons
-                (unwrap e1)
-                (unwrap e2)
+                (f e1)
+                (f e2)
 
         Lambda { argument, body } ->
             Unwrapped.Lambda
                 { argument = argument
-                , body = unwrap body
+                , body = f body
                 }
 
         Call { fn, argument } ->
             Unwrapped.Call
-                { fn = unwrap fn
-                , argument = unwrap argument
+                { fn = f fn
+                , argument = f argument
                 }
 
         If { test, then_, else_ } ->
             Unwrapped.If
-                { test = unwrap test
-                , then_ = unwrap then_
-                , else_ = unwrap else_
+                { test = f test
+                , then_ = f then_
+                , else_ = f else_
                 }
 
         Let { bindings, body } ->
             Unwrapped.Let
                 { bindings =
                     Dict.map
-                        (always (Binding.map unwrap))
+                        (always (Binding.map f))
                         bindings
-                , body = unwrap body
+                , body = f body
                 }
 
         List list ->
             Unwrapped.List
-                (List.map unwrap list)
+                (List.map f list)
 
         Unit ->
             Unwrapped.Unit
 
         Tuple e1 e2 ->
             Unwrapped.Tuple
-                (unwrap e1)
-                (unwrap e2)
+                (f e1)
+                (f e2)
 
         Tuple3 e1 e2 e3 ->
             Unwrapped.Tuple3
-                (unwrap e1)
-                (unwrap e2)
-                (unwrap e3)
+                (f e1)
+                (f e2)
+                (f e3)
 
         Record bindings ->
             Unwrapped.Record <|
@@ -187,11 +203,11 @@ unwrap expr =
                     bindings
 
         Case e branches ->
-            Unwrapped.Case (unwrap e) <|
+            Unwrapped.Case (f e) <|
                 List.map
                     (\{ pattern, body } ->
                         { pattern = unwrapPattern pattern
-                        , body = unwrap body
+                        , body = f body
                         }
                     )
                     branches
@@ -201,6 +217,10 @@ unwrap expr =
 -}
 unwrapPattern : LocatedPattern -> Unwrapped.Pattern
 unwrapPattern expr =
+    let
+        f =
+            unwrapPattern
+    in
     case Located.unwrap expr of
         PAnything ->
             Unwrapped.PAnything
@@ -212,25 +232,25 @@ unwrapPattern expr =
             Unwrapped.PRecord varNames
 
         PAlias p varName ->
-            Unwrapped.PAlias (unwrapPattern p) varName
+            Unwrapped.PAlias (f p) varName
 
         PUnit ->
             Unwrapped.PUnit
 
         PTuple p1 p2 ->
-            Unwrapped.PTuple (unwrapPattern p1) (unwrapPattern p2)
+            Unwrapped.PTuple (f p1) (f p2)
 
         PTuple3 p1 p2 p3 ->
             Unwrapped.PTuple3
-                (unwrapPattern p1)
-                (unwrapPattern p2)
-                (unwrapPattern p3)
+                (f p1)
+                (f p2)
+                (f p3)
 
         PList ps ->
-            Unwrapped.PList (List.map unwrapPattern ps)
+            Unwrapped.PList (List.map f ps)
 
         PCons p1 p2 ->
-            Unwrapped.PCons (unwrapPattern p1) (unwrapPattern p2)
+            Unwrapped.PCons (f p1) (f p2)
 
         PBool bool ->
             Unwrapped.PBool bool
@@ -252,6 +272,10 @@ unwrapPattern expr =
 -}
 fromUnwrapped : Unwrapped.Expr -> LocatedExpr
 fromUnwrapped expr =
+    let
+        f =
+            fromUnwrapped
+    in
     Located.located Located.dummyRegion <|
         case expr of
             Unwrapped.Int int ->
@@ -277,72 +301,72 @@ fromUnwrapped expr =
 
             Unwrapped.Plus e1 e2 ->
                 Plus
-                    (fromUnwrapped e1)
-                    (fromUnwrapped e2)
+                    (f e1)
+                    (f e2)
 
             Unwrapped.Cons e1 e2 ->
                 Cons
-                    (fromUnwrapped e1)
-                    (fromUnwrapped e2)
+                    (f e1)
+                    (f e2)
 
             Unwrapped.Lambda { argument, body } ->
                 Lambda
                     { argument = argument
-                    , body = fromUnwrapped body
+                    , body = f body
                     }
 
             Unwrapped.Call { fn, argument } ->
                 Call
-                    { fn = fromUnwrapped fn
-                    , argument = fromUnwrapped argument
+                    { fn = f fn
+                    , argument = f argument
                     }
 
             Unwrapped.If { test, then_, else_ } ->
                 If
-                    { test = fromUnwrapped test
-                    , then_ = fromUnwrapped then_
-                    , else_ = fromUnwrapped else_
+                    { test = f test
+                    , then_ = f then_
+                    , else_ = f else_
                     }
 
             Unwrapped.Let { bindings, body } ->
                 Let
                     { bindings =
                         Dict.map
-                            (always (Binding.map fromUnwrapped))
+                            (always (Binding.map f))
                             bindings
-                    , body = fromUnwrapped body
+                    , body = f body
                     }
 
             Unwrapped.List list ->
                 List
-                    (List.map fromUnwrapped list)
+                    (List.map f list)
 
             Unwrapped.Unit ->
                 Unit
 
             Unwrapped.Tuple e1 e2 ->
                 Tuple
-                    (fromUnwrapped e1)
-                    (fromUnwrapped e2)
+                    (f e1)
+                    (f e2)
 
             Unwrapped.Tuple3 e1 e2 e3 ->
                 Tuple3
-                    (fromUnwrapped e1)
-                    (fromUnwrapped e2)
-                    (fromUnwrapped e3)
+                    (f e1)
+                    (f e2)
+                    (f e3)
 
             Unwrapped.Record bindings ->
                 Record <|
                     Dict.map
-                        (always (Binding.map fromUnwrapped))
+                        (always (Binding.map f))
                         bindings
 
             Unwrapped.Case e branches ->
-                Case (fromUnwrapped e) <|
+                Case (f e) <|
                     List.map
                         (\{ pattern, body } ->
                             { pattern = fromUnwrappedPattern pattern
-                            , body = fromUnwrapped body
+                            , body = f body
                             }
                         )
                         branches
@@ -352,6 +376,10 @@ fromUnwrapped expr =
 -}
 fromUnwrappedPattern : Unwrapped.Pattern -> LocatedPattern
 fromUnwrappedPattern pattern =
+    let
+        f =
+            fromUnwrappedPattern
+    in
     Located.located Located.dummyRegion <|
         case pattern of
             Unwrapped.PAnything ->
@@ -364,25 +392,25 @@ fromUnwrappedPattern pattern =
                 PRecord varNames
 
             Unwrapped.PAlias p varName ->
-                PAlias (fromUnwrappedPattern p) varName
+                PAlias (f p) varName
 
             Unwrapped.PUnit ->
                 PUnit
 
             Unwrapped.PTuple p1 p2 ->
-                PTuple (fromUnwrappedPattern p1) (fromUnwrappedPattern p2)
+                PTuple (f p1) (f p2)
 
             Unwrapped.PTuple3 p1 p2 p3 ->
                 PTuple3
-                    (fromUnwrappedPattern p1)
-                    (fromUnwrappedPattern p2)
-                    (fromUnwrappedPattern p3)
+                    (f p1)
+                    (f p2)
+                    (f p3)
 
             Unwrapped.PList ps ->
-                PList (List.map fromUnwrappedPattern ps)
+                PList (List.map f ps)
 
             Unwrapped.PCons p1 p2 ->
-                PCons (fromUnwrappedPattern p1) (fromUnwrappedPattern p2)
+                PCons (f p1) (f p2)
 
             Unwrapped.PBool bool ->
                 PBool bool

@@ -352,6 +352,9 @@ getType locatedExpr =
 unwrap : LocatedExpr -> Unwrapped.Expr
 unwrap expr =
     let
+        f =
+            unwrap
+
         ( expr_, type_ ) =
             Located.unwrap expr
     in
@@ -379,59 +382,59 @@ unwrap expr =
 
         Plus e1 e2 ->
             Unwrapped.Plus
-                (unwrap e1)
-                (unwrap e2)
+                (f e1)
+                (f e2)
 
         Cons e1 e2 ->
             Unwrapped.Cons
-                (unwrap e1)
-                (unwrap e2)
+                (f e1)
+                (f e2)
 
         Lambda { argument, body } ->
             Unwrapped.Lambda
                 { argument = argument
-                , body = unwrap body
+                , body = f body
                 }
 
         Call { fn, argument } ->
             Unwrapped.Call
-                { fn = unwrap fn
-                , argument = unwrap argument
+                { fn = f fn
+                , argument = f argument
                 }
 
         If { test, then_, else_ } ->
             Unwrapped.If
-                { test = unwrap test
-                , then_ = unwrap then_
-                , else_ = unwrap else_
+                { test = f test
+                , then_ = f then_
+                , else_ = f else_
                 }
 
         Let { bindings, body } ->
             Unwrapped.Let
                 { bindings =
                     Dict.map
-                        (always (Binding.map unwrap))
+                        (always (Binding.map f))
                         bindings
-                , body = unwrap body
+                , body = f body
                 }
 
         List list ->
             Unwrapped.List
-                (List.map unwrap list)
+                (List.map f list)
 
         Unit ->
             Unwrapped.Unit
 
         Tuple e1 e2 ->
             Unwrapped.Tuple
-                (unwrap e1)
-                (unwrap e2)
+                (f e1)
+                (f e2)
 
         Tuple3 e1 e2 e3 ->
             Unwrapped.Tuple3
-                (unwrap e1)
-                (unwrap e2)
-                (unwrap e3)
+                (f e1)
+                (f e2)
+                (f e3)
 
         Record bindings ->
             Unwrapped.Record <|
@@ -440,11 +443,11 @@ unwrap expr =
                     bindings
 
         Case test branches ->
-            Unwrapped.Case (unwrap test) <|
+            Unwrapped.Case (f test) <|
                 List.map
                     (\{ pattern, body } ->
                         { pattern = unwrapPattern pattern
-                        , body = unwrap body
+                        , body = f body
                         }
                     )
                     branches
@@ -513,6 +516,10 @@ unwrapPattern expr =
 -}
 dropTypes : LocatedExpr -> Canonical.LocatedExpr
 dropTypes locatedExpr =
+    let
+        f =
+            dropTypes
+    in
     locatedExpr
         |> Located.map
             (\( expr, _ ) ->
@@ -540,66 +547,66 @@ dropTypes locatedExpr =
 
                     Plus e1 e2 ->
                         Canonical.Plus
-                            (dropTypes e1)
-                            (dropTypes e2)
+                            (f e1)
+                            (f e2)
 
                     Cons e1 e2 ->
                         Canonical.Cons
-                            (dropTypes e1)
-                            (dropTypes e2)
+                            (f e1)
+                            (f e2)
 
                     Lambda { argument, body } ->
                         Canonical.Lambda
                             { argument = argument
-                            , body = dropTypes body
+                            , body = f body
                             }
 
                     Call { fn, argument } ->
                         Canonical.Call
-                            { fn = dropTypes fn
-                            , argument = dropTypes argument
+                            { fn = f fn
+                            , argument = f argument
                             }
 
                     If { test, then_, else_ } ->
                         Canonical.If
-                            { test = dropTypes test
-                            , then_ = dropTypes then_
-                            , else_ = dropTypes else_
+                            { test = f test
+                            , then_ = f then_
+                            , else_ = f else_
                             }
 
                     Let { bindings, body } ->
                         Canonical.Let
-                            { bindings = Dict.map (always (Binding.map dropTypes)) bindings
-                            , body = dropTypes body
+                            { bindings = Dict.map (always (Binding.map f)) bindings
+                            , body = f body
                             }
 
                     List exprs ->
-                        Canonical.List (List.map dropTypes exprs)
+                        Canonical.List (List.map f exprs)
 
                     Unit ->
                         Canonical.Unit
 
                     Tuple e1 e2 ->
                         Canonical.Tuple
-                            (dropTypes e1)
-                            (dropTypes e2)
+                            (f e1)
+                            (f e2)
 
                     Tuple3 e1 e2 e3 ->
                         Canonical.Tuple3
-                            (dropTypes e1)
-                            (dropTypes e2)
-                            (dropTypes e3)
+                            (f e1)
+                            (f e2)
+                            (f e3)
 
                     Record bindings ->
                         Canonical.Record <|
-                            Dict.map (always (Binding.map dropTypes)) bindings
+                            Dict.map (always (Binding.map f)) bindings
 
                     Case test branches ->
-                        Canonical.Case (dropTypes test) <|
+                        Canonical.Case (f test) <|
                             List.map
                                 (\{ pattern, body } ->
                                     { pattern = dropPatternTypes pattern
-                                    , body = dropTypes body
+                                    , body = f body
                                     }
                                 )
                                 branches
@@ -610,6 +617,10 @@ dropTypes locatedExpr =
 -}
 dropPatternTypes : LocatedPattern -> Canonical.LocatedPattern
 dropPatternTypes locatedPattern =
+    let
+        f =
+            dropPatternTypes
+    in
     locatedPattern
         |> Located.map
             (\( pattern, _ ) ->
@@ -624,27 +635,27 @@ dropPatternTypes locatedPattern =
                         Canonical.PRecord varNames
 
                     PAlias p varName ->
-                        Canonical.PAlias (dropPatternTypes p) varName
+                        Canonical.PAlias (f p) varName
 
                     PUnit ->
                         Canonical.PUnit
 
                     PTuple p1 p2 ->
                         Canonical.PTuple
-                            (dropPatternTypes p1)
-                            (dropPatternTypes p2)
+                            (f p1)
+                            (f p2)
 
                     PTuple3 p1 p2 p3 ->
                         Canonical.PTuple3
-                            (dropPatternTypes p1)
-                            (dropPatternTypes p2)
-                            (dropPatternTypes p3)
+                            (f p1)
+                            (f p2)
+                            (f p3)
 
                     PList ps ->
-                        Canonical.PList (List.map dropPatternTypes ps)
+                        Canonical.PList (List.map f ps)
 
                     PCons p1 p2 ->
-                        Canonical.PCons (dropPatternTypes p1) (dropPatternTypes p2)
+                        Canonical.PCons (f p1) (f p2)
 
                     PBool bool ->
                         Canonical.PBool bool
