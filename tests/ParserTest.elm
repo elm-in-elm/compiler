@@ -1003,6 +1003,32 @@ expr =
                             }
                         )
                   )
+                , ( "two bindings where one is dependent on the other"
+                  , """
+                    let
+                      x = 2
+                      y = x + 1
+                    in
+                      42
+                    """
+                        |> String.unindent
+                  , Just
+                        (Let
+                            { bindings =
+                                [ { name = "x"
+                                  , body = Int 2
+                                  }
+                                , { name = "y"
+                                  , body =
+                                        Plus
+                                            (Argument "x")
+                                            (Int 1)
+                                  }
+                                ]
+                            , body = Int 42
+                            }
+                        )
+                  )
                 ]
               )
             , ( "list"

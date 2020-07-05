@@ -245,6 +245,31 @@ javascript =
                             }
                       , "((() => {const x = 2; return (1 + x);})())"
                       )
+                    , ( "two bindings dependent on each other"
+                      , Let
+                            { bindings =
+                                Dict.fromList
+                                    [ ( "x"
+                                      , { name = "x"
+                                        , body = typedInt 2
+                                        }
+                                      )
+                                    , ( "y"
+                                      , { name = "y"
+                                        , body =
+                                            typed
+                                                (Plus
+                                                    (typedInt 1)
+                                                    (typed (Argument "x"))
+                                                )
+                                        }
+                                      )
+                                    ]
+                            , body =
+                                typedInt 42
+                            }
+                      , "((() => {const x = 2; const y = (1 + x); return 42;})())"
+                      )
                     ]
                 )
             , describe "Tuple"
