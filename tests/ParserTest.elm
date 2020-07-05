@@ -1706,10 +1706,33 @@ typeAnnotation =
                         |> String.removeNewlinesAtEnds
                   , Nothing
                   )
+                , ( "newline but not space before arrow fails"
+                  , """
+                    x : Int
+                    -> Int
+                    """
+                        |> String.unindent
+                        |> String.removeNewlinesAtEnds
+                  , Nothing
+                  )
+                , ( "newline and space before arrow is OK"
+                  , """
+                    x : Int
+                     -> Int
+                    """
+                        |> String.unindent
+                        |> String.removeNewlinesAtEnds
+                  , Just
+                        { varName = "x"
+                        , type_ =
+                            ConcreteType.Function
+                                { from = ConcreteType.Int
+                                , to = ConcreteType.Int
+                                }
+                        }
+                  )
                 ]
             )
-
-        -- TODO whitespace behaviour of `->` type (esp. newlines)
         ]
 
 

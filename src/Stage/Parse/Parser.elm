@@ -1475,13 +1475,54 @@ type_ =
             , userDefinedType
             ]
         , andThenOneOf =
-            [ PP.infixRight 1
-                (P.token (P.Token "->" ExpectingRightArrow))
-                (\from to -> ConcreteType.Function { from = from, to = to })
+            [ functionType
             ]
         , spaces = ignorables
         }
         |> P.inContext InType
+
+
+functionType :
+    TypeConfig
+    -> ( Int, ConcreteType PossiblyQualified -> Parser_ (ConcreteType PossiblyQualified) )
+functionType =
+    PP.infixRight 1
+        {- If we only tried `notAtBeginningOfLine (P.token ...)` then it would
+           not work correctly for the `x : Int\n-> Int` example: the parser
+           would happily stop on the first Int.
+
+           This is because of how our Pratt parsers work: they first
+           successfully parse the first `Int` and then *optionally* try the
+           `andThenOneOf` part that combines exprs together. If that fails,
+           that's fine for them.
+
+           But we'd like it to fail loudly if that `->` is there!
+           So we parse `->` if at the beginning of line and then fail on
+           purpose. (It's important that we *don't backtrace.* This act of
+           parsing `->` there is what differentiates this from the simple
+           `notAtBeginningOfLine (P.token ...)`.)
+
+           TODO: maybe we can extract this pattern to some helper function?
+        -}
+        (P.oneOf
+            [ onlyAtBeginningOfLine
+                (P.token (P.Token "->" ExpectingRightArrow))
+                |> P.andThen (\_ -> P.problem ExpectingIndentation)
+            , notAtBeginningOfLine
+                (P.token (P.Token "->" ExpectingRightArrow))
+            ]
+        )
+        (\from to ->
+            ConcreteType.Function
+                { from = from
+                , to = to
+                }
+        )
+
+
+
+--try it outright, if it succeeds then fail
+--succeed
 
 
 parenthesizedType : TypeConfig -> Parser_ (ConcreteType PossiblyQualified)
