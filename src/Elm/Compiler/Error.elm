@@ -78,7 +78,6 @@ type ParseContext
     | InFile FilePath
     | InCase
     | InPattern
-    | InTypeAnnotation
     | InType
     | InTypeAlias
     | InCustomType
@@ -143,8 +142,6 @@ type ParseProblem
     | ExpectingRightParen
     | ExpectingLeftBracket
     | ExpectingRightBracket
-    | ExpectingListSeparator
-    | ExpectingTupleSeparator
     | ExpectingNotBeginningOfLine
     | ExpectingIf
     | ExpectingThen
@@ -159,9 +156,6 @@ type ParseProblem
     | ExpectingPipe -- `Foo >|< Bar`
     | ExpectingSimpleType String
     | ExpectingListType
-    | ExpectingRecordLeftBrace
-    | ExpectingRecordSeparator
-    | ExpectingRecordRightBrace
     | ExpectingCase
     | ExpectingOf
     | ExpectingCaseBody
@@ -519,12 +513,6 @@ parseProblemToString problem =
         ExpectingRightBracket ->
             "ExpectingRightBracket"
 
-        ExpectingListSeparator ->
-            "ExpectingListSeparator"
-
-        ExpectingTupleSeparator ->
-            "ExpectingTupleSeparator"
-
         ExpectingNotBeginningOfLine ->
             "ExpectingNotBeginningOfLine"
 
@@ -566,15 +554,6 @@ parseProblemToString problem =
 
         ExpectingListType ->
             "ExpectingListType"
-
-        ExpectingRecordLeftBrace ->
-            "ExpectingRecordLeftBrace"
-
-        ExpectingRecordSeparator ->
-            "ExpectingRecordSeparator"
-
-        ExpectingRecordRightBrace ->
-            "ExpectingRecordRightBrace"
 
         ExpectingCase ->
             "ExpectingCase"
