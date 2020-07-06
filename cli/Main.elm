@@ -545,23 +545,6 @@ handleFatalError error =
     )
 
 
-log : Msg -> Msg
-log msg =
-    let
-        string =
-            case msg of
-                ReadFileSuccess { filePath } ->
-                    "ReadFileSuccess: " ++ filePath
-
-                ReadFileError error ->
-                    "ReadFileError: " ++ Debug.toString error
-
-        _ =
-            Debug.log string ()
-    in
-    msg
-
-
 
 -- ERRORS
 
