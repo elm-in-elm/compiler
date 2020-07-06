@@ -492,39 +492,6 @@ This branch ends here - we're only interested in performance of parsing!
 compile : String -> Project Frontend.ProjectFields -> ( Model Frontend.ProjectFields, Cmd Msg )
 compile format project =
     ( Finished, Cmd.none )
-    let
-        _ =
-            project.modules
-                |> Dict.values
-                |> List.map
-                    (\module_ ->
-                        Dict.values module_.declarations
-                            |> List.map
-                                (\decl ->
-                                    decl.body
-                                        |> Declaration.mapBody
-                                            Frontend.unwrap
-                                            identity
-                                            identity
-                                        |> Debug.log (decl.module_ ++ "." ++ decl.name)
-                                )
-                    )
-
-        emitter =
-            case format of
-                "JSON" ->
-                    EmitJson.emitProject
-
-                _ ->
-                    EmitJS.emitProject
-    in
-    Ok project
-        |> Result.andThen Desugar.desugar
-        |> Result.andThen InferTypes.inferTypes
-        |> Result.map Optimize.optimize
-        |> Result.andThen emitter
-        |> Result.mapError CompilerError
-        |> writeToFSAndExit
 
 
 {-| We've got our output ready for writing to the filesystem!
