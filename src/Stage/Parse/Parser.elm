@@ -11,7 +11,6 @@ module Stage.Parse.Parser exposing
     , portDeclaration
     , spacesOnly
     , typeAliasDeclaration
-    , typeAnnotation
     , type_
     , valueDeclaration
     )
@@ -375,29 +374,48 @@ declarationBody =
 valueDeclaration : Parser_ ( String, DeclarationBody LocatedExpr TypeAnnotation PossiblyQualified )
 valueDeclaration =
     P.succeed
-        (\annotation name expr_ ->
-            ( name
-            , Declaration.Value
-                { typeAnnotation = annotation
-                , expression = expr_
-                }
-            )
+        (\annotationOrDeclName maybeAnnotation expr_ ->
+            case maybeAnnotation of
+                Nothing ->
+                    ( annotationOrDeclName
+                    , Declaration.Value
+                        { typeAnnotation = Nothing
+                        , expression = expr_
+                        }
+                    )
+
+                Just ( type__, declName ) ->
+                    ( declName
+                    , Declaration.Value
+                        { typeAnnotation =
+                            Just
+                                { varName = annotationOrDeclName
+                                , type_ = type__
+                                }
+                        , expression = expr_
+                        }
+                    )
         )
+        |= onlyAtBeginningOfLine varName
+        |. ignorables
         |= P.oneOf
-            -- TODO refactor the `backtrackable` away
-            -- TODO is it even working correctly?
-            [ P.backtrackable
-                (P.succeed Just
-                    |= typeAnnotation
-                    |. ignorables
-                )
+            [ P.succeed (\type__ declarationName -> Just ( type__, declarationName ))
+                |. notAtBeginningOfLine colon
+                |. ignorables
+                |= notAtBeginningOfLine type_
+                |. ignorables
+                |= onlyAtBeginningOfLine varName
+                |. ignorables
             , P.succeed Nothing
             ]
-        |= varName
-        |. ignorables
-        |. P.symbol (P.Token "=" ExpectingEqualsSign)
+        |. notAtBeginningOfLine equals
         |. ignorables
         |= expr
+
+
+equals : Parser_ ()
+equals =
+    P.symbol (P.Token "=" ExpectingEqualsSign)
 
 
 {-|
@@ -428,7 +446,7 @@ typeAliasDeclaration =
         |. ignorables
         |= zeroOrMoreWith ignorables varName
         |. ignorables
-        |. P.symbol (P.Token "=" ExpectingEqualsSign)
+        |. equals
         |. ignorables
         |= type_
         |> P.inContext InTypeAlias
@@ -467,7 +485,7 @@ customTypeDeclaration =
         |. ignorables
         |= zeroOrMoreWith ignorables varName
         |. ignorables
-        |. P.symbol (P.Token "=" ExpectingEqualsSign)
+        |. equals
         |. ignorables
         |= notAtBeginningOfLine constructors
         |> P.inContext InCustomType
@@ -513,11 +531,8 @@ expr =
             , lambda
             , PP.literal literal
             , always var
-            , unit
             , list
-            , tuple
-            , tuple3
-            , parenthesizedExpr
+            , parenStartingExpr
             , record
             , case_
             ]
@@ -542,12 +557,52 @@ expr =
         |> P.inContext InExpr
 
 
-parenthesizedExpr : ExprConfig -> Parser_ LocatedExpr
-parenthesizedExpr config =
+parenStartingExpr : ExprConfig -> Parser_ LocatedExpr
+parenStartingExpr config =
     P.succeed identity
-        |. P.symbol (P.Token "(" ExpectingLeftParen)
-        |= PP.subExpression 0 config
-        |. P.symbol (P.Token ")" ExpectingRightParen)
+        |. leftParen
+        |= P.oneOf
+            [ P.succeed identity
+                |= PP.subExpression 0 config
+                |> P.andThen
+                    (\e1 ->
+                        P.oneOf
+                            [ P.succeed identity
+                                |. ignorables
+                                |. comma
+                                |= PP.subExpression 0 config
+                                |> P.andThen
+                                    (\e2 ->
+                                        P.succeed identity
+                                            |= P.oneOf
+                                                [ -- ("x", "y", "z")
+                                                  P.succeed (Frontend.Tuple3 e1 e2)
+                                                    |. comma
+                                                    |= PP.subExpression 0 config
+                                                , -- ("x", "y")
+                                                  P.succeed (Frontend.Tuple e1 e2)
+                                                ]
+                                    )
+                            , -- ("x"), parenthesized expr
+                              P.succeed (Located.unwrap e1)
+                            ]
+                    )
+            , -- ()
+              -- Note that unit can't be written as ( ) - no spaces inside!
+              P.succeed Frontend.Unit
+            ]
+        |. rightParen
+        |> located
+
+
+leftParen : Parser_ ()
+leftParen =
+    P.symbol (P.Token "(" ExpectingLeftParen)
+
+
+rightParen : Parser_ ()
+rightParen =
+    P.symbol (P.Token ")" ExpectingRightParen)
 
 
 literal : Parser_ LocatedExpr
@@ -564,6 +619,29 @@ literalNumber : Parser_ LocatedExpr
 literalNumber =
     let
         parseLiteralNumber =
+            {- TODO remove backtrackable.
+
+               This means either waiting for elm/parser to be fixed (see below) or
+               reimplementing numerical parsers from scratch.
+
+               The underlying problem is that `P.number` commits when it sees an
+               `e` at the beginning of the parsed string. There are a few issues
+               already about it:
+
+               https://github.com/elm/parser/issues/25
+               https://github.com/elm/parser/issues/44
+
+               Note that reimplementing `P.number` isn't as simple as it looks: we
+               have to support:
+
+                   5
+                   1e15
+                   1.123e10
+                   1.123
+                   0xDEADBEEF
+
+               and all their `-` prefixed variants.
+            -}
             P.backtrackable <|
                 P.number
                     { int = Ok Int
@@ -856,7 +934,6 @@ lambda config =
         |= oneOrMoreWith spacesOnly varName
         |. spacesOnly
         |. P.symbol (P.Token "->" ExpectingRightArrow)
-        |. ignorables
         |= PP.subExpression 0 config
         |> P.inContext InLambda
         |> located
@@ -938,7 +1015,6 @@ let_ config =
                 (oneOrMoreWith ignorables (letBinding config))
             |. ignorables
             |. P.keyword (P.Token "in" ExpectingIn)
-            |. ignorables
             |= PP.subExpression 0 config
             |> P.inContext InLet
             |> located
@@ -951,8 +1027,11 @@ letBinding config =
         |. checkIndent (==) ExpectingIndentation
         |= varName
         |. ignorables
-        |. notAtBeginningOfLine (P.symbol (P.Token "=" ExpectingEqualsSign))
-        |. ignorables
+        |. notAtBeginningOfLine equals
+        |. {- Even though `PP.subExpression` eats whitespace, these `ignorables` are
+              important because of the `notAtBeginningOfLine` interplay.
+           -}
+           ignorables
         |= notAtBeginningOfLine (PP.subExpression 0 config)
         |> P.inContext InLetBinding
 
@@ -962,8 +1041,7 @@ recordBinding config =
     P.succeed Binding
         |= varName
         |. ignorables
-        |. P.symbol (P.Token "=" ExpectingEqualsSign)
-        |. ignorables
+        |. equals
         |= PP.subExpression 0 config
         |> P.inContext InRecordBinding
 
@@ -979,7 +1057,6 @@ typeBinding config =
         |= varName
         |. ignorables
         |. colon
-        |. ignorables
         |= PP.subExpression 0 config
         |> P.inContext InTypeBinding
 
@@ -1002,22 +1079,14 @@ promoteArguments arguments expr_ =
             expr_
 
 
-unit : ExprConfig -> Parser_ LocatedExpr
-unit _ =
-    P.succeed Frontend.Unit
-        |. P.keyword (P.Token "()" ExpectingUnit)
-        |> P.inContext InUnit
-        |> located
-
-
 list : ExprConfig -> Parser_ LocatedExpr
 list config =
     P.succeed Frontend.List
         |= P.sequence
             { start = P.Token "[" ExpectingLeftBracket
-            , separator = P.Token "," ExpectingListSeparator
+            , separator = P.Token "," ExpectingComma
             , end = P.Token "]" ExpectingRightBracket
-            , spaces = spacesOnly
+            , spaces = ignorables
             , item = PP.subExpression 0 config
             , trailing = P.Forbidden
             }
@@ -1025,44 +1094,9 @@ list config =
         |> located
 
 
-tuple : ExprConfig -> Parser_ LocatedExpr
-tuple config =
-    P.backtrackable
-        (P.succeed Tuple
-            |. P.symbol (P.Token "(" ExpectingLeftParen)
-            |. ignorables
-            |= PP.subExpression 0 config
-            |. ignorables
-            |. P.symbol (P.Token "," ExpectingTupleSeparator)
-            |. ignorables
-            |= PP.subExpression 0 config
-            |. ignorables
-            |. P.symbol (P.Token ")" ExpectingRightParen)
-            |> P.inContext InTuple
-        )
-        |> located
-
-
-tuple3 : ExprConfig -> Parser_ LocatedExpr
-tuple3 config =
-    P.backtrackable
-        (P.succeed Frontend.Tuple3
-            |. P.symbol (P.Token "(" ExpectingLeftParen)
-            |. ignorables
-            |= PP.subExpression 0 config
-            |. ignorables
-            |. P.symbol (P.Token "," ExpectingTupleSeparator)
-            |. ignorables
-            |= PP.subExpression 0 config
-            |. ignorables
-            |. P.symbol (P.Token "," ExpectingTupleSeparator)
-            |. ignorables
-            |= PP.subExpression 0 config
-            |. ignorables
-            |. P.symbol (P.Token ")" ExpectingRightParen)
-            |> P.inContext InTuple3
-        )
-        |> located
+comma : Parser_ ()
+comma =
+    P.symbol (P.Token "," ExpectingComma)
 
 
 record : ExprConfig -> Parser_ LocatedExpr
@@ -1089,7 +1123,6 @@ case_ config =
                     (oneOrMoreWith ignorables (caseBranch config))
         )
         |. P.keyword (P.Token "case" ExpectingCase)
-        |. ignorables
         |= PP.subExpression 0 config
         |. ignorables
         |. P.keyword (P.Token "of" ExpectingOf)
@@ -1245,9 +1278,9 @@ patternNumber =
 patternRecord : Parser_ LocatedPattern
 patternRecord =
     P.sequence
-        { start = P.Token "{" ExpectingRecordLeftBrace
-        , separator = P.Token "," ExpectingRecordSeparator
-        , end = P.Token "}" ExpectingRecordRightBrace
+        { start = P.Token "{" ExpectingLeftBrace
+        , separator = P.Token "," ExpectingComma
+        , end = P.Token "}" ExpectingRightBrace
         , spaces = ignorablesAndCheckIndent (<) ExpectingIndentation
         , item = varName
         , trailing = P.Forbidden
@@ -1261,7 +1294,7 @@ patternList : PatternConfig -> Parser_ LocatedPattern
 patternList config =
     P.sequence
         { start = P.Token "[" ExpectingLeftBracket
-        , separator = P.Token "," ExpectingListSeparator
+        , separator = P.Token "," ExpectingComma
         , end = P.Token "]" ExpectingRightBracket
         , spaces = ignorablesAndCheckIndent (<) ExpectingIndentation
         , item = PP.subExpression 0 config
@@ -1276,7 +1309,7 @@ patternTuple : PatternConfig -> Parser_ LocatedPattern
 patternTuple config =
     P.sequence
         { start = P.Token "(" ExpectingLeftParen
-        , separator = P.Token "," ExpectingTupleSeparator
+        , separator = P.Token "," ExpectingComma
         , end = P.Token ")" ExpectingRightParen
         , spaces = ignorablesAndCheckIndent (<) ExpectingIndentation
         , item = PP.subExpression 0 config
@@ -1467,17 +1500,6 @@ oneOrMoreHelp spaces p vs =
         ]
 
 
-typeAnnotation : Parser_ TypeAnnotation
-typeAnnotation =
-    P.succeed TypeAnnotation
-        |= varName
-        |. ignorables
-        |. notAtBeginningOfLine colon
-        |. ignorables
-        |= notAtBeginningOfLine type_
-        |> P.inContext InTypeAnnotation
-
-
 type_ : Parser_ (ConcreteType PossiblyQualified)
 type_ =
     PP.expression
@@ -1550,9 +1572,9 @@ functionType =
 parenthesizedType : TypeConfig -> Parser_ (ConcreteType PossiblyQualified)
 parenthesizedType config =
     P.succeed identity
-        |. P.symbol (P.Token "(" ExpectingLeftParen)
+        |. leftParen
         |= PP.subExpression 0 config
-        |. P.symbol (P.Token ")" ExpectingRightParen)
+        |. rightParen
         |> P.inContext InParenthesizedType
 
 
@@ -1576,7 +1598,6 @@ listType : TypeConfig -> Parser_ (ConcreteType PossiblyQualified)
 listType config =
     P.succeed ConcreteType.List
         |. P.keyword (P.Token "List" ExpectingListType)
-        |. spacesOnly
         |= PP.subExpression 0 config
 
 
@@ -1584,15 +1605,13 @@ tupleType : TypeConfig -> Parser_ (ConcreteType PossiblyQualified)
 tupleType config =
     P.backtrackable
         (P.succeed ConcreteType.Tuple
-            |. P.token (P.Token "(" ExpectingLeftParen)
-            |. spacesOnly
+            |. leftParen
             |= PP.subExpression 0 config
             |. spacesOnly
-            |. P.token (P.Token "," ExpectingComma)
-            |. spacesOnly
+            |. comma
             |= PP.subExpression 0 config
             |. spacesOnly
-            |. P.token (P.Token ")" ExpectingRightParen)
+            |. rightParen
         )
 
 
@@ -1600,19 +1619,16 @@ tuple3Type : TypeConfig -> Parser_ (ConcreteType PossiblyQualified)
 tuple3Type config =
     P.backtrackable
         (P.succeed ConcreteType.Tuple3
-            |. P.token (P.Token "(" ExpectingLeftParen)
-            |. spacesOnly
+            |. leftParen
             |= PP.subExpression 0 config
             |. spacesOnly
-            |. P.token (P.Token "," ExpectingComma)
-            |. spacesOnly
+            |. comma
             |= PP.subExpression 0 config
             |. spacesOnly
-            |. P.token (P.Token "," ExpectingComma)
-            |. spacesOnly
+            |. comma
             |= PP.subExpression 0 config
             |. spacesOnly
-            |. P.token (P.Token ")" ExpectingRightParen)
+            |. rightParen
         )
 
 
