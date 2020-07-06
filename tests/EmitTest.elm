@@ -3,6 +3,7 @@ module EmitTest exposing (javascript)
 import Dict
 import Elm.AST.Typed as Typed exposing (Expr_(..))
 import Elm.Data.Declaration exposing (Declaration, DeclarationBody(..))
+import Elm.Data.Qualifiedness exposing (Qualified)
 import Expect
 import Stage.Emit.JavaScript as JS
 import Test exposing (Test, describe, test)
@@ -227,6 +228,48 @@ javascript =
                             }
                       , "((() => {const x = 2; const y = 3; return 1;})())"
                       )
+                    , ( "one binding used in the body"
+                      , Let
+                            { bindings =
+                                Dict.singleton
+                                    "x"
+                                    { name = "x"
+                                    , body = typedInt 2
+                                    }
+                            , body =
+                                typed
+                                    (Plus
+                                        (typedInt 1)
+                                        (typed (Argument "x"))
+                                    )
+                            }
+                      , "((() => {const x = 2; return (1 + x);})())"
+                      )
+                    , ( "two bindings dependent on each other"
+                      , Let
+                            { bindings =
+                                Dict.fromList
+                                    [ ( "x"
+                                      , { name = "x"
+                                        , body = typedInt 2
+                                        }
+                                      )
+                                    , ( "y"
+                                      , { name = "y"
+                                        , body =
+                                            typed
+                                                (Plus
+                                                    (typedInt 1)
+                                                    (typed (Argument "x"))
+                                                )
+                                        }
+                                      )
+                                    ]
+                            , body =
+                                typedInt 42
+                            }
+                      , "((() => {const x = 2; const y = (1 + x); return 42;})())"
+                      )
                     ]
                 )
             , describe "Tuple"
@@ -306,7 +349,7 @@ javascript =
                 )
             ]
         , let
-            runTest : ( String, Declaration Typed.LocatedExpr, String ) -> Test
+            runTest : ( String, Declaration Typed.LocatedExpr Never Qualified, String ) -> Test
             runTest ( description, input, output ) =
                 test description <|
                     \() ->
@@ -319,7 +362,11 @@ javascript =
                 [ ( "simple"
                   , { module_ = "Foo"
                     , name = "bar"
-                    , body = Value <| typedInt 1
+                    , body =
+                        Value
+                            { typeAnnotation = Nothing
+                            , expression = typedInt 1
+                            }
                     }
                   , "const Foo$bar = 1;"
                   )

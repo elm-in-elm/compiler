@@ -1,6 +1,6 @@
 module Elm.Compiler.Error exposing
     ( Error(..), toString
-    , ParseError(..), ParseProblem(..), ParseContext(..)
+    , ParseError(..), ParseCompilerBug(..), ParseProblem(..), ParseContext(..)
     , DesugarError(..)
     , TypeError(..)
     , EmitError(..)
@@ -9,16 +9,20 @@ module Elm.Compiler.Error exposing
 {-| All the errors the compiler can encounter.
 
 @docs Error, toString
-@docs ParseError, ParseProblem, ParseContext
+@docs ParseError, ParseCompilerBug, ParseProblem, ParseContext
 @docs DesugarError
 @docs TypeError
 @docs EmitError
 
 -}
 
+import Array
+import Elm.Data.FileContents exposing (FileContents)
 import Elm.Data.FilePath exposing (FilePath)
+import Elm.Data.Located exposing (Located)
 import Elm.Data.ModuleName exposing (ModuleName)
-import Elm.Data.Type as Type exposing (Type)
+import Elm.Data.Qualifiedness exposing (PossiblyQualified(..), Qualified)
+import Elm.Data.Type exposing (TypeOrId(..))
 import Elm.Data.Type.ToString as TypeToString
 import Elm.Data.VarName exposing (VarName)
 import Json.Decode as JD
@@ -46,7 +50,7 @@ type ParseError
         }
     | EmptySourceDirectories
     | InvalidElmJson JD.Error
-    | ParseProblem (List (P.DeadEnd ParseContext ParseProblem))
+    | ParseProblem ( List (P.DeadEnd ParseContext ParseProblem), FileContents )
 
 
 {-| Context information about what was the parser trying to do at the time of
@@ -64,12 +68,35 @@ type ParseContext
     | InIf
     | InLet
     | InLetBinding
+    | InRecordBinding
     | InLambda
     | InList
     | InUnit
     | InTuple
     | InTuple3
     | InRecord
+    | InFile FilePath
+    | InCase
+    | InPattern
+    | InTypeAnnotation
+    | InType
+    | InTypeAlias
+    | InCustomType
+    | InConstructors
+    | InTypeVarType
+    | InUserDefinedType
+    | InModuleNameWithDot
+    | InQualifiers
+    | InQualifiersAndTypeName
+    | InParenthesizedType
+    | InExposedValue
+    | InDeclaration
+    | InVar
+    | InVarName
+    | InQualifiedVar
+    | InTypeBinding
+    | InPatternVar
+    | InPatternRecord
 
 
 {-| The specific problem the parser encountered. Together with [`ParseContext`](#ParseContext)
@@ -80,14 +107,14 @@ type ParseProblem
     | ExpectingEffectKeyword -- `>effect< module ...`
     | ExpectingModuleKeyword -- `>module< Foo.Bar exposing (..)`
     | ExpectingModuleName -- `module >Foo.Bar< exposing (..)`
+    | ExpectingModuleNameDot -- `foo : Bar>.<Baz`
     | ExpectingExposingKeyword -- `module Foo.Bar >exposing< (..)`
     | ExpectingExposingAllSymbol -- `module Foo.Bar exposing >(..)<`
-    | ExpectingExposingListLeftParen -- `module Foo.Bar exposing >(<a, b, c)`
-    | ExpectingExposingListRightParen -- `module Foo.Bar exposing (a, b, c>)<`
-    | ExpectingExposingListSeparatorComma -- `module Foo.Bar exposing (a>,< b, c)`
+    | ExpectingComma -- `module Foo.Bar exposing (a>,< b, c)`
     | ExpectingExposedTypeDoublePeriod -- `module Foo.Bar exposing (Foo>(..)<)`
     | ExpectingVarName -- eg. `module Foo.Bar exposing (>a<)`
     | ExpectingTypeOrConstructorName -- eg. `module Foo.Bar exposing (>Foo<)`
+    | ExpectingTypeAlias -- eg. `>type alias <X =`
     | ExposingListCantBeEmpty -- `module Foo.Bar exposing >()<`
     | ExpectingImportKeyword -- `>import< Foo as F exposing (..)`
     | ExpectingAsKeyword -- `import Foo >as< F exposing (..)`
@@ -101,8 +128,8 @@ type ParseProblem
     | ExpectingChar
     | ExpectingEscapeBackslash
     | ExpectingEscapeCharacter Char
-    | ExpectingUnicodeEscapeLeftBrace
-    | ExpectingUnicodeEscapeRightBrace
+    | ExpectingLeftBrace
+    | ExpectingRightBrace
     | InvalidUnicodeCodePoint
     | ExpectingDoubleQuote
     | ExpectingTripleQuote
@@ -127,19 +154,53 @@ type ParseProblem
     | ExpectingLet
     | ExpectingIn
     | ExpectingUnit
+    | ExpectingColon
+    | ExpectingSpace
+    | ExpectingPipe -- `Foo >|< Bar`
+    | ExpectingSimpleType String
+    | ExpectingListType
     | ExpectingRecordLeftBrace
     | ExpectingRecordSeparator
     | ExpectingRecordRightBrace
+    | ExpectingCase
+    | ExpectingOf
+    | ExpectingCaseBody
+    | ExpectingPatternAliasName -- `{ foo } as >bar<`
+    | ExpectingIndentation
+    | ExpectingNoIndentation
+    | ExpectingPatternAnything -- `>_< ->`
+    | ExpectingMaxThreeTuple
+    | ExpectingTypeName
+    | ExpectingNewlineAfterTypeAnnotation
+    | ExpectingNonSpaceAfterTypeAnnotationNewlines
+    | InvalidTab
     | InvalidNumber
     | TriedToParseCharacterStoppingDelimiter
-    | CompilerBug String
+    | ParseCompilerBug ParseCompilerBug
+    | EmptyListOfConstructors
+    | ExpectingEnd
+
+
+type ParseCompilerBug
+    = ModuleNameStartParserFailed
+    | ModuleNameEndParserFailed
+    | MultipleCharactersChompedInCharacter
+    | QualifiersStartParserFailed
+    | QualifiersSeparatorParserFailed
+    | QualifiersEndParserFailed
+    | ConstructorsStartParserFailed
+    | ConstructorsSeparatorParserFailed
+    | ConstructorsEndParserFailed
 
 
 {-| Errors encountered during [desugaring](Elm.Compiler#desugarExpr) from the [Frontend AST](Elm.AST.Frontend) to [Canonical AST](Elm.AST.Canonical).
 -}
 type DesugarError
     = VarNameNotFound
-        { var : { module_ : Maybe ModuleName, name : VarName }
+        { var :
+            { qualifiedness : PossiblyQualified
+            , name : VarName
+            }
         , insideModule : ModuleName
         }
     | AmbiguousName
@@ -147,13 +208,23 @@ type DesugarError
         , insideModule : ModuleName
         , possibleModules : List ModuleName
         }
+    | VarNameAndTypeAnnotationDontMatch
+        { typeAnnotation : VarName
+        , varName : VarName
+        }
+    | DuplicateRecordField
+        { name : VarName
+        , insideModule : ModuleName
+        , firstOccurrence : Located ()
+        , secondOccurrence : Located ()
+        }
 
 
 {-| Errors encountered during [typechecking](Elm.Compiler#inferExpr).
 -}
 type TypeError
-    = TypeMismatch Type Type
-    | OccursCheckFailed Int Type
+    = TypeMismatch (TypeOrId Qualified) (TypeOrId Qualified)
+    | OccursCheckFailed Int (TypeOrId Qualified)
 
 
 {-| Errors encountered during emitting. As you're free to do the emit phase however
@@ -165,9 +236,9 @@ you want, this is only returned from the helpers in Stage.Emit in the compiler C
 -}
 type EmitError
     = MainDeclarationNotFound
-    | ModuleNotFoundForVar { module_ : ModuleName, var : VarName }
-    | ModuleNotFoundForType { module_ : ModuleName, type_ : VarName }
+    | ModuleNotFoundForVar { module_ : ModuleName, name : VarName }
     | DeclarationNotFound { module_ : ModuleName, name : VarName }
+    | EmitCompilerBug String
 
 
 {-| An English description of the error. Feel free to write your own though!
@@ -191,10 +262,19 @@ toString error =
                     "Invalid elm.json! "
                         ++ JD.errorToString jsonError
 
-                ParseProblem problems ->
-                    String.join "\n"
-                        ("Parse problems: "
-                            :: List.map (\{ problem } -> "  " ++ parseProblemToString problem) problems
+                ParseProblem ( problems, source ) ->
+                    String.join
+                        "\n"
+                        (List.map
+                            (\{ problem, row, col, contextStack } ->
+                                multilineErrorMessage
+                                    source
+                                    (filenameFromContext contextStack)
+                                    ("Parse problem: " ++ parseProblemToString problem)
+                                    (parseProblemToString problem)
+                                    { row = row, col = col }
+                            )
+                            problems
                         )
 
         DesugarError desugarError ->
@@ -217,7 +297,7 @@ toString error =
                                 (\possibleModule ->
                                     " - "
                                         ++ fullVarName
-                                            { module_ = Just possibleModule
+                                            { qualifiedness = PossiblyQualified <| Just possibleModule
                                             , name = name
                                             }
                                 )
@@ -225,13 +305,37 @@ toString error =
                             )
                         ++ "\n\nChange your imports to resolve this ambiguity!"
 
+                VarNameAndTypeAnnotationDontMatch { typeAnnotation, varName } ->
+                    "The annotation and the definition below it don't match!\n\n"
+                        ++ "  Annotation: "
+                        ++ typeAnnotation
+                        ++ "\n"
+                        ++ "  Definition: "
+                        ++ varName
+
+                DuplicateRecordField { name } ->
+                    {- TODO
+                       This record has multiple `a` fields. One here:
+
+                       12|     { a = 123
+                                 ^
+                       And another one here:
+
+                       13|     , a = ()
+                                 ^
+                       How can I know which one you want? Rename one of them!
+                    -}
+                    "This record has multiple `" ++ name ++ "` fields."
+
         TypeError typeError ->
             case typeError of
                 TypeMismatch t1 t2 ->
                     let
                         -- share index between types
                         ( type1, state1 ) =
-                            TypeToString.toString TypeToString.emptyState t1
+                            TypeToString.toString
+                                (TypeToString.fromTypesOrIds [ t1, t2 ])
+                                t1
 
                         ( type2, _ ) =
                             TypeToString.toString state1 t2
@@ -242,14 +346,16 @@ toString error =
                         ++ type2
                         ++ "` don't match."
 
-                OccursCheckFailed varId type_ ->
+                OccursCheckFailed varId typeOrId ->
                     let
                         -- share index between types
                         ( type1, state1 ) =
-                            TypeToString.toString TypeToString.emptyState (Type.Var varId)
+                            TypeToString.toString
+                                (TypeToString.fromTypeOrId typeOrId)
+                                (Id varId)
 
                         ( type2, _ ) =
-                            TypeToString.toString state1 type_
+                            TypeToString.toString state1 typeOrId
                     in
                     "An \"occurs check\" failed while typechecking: "
                         ++ type1
@@ -261,18 +367,11 @@ toString error =
                 MainDeclarationNotFound ->
                     "Couldn't find the value `main` in the main module given to the compiler!"
 
-                ModuleNotFoundForVar { module_, var } ->
+                ModuleNotFoundForVar { module_, name } ->
                     "Couldn't find the module `"
                         ++ module_
                         ++ "` when looking at the usage of variable `"
-                        ++ var
-                        ++ "`."
-
-                ModuleNotFoundForType { module_, type_ } ->
-                    "Couldn't find the module `"
-                        ++ module_
-                        ++ "` when looking at the usage of type `"
-                        ++ type_
+                        ++ name
                         ++ "`."
 
                 DeclarationNotFound { module_, name } ->
@@ -282,10 +381,17 @@ toString error =
                         ++ module_
                         ++ "`."
 
+                EmitCompilerBug bug ->
+                    "Emit stage bug: " ++ bug
 
-fullVarName : { module_ : Maybe ModuleName, name : VarName } -> String
-fullVarName { module_, name } =
-    module_
+
+fullVarName : { qualifiedness : PossiblyQualified, name : VarName } -> String
+fullVarName { qualifiedness, name } =
+    let
+        (PossiblyQualified maybeModule) =
+            qualifiedness
+    in
+    maybeModule
         |> Maybe.map (\moduleAlias -> moduleAlias ++ "." ++ name)
         |> Maybe.withDefault name
 
@@ -311,14 +417,8 @@ parseProblemToString problem =
         ExpectingExposingAllSymbol ->
             "ExpectingExposingAllSymbol"
 
-        ExpectingExposingListLeftParen ->
-            "ExpectingExposingListLeftParen"
-
-        ExpectingExposingListRightParen ->
-            "ExpectingExposingListRightParen"
-
-        ExpectingExposingListSeparatorComma ->
-            "ExpectingExposingListSeparatorComma"
+        ExpectingComma ->
+            "ExpectingComma"
 
         ExpectingExposedTypeDoublePeriod ->
             "ExpectingExposedTypeDoublePeriod"
@@ -328,6 +428,9 @@ parseProblemToString problem =
 
         ExpectingTypeOrConstructorName ->
             "ExpectingTypeOrConstructorName"
+
+        ExpectingTypeAlias ->
+            "ExpectingTypeAlias"
 
         ExposingListCantBeEmpty ->
             "ExposingListCantBeEmpty"
@@ -343,6 +446,9 @@ parseProblemToString problem =
 
         ExpectingModuleNamePart ->
             "ExpectingModuleNamePart"
+
+        ExpectingModuleNameDot ->
+            "ExpectingModuleNameDot"
 
         ExpectingQualifiedVarNameDot ->
             "ExpectingQualifiedVarNameDot"
@@ -368,11 +474,11 @@ parseProblemToString problem =
         ExpectingEscapeCharacter char ->
             "ExpectingEscapeCharacter " ++ String.fromChar char
 
-        ExpectingUnicodeEscapeLeftBrace ->
-            "ExpectingUnicodeEscapeLeftBrace"
+        ExpectingLeftBrace ->
+            "ExpectingLeftBrace"
 
-        ExpectingUnicodeEscapeRightBrace ->
-            "ExpectingUnicodeEscapeRightBrace"
+        ExpectingRightBrace ->
+            "ExpectingRightBrace"
 
         InvalidUnicodeCodePoint ->
             "InvalidUnicodeCodePoint"
@@ -446,6 +552,21 @@ parseProblemToString problem =
         ExpectingUnit ->
             "ExpectingUnit"
 
+        ExpectingColon ->
+            "ExpectingColon"
+
+        ExpectingSpace ->
+            "ExpectingSpace"
+
+        ExpectingPipe ->
+            "ExpectingPipe"
+
+        ExpectingSimpleType type_ ->
+            "ExpectingSimpleType " ++ type_
+
+        ExpectingListType ->
+            "ExpectingListType"
+
         ExpectingRecordLeftBrace ->
             "ExpectingRecordLeftBrace"
 
@@ -455,11 +576,131 @@ parseProblemToString problem =
         ExpectingRecordRightBrace ->
             "ExpectingRecordRightBrace"
 
+        ExpectingCase ->
+            "ExpectingCase"
+
+        ExpectingOf ->
+            "ExpectingOf"
+
+        ExpectingCaseBody ->
+            "ExpectingCaseBody"
+
+        ExpectingPatternAliasName ->
+            "ExpectingPatternAliasName"
+
+        ExpectingIndentation ->
+            "ExpectingIndentation"
+
+        ExpectingNoIndentation ->
+            "ExpectingNoIndentation"
+
+        ExpectingPatternAnything ->
+            "ExpectingPatternAnything"
+
+        ExpectingMaxThreeTuple ->
+            "ExpectingMaxThreeTuple"
+
+        ExpectingTypeName ->
+            "ExpectingTypeName"
+
+        ExpectingNewlineAfterTypeAnnotation ->
+            "ExpectingNewlineAfterTypeAnnotation"
+
+        ExpectingNonSpaceAfterTypeAnnotationNewlines ->
+            "ExpectingNonSpaceAfterTypeAnnotationNewlines"
+
+        InvalidTab ->
+            "InvalidTab"
+
         InvalidNumber ->
             "InvalidNumber"
 
         TriedToParseCharacterStoppingDelimiter ->
             "TriedToParseCharacterStoppingDelimiter"
 
-        CompilerBug bug ->
-            "CompilerBug " ++ bug
+        ParseCompilerBug bug ->
+            "Parse compiler bug: "
+                ++ parseCompilerBugToString bug
+
+        EmptyListOfConstructors ->
+            "EmptyListOfConstructors"
+
+        ExpectingEnd ->
+            "ExpectingEnd"
+
+
+parseCompilerBugToString : ParseCompilerBug -> String
+parseCompilerBugToString bug =
+    case bug of
+        ModuleNameStartParserFailed ->
+            "moduleName start parser failed"
+
+        ModuleNameEndParserFailed ->
+            "moduleName end parser failed"
+
+        MultipleCharactersChompedInCharacter ->
+            "multiple characters chomped in character"
+
+        QualifiersStartParserFailed ->
+            "qualifiers start parser failed"
+
+        QualifiersSeparatorParserFailed ->
+            "qualifiers separator parser failed"
+
+        QualifiersEndParserFailed ->
+            "qualifiers end parser failed"
+
+        ConstructorsStartParserFailed ->
+            "constructors start parser failed"
+
+        ConstructorsSeparatorParserFailed ->
+            "constructors separator parser failed"
+
+        ConstructorsEndParserFailed ->
+            "constructors end parser failed"
+
+
+filenameFromContext : List { a | context : ParseContext } -> Maybe FilePath
+filenameFromContext contextStack_ =
+    case contextStack_ of
+        { context } :: rest ->
+            case context of
+                InFile name ->
+                    Just name
+
+                _ ->
+                    filenameFromContext rest
+
+        [] ->
+            Nothing
+
+
+multilineErrorMessage : FileContents -> Maybe FilePath -> String -> String -> { row : Int, col : Int } -> String
+multilineErrorMessage source filename title errorMessage { row, col } =
+    title
+        ++ "\n  --> "
+        ++ (filename
+                |> Maybe.map (\s -> s ++ ":")
+                |> Maybe.withDefault ""
+           )
+        ++ String.fromInt row
+        ++ ":"
+        ++ String.fromInt col
+        ++ (source
+                |> String.split "\n"
+                |> Array.fromList
+                |> Array.get (row - 1)
+                |> Maybe.map
+                    (\snippet ->
+                        "\n   | "
+                            ++ "\n"
+                            ++ String.padRight 3 ' ' (String.fromInt row)
+                            ++ "| "
+                            ++ snippet
+                            ++ "\n   | "
+                            ++ String.repeat (col - 1) " "
+                            ++ "^ "
+                            ++ errorMessage
+                    )
+                |> Maybe.withDefault ""
+           )

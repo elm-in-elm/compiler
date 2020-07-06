@@ -1,12 +1,21 @@
-module Stage.InferTypes exposing (inferExpr, inferTypes)
+module Stage.InferTypes exposing (inferExpr, inferTypes, unifyWithTypeAnnotation)
 
-import Dict
+import Dict exposing (Dict)
 import Elm.AST.Canonical as Canonical
 import Elm.AST.Typed as Typed
 import Elm.Compiler.Error exposing (Error(..), TypeError(..))
+import Elm.Data.Declaration as Declaration
+    exposing
+        ( Declaration
+        , DeclarationBody(..)
+        )
 import Elm.Data.Located as Located
+import Elm.Data.ModuleName exposing (ModuleName)
 import Elm.Data.Project exposing (Project)
-import Elm.Data.Type exposing (Type(..))
+import Elm.Data.Qualifiedness exposing (Qualified)
+import Elm.Data.Type exposing (Type(..), TypeOrId(..))
+import Elm.Data.Type.Concrete as ConcreteType exposing (ConcreteType)
+import Elm.Data.VarName exposing (VarName)
 import Stage.InferTypes.AssignIds as AssignIds
 import Stage.InferTypes.Boilerplate as Boilerplate
 import Stage.InferTypes.GenerateEquations as GenerateEquations
@@ -31,28 +40,27 @@ We also have a fourth part:
 -}
 inferTypes : Project Canonical.ProjectFields -> Result Error (Project Typed.ProjectFields)
 inferTypes project =
-    Boilerplate.inferProject inferExpr project
+    project
+        |> Boilerplate.inferProject
+            inferExpr
+            unifyWithTypeAnnotation
+            SubstitutionMap.empty
         |> Result.mapError TypeError
 
 
-inferExpr : Canonical.LocatedExpr -> Result TypeError Typed.LocatedExpr
-inferExpr located =
+inferExpr :
+    Dict ( ModuleName, VarName ) (ConcreteType Qualified)
+    -> Int
+    -> SubstitutionMap
+    -> Canonical.LocatedExpr
+    -> Result ( TypeError, SubstitutionMap ) ( Typed.LocatedExpr, SubstitutionMap, Int )
+inferExpr aliases unusedId substitutionMap located =
     let
-        ( exprWithIds, idSource ) =
-            AssignIds.assignIds located
+        ( exprWithIds, unusedId1 ) =
+            AssignIds.assignIds unusedId located
 
-        typeEquations =
-            GenerateEquations.generateEquations idSource exprWithIds
-                {- We throw away the IdSource. It shouldn't be needed anymore!
-
-                   BTW GenerateEquations needed it because in case of some Exprs
-                   (like List) it needed to create a new type ID on the fly.
-
-                   TODO those IDs generated on the fly have bad visibility (you
-                   can only infer their existence from the equations, but can't
-                   clearly see what they belong to). Can we do something about it?
-                -}
-                |> Tuple.first
+        ( typeEquations, unusedId2 ) =
+            GenerateEquations.generateEquations unusedId1 exprWithIds
 
         {- We have an interesting dilemma:
 
@@ -66,12 +74,18 @@ inferExpr located =
            The second option seems like an unnecessary work, but for the purposes
            of readability and education we go with it.
         -}
-        substitutionMap : Result ( TypeError, SubstitutionMap ) SubstitutionMap
-        substitutionMap =
-            Unify.unifyAllEquations typeEquations
+        newSubstitutionMap : Result ( TypeError, SubstitutionMap ) SubstitutionMap
+        newSubstitutionMap =
+            Unify.unifyAllEquations typeEquations aliases substitutionMap
     in
-    substitutionMap
-        |> Result.map (substituteAllInExpr exprWithIds)
+    newSubstitutionMap
+        |> Result.map
+            (\map ->
+                ( substituteAllInExpr exprWithIds map
+                , map
+                , unusedId2
+                )
+            )
         |> Result.mapError substituteAllInError
 
 
@@ -92,9 +106,9 @@ Ie. if we have `t0 == Int` and error `List t0 /= Int`, we can do a bit better
 and return `List Int /= Int` to the user.
 
 -}
-substituteAllInError : ( TypeError, SubstitutionMap ) -> TypeError
+substituteAllInError : ( TypeError, SubstitutionMap ) -> ( TypeError, SubstitutionMap )
 substituteAllInError ( error, substitutionMap ) =
-    case error of
+    ( case error of
         TypeMismatch t1 t2 ->
             TypeMismatch
                 (getBetterType substitutionMap t1)
@@ -102,9 +116,12 @@ substituteAllInError ( error, substitutionMap ) =
 
         OccursCheckFailed id type_ ->
             OccursCheckFailed id (getBetterType substitutionMap type_)
+    , substitutionMap
+    )
 
 
-{-| Only care about this level, don't recurse
+{-| Only care about this level, don't recurse. The recursion is handled by
+`transform` library.
 -}
 substituteType : SubstitutionMap -> Typed.LocatedExpr -> Typed.LocatedExpr
 substituteType substitutionMap located =
@@ -118,66 +135,160 @@ substituteType substitutionMap located =
 {-| Tries to resolve `Var 0`-like references through the SubstitutionMap.
 
 Only goes one step, but that should be enough if we created the SubstitutionMap
-correctly. (TODO check that assumption)
+correctly. (Any references not fully resolved are bugs, please report them!)
 
 Remember to call itself recursively on children Exprs!
 
 -}
-getBetterType : SubstitutionMap -> Type -> Type
-getBetterType substitutionMap type_ =
+getBetterType : SubstitutionMap -> TypeOrId Qualified -> TypeOrId Qualified
+getBetterType substitutionMap typeOrId =
     if SubstitutionMap.isEmpty substitutionMap then
-        type_
+        typeOrId
 
     else
-        case type_ of
-            Int ->
-                type_
-
-            Float ->
-                type_
-
-            Char ->
-                type_
-
-            String ->
-                type_
-
-            Bool ->
-                type_
-
-            Var id ->
+        case typeOrId of
+            Id id ->
                 -- walk one extra level
+                -- TODO: why? explain
                 SubstitutionMap.get id substitutionMap
-                    |> Maybe.map (\typeForId -> getBetterType substitutionMap typeForId)
-                    |> Maybe.withDefault type_
+                    |> Maybe.map (getBetterType substitutionMap)
+                    |> Maybe.withDefault typeOrId
 
-            Function arg result ->
-                Function
-                    (getBetterType substitutionMap arg)
-                    (getBetterType substitutionMap result)
+            Type type_ ->
+                case type_ of
+                    Int ->
+                        typeOrId
 
-            List param ->
-                List <| getBetterType substitutionMap param
+                    Float ->
+                        typeOrId
 
-            Unit ->
-                type_
+                    Char ->
+                        typeOrId
 
-            Tuple e1 e2 ->
-                Tuple
-                    (getBetterType substitutionMap e1)
-                    (getBetterType substitutionMap e2)
+                    String ->
+                        typeOrId
 
-            Tuple3 e1 e2 e3 ->
-                Tuple3
-                    (getBetterType substitutionMap e1)
-                    (getBetterType substitutionMap e2)
-                    (getBetterType substitutionMap e3)
+                    Bool ->
+                        typeOrId
 
-            UserDefinedType name params ->
-                UserDefinedType
-                    name
-                    (List.map (getBetterType substitutionMap) params)
+                    TypeVar _ ->
+                        typeOrId
 
-            Record bindings ->
-                Record <|
-                    Dict.map (\_ binding -> getBetterType substitutionMap binding) bindings
+                    Function { from, to } ->
+                        Type <|
+                            Function
+                                { from = getBetterType substitutionMap from
+                                , to = getBetterType substitutionMap to
+                                }
+
+                    List param ->
+                        Type <|
+                            List <|
+                                getBetterType substitutionMap param
+
+                    Unit ->
+                        typeOrId
+
+                    Tuple e1 e2 ->
+                        Type <|
+                            Tuple
+                                (getBetterType substitutionMap e1)
+                                (getBetterType substitutionMap e2)
+
+                    Tuple3 e1 e2 e3 ->
+                        Type <|
+                            Tuple3
+                                (getBetterType substitutionMap e1)
+                                (getBetterType substitutionMap e2)
+                                (getBetterType substitutionMap e3)
+
+                    UserDefinedType ut ->
+                        Type <|
+                            UserDefinedType
+                                { ut | args = List.map (getBetterType substitutionMap) ut.args }
+
+                    Record bindings ->
+                        Type <|
+                            Record <|
+                                Dict.map (\_ binding -> getBetterType substitutionMap binding) bindings
+
+
+unifyWithTypeAnnotation :
+    Dict ( ModuleName, VarName ) (ConcreteType Qualified)
+    -> Int
+    -> SubstitutionMap
+    -> Declaration Typed.LocatedExpr (ConcreteType Qualified) Qualified
+    -> Result ( TypeError, SubstitutionMap ) ( Declaration Typed.LocatedExpr Never Qualified, SubstitutionMap, Int )
+unifyWithTypeAnnotation aliases unusedId substitutionMap decl =
+    let
+        default =
+            Ok
+                ( throwAwayType decl
+                , substitutionMap
+                , unusedId
+                )
+    in
+    case decl.body of
+        Value r ->
+            case r.typeAnnotation of
+                Just annotationType ->
+                    let
+                        realDeclarationType =
+                            Typed.getTypeOrId r.expression
+
+                        unifyResult =
+                            Unify.unify
+                                (ConcreteType.toTypeOrId annotationType)
+                                realDeclarationType
+                                aliases
+                                substitutionMap
+                    in
+                    unifyResult
+                        |> Result.map
+                            (\newSubstitutionMap ->
+                                ( throwAwayType decl
+                                , newSubstitutionMap
+                                , unusedId
+                                )
+                            )
+
+                Nothing ->
+                    default
+
+        TypeAlias _ ->
+            default
+
+        CustomType _ ->
+            default
+
+        Port _ ->
+            default
+
+
+throwAwayType : Declaration a (ConcreteType Qualified) b -> Declaration a Never b
+throwAwayType decl =
+    { module_ = decl.module_
+    , name = decl.name
+    , body =
+        case decl.body of
+            Value r ->
+                Value
+                    { expression = r.expression
+                    , typeAnnotation = Nothing
+                    }
+
+            TypeAlias r ->
+                TypeAlias
+                    { parameters = r.parameters
+                    , definition = r.definition
+                    }
+
+            CustomType r ->
+                CustomType
+                    { parameters = r.parameters
+                    , constructors = r.constructors
+                    }
+
+            Port type_ ->
+                Port type_
+    }

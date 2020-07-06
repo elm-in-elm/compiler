@@ -17,11 +17,13 @@ contains two bindings: `myNumber` and `answer`.
 
 -}
 
+import Elm.Data.VarName exposing (VarName)
+
 
 {-| -}
 type alias Binding expr =
     -- TODO type annotation for the let...in binding
-    { name : String
+    { name : VarName
     , body : expr
     }
 

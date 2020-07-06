@@ -1,12 +1,18 @@
 module Elm.AST.Typed exposing
     ( ProjectFields
-    , LocatedExpr, Expr, Expr_(..), getExpr, getType, unwrap, dropTypes, transformAll, transformOnce, recursiveChildren, setExpr
+    , LocatedExpr, Expr, Expr_(..)
+    , LocatedPattern, Pattern, Pattern_(..)
+    , getExpr, unwrap, transformAll, transformOnce, recursiveChildren, setExpr
+    , dropTypes, getTypeOrId, getType
     )
 
 {-| Typed AST holds the inferred [types](Elm.Data.Type) for every expression.
 
 @docs ProjectFields
-@docs LocatedExpr, Expr, Expr_, getExpr, getType, unwrap, dropTypes, transformAll, transformOnce, recursiveChildren, setExpr
+@docs LocatedExpr, Expr, Expr_
+@docs LocatedPattern, Pattern, Pattern_
+@docs getExpr, unwrap, transformAll, transformOnce, recursiveChildren, setExpr
+@docs dropTypes, getTypeOrId, getType
 
 -}
 
@@ -17,12 +23,14 @@ import Elm.Data.Binding as Binding exposing (Binding)
 import Elm.Data.Located as Located exposing (Located)
 import Elm.Data.Module exposing (Module)
 import Elm.Data.ModuleName exposing (ModuleName)
-import Elm.Data.Type exposing (Type)
+import Elm.Data.Qualifiedness exposing (Qualified)
+import Elm.Data.Type as Type exposing (Type, TypeOrId(..))
 import Elm.Data.VarName exposing (VarName)
+import OurExtras.List as List
 import Transform
 
 
-{-| "What does this compiler stage need to store abotut the whole project?
+{-| "What does this compiler stage need to store about the whole project?
 
 (See [`Elm.Data.Project`](Elm.Data.Project).)
 
@@ -31,7 +39,7 @@ that hold [typed AST expressions](#LocatedExpr).
 
 -}
 type alias ProjectFields =
-    { modules : Dict ModuleName (Module LocatedExpr) }
+    { modules : Dict ModuleName (Module LocatedExpr Never Qualified) }
 
 
 {-| The main type of this module. Expression with [location metadata](Elm.Data.Located).
@@ -52,7 +60,7 @@ type alias LocatedExpr =
 
 -}
 type alias Expr =
-    ( Expr_, Type )
+    ( Expr_, TypeOrId Qualified )
 
 
 {-| -}
@@ -75,6 +83,37 @@ type Expr_
     | Tuple LocatedExpr LocatedExpr
     | Tuple3 LocatedExpr LocatedExpr LocatedExpr
     | Record (Dict VarName (Binding LocatedExpr))
+    | Case LocatedExpr (List { pattern : LocatedPattern, body : LocatedExpr })
+
+
+type alias LocatedPattern =
+    Located Pattern
+
+
+{-| Differs from [Canonical.Pattern](Elm.AST.Canonical#Pattern) by:
+
+  - being a tuple of the underlying Pattern\_ and its inferred type
+
+-}
+type alias Pattern =
+    ( Pattern_, TypeOrId Qualified )
+
+
+type Pattern_
+    = PAnything
+    | PVar VarName
+    | PRecord (List VarName)
+    | PAlias LocatedPattern VarName
+    | PUnit
+    | PTuple LocatedPattern LocatedPattern
+    | PTuple3 LocatedPattern LocatedPattern LocatedPattern
+    | PList (List LocatedPattern)
+    | PCons LocatedPattern LocatedPattern
+    | PBool Bool
+    | PChar Char
+    | PString String
+    | PInt Int
+    | PFloat Float
 
 
 {-| A helper for the [Transform](/packages/Janiczek/transform/latest/) library.
@@ -165,6 +204,16 @@ recurse fn locatedExpr =
                                 (always (Binding.map fn))
                                 bindings
                             )
+
+                    Case test branches ->
+                        Case (fn test) <|
+                            List.map
+                                (\{ pattern, body } ->
+                                    { pattern = pattern
+                                    , body = fn body
+                                    }
+                                )
+                                branches
             )
 
 
@@ -239,13 +288,13 @@ recursiveChildren fn locatedExpr =
 
         Let { bindings, body } ->
             fn body
-                ++ List.concatMap (.body >> fn) (Dict.values bindings)
+                ++ List.fastConcatMap (.body >> fn) (Dict.values bindings)
 
         Unit ->
             []
 
         List items ->
-            List.concatMap fn items
+            List.fastConcatMap fn items
 
         Tuple e1 e2 ->
             fn e1 ++ fn e2
@@ -254,7 +303,10 @@ recursiveChildren fn locatedExpr =
             fn e1 ++ fn e2 ++ fn e3
 
         Record bindings ->
-            List.concatMap (.body >> fn) (Dict.values bindings)
+            List.fastConcatMap (.body >> fn) (Dict.values bindings)
+
+        Case e branches ->
+            fn e ++ List.fastConcatMap (.body >> fn) branches
 
 
 mapExpr : (Expr_ -> Expr_) -> LocatedExpr -> LocatedExpr
@@ -274,14 +326,25 @@ setExpr expr locatedExpr =
 -}
 getExpr : LocatedExpr -> Expr_
 getExpr locatedExpr =
-    Tuple.first <| Located.unwrap locatedExpr
+    locatedExpr
+        |> Located.unwrap
+        |> Tuple.first
 
 
 {-| Extract the type (remove the location information and the expression).
 -}
-getType : LocatedExpr -> Type
+getTypeOrId : LocatedExpr -> TypeOrId Qualified
+getTypeOrId locatedExpr =
+    locatedExpr
+        |> Located.unwrap
+        |> Tuple.second
+
+
+getType : LocatedExpr -> Maybe (Type Qualified)
 getType locatedExpr =
-    Tuple.second <| Located.unwrap locatedExpr
+    locatedExpr
+        |> getTypeOrId
+        |> Type.getType
 
 
 {-| Discard the [location metadata](Elm.Data.Located#Located).
@@ -289,6 +352,9 @@ getType locatedExpr =
 unwrap : LocatedExpr -> Unwrapped.Expr
 unwrap expr =
     let
+        f =
+            unwrap
+
         ( expr_, type_ ) =
             Located.unwrap expr
     in
@@ -316,65 +382,132 @@ unwrap expr =
 
         Plus e1 e2 ->
             Unwrapped.Plus
-                (unwrap e1)
-                (unwrap e2)
+                (f e1)
+                (f e2)
 
         Cons e1 e2 ->
             Unwrapped.Cons
-                (unwrap e1)
-                (unwrap e2)
+                (f e1)
+                (f e2)
 
         Lambda { argument, body } ->
             Unwrapped.Lambda
                 { argument = argument
-                , body = unwrap body
+                , body = f body
                 }
 
         Call { fn, argument } ->
             Unwrapped.Call
-                { fn = unwrap fn
-                , argument = unwrap argument
+                { fn = f fn
+                , argument = f argument
                 }
 
         If { test, then_, else_ } ->
             Unwrapped.If
-                { test = unwrap test
-                , then_ = unwrap then_
-                , else_ = unwrap else_
+                { test = f test
+                , then_ = f then_
+                , else_ = f else_
                 }
 
         Let { bindings, body } ->
             Unwrapped.Let
                 { bindings =
                     Dict.map
-                        (always (Binding.map unwrap))
+                        (always (Binding.map f))
                         bindings
-                , body = unwrap body
+                , body = f body
                 }
 
         List list ->
             Unwrapped.List
-                (List.map unwrap list)
+                (List.map f list)
 
         Unit ->
             Unwrapped.Unit
 
         Tuple e1 e2 ->
             Unwrapped.Tuple
-                (unwrap e1)
-                (unwrap e2)
+                (f e1)
+                (f e2)
 
         Tuple3 e1 e2 e3 ->
             Unwrapped.Tuple3
-                (unwrap e1)
-                (unwrap e2)
-                (unwrap e3)
+                (f e1)
+                (f e2)
+                (f e3)
 
         Record bindings ->
             Unwrapped.Record <|
                 Dict.map
                     (always (Binding.map unwrap))
                     bindings
+
+        Case test branches ->
+            Unwrapped.Case (f test) <|
+                List.map
+                    (\{ pattern, body } ->
+                        { pattern = unwrapPattern pattern
+                        , body = f body
+                        }
+                    )
+                    branches
+    , type_
+    )
+
+
+{-| Discard the [location metadata](Elm.Data.Located#Located).
+-}
+unwrapPattern : LocatedPattern -> Unwrapped.Pattern
+unwrapPattern expr =
+    let
+        ( expr_, type_ ) =
+            Located.unwrap expr
+    in
+    ( case expr_ of
+        PAnything ->
+            Unwrapped.PAnything
+
+        PVar varName ->
+            Unwrapped.PVar varName
+
+        PRecord varNames ->
+            Unwrapped.PRecord varNames
+
+        PAlias p varName ->
+            Unwrapped.PAlias (unwrapPattern p) varName
+
+        PUnit ->
+            Unwrapped.PUnit
+
+        PTuple p1 p2 ->
+            Unwrapped.PTuple (unwrapPattern p1) (unwrapPattern p2)
+
+        PTuple3 p1 p2 p3 ->
+            Unwrapped.PTuple3
+                (unwrapPattern p1)
+                (unwrapPattern p2)
+                (unwrapPattern p3)
+
+        PList ps ->
+            Unwrapped.PList (List.map unwrapPattern ps)
+
+        PCons p1 p2 ->
+            Unwrapped.PCons (unwrapPattern p1) (unwrapPattern p2)
+
+        PBool bool ->
+            Unwrapped.PBool bool
+
+        PChar char ->
+            Unwrapped.PChar char
+
+        PString string ->
+            Unwrapped.PString string
+
+        PInt int ->
+            Unwrapped.PInt int
+
+        PFloat float ->
+            Unwrapped.PFloat float
     , type_
     )
 
@@ -383,6 +516,10 @@ unwrap expr =
 -}
 dropTypes : LocatedExpr -> Canonical.LocatedExpr
 dropTypes locatedExpr =
+    let
+        f =
+            dropTypes
+    in
     locatedExpr
         |> Located.map
             (\( expr, _ ) ->
@@ -410,57 +547,128 @@ dropTypes locatedExpr =
 
                     Plus e1 e2 ->
                         Canonical.Plus
-                            (dropTypes e1)
-                            (dropTypes e2)
+                            (f e1)
+                            (f e2)
 
                     Cons e1 e2 ->
                         Canonical.Cons
-                            (dropTypes e1)
-                            (dropTypes e2)
+                            (f e1)
+                            (f e2)
 
                     Lambda { argument, body } ->
                         Canonical.Lambda
                             { argument = argument
-                            , body = dropTypes body
+                            , body = f body
                             }
 
                     Call { fn, argument } ->
                         Canonical.Call
-                            { fn = dropTypes fn
-                            , argument = dropTypes argument
+                            { fn = f fn
+                            , argument = f argument
                             }
 
                     If { test, then_, else_ } ->
                         Canonical.If
-                            { test = dropTypes test
-                            , then_ = dropTypes then_
-                            , else_ = dropTypes else_
+                            { test = f test
+                            , then_ = f then_
+                            , else_ = f else_
                             }
 
                     Let { bindings, body } ->
                         Canonical.Let
-                            { bindings = Dict.map (always (Binding.map dropTypes)) bindings
-                            , body = dropTypes body
+                            { bindings = Dict.map (always (Binding.map f)) bindings
+                            , body = f body
                             }
 
                     List exprs ->
-                        Canonical.List (List.map dropTypes exprs)
+                        Canonical.List (List.map f exprs)
 
                     Unit ->
                         Canonical.Unit
 
                     Tuple e1 e2 ->
                         Canonical.Tuple
-                            (dropTypes e1)
-                            (dropTypes e2)
+                            (f e1)
+                            (f e2)
 
                     Tuple3 e1 e2 e3 ->
                         Canonical.Tuple3
-                            (dropTypes e1)
-                            (dropTypes e2)
-                            (dropTypes e3)
+                            (f e1)
+                            (f e2)
+                            (f e3)
 
                     Record bindings ->
                         Canonical.Record <|
-                            Dict.map (always (Binding.map dropTypes)) bindings
+                            Dict.map (always (Binding.map f)) bindings
+
+                    Case test branches ->
+                        Canonical.Case (f test) <|
+                            List.map
+                                (\{ pattern, body } ->
+                                    { pattern = dropPatternTypes pattern
+                                    , body = f body
+                                    }
+                                )
+                                branches
+            )
+
+
+{-| Go from `AST.Typed` to [`AST.Canonical`](Elm.AST.Canonical).
+-}
+dropPatternTypes : LocatedPattern -> Canonical.LocatedPattern
+dropPatternTypes locatedPattern =
+    let
+        f =
+            dropPatternTypes
+    in
+    locatedPattern
+        |> Located.map
+            (\( pattern, _ ) ->
+                case pattern of
+                    PAnything ->
+                        Canonical.PAnything
+
+                    PVar varName ->
+                        Canonical.PVar varName
+
+                    PRecord varNames ->
+                        Canonical.PRecord varNames
+
+                    PAlias p varName ->
+                        Canonical.PAlias (f p) varName
+
+                    PUnit ->
+                        Canonical.PUnit
+
+                    PTuple p1 p2 ->
+                        Canonical.PTuple
+                            (f p1)
+                            (f p2)
+
+                    PTuple3 p1 p2 p3 ->
+                        Canonical.PTuple3
+                            (f p1)
+                            (f p2)
+                            (f p3)
+
+                    PList ps ->
+                        Canonical.PList (List.map f ps)
+
+                    PCons p1 p2 ->
+                        Canonical.PCons (f p1) (f p2)
+
+                    PBool bool ->
+                        Canonical.PBool bool
+
+                    PChar char ->
+                        Canonical.PChar char
+
+                    PString string ->
+                        Canonical.PString string
+
+                    PInt int ->
+                        Canonical.PInt int
+
+                    PFloat float ->
+                        Canonical.PFloat float
             )

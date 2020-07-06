@@ -1,0 +1,76 @@
+// Possible states:
+// ----------------
+// notstarted
+// juststarted
+// inprogress
+// nearlydone
+// complete
+
+# General
+
+parsing|inprogress
+type inference|inprogress
+optimizing|juststarted
+emitting|juststarted|Very naive JS implementation
+library|juststarted|First version released, not entirely usable without all parsers
+cli|juststarted|Very rudimentary, almost no customization
+
+# Parsing
+
+module declarations|nearlydone|Effect modules missing
+port declarations|complete
+integers|complete
+floats|complete
+chars|complete
+strings|complete
+booleans|complete
+variables|complete
+list literals|complete
+binary operators|inprogress|Multi-line support missing
+lambdas|complete
+function calls|complete
+if...then...else|complete
+let...in|complete
+case...of|nearlydone|Custom type destructuring missing
+records|complete
+record accessors|notstarted
+record updates|notstarted
+unit|complete
+tuples and 3-tuples|complete
+type annotations|complete
+custom types|complete
+type aliases|complete
+pattern matching|nearlydone|Some cases still missing
+infix operator definitions|notstarted
+WebGL shaders|notstarted
+comments|notstarted
+
+# Type Inference
+
+basic Hindley-Milner|complete
+let polymorphism|notstarted
+type aliases|nearlydone|Parameters parsed but we're doing nothing with them
+custom types|notstarted
+extensible records|notstarted
+case...of|nearlydone|A few remaining TODOs for generating equations
+
+# Optimizations
+
+constant-folding integers|juststarted|Only (+) done
+constant-folding floats|juststarted|Only (+) done
+constant-folding strings|notstarted
+constant-folding booleans|notstarted
+constant-folding lists|juststarted|Only (::) done
+constant-folding tuples and 3-tuples|notstarted
+merging lambdas|notstarted
+merging function calls|notstarted
+merging record updates|notstarted
+pipe operators inlining|notstarted
+variable inlining|notstarted
+if <literal bool> folding|complete
+case <literal> of -> if|notstarted
+
+# Emitting
+
+proof-of-concept JS backend|inprogress|only stuff we can parse is emitted
+dead code elimination|complete

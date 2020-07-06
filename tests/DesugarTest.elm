@@ -4,12 +4,15 @@ import Dict
 import Elm.AST.Canonical as Canonical
 import Elm.AST.Canonical.Unwrapped as CanonicalU
 import Elm.AST.Frontend as Frontend
-import Elm.Compiler.Error as CompilerError
+import Elm.Compiler.Error as Error exposing (DesugarError)
 import Elm.Data.Declaration as Declaration exposing (Declaration)
 import Elm.Data.Exposing as Exposing
 import Elm.Data.Import exposing (Import)
+import Elm.Data.Located as Located
 import Elm.Data.Module as Module exposing (Module)
 import Elm.Data.ModuleName exposing (ModuleName)
+import Elm.Data.Qualifiedness exposing (PossiblyQualified(..))
+import Elm.Data.TypeAnnotation exposing (TypeAnnotation)
 import Elm.Data.VarName exposing (VarName)
 import Expect
 import Stage.Desugar as Desugar
@@ -44,8 +47,13 @@ desugarTest =
             , inputVar = ( Nothing, "b" )
             , expectedResult =
                 Err
-                    (CompilerError.VarNameNotFound
-                        { insideModule = "A", var = { module_ = Nothing, name = "b" } }
+                    (Error.VarNameNotFound
+                        { insideModule = "A"
+                        , var =
+                            { qualifiedness = PossiblyQualified Nothing
+                            , name = "b"
+                            }
+                        }
                     )
             }
         , toTest
@@ -99,7 +107,7 @@ desugarTest =
             , inputVar = ( Nothing, "a" )
             , expectedResult =
                 Err <|
-                    CompilerError.AmbiguousName
+                    Error.AmbiguousName
                         { name = "a"
                         , insideModule = "A"
                         , possibleModules = [ "B", "C" ]
@@ -114,11 +122,39 @@ desugarTest =
             , inputVar = ( Nothing, "a" )
             , expectedResult =
                 Err <|
-                    CompilerError.VarNameNotFound
-                        { var = { module_ = Nothing, name = "a" }
+                    Error.VarNameNotFound
+                        { var =
+                            { qualifiedness = PossiblyQualified Nothing
+                            , name = "a"
+                            }
                         , insideModule = "A"
                         }
             }
+        , test "desugar duplicate record field" <|
+            \_ ->
+                let
+                    aRegion =
+                        { start = { row = 1, col = 1 }, end = { row = 2, col = 2 } }
+
+                    bRegion =
+                        { start = { row = 3, col = 3 }, end = { row = 4, col = 4 } }
+                in
+                [ { name = "aaa", body = Located.located aRegion Frontend.Unit }
+                , { name = "aaa", body = Located.located bRegion Frontend.Unit }
+                ]
+                    |> Frontend.Record
+                    |> located
+                    |> Desugar.desugarExpr Dict.empty (moduleFromName "A")
+                    |> mapUnwrap
+                    |> Expect.equal
+                        ({ name = "aaa"
+                         , insideModule = "A"
+                         , firstOccurrence = Located.located aRegion ()
+                         , secondOccurrence = Located.located bRegion ()
+                         }
+                            |> Error.DuplicateRecordField
+                            |> Err
+                        )
         ]
 
 
@@ -161,7 +197,7 @@ type alias NameResolutionTestCase =
     , thisModuleImports : List ( ModuleName, Import )
     , availableModules : List { name : ModuleName, exposedVars : List VarName }
     , inputVar : ( Maybe ModuleName, VarName )
-    , expectedResult : Result CompilerError.DesugarError ( ModuleName, VarName )
+    , expectedResult : Result DesugarError ( ModuleName, VarName )
     }
 
 
@@ -192,12 +228,19 @@ toTest r =
 
 var : ( Maybe ModuleName, VarName ) -> Frontend.LocatedExpr
 var ( maybeModuleName, varName ) =
-    located <| Frontend.Var { module_ = maybeModuleName, name = varName }
+    located <|
+        Frontend.Var
+            { qualifiedness = PossiblyQualified maybeModuleName
+            , name = varName
+            }
 
 
 buildExpectedResult : ( ModuleName, VarName ) -> CanonicalU.Expr
 buildExpectedResult ( moduleName, varName ) =
-    CanonicalU.Var { module_ = moduleName, name = varName }
+    CanonicalU.Var
+        { module_ = moduleName
+        , name = varName
+        }
 
 
 
@@ -230,7 +273,7 @@ as_ alias_ ( moduleName, import_ ) =
     ( moduleName, { import_ | as_ = Just alias_ } )
 
 
-moduleFromName : ModuleName -> Module a
+moduleFromName : ModuleName -> Module expr ann qual
 moduleFromName name =
     { imports = Dict.empty
     , name = name
@@ -247,20 +290,30 @@ moduleFromName name =
 -}
 
 
-addDeclaration : String -> Module Frontend.LocatedExpr -> Module Frontend.LocatedExpr
+addDeclaration :
+    String
+    -> Module Frontend.LocatedExpr TypeAnnotation PossiblyQualified
+    -> Module Frontend.LocatedExpr TypeAnnotation PossiblyQualified
 addDeclaration varName module_ =
     let
-        decl : Declaration Frontend.LocatedExpr
+        decl : Declaration Frontend.LocatedExpr TypeAnnotation PossiblyQualified
         decl =
             { module_ = module_.name
             , name = varName
-            , body = Declaration.Value (located <| Frontend.Int 42)
+            , body =
+                Declaration.Value
+                    { typeAnnotation = Nothing
+                    , expression = located <| Frontend.Int 42
+                    }
             }
     in
     { module_ | declarations = Dict.insert varName decl module_.declarations }
 
 
-addDeclarations : List String -> Module Frontend.LocatedExpr -> Module Frontend.LocatedExpr
+addDeclarations :
+    List String
+    -> Module Frontend.LocatedExpr TypeAnnotation PossiblyQualified
+    -> Module Frontend.LocatedExpr TypeAnnotation PossiblyQualified
 addDeclarations varNames module_ =
     List.foldr addDeclaration module_ varNames
 
@@ -269,7 +322,7 @@ addDeclarations varNames module_ =
 {- | add a list of exposed values to a module -}
 
 
-exposingValuesInModule : List VarName -> Module a -> Module a
+exposingValuesInModule : List VarName -> Module expr ann qual -> Module expr ann qual
 exposingValuesInModule varNames exposable =
     { exposable | exposing_ = Exposing.ExposingSome (List.map Exposing.ExposedValue varNames) }
 
@@ -278,12 +331,12 @@ exposingValuesInModule varNames exposable =
 {- | add an import to a module -}
 
 
-addImport : ( ModuleName, Import ) -> Module a -> Module a
+addImport : ( ModuleName, Import ) -> Module expr ann qual -> Module expr ann qual
 addImport ( moduleName, import_ ) module_ =
     { module_ | imports = Dict.insert moduleName import_ module_.imports }
 
 
-addImports : List ( ModuleName, Import ) -> Module a -> Module a
+addImports : List ( ModuleName, Import ) -> Module expr ann qual -> Module expr ann qual
 addImports imports module_ =
     List.foldr addImport module_ imports
 

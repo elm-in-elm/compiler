@@ -1,39 +1,46 @@
-.PHONY: test-perf
-test-perf:
-	@rm -rf ../build/elm.js ../cli/elm-stuff
-	@echo "COMPILING THE COMPILER (NON-OPTIMIZED)"
-	@cd cli && elm make Main.elm --output ../build/elm.js >/dev/null 2>&1
-	@echo "MEASURING! (NON-OPTIMIZED)"
-	@bash -c "time node cli/index.js >/dev/null 2>&1"
-	@echo -e "\nCOMPILING THE COMPILER (OPTIMIZED)"
-	@cd cli && elm make Main.elm --optimize --output ../build/elm.js >/dev/null 2>&1
-	@echo "MEASURING! (OPTIMIZED)"
-	@bash -c "time node cli/index.js >/dev/null 2>&1"
-	
+# elm-format does not support excluding files so we explicitly list all the directories
+# we want to be formatted. See https://github.com/avh4/elm-format/issues/669.
+FORMAT_DIRS = \
+	benchmarks \
+	cli \
+	example-library-usages \
+	src \
+	tests
 
 .PHONY: run
 run: build
-	@tput reset
-	@node cli/index.js
+	tput reset
+	cd example-project && \
+	(node $(NODE_FLAGS) ../cli/index.js --main src/Main.elm || true) \
+	# have `make run` succeed even if compilation fails.
+
+.PHONY: json
+json: build
+	tput reset
+	cd example-project && node ../cli/index.js --main src/Main.elm -o JSON
 
 .PHONY: build
 build:
-	rm -rf build/elm.js cli/elm-stuff
-	cd cli && elm make Main.elm --output ../build/elm.js
+	rm -rf build/elm.js elm-stuff
+	cd cli && npx elm make Main.elm --output ../build/elm.js
+
+.PHONY: watch
+watch:
+	cd cli && npx elm-live Main.elm --no-server
 
 .PHONY: test
-test:
-	elm make --output /dev/null # build the library just to test it compiles
-	elm-test
+test: build
+	npx elm make --output /dev/null # build the library just to test it compiles
+	npx elm-test
+	npx ava
 
 .PHONY: format
 format:
-	elm-format . --yes
-
+	npx elm-format $(FORMAT_DIRS) --yes
 
 .PHONY: lint
 lint:
-	elm-format . --validate
+	npx elm-format $(FORMAT_DIRS) --validate
 
 .PHONY: readme_lib
 readme_lib:
@@ -44,3 +51,16 @@ readme_lib:
 readme_gh:
 	mv README.md README-library.md
 	mv README-github.md README.md
+
+.SILENT: test-perf
+.PHONY: test-perf
+test-perf:
+	rm -rf build/elm.js
+	echo "COMPILING THE COMPILER (NON-OPTIMIZED)"
+	cd cli && npx elm make Main.elm --output ../build/elm.js >/dev/null 2>&1
+	echo "MEASURING! (NON-OPTIMIZED)"
+	bash -c "time node cli/index.js --main src/Main.elm >/dev/null 2>&1"
+	echo -e "\nCOMPILING THE COMPILER (OPTIMIZED)"
+	cd cli && npx elm make Main.elm --optimize --output ../build/elm.js >/dev/null 2>&1
+	echo "MEASURING! (OPTIMIZED)"
+	bash -c "time node cli/index.js --main src/Main.elm >/dev/null 2>&1"

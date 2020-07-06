@@ -1,7 +1,7 @@
 module OptimizeTest exposing (optimize)
 
 import Elm.AST.Typed as Typed exposing (Expr_(..))
-import Elm.Data.Type as Type
+import Elm.Data.Type as Type exposing (TypeOrId(..))
 import Expect
 import Stage.Optimize
 import Test exposing (Test, describe, test)
@@ -34,36 +34,36 @@ optimize =
                             ( Plus
                                 (typedInt 2)
                                 (typedInt 5)
-                            , Type.Int
+                            , Type Type.Int
                             )
                       , typedInt 7
                       )
                     , ( "doesn't work if left is not int"
                       , located
                             ( Plus
-                                (located ( Argument "x", Type.Int ))
+                                (located ( Argument "x", Type Type.Int ))
                                 (typedInt 5)
-                            , Type.Int
+                            , Type Type.Int
                             )
                       , located
                             ( Plus
-                                (located ( Argument "x", Type.Int ))
+                                (located ( Argument "x", Type Type.Int ))
                                 (typedInt 5)
-                            , Type.Int
+                            , Type Type.Int
                             )
                       )
                     , ( "doesn't work if right is not int"
                       , located
                             ( Plus
                                 (typedInt 5)
-                                (located ( Argument "x", Type.Int ))
-                            , Type.Int
+                                (located ( Argument "x", Type Type.Int ))
+                            , Type Type.Int
                             )
                       , located
                             ( Plus
                                 (typedInt 5)
-                                (located ( Argument "x", Type.Int ))
-                            , Type.Int
+                                (located ( Argument "x", Type Type.Int ))
+                            , Type Type.Int
                             )
                       )
                     ]
@@ -75,7 +75,7 @@ optimize =
                             ( Cons
                                 (typedInt 1)
                                 (typedIntList [ 2, 3 ])
-                            , Type.Int
+                            , Type Type.Int
                             )
                       , typedIntList [ 1, 2, 3 ]
                       )
@@ -90,7 +90,7 @@ optimize =
                                 , then_ = typedInt 42
                                 , else_ = typedInt 0
                                 }
-                            , Type.Int
+                            , Type Type.Int
                             )
                       , typedInt 42
                       )
@@ -101,26 +101,26 @@ optimize =
                                 , then_ = typedInt 0
                                 , else_ = typedInt 42
                                 }
-                            , Type.Int
+                            , Type Type.Int
                             )
                       , typedInt 42
                       )
                     , ( "doesn't work if the bool is not literal"
                       , located
                             ( If
-                                { test = located ( Argument "x", Type.Bool )
+                                { test = located ( Argument "x", Type Type.Bool )
                                 , then_ = typedInt 0
                                 , else_ = typedInt 42
                                 }
-                            , Type.Int
+                            , Type Type.Int
                             )
                       , located
                             ( If
-                                { test = located ( Argument "x", Type.Bool )
+                                { test = located ( Argument "x", Type Type.Bool )
                                 , then_ = typedInt 0
                                 , else_ = typedInt 42
                                 }
-                            , Type.Int
+                            , Type Type.Int
                             )
                       )
                     ]

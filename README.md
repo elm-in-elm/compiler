@@ -30,14 +30,14 @@ Elm compiler written in Elm!
 
 ## Goals
 
-1. :book: **compiler as Elm library:** so that we can publish it on https://package.elm-lang.org/ and unlock new kinds of Elm applications (like Slack bots, [Klipse](https://github.com/viebel/klipse) integration, stepping debuggers, ...)!
+1. :book: **compiler as Elm library:** so that we can publish it on https://package.elm-lang.org/ and unlock new kinds of Elm applications (like Elm-evaluating Slack bots, [Klipse](https://github.com/viebel/klipse) integration, stepping debuggers, ...)!
 2. :children_crossing: **learning friendly:** so that folks can learn how to write a compiler in Elm (similarly to Richard Feldman's [elm-spa-example](https://github.com/rtfeldman/elm-spa-example)). This means `elm-in-elm` is focused on readability, beauty, approachability, simplicity, great docs and great tests first, and only then completeness and speed.
 3. :bulb: **exploration ready:** the first two points enable folks to hack on the compiler (as it's written in Elm, which they know, and the code is new-people-friendly) and answer some questions! (For example, what's the best order of optimizations? How would emitting to JavaScript have to look like to make it extra amenable to Google Closure Compiler's advanced optimizations?)
 4. :wrench: **extensible:** again, the first two (three?) points make it easy and invite extending the compiler in various ways, eg. a native binary target, different type inference algorithm, new optimizations, `where` syntax, etc.
 
 **In short, `elm-in-elm` aims to unblock and encourage people to play with compilers and the Elm language itself, explore new frontiers and have fun!**
 
-:tv: For more context and information, you can watch [Martin Janiczek's talk from Elm Europe 2019](#todo) (:construction: `TODO` :construction:) which served as an unveiling of `elm-in-elm` to public. Here are :bar_chart: [the slides.](assets/talk.pdf)
+:tv: For more context and information, you can watch [Martin Janiczek's talk from Elm Europe 2019](https://www.youtube.com/watch?v=62khGXfh8zg&list=PL-cYi7I913S_oRLJEpsVbSTq_OOMSXlPD&index=21) which served as an unveiling of `elm-in-elm` to public. Here are :bar_chart: [the slides.](assets/talk.pdf)
 
 ## Non-goals :negative_squared_cross_mark:
 
@@ -61,7 +61,7 @@ It is written in Elm, and compiles Elm to JavaScript, but lays the foundation to
 
 ## Contributing
 
-Oh God please yes! :heart: Feel free to look around the [<kbd>help wanted</kbd>](https://github.com/elm-in-elm/compiler/labels/help%20wanted) or [<kbd>good first issue</kbd>](https://github.com/elm-in-elm/compiler/labels/good%20first%20issue) issues, have a look around the codebase for some general nitpicks or refactorings, or hit us up on [Discord](https://discordapp.com/invite/d6kkjg7)!
+Please yes! :heart: Feel free to look around the [<kbd>help wanted</kbd>](https://github.com/elm-in-elm/compiler/labels/help%20wanted) or [<kbd>good first issue</kbd>](https://github.com/elm-in-elm/compiler/labels/good%20first%20issue) issues, have a look around the codebase for some general nitpicks or refactorings, or hit us up on [Discord](https://discordapp.com/invite/d6kkjg7)!
 
 ## Roadmap
 
@@ -70,41 +70,39 @@ Oh God please yes! :heart: Feel free to look around the [<kbd>help wanted</kbd>]
 </p>
 
 
-|                   | parser tests         | optimize tests       | emit tests           | parse                | desugar            | infer types        | optimize             | emit                 |
-| ----------------- | -------------------- | -------------------- | -------------------- | -------------------- | ------------------ | ------------------ | -------------------- | -------------------- |
-| integers          | :heavy_check_mark:   | :warning: [[2]](#f2) | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark: | :heavy_check_mark: | :warning: [[2]](#f2) | :heavy_check_mark:   |
-| floats            | :heavy_check_mark:   | :x: [[5]](#f5)       | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark: | :heavy_check_mark: | :x: [[5]](#f5)       | :heavy_check_mark:   |
-| characters        | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark:   | :heavy_check_mark:   |
-| strings           | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark:   | :heavy_check_mark:   |
-| booleans          | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark:   | :heavy_check_mark:   |
-| variables         | :warning:            | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark:   | :heavy_check_mark:   |
-| lists             | :warning: [[3]](#3)  | :x: [[8]](#f8)       | :warning: [[1]](#f1) | :warning: [[3]](#3)  | :heavy_check_mark: | :heavy_check_mark: | :x: [[8]](#f8)       | :warning: [[1]](#f1) |
-| binary operators  | :warning: [[3]](#3)  | :heavy_check_mark:   | :heavy_check_mark:   | :warning: [[3]](#3)  | :heavy_check_mark: | :x:                | :warning:            | :warning:            |
-| lambdas           | :warning: [[3]](#3)  | :heavy_check_mark:   | :heavy_check_mark:   | :warning: [[3]](#3)  | :heavy_check_mark: | :heavy_check_mark: | :warning:            | :heavy_check_mark:   |
-| function calls    | :warning: [[3]](#3)  | :heavy_check_mark:   | :heavy_check_mark:   | :warning: [[3]](#3)  | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark:   | :heavy_check_mark:   |
-| if...then...else  | :warning: [[3]](#3)  | :heavy_check_mark:   | :heavy_check_mark:   | :warning: [[3]](#3)  | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark:   | :heavy_check_mark:   |
-| let..in           | :warning: [[3]](#3)  | :heavy_check_mark:   | :heavy_check_mark:   | :warning: [[3]](#3)  | :heavy_check_mark: | :warning:          | :heavy_check_mark:   | :warning:            |
-| case...of         | :x:                  | :x:                  | :x:                  | :x:                  | :x:                | :x:                | :x:                  | :x:                  |
-| records           | :warning: [[3]](#3)  | :heavy_check_mark:   | :heavy_check_mark:    | :warning: [[3]](#3)  | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark:   | :heavy_check_mark:   |
-| record accessors  | :x:                  | :x:                  | :x:                  | :x:                  | :x:                | :x:                | :x:                  | :x:                  |
-| record updates    | :x:                  | :x:                  | :x:                  | :x:                  | :x:                | :x:                | :x:                  | :x:                  |
-| unit type         | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark:   | :heavy_check_mark:   |
-| tuples, 3-tuples  | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark:  | :heavy_check_mark:     | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark:   | :heavy_check_mark:  |
-| type annotations  | :x:                  | :x:                  | :x:                  | :x:                  | :x:                | :x:                | :x:                  | :x:                  |
-| type aliases      | :x:                  | :x:                  | :x:                  | :x:                  | :x:                | :x:                | :x:                  | :x:                  |
-| custom types      | :x:                  | :x:                  | :x:                  | :x:                  | :x:                | :x:                | :x:                  | :x:                  |
-| custom operators  | :x:                  | :x:                  | :x:                  | :x:                  | :x:                | :x:                | :x:                  | :x:                  |
-| shaders (?)       | :x:                  | :x:                  | :x:                  | :x:                  | :x:                | :x:                | :x:                  | :x:                  |
+|                   | parser tests         | optimize tests       | emit tests           | parse                | desugar            | infer types          | optimize             | emit                 |
+| ----------------- | -------------------- | -------------------- | -------------------- | -------------------- | ------------------ | -------------------- | -------------------- | -------------------- |
+| integers          | :heavy_check_mark:   | :warning: [[2]](#f2) | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark: | :heavy_check_mark:   | :warning: [[2]](#f2) | :heavy_check_mark:   |
+| floats            | :heavy_check_mark:   | :x: [[5]](#f5)       | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark: | :heavy_check_mark:   | :x: [[5]](#f5)       | :heavy_check_mark:   |
+| characters        | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark: | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark:   |
+| strings           | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark: | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark:   |
+| booleans          | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark: | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark:   |
+| variables         | :warning:            | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark: | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark:   |
+| lists             | :heavy_check_mark:   | :x: [[6]](#f6)       | :warning: [[1]](#f1) | :heavy_check_mark:   | :heavy_check_mark: | :heavy_check_mark:   | :x: [[6]](#f6)       | :warning: [[1]](#f1) |
+| binary operators  | :warning: [[3]](#3)  | :heavy_check_mark:   | :heavy_check_mark:   | :warning: [[3]](#3)  | :heavy_check_mark: | :x:                  | :warning:            | :warning:            |
+| lambdas           | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark: | :heavy_check_mark:   | :warning:            | :heavy_check_mark:   |
+| function calls    | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark: | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark:   |
+| if...then...else  | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark: | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark:   |
+| let..in           | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark: | :warning:            | :heavy_check_mark:   | :warning:            |
+| case...of         | :warning: [[4]](#4)  | :x:                  | :x:                  | :warning: [[4]](#4)  | :x:                | :x:                  | :x:                  | :x:                  |
+| records           | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark: | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark:   |
+| record accessors  | :x:                  | :x:                  | :x:                  | :x:                  | :x:                | :x:                  | :x:                  | :x:                  |
+| record updates    | :x:                  | :x:                  | :x:                  | :x:                  | :x:                | :x:                  | :x:                  | :x:                  |
+| unit type         | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark: | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark:   |
+| tuples, 3-tuples  | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark: | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark:   |
+| type annotations  | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark: | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark:   |
+| type aliases      | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark:   | :heavy_check_mark: | :warning: [[7]](#f7) | :heavy_check_mark:   | :heavy_check_mark:   |
+| custom types      | :heavy_check_mark:   | :x:                  | :x:                  | :heavy_check_mark:   | :x:                | :x:                  | :x:                  | :x:                  |
+| custom operators  | :x:                  | :x:                  | :x:                  | :x:                  | :x:                | :x:                  | :x:                  | :x:                  |
+| shaders (?)       | :x:                  | :x:                  | :x:                  | :x:                  | :x:                | :x:                  | :x:                  | :x:                  |
 
 1. <span id="f1"></span> Lists' `emit` will have to change a bit: conversion from target platform lists to Elm "custom type" lists is now missing; tracked in [#29](https://github.com/elm-in-elm/compiler/issues/29)
-2. <span id="f2"></span> To be optimized with multiplication, subtraction, division, modulo, exponentiation... maybe more?; not tracked yet
-3. <span id="f3"></span> Multi-line lists, binops, lambdas, fn calls, ifs, lets don't work correctly now; not tracked yet
-4. <span id="f4"></span> ... this space left intentionally blank :smile: ...
-5. <span id="f5"></span> To be optimized the same way Ints are; not tracked yet
-6. <span id="f6"></span> ... this space left intentionally blank :smile: ...
-7. <span id="f7"></span> ... this space left intentionally blank :smile: ...
-8. <span id="f8"></span> Not implemented; partially tracked in [#29](https://github.com/elm-in-elm/compiler/issues/29)
-9. <span id="f9"></span> ... this space left intentionally blank :smile: ...
+2. <span id="f2"></span> To be optimized with multiplication, subtraction, division, modulo, exponentiation... maybe more?
+3. <span id="f3"></span> Multi-line binops (probably) don't work correctly now
+4. <span id="f4"></span> Custom type patterns aren't supported yet
+5. <span id="f5"></span> To be optimized the same way Ints are
+6. <span id="f6"></span> Not implemented; partially tracked in [#29](https://github.com/elm-in-elm/compiler/issues/29)
+7. <span id="f7"></span> We're currently doing nothing about the type parameters in the type aliases.
 
 
 ## FAQ
@@ -166,7 +164,6 @@ Make sure to format code before submitting a pull request!
 #### Project management
 
 - [ ] [@janiczek](https://twitter.com/janiczek/): Share your Firefox bookmarks relevant to `elm-in-elm` (ie. talks about Haskell hierarchical optimizations etc.)
-- [ ] After Elm Europe 2019 videos are out, add a link to the talk to the README
 - [ ] Add tests for stages other than parsing and emit into the matrix above
 
 #### General
@@ -268,6 +265,18 @@ Make sure to format code before submitting a pull request!
         src="https://avatars3.githubusercontent.com/u/6839698">
         </br>
         <a href="https://github.com/sebsheep">Sébastien Besnier</a>
+      </td>
+      <td align="center">
+        <img width="150" height="150"
+        src="https://avatars3.githubusercontent.com/u/12603666">
+        </br>
+        <a href="https://github.com/sgdan">sgdan</a>
+      </td>
+      <td align="center">
+        <img width="150" height="150"
+        src="https://avatars0.githubusercontent.com/u/15112020">
+        </br>
+        <a href="https://github.com/pablohirafuji">Pablo Hirafuji</a>
       </td>
       <td align="center">
         <img width="150" height="150"
