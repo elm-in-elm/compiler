@@ -57,10 +57,10 @@ readme_gh:
 test-perf:
 	rm -rf build/elm.js
 	echo "COMPILING THE COMPILER (NON-OPTIMIZED)"
-	cd cli && npx elm make Main.elm --output ../build/elm.js >/dev/null 2>&1
+	cd cli && npx elm make Main.elm --output ../build/elm.js
 	echo "MEASURING! (NON-OPTIMIZED)"
-	bash -c "time node cli/index.js --main src/Main.elm >/dev/null 2>&1"
+	bash -c "cd example-project && time node ../cli/index.js --main src/Main.elm"
 	echo -e "\nCOMPILING THE COMPILER (OPTIMIZED)"
-	cd cli && npx elm make Main.elm --optimize --output ../build/elm.js >/dev/null 2>&1
+	cd cli && npx elm make Main.elm --optimize --output ../build/elm.js
 	echo "MEASURING! (OPTIMIZED)"
-	bash -c "time node cli/index.js --main src/Main.elm >/dev/null 2>&1"
+	bash -c "cd example-project && time node ../cli/index.js --main src/Main.elm"
