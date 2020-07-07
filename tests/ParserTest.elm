@@ -1239,6 +1239,7 @@ expr =
                     case 21 of
                         31 -> True
                         5 -> True
+                        0xABC -> True
                         _ -> False
                     """
                         |> String.unindent
@@ -1246,6 +1247,7 @@ expr =
                         (Case (Int 21)
                             [ { pattern = PInt 31, body = Bool True }
                             , { pattern = PInt 5, body = Bool True }
+                            , { pattern = PHexInt 2748, body = Bool True }
                             , { pattern = PAnything, body = Bool False }
                             ]
                         )

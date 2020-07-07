@@ -334,6 +334,9 @@ desugarPattern located =
         Frontend.PInt int ->
             return <| Canonical.PInt int
 
+        Frontend.PHexInt int ->
+            return <| Canonical.PInt int
+
         Frontend.PFloat float ->
             return <| Canonical.PFloat float
 

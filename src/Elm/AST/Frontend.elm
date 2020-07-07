@@ -93,6 +93,7 @@ type Pattern
     | PChar Char
     | PString String
     | PInt Int
+    | PHexInt Int
     | PFloat Float
 
 
@@ -357,6 +358,9 @@ unwrapPattern expr =
 
         PInt int ->
             Unwrapped.PInt int
+
+        PHexInt int ->
+            Unwrapped.PHexInt int
 
         PFloat float ->
             Unwrapped.PFloat float

@@ -1243,10 +1243,11 @@ patternNumber : Parser_ LocatedPattern
 patternNumber =
     let
         parseLiteralNumber =
+            -- TODO remove backtrackable, similarly to `literalNumber`
             P.backtrackable <|
                 P.number
                     { int = Ok PInt
-                    , hex = Ok PInt
+                    , hex = Ok PHexInt
                     , octal = Err InvalidNumber -- Elm does not support octal notation
                     , binary = Err InvalidNumber -- Elm does not support binary notation
                     , float = Ok PFloat

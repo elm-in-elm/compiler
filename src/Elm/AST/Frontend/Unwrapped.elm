@@ -57,4 +57,5 @@ type Pattern
     | PChar Char
     | PString String
     | PInt Int
+    | PHexInt Int
     | PFloat Float
