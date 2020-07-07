@@ -2,17 +2,17 @@ module OurExtras.Tuple3 exposing (first, mapFirst, mapSecond, mapThird, second, 
 
 
 first : ( a, b, c ) -> a
-first ( a, b, c ) =
+first ( a, _, _ ) =
     a
 
 
 second : ( a, b, c ) -> b
-second ( a, b, c ) =
+second ( _, b, _ ) =
     b
 
 
 third : ( a, b, c ) -> c
-third ( a, b, c ) =
+third ( _, _, c ) =
     c
 
 

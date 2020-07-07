@@ -4,7 +4,7 @@ import Dict exposing (Dict)
 import Elm.AST.Canonical as Canonical
 import Elm.AST.Typed as Typed
 import Elm.Compiler.Error exposing (Error(..), TypeError(..))
-import Elm.Data.Declaration as Declaration
+import Elm.Data.Declaration
     exposing
         ( Declaration
         , DeclarationBody(..)
