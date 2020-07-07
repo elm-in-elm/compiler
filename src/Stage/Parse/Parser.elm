@@ -610,7 +610,7 @@ literal =
     P.oneOf
         [ literalNumber
         , literalChar
-        , literalString
+        , doubleQuoteStartingLiteral String
         , literalBool
         ]
 
@@ -677,47 +677,91 @@ literalNumber =
         |> located
 
 
-type Quotes
-    = {- ' -} SingleQuote
-    | {- " -} DoubleQuote
-    | {- """ -} TripleQuote
+type StringType
+    = {- ' -} CharString
+    | {- " -} NormalString
+    | {- """ -} MultilineString
 
 
-isAllowedChar : Quotes -> Char -> Bool
-isAllowedChar quotes char =
-    case quotes of
-        SingleQuote ->
-            char /= '\n'
+canContinueChompingString : StringType -> Char -> Bool
+canContinueChompingString stringType char =
+    case stringType of
+        CharString ->
+            char /= '\''
 
-        DoubleQuote ->
-            char /= '\n'
+        NormalString ->
+            char /= '"' && char /= '\\'
 
-        TripleQuote ->
+        MultilineString ->
+            -- we'll have to check for the other two double-quotes afterwards
+            char /= '"' && char /= '\\'
+
+
+areChompedCharsOk : StringType -> String -> Bool
+areChompedCharsOk stringType string =
+    case stringType of
+        CharString ->
+            {- We could also check for the string only being 1 character long
+               but we need to convert from String to Char anyway later so it's
+               better done there. See `singleCharacter`.
+            -}
+            not <| String.contains "\n" string
+
+        NormalString ->
+            not <| String.contains "\n" string
+
+        MultilineString ->
             True
 
 
-singleQuote : P.Token ParseProblem
-singleQuote =
-    P.Token "'" ExpectingSingleQuote
+apostrophe_ : P.Token ParseProblem
+apostrophe_ =
+    P.Token "'" ExpectingApostrophe
 
 
-doubleQuote : P.Token ParseProblem
-doubleQuote =
+doubleQuote_ : P.Token ParseProblem
+doubleQuote_ =
     P.Token "\"" ExpectingDoubleQuote
 
 
-tripleQuote : P.Token ParseProblem
-tripleQuote =
-    P.Token "\"\"\"" ExpectingTripleQuote
+apostrophe : Parser_ ()
+apostrophe =
+    P.symbol apostrophe_
 
 
-character : Quotes -> Parser_ Char
-character quotes =
-    P.oneOf
-        [ -- escaped characters have priority
-          P.succeed identity
-            |. P.token (P.Token "\\" ExpectingEscapeBackslash)
-            |= P.oneOf
+doubleQuote : Parser_ ()
+doubleQuote =
+    P.symbol doubleQuote_
+
+
+singleCharacter : StringType -> Parser_ Char
+singleCharacter stringType =
+    stringContents stringType
+        |> P.andThen
+            (\chars ->
+                case String.toList chars of
+                    [ char ] ->
+                        P.succeed char
+
+                    _ ->
+                        P.problem MoreThanOneCharInApostrophes
+            )
+
+
+backslash : Parser_ ()
+backslash =
+    P.token (P.Token "\\" ExpectingBackslash)
+
+
+{-| Will chomp string contents (up to and including the string boundary,
+ie. all three double-quotes for a multiline string).
+-}
+stringContents : StringType -> Parser_ String
+stringContents stringType =
+    let
+        escapedChar : Parser_ String
+        escapedChar =
+            P.oneOf
                 [ P.map (\_ -> '\\') (P.token (P.Token "\\" (ExpectingEscapeCharacter '\\')))
                 , P.map (\_ -> '"') (P.token (P.Token "\"" (ExpectingEscapeCharacter '"'))) -- " (elm-vscode workaround)
                 , P.map (\_ -> '\'') (P.token (P.Token "'" (ExpectingEscapeCharacter '\'')))
@@ -730,30 +774,91 @@ character quotes =
                     |= unicodeCharacter
                     |. P.token (P.Token "}" ExpectingRightBrace)
                 ]
-            |> P.inContext InCharEscapeMode
-        , -- we don't want to eat the closing delimiter
-          (case quotes of
-            SingleQuote ->
-                P.token singleQuote
+                |> P.map String.fromChar
+                |> P.inContext InCharEscapeMode
 
-            DoubleQuote ->
-                P.token doubleQuote
+        help acc =
+            P.oneOf
+                [ -- escaped characters have priority
+                  P.succeed (\char -> P.Loop (char :: acc))
+                    |. backslash
+                    |= escapedChar
+                , -- all other characters except the quote mode we're in (and sometimes except newlines)
+                  P.succeed identity
+                    |= P.getChompedString (P.chompWhile (canContinueChompingString stringType))
+                    |> P.andThen
+                        (\string ->
+                            let
+                                end =
+                                    P.succeed (P.Done (List.reverse (string :: acc)))
 
-            TripleQuote ->
-                P.token tripleQuote
-          )
-            |> P.andThen (always (P.problem TriedToParseCharacterStoppingDelimiter))
-        , -- all other characters (sometimes except newlines)
-          P.succeed identity
-            |= P.getChompedString (P.chompIf (isAllowedChar quotes) ExpectingChar)
-            |> P.andThen
-                (\string ->
-                    string
-                        |> String.uncons
-                        |> Maybe.map (Tuple.first >> P.succeed)
-                        |> Maybe.withDefault (P.problem (ParseCompilerBug MultipleCharactersChompedInCharacter))
-                )
-        ]
+                                loopWithExtra extra =
+                                    P.succeed (P.Loop (extra :: string :: acc))
+                            in
+                            if areChompedCharsOk stringType string then
+                                case stringType of
+                                    CharString ->
+                                        P.succeed identity
+                                            |. apostrophe
+                                            |= end
+
+                                    NormalString ->
+                                        P.oneOf
+                                            -- was it an escape backslash or a double-quote?
+                                            [ P.succeed identity
+                                                |. backslash
+                                                |= escapedChar
+                                                |> P.andThen (\char -> loopWithExtra char)
+                                            , P.succeed identity
+                                                |. doubleQuote
+                                                |= end
+                                            ]
+
+                                    MultilineString ->
+                                        {- We have to somehow get past whatever
+                                           stopped us. For a list of such
+                                           characters see `areChompedCharsOk`.
+
+                                           In case of escape backslash we need
+                                           to eat it and the escaped char after
+                                           it and loop; in case it's a single
+                                           double-quote we need add it and loop;
+                                           in case of two double-quotes add them
+                                           and loop; and in case of three we
+                                           need to end without adding them.
+                                        -}
+                                        P.oneOf
+                                            [ P.succeed identity
+                                                |. backslash
+                                                |= escapedChar
+                                                |> P.andThen (\char -> loopWithExtra char)
+                                            , P.succeed identity
+                                                |. doubleQuote
+                                                -- 1st " out of 3
+                                                |= P.oneOf
+                                                    [ P.succeed identity
+                                                        |. doubleQuote
+                                                        -- 2nd " out of 3
+                                                        |= P.oneOf
+                                                            [ P.succeed identity
+                                                                |. doubleQuote
+                                                                -- 3rd " out of 3! Let's end here
+                                                                |= end
+                                                            , -- We ended at 2nd ", add them and loop
+                                                              loopWithExtra "\"\""
+                                                            ]
+                                                    , -- We ended at 1st ", add it and loop
+                                                      loopWithExtra "\""
+                                                    ]
+                                            ]
+
+                            else
+                                P.problem StringContainedBadCharacters
+                        )
+                ]
+    in
+    P.loop [] help
+        |> P.map String.concat
 
 
 unicodeCharacter : Parser_ Char
@@ -782,40 +887,35 @@ unicodeCharacter =
 literalChar : Parser_ LocatedExpr
 literalChar =
     P.succeed Char
-        |. P.symbol singleQuote
-        |= character SingleQuote
-        |. P.symbol singleQuote
+        |. apostrophe
+        |= singleCharacter CharString
         |> P.inContext InChar
         |> located
 
 
-literalString : Parser_ LocatedExpr
-literalString =
-    P.succeed String
+doubleQuoteStartingLiteral : (String -> a) -> Parser_ (Located a)
+doubleQuoteStartingLiteral tagger =
+    P.succeed tagger
+        |. doubleQuote
         |= P.oneOf
-            [ tripleQuoteString
-            , doubleQuoteString
+            [ P.succeed identity
+                |. doubleQuote
+                |= P.oneOf
+                    [ -- three double quotes - this has to be a """..."""
+                      P.succeed identity
+                        |. doubleQuote
+                        |= stringContents MultilineString
+                        |> P.inContext InThreeDoubleQuotesString
+                    , -- two double quotes but not a third one: empty string ""
+                      P.succeed ""
+                    ]
+            , -- one double quote - this has to be a "..."
+              P.succeed identity
+                |= stringContents NormalString
+                |> P.inContext InDoubleQuoteString
             ]
         |> P.inContext InString
         |> located
-
-
-doubleQuoteString : Parser_ String
-doubleQuoteString =
-    P.succeed String.fromList
-        |. P.symbol doubleQuote
-        |= zeroOrMoreWith (P.succeed ()) (character DoubleQuote)
-        |. P.symbol doubleQuote
-        |> P.inContext InDoubleQuoteString
-
-
-tripleQuoteString : Parser_ String
-tripleQuoteString =
-    P.succeed String.fromList
-        |. P.symbol tripleQuote
-        |= zeroOrMoreWith (P.succeed ()) (character TripleQuote)
-        |. P.symbol tripleQuote
-        |> P.inContext InTripleQuoteString
 
 
 literalBool : Parser_ LocatedExpr
@@ -930,7 +1030,7 @@ lambda config =
                             )
                 }
         )
-        |. P.symbol (P.Token "\\" ExpectingBackslash)
+        |. backslash
         |= oneOrMoreWith spacesOnly varName
         |. spacesOnly
         |. P.symbol (P.Token "->" ExpectingRightArrow)
@@ -1184,7 +1284,7 @@ patternLiteral =
         , patternUnit
         , patternVar
         , patternChar
-        , patternString
+        , doubleQuoteStartingLiteral PString
         , patternBool
         , patternNumber
         , patternRecord
@@ -1208,21 +1308,9 @@ patternUnit =
 patternChar : Parser_ LocatedPattern
 patternChar =
     P.succeed PChar
-        |. P.symbol singleQuote
-        |= character SingleQuote
-        |. P.symbol singleQuote
+        |. apostrophe
+        |= singleCharacter CharString
         |> P.inContext InChar
-        |> located
-
-
-patternString : Parser_ LocatedPattern
-patternString =
-    P.succeed PString
-        |= P.oneOf
-            [ tripleQuoteString
-            , doubleQuoteString
-            ]
-        |> P.inContext InString
         |> located
 
 
@@ -1469,11 +1557,19 @@ Adapted to behave like \* instead of +.
 zeroOrMoreHelp : Parser_ () -> Parser_ a -> List a -> Parser_ (P.Step (List a) (List a))
 zeroOrMoreHelp spaces p vs =
     P.oneOf
-        [ P.backtrackable
-            (P.succeed (\v -> P.Loop (v :: vs))
-                |= p
-                |. spaces
-            )
+        [ p
+            |> P.andThen
+                (\v ->
+                    let
+                        result =
+                            P.Loop (v :: vs)
+                    in
+                    P.oneOf
+                        [ P.succeed result
+                            |. spaces
+                        , P.succeed result
+                        ]
+                )
         , P.succeed ()
             |> P.map (always (P.Done (List.reverse vs)))
         ]
@@ -1730,7 +1826,7 @@ postfix precedence operator apply _ =
 
 shouldLog : String -> Bool
 shouldLog message =
-    False
+    True
 
 
 {-| Beware: what this parser logs might sometimes be a lie.
@@ -1774,6 +1870,11 @@ log message parser =
                         remainingSource =
                             String.dropLeft offsetBefore source
                                 |> Debug.log "yet to parse  "
+                    in
+                    let
+                        length =
+                            String.length remainingSource
+                                |> Debug.log "of length"
                     in
                     let
                         _ =

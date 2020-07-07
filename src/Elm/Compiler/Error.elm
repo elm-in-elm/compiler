@@ -63,7 +63,7 @@ type ParseContext
     | InUnicodeCharacter
     | InString
     | InDoubleQuoteString
-    | InTripleQuoteString
+    | InThreeDoubleQuotesString
     | InExpr
     | InIf
     | InLet
@@ -123,9 +123,9 @@ type ParseProblem
     | ExpectingEqualsSign -- `x >=< 1`
     | ExpectingMinusSign -- `>-<42`
     | ExpectingNumber
-    | ExpectingSingleQuote
+    | ExpectingApostrophe
     | ExpectingChar
-    | ExpectingEscapeBackslash
+    | ExpectingStringBoundary
     | ExpectingEscapeCharacter Char
     | ExpectingLeftBrace
     | ExpectingRightBrace
@@ -169,16 +169,17 @@ type ParseProblem
     | ExpectingNonSpaceAfterTypeAnnotationNewlines
     | InvalidTab
     | InvalidNumber
-    | TriedToParseCharacterStoppingDelimiter
+    | MoreThanOneCharInApostrophes
+    | StringContainedBadCharacters
     | ParseCompilerBug ParseCompilerBug
     | EmptyListOfConstructors
     | ExpectingEnd
+    | TodoRewrite
 
 
 type ParseCompilerBug
     = ModuleNameStartParserFailed
     | ModuleNameEndParserFailed
-    | MultipleCharactersChompedInCharacter
     | QualifiersStartParserFailed
     | QualifiersSeparatorParserFailed
     | QualifiersEndParserFailed
@@ -456,14 +457,14 @@ parseProblemToString problem =
         ExpectingNumber ->
             "ExpectingNumber"
 
-        ExpectingSingleQuote ->
-            "ExpectingSingleQuote"
+        ExpectingApostrophe ->
+            "ExpectingApostrophe"
 
         ExpectingChar ->
             "ExpectingChar"
 
-        ExpectingEscapeBackslash ->
-            "ExpectingEscapeBackslash"
+        ExpectingStringBoundary ->
+            "ExpectingStringBoundary"
 
         ExpectingEscapeCharacter char ->
             "ExpectingEscapeCharacter " ++ String.fromChar char
@@ -594,8 +595,11 @@ parseProblemToString problem =
         InvalidNumber ->
             "InvalidNumber"
 
-        TriedToParseCharacterStoppingDelimiter ->
-            "TriedToParseCharacterStoppingDelimiter"
+        MoreThanOneCharInApostrophes ->
+            "MoreThanOneCharInApostrophes"
+
+        StringContainedBadCharacters ->
+            "StringContainedBadCharacters"
 
         ParseCompilerBug bug ->
             "Parse compiler bug: "
@@ -607,6 +611,9 @@ parseProblemToString problem =
         ExpectingEnd ->
             "ExpectingEnd"
 
+        TodoRewrite ->
+            "TodoRewrite"
+
 
 parseCompilerBugToString : ParseCompilerBug -> String
 parseCompilerBugToString bug =
@@ -616,9 +623,6 @@ parseCompilerBugToString bug =
 
         ModuleNameEndParserFailed ->
             "moduleName end parser failed"
-
-        MultipleCharactersChompedInCharacter ->
-            "multiple characters chomped in character"
 
         QualifiersStartParserFailed ->
             "qualifiers start parser failed"
