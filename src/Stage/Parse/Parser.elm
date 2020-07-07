@@ -1510,11 +1510,8 @@ type_ =
             , simpleType "Char" ConcreteType.Char
             , simpleType "String" ConcreteType.String
             , simpleType "Bool" ConcreteType.Bool
-            , simpleType "()" ConcreteType.Unit
+            , parenStartingType
             , listType
-            , tupleType
-            , tuple3Type
-            , parenthesizedType
             , recordType
             , userDefinedType
             ]
@@ -1524,6 +1521,43 @@ type_ =
         , spaces = ignorables
         }
         |> P.inContext InType
+
+
+parenStartingType : TypeConfig -> Parser_ (ConcreteType PossiblyQualified)
+parenStartingType config =
+    P.succeed identity
+        |. leftParen
+        |= P.oneOf
+            [ P.succeed identity
+                |= PP.subExpression 0 config
+                |> P.andThen
+                    (\t1 ->
+                        P.oneOf
+                            [ P.succeed identity
+                                |. ignorables
+                                |. comma
+                                |= PP.subExpression 0 config
+                                |> P.andThen
+                                    (\t2 ->
+                                        P.succeed identity
+                                            |= P.oneOf
+                                                [ -- ("x", "y", "z")
+                                                  P.succeed (ConcreteType.Tuple3 t1 t2)
+                                                    |. comma
+                                                    |= PP.subExpression 0 config
+                                                , -- ("x", "y")
+                                                  P.succeed (ConcreteType.Tuple t1 t2)
+                                                ]
+                                    )
+                            , -- ("x"), parenthesized type
+                              P.succeed t1
+                            ]
+                    )
+            , -- ()
+              -- Note that unit can't be written as ( ) - no spaces inside!
+              P.succeed ConcreteType.Unit
+            ]
+        |. rightParen
 
 
 functionType :
@@ -1564,20 +1598,6 @@ functionType =
         )
 
 
-
---try it outright, if it succeeds then fail
---succeed
-
-
-parenthesizedType : TypeConfig -> Parser_ (ConcreteType PossiblyQualified)
-parenthesizedType config =
-    P.succeed identity
-        |. leftParen
-        |= PP.subExpression 0 config
-        |. rightParen
-        |> P.inContext InParenthesizedType
-
-
 varType : Parser_ (ConcreteType PossiblyQualified)
 varType =
     varName
@@ -1599,37 +1619,6 @@ listType config =
     P.succeed ConcreteType.List
         |. P.keyword (P.Token "List" ExpectingListType)
         |= PP.subExpression 0 config
-
-
-tupleType : TypeConfig -> Parser_ (ConcreteType PossiblyQualified)
-tupleType config =
-    P.backtrackable
-        (P.succeed ConcreteType.Tuple
-            |. leftParen
-            |= PP.subExpression 0 config
-            |. spacesOnly
-            |. comma
-            |= PP.subExpression 0 config
-            |. spacesOnly
-            |. rightParen
-        )
-
-
-tuple3Type : TypeConfig -> Parser_ (ConcreteType PossiblyQualified)
-tuple3Type config =
-    P.backtrackable
-        (P.succeed ConcreteType.Tuple3
-            |. leftParen
-            |= PP.subExpression 0 config
-            |. spacesOnly
-            |. comma
-            |= PP.subExpression 0 config
-            |. spacesOnly
-            |. comma
-            |= PP.subExpression 0 config
-            |. spacesOnly
-            |. rightParen
-        )
 
 
 recordType : TypeConfig -> Parser_ (ConcreteType PossiblyQualified)
