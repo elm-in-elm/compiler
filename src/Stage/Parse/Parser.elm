@@ -1956,35 +1956,7 @@ userDefinedType config =
                 }
         )
         |= qualifiersAndTypeName
-        |. spacesOnly
-        |= P.oneOf
-            [ {- consider `x : Foo.Bar\nx = 1` vs `x : Foo.Bar\n x`
-
-                 Right now we've chomped the `Bar` and we want to chomp some
-                 arguments.
-
-                 We have to explicitly check whether the next non-newline char is
-                 a space or not.
-
-                 If it is, we have a multi-line type annotation
-                 on our hands and the `x` at the end is a type argument.
-
-                 If it isn't, we have finished the type annotation
-                 parsing and the argument list for the `Foo.Bar` is empty.
-                 And that's this `oneOf` case!
-              -}
-              P.backtrackable
-                (P.succeed []
-                    |. spacesOnly
-                    |. checkNextCharIs '\n' ExpectingNewlineAfterTypeAnnotation
-                    |. newlines
-                    |. checkNextCharIsNot ' ' ExpectingNonSpaceAfterTypeAnnotationNewlines
-                )
-            , {- Here, the next thing to parse isn't the `x = ...` declaration
-                 but a continuation of the type annotation - custom type args!
-              -}
-              zeroOrMoreWith ignorables (notAtBeginningOfLine (PP.subExpression 0 config))
-            ]
+        |= zeroOrMoreWith ignorables (notAtBeginningOfLine (PP.subExpression 0 config))
         |> P.inContext InUserDefinedType
 
 

@@ -1574,7 +1574,7 @@ valueDeclaration =
     in
     -- TODO add various whitespace behavior tests
     describe "Stage.Parse.Parser.valueDeclaration" <|
-        List.map runTest <|
+        List.map runTest
             [ ( "simple without annotation"
               , "x = ()"
               , Just
@@ -1598,6 +1598,39 @@ valueDeclaration =
                                 }
                         }
                     )
+              )
+            , ( "user defined type with argument - newline+space"
+              , """
+                x : Foo
+                 ()
+                x = ()
+                """
+                    |> String.unindent
+                    |> String.removeNewlinesAtEnds
+              , Just
+                    ( "x"
+                    , Declaration.Value
+                        { expression = Unit
+                        , typeAnnotation =
+                            Just
+                                { varName = "x"
+                                , type_ =
+                                    ConcreteType.UserDefinedType
+                                        { qualifiedness = PossiblyQualified Nothing
+                                        , name = "Foo"
+                                        , args = [ ConcreteType.Unit ]
+                                        }
+                                }
+                        }
+                    )
+              )
+            , ( "user defined type with argument - newline only"
+              , """
+                       x : Foo
+                       ()
+                       x = ()
+                       """
+              , Nothing
               )
             ]
 
