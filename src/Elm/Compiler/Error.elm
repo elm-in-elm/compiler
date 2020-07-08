@@ -106,7 +106,7 @@ type ParseProblem
     | ExpectingEffectKeyword -- `>effect< module ...`
     | ExpectingModuleKeyword -- `>module< Foo.Bar exposing (..)`
     | ExpectingModuleName -- `module >Foo.Bar< exposing (..)`
-    | ExpectingModuleNameDot -- `foo : Bar>.<Baz`
+    | ExpectingDot -- `foo : Bar>.<Baz`
     | ExpectingExposingKeyword -- `module Foo.Bar >exposing< (..)`
     | ExpectingExposingAllSymbol -- `module Foo.Bar exposing >(..)<`
     | ExpectingComma -- `module Foo.Bar exposing (a>,< b, c)`
@@ -119,7 +119,6 @@ type ParseProblem
     | ExpectingAsKeyword -- `import Foo >as< F exposing (..)`
     | ExpectingModuleNameWithoutDots -- `import Foo as >F< exposing (..)`
     | ExpectingModuleNamePart -- `Foo.>Bar<.Baz.value`
-    | ExpectingQualifiedVarNameDot -- `x = Foo>.<y`
     | ExpectingEqualsSign -- `x >=< 1`
     | ExpectingMinusSign -- `>-<42`
     | ExpectingNumber
@@ -135,7 +134,6 @@ type ParseProblem
     | ExpectingPlusOperator
     | ExpectingConsOperator
     | ExpectingConcatOperator
-    | ExpectingModuleDot -- `import Foo>.<Bar`
     | ExpectingBackslash -- `>\<x -> x + 1`
     | ExpectingRightArrow -- `\x >->< x + 1`
     | ExpectingLeftParen
@@ -167,6 +165,8 @@ type ParseProblem
     | ExpectingTypeName
     | ExpectingNewlineAfterTypeAnnotation
     | ExpectingNonSpaceAfterTypeAnnotationNewlines
+    | ExpectingZero
+    | ExpectingLowercaseX
     | InvalidTab
     | InvalidNumber
     | MoreThanOneCharInApostrophes
@@ -174,7 +174,13 @@ type ParseProblem
     | ParseCompilerBug ParseCompilerBug
     | EmptyListOfConstructors
     | ExpectingEnd
-    | TodoRewrite
+    | IntCannotStartWithZero
+    | FloatCannotEndWithDecimal
+    | ExpectingScientificNotationE
+    | ExpectingScientificNotationExponent
+    | ExpectingScientificNotationPlus
+    | ExpectingScientificNotationMinus
+    | IntZeroCannotHaveScientificNotation
 
 
 type ParseCompilerBug
@@ -186,6 +192,8 @@ type ParseCompilerBug
     | ConstructorsStartParserFailed
     | ConstructorsSeparatorParserFailed
     | ConstructorsEndParserFailed
+    | ParsedHexButCouldntConvert
+    | ParsedIntButCouldntConvert
 
 
 {-| Errors encountered during [desugaring](Elm.Compiler#desugarExpr) from the [Frontend AST](Elm.AST.Frontend) to [Canonical AST](Elm.AST.Canonical).
@@ -442,11 +450,8 @@ parseProblemToString problem =
         ExpectingModuleNamePart ->
             "ExpectingModuleNamePart"
 
-        ExpectingModuleNameDot ->
-            "ExpectingModuleNameDot"
-
-        ExpectingQualifiedVarNameDot ->
-            "ExpectingQualifiedVarNameDot"
+        ExpectingDot ->
+            "ExpectingDot"
 
         ExpectingEqualsSign ->
             "ExpectingEqualsSign"
@@ -492,9 +497,6 @@ parseProblemToString problem =
 
         ExpectingConcatOperator ->
             "ExpectingConcatOperator"
-
-        ExpectingModuleDot ->
-            "ExpectingModuleDot"
 
         ExpectingBackslash ->
             "ExpectingBackslash"
@@ -589,6 +591,12 @@ parseProblemToString problem =
         ExpectingNonSpaceAfterTypeAnnotationNewlines ->
             "ExpectingNonSpaceAfterTypeAnnotationNewlines"
 
+        ExpectingZero ->
+            "ExpectingZero"
+
+        ExpectingLowercaseX ->
+            "ExpectingLowercaseX"
+
         InvalidTab ->
             "InvalidTab"
 
@@ -611,8 +619,26 @@ parseProblemToString problem =
         ExpectingEnd ->
             "ExpectingEnd"
 
-        TodoRewrite ->
-            "TodoRewrite"
+        IntCannotStartWithZero ->
+            "IntCannotStartWithZero"
+
+        FloatCannotEndWithDecimal ->
+            "FloatCannotEndWithDecimal"
+
+        ExpectingScientificNotationE ->
+            "ExpectingScientificNotationE"
+
+        ExpectingScientificNotationExponent ->
+            "ExpectingScientificNotationExponent"
+
+        ExpectingScientificNotationPlus ->
+            "ExpectingScientificNotationPlus"
+
+        ExpectingScientificNotationMinus ->
+            "ExpectingScientificNotationMinus"
+
+        IntZeroCannotHaveScientificNotation ->
+            "IntZeroCannotHaveScientificNotation"
 
 
 parseCompilerBugToString : ParseCompilerBug -> String
@@ -641,6 +667,12 @@ parseCompilerBugToString bug =
 
         ConstructorsEndParserFailed ->
             "constructors end parser failed"
+
+        ParsedHexButCouldntConvert ->
+            "parsed hex characters but couldn't convert them to an integer"
+
+        ParsedIntButCouldntConvert ->
+            "parsed int characters but couldn't convert them to an integer"
 
 
 filenameFromContext : List { a | context : ParseContext } -> Maybe FilePath

@@ -648,6 +648,10 @@ expr =
                   , "0x789DEF"
                   , Just (HexInt 7904751)
                   )
+                , ( "hexadecimal int - mixed case"
+                  , "0x789dEf"
+                  , Just (HexInt 7904751)
+                  )
                 , ( "negative int"
                   , "-42"
                   , Just (Int -42)
@@ -655,6 +659,14 @@ expr =
                 , ( "negative hexadecimal"
                   , "-0x123abc"
                   , Just (HexInt -1194684)
+                  )
+                , ( "starting with zero disallowed"
+                  , "0123"
+                  , Nothing
+                  )
+                , ( "e is interpreted as hex 14, not scientific notation"
+                  , "0xABCe5"
+                  , Just (HexInt 703717)
                   )
                 ]
               )
@@ -676,6 +688,10 @@ expr =
                   , Just (Float -4.2)
                   )
                 , ( "Scientific notation"
+                  , "5e2"
+                  , Just (Float 500)
+                  )
+                , ( "Scientific notation with dot"
                   , "5.12e2"
                   , Just (Float 512)
                   )
@@ -687,9 +703,36 @@ expr =
                   , "-5.12e2"
                   , Just (Float -512)
                   )
+                , ( "Exponent with explicit plus sign"
+                  , "5e+2"
+                  , Just (Float 500)
+                  )
+                , ( "Uppercase E and exponent with explicit plus sign"
+                  , "5E+2"
+                  , Just (Float 500)
+                  )
                 , ( "Negative exponent"
                   , "5e-2"
                   , Just (Float 0.05)
+                  )
+                , ( "Zero - exhibit 1"
+                  , "0.0e5"
+                  , Just (Float 0)
+                  )
+                , ( "Zero - exhibit 2"
+                  , "0e5"
+                  , Nothing
+                  )
+                , ( "starting with dot disallowed"
+                  , ".123"
+                  , Nothing
+                  )
+                , ( "ending with dot disallowed"
+                  , "123."
+                  , {- TODO perhaps make another test suite especially for
+                       `number` that also tests which cases return which errors
+                    -}
+                    Nothing
                   )
                 ]
               )

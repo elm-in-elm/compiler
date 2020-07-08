@@ -160,7 +160,7 @@ import_ =
             ]
         |. P.oneOf
             [ -- not sure if this is idiomatic
-              P.symbol (P.Token "." ExpectingModuleNameWithoutDots)
+              dot
                 |. P.problem ExpectingModuleNameWithoutDots
             , ignorables
             ]
@@ -206,11 +206,21 @@ effectModuleType =
         |. P.keyword (P.Token "module" ExpectingModuleKeyword)
 
 
+dot : Parser_ ()
+dot =
+    P.symbol dot_
+
+
+dot_ : P.Token ParseProblem
+dot_ =
+    P.Token "." ExpectingDot
+
+
 moduleName : Parser_ String
 moduleName =
     P.sequence
         { start = P.Token "" (ParseCompilerBug ModuleNameStartParserFailed)
-        , separator = P.Token "." ExpectingModuleDot
+        , separator = dot_
         , end = P.Token "" (ParseCompilerBug ModuleNameEndParserFailed)
         , spaces = P.succeed ()
         , item = moduleNameWithoutDots
@@ -615,6 +625,206 @@ literal =
         ]
 
 
+type alias NumberConfig a =
+    { int : Int -> a
+    , hex : Int -> a
+    , float : Float -> a
+    }
+
+
+number : NumberConfig a -> Parser_ a
+number config =
+    let
+        finalizeFloat : { hasParsedDot : Bool, parsedIntPart : Int } -> Parser_ a
+        finalizeFloat { hasParsedDot, parsedIntPart } =
+            {- Float is just whatever the integer was plus `.` (if not parsed
+               yet) and scientific notation (`e`)
+            -}
+            P.oneOf
+                [ -- dot+decimal digits, ie. 123.5 or 123.5e8
+                  P.succeed identity
+                    |. (if hasParsedDot then
+                            P.succeed ()
+
+                        else
+                            dot
+                       )
+                    |= P.getChompedString (P.chompWhile Char.isDigit)
+                    |> P.andThen
+                        (\chompedDecimalDigits ->
+                            case String.toInt chompedDecimalDigits of
+                                Just decimalDigits ->
+                                    let
+                                        decimalLength =
+                                            String.length chompedDecimalDigits
+
+                                        scaledDecimalDigits : Float
+                                        scaledDecimalDigits =
+                                            {- TODO would it be better to (A) scale the integer
+                                               part up and adding non-scaled decimal part
+                                               instead of (B) scaling decimal part down and adding
+                                               to non-scaled integer part?
+
+                                               Ie. for 123.45:
+
+                                               (A) parsedIntPart = 123
+                                                   decimalDigits = 45
+                                                   scaledDecimalDigits = 0.45
+                                                   intermediate result = 123.45
+                                                   ... scientific notation scaling happens ...
+                                                   result = ...
+
+                                               (B) parsedIntPart = 123
+                                                   decimalDigits = 45
+                                                   scaledIntPart = 12300
+                                                   intermediate result = 12345
+                                                   ... scientific notation scaling happens ...
+                                                   result = ...
+
+                                               It seems like (B) would have less floating point
+                                               problems?
+                                            -}
+                                            toFloat decimalDigits * 10 ^ negate (toFloat decimalLength)
+
+                                        floatSoFar : Float
+                                        floatSoFar =
+                                            toFloat parsedIntPart + scaledDecimalDigits
+                                    in
+                                    P.oneOf
+                                        [ scientificNotation floatSoFar
+                                        , P.succeed (config.float floatSoFar)
+                                        ]
+
+                                Nothing ->
+                                    -- This probably only happens on empty string
+                                    P.problem FloatCannotEndWithDecimal
+                        )
+                , -- no dot+decimal digits, eg. 123e5
+                  scientificNotation (toFloat parsedIntPart)
+                , -- no dot+decimal digits, no `e`, eg. 123
+                  P.succeed (config.int parsedIntPart)
+                ]
+
+        scientificNotationE : Parser_ ()
+        scientificNotationE =
+            P.chompIf (\c -> c == 'e' || c == 'E') ExpectingScientificNotationE
+
+        scientificNotation : Float -> Parser_ a
+        scientificNotation floatSoFar =
+            P.succeed identity
+                |. scientificNotationE
+                |= P.oneOf
+                    [ -- explicit '+' case
+                      P.succeed identity
+                        |. P.chompIf (\c -> c == '+') ExpectingScientificNotationPlus
+                        |= P.getChompedString (P.chompWhile Char.isDigit)
+                        |> P.andThen
+                            (finalizeScientificNotation
+                                { floatSoFar = floatSoFar
+                                , shouldNegate = False
+                                }
+                            )
+                    , -- explicit '-' case
+                      P.succeed identity
+                        |. P.chompIf (\c -> c == '-') ExpectingScientificNotationMinus
+                        |= P.getChompedString (P.chompWhile Char.isDigit)
+                        |> P.andThen
+                            (finalizeScientificNotation
+                                { floatSoFar = floatSoFar
+                                , shouldNegate = True
+                                }
+                            )
+                    , -- just a number
+                      P.getChompedString (P.chompWhile Char.isDigit)
+                        |> P.andThen
+                            (finalizeScientificNotation
+                                { floatSoFar = floatSoFar
+                                , shouldNegate = False
+                                }
+                            )
+                    ]
+
+        finalizeScientificNotation : { floatSoFar : Float, shouldNegate : Bool } -> String -> Parser_ a
+        finalizeScientificNotation { floatSoFar, shouldNegate } exponentDigits =
+            case String.toInt exponentDigits of
+                Nothing ->
+                    P.problem ExpectingScientificNotationExponent
+
+                Just exponent ->
+                    let
+                        floatExponent =
+                            toFloat exponent
+
+                        exponent_ =
+                            if shouldNegate then
+                                negate floatExponent
+
+                            else
+                                floatExponent
+                    in
+                    P.succeed (config.float (floatSoFar * 10 ^ exponent_))
+    in
+    P.oneOf
+        [ P.succeed identity
+            |. P.symbol (P.Token "0" ExpectingZero)
+            |= P.oneOf
+                [ scientificNotationE
+                    |> P.andThen (\() -> P.problem IntZeroCannotHaveScientificNotation)
+                , P.succeed identity
+                    |. P.symbol (P.Token "x" ExpectingLowercaseX)
+                    |= P.getChompedString (P.chompWhile Char.isHexDigit)
+                    |> P.andThen
+                        (\chompedHex ->
+                            {- Usage of Hex.fromString saves us from checking
+                               whether the string is empty.
+                            -}
+                            case Hex.fromString (String.toLower chompedHex) of
+                                Err _ ->
+                                    P.problem (ParseCompilerBug ParsedHexButCouldntConvert)
+
+                                Ok int ->
+                                    P.succeed (config.hex int)
+                        )
+                , P.succeed identity
+                    |. dot
+                    |= finalizeFloat
+                        { hasParsedDot = True
+                        , parsedIntPart = 0
+                        }
+                , P.succeed identity
+                    |= P.getChompedString (P.chompWhile Char.isDigit)
+                    |> P.andThen
+                        (\chompedInt ->
+                            if String.isEmpty chompedInt then
+                                P.succeed (config.int 0)
+
+                            else
+                                P.problem IntCannotStartWithZero
+                        )
+                , -- TODO is this one needed?
+                  P.succeed (config.int 0)
+                ]
+        , P.succeed identity
+            |= P.getChompedString (P.chompWhile Char.isDigit)
+            |> P.andThen
+                (\chompedInt ->
+                    case String.toInt chompedInt of
+                        Nothing ->
+                            if String.isEmpty chompedInt then
+                                P.problem ExpectingNumber
+
+                            else
+                                P.problem (ParseCompilerBug ParsedIntButCouldntConvert)
+
+                        Just int ->
+                            finalizeFloat
+                                { hasParsedDot = False
+                                , parsedIntPart = int
+                                }
+                )
+        ]
+
+
 literalNumber : Parser_ LocatedExpr
 literalNumber =
     let
@@ -642,16 +852,11 @@ literalNumber =
 
                and all their `-` prefixed variants.
             -}
-            P.backtrackable <|
-                P.number
-                    { int = Ok Int
-                    , hex = Ok HexInt
-                    , octal = Err InvalidNumber -- Elm does not support octal notation
-                    , binary = Err InvalidNumber -- Elm does not support binary notation
-                    , float = Ok Float
-                    , invalid = InvalidNumber
-                    , expecting = ExpectingNumber
-                    }
+            number
+                { int = Int
+                , hex = HexInt
+                , float = Float
+                }
 
         negateLiteral toBeNegated =
             case toBeNegated of
@@ -964,7 +1169,7 @@ qualifiers : Parser_ (List ModuleName)
 qualifiers =
     P.sequence
         { start = P.Token "" (ParseCompilerBug QualifiersStartParserFailed)
-        , separator = P.Token "." ExpectingQualifiedVarNameDot
+        , separator = dot_
         , end = P.Token "" (ParseCompilerBug QualifiersEndParserFailed)
         , spaces = P.succeed ()
         , item = moduleNameWithoutDots
@@ -1787,7 +1992,7 @@ qualifiersAndTypeName : Parser_ ( List ModuleName, String )
 qualifiersAndTypeName =
     P.sequence
         { start = P.Token "" (ParseCompilerBug QualifiersStartParserFailed)
-        , separator = P.Token "." ExpectingQualifiedVarNameDot
+        , separator = dot_
         , end = P.Token "" (ParseCompilerBug QualifiersEndParserFailed)
         , spaces = P.succeed ()
         , item = moduleNameWithoutDots
