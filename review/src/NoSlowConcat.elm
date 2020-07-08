@@ -19,11 +19,11 @@ import Review.Rule as Rule exposing (Error, Rule)
 
 {-| Make sure we use OurExtras.List.fastConcat and OurExtras.List.fastConcatMap
 instead of List.concat and List.concatMap.
-If you want to use this rule, add it to `config : List Rule` in `review/ReviewConfig.elm`
+If you want to use this rule, add it to `config : List Rule` in `review/src/ReviewConfig.elm`
 -}
 rule : Rule
 rule =
-    Rule.newModuleRuleSchema "FastConcatFunctionsUsed" ()
+    Rule.newModuleRuleSchema "NoSlowConcat" ()
         |> Rule.withSimpleExpressionVisitor expressionVisitor
         |> Rule.fromModuleRuleSchema
 

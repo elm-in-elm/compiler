@@ -1,6 +1,7 @@
 module ReviewConfig exposing (config)
 
 import NoDebug.TodoOrToString
+import NoParserBacktrackable
 import NoSlowConcat
 import NoUnused.CustomTypeConstructors
 import NoUnused.Dependencies
@@ -17,7 +18,10 @@ config =
     , NoUnused.Parameters.rule
     , NoUnused.Patterns.rule
     , NoUnused.Variables.rule
-    , NoSlowConcat.rule
     , NoDebug.TodoOrToString.rule
         |> Rule.ignoreErrorsForDirectories [ "tests" ]
+
+    -- custom
+    , NoSlowConcat.rule
+    , NoParserBacktrackable.rule
     ]
