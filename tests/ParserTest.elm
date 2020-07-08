@@ -501,6 +501,7 @@ expr =
                         x + 1
                     """
                         |> String.unindent
+                        |> String.removeNewlinesAtEnds
                   , Just
                         (Lambda
                             { arguments = [ "x" ]
@@ -573,6 +574,7 @@ expr =
                         arg2
                     """
                         |> String.unindent
+                        |> String.removeNewlinesAtEnds
                   , Just
                         (Call
                             { fn =
@@ -617,6 +619,7 @@ expr =
 
                     """
                         |> String.unindent
+                        |> String.removeNewlinesAtEnds
                   , Just
                         (If
                             { test = Int 1
@@ -938,6 +941,7 @@ expr =
                       2
                     """
                         |> String.unindent
+                        |> String.removeNewlinesAtEnds
                   , Just
                         (Let
                             { bindings =
@@ -957,6 +961,7 @@ expr =
                       2
                     """
                         |> String.unindent
+                        |> String.removeNewlinesAtEnds
                   , Nothing
                   )
                 , ( "allows result expr on the same indentation level as `let`"
@@ -967,6 +972,7 @@ expr =
                     2
                     """
                         |> String.unindent
+                        |> String.removeNewlinesAtEnds
                   , Just
                         (Let
                             { bindings =
@@ -987,6 +993,7 @@ expr =
                     3
                     """
                         |> String.unindent
+                        |> String.removeNewlinesAtEnds
                   , Just
                         (Let
                             { bindings =
@@ -1010,6 +1017,7 @@ expr =
                       3
                     """
                         |> String.unindent
+                        |> String.removeNewlinesAtEnds
                   , Nothing
                   )
                 , ( "doesn't allow bindings to have different indentation from each other - the other way"
@@ -1021,6 +1029,7 @@ expr =
                       3
                     """
                         |> String.unindent
+                        |> String.removeNewlinesAtEnds
                   , Nothing
                   )
                 , ( "one binding that's used in the body"
@@ -1031,6 +1040,7 @@ expr =
                       1 + x
                     """
                         |> String.unindent
+                        |> String.removeNewlinesAtEnds
                   , Just
                         (Let
                             { bindings =
@@ -1054,6 +1064,7 @@ expr =
                       42
                     """
                         |> String.unindent
+                        |> String.removeNewlinesAtEnds
                   , Just
                         (Let
                             { bindings =
@@ -1122,6 +1133,7 @@ expr =
                     ]
                     """
                         |> String.unindent
+                        |> String.removeNewlinesAtEnds
                   , Just
                         (List
                             [ Int 1
@@ -1286,6 +1298,7 @@ expr =
                         _ -> False
                     """
                         |> String.unindent
+                        |> String.removeNewlinesAtEnds
                   , Just
                         (Case (Int 21)
                             [ { pattern = PInt 31, body = Bool True }
@@ -1312,6 +1325,7 @@ expr =
                             False
                     """
                         |> String.unindent
+                        |> String.removeNewlinesAtEnds
                   , Just
                         (Case (Var { name = "arg", qualifiedness = PossiblyQualified Nothing })
                             [ { pattern = PTuple (PChar 'c') (PInt 23)
@@ -1535,6 +1549,7 @@ type_ =
                 }
                 """
                     |> String.unindent
+                    |> String.removeNewlinesAtEnds
               , ConcreteType.Record <|
                     Dict.fromList
                         [ ( "x", ConcreteType.Int )
@@ -1586,7 +1601,12 @@ valueDeclaration =
                     )
               )
             , ( "simple with annotation"
-              , "y : ()\ny = ()"
+              , """
+                y : ()
+                y = ()
+                """
+                    |> String.unindent
+                    |> String.removeNewlinesAtEnds
               , Just
                     ( "y"
                     , Declaration.Value
@@ -1626,10 +1646,42 @@ valueDeclaration =
               )
             , ( "user defined type with argument - newline only"
               , """
-                       x : Foo
-                       ()
-                       x = ()
-                       """
+                x : Foo
+                ()
+                x = ()
+                """
+                    |> String.unindent
+                    |> String.removeNewlinesAtEnds
+              , Nothing
+              )
+            , ( "type on a newline+space"
+              , """
+                x :
+                 ()
+                x = ()
+                """
+                    |> String.unindent
+                    |> String.removeNewlinesAtEnds
+              , Just
+                    ( "x"
+                    , Declaration.Value
+                        { expression = Unit
+                        , typeAnnotation =
+                            Just
+                                { varName = "x"
+                                , type_ = ConcreteType.Unit
+                                }
+                        }
+                    )
+              )
+            , ( "type on a newline without space"
+              , """
+                x :
+                ()
+                x = ()
+                """
+                    |> String.unindent
+                    |> String.removeNewlinesAtEnds
               , Nothing
               )
             ]
