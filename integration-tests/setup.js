@@ -19,7 +19,7 @@ function runCompiler(cwd, args) {
 
 async function exec(t, cwd, args, func) {
 	try {
-		t.log(await fs.unlink(path.join(cwd, 'out.js')));
+		await fs.unlink(path.join(cwd, 'out.js'));
 	} catch (error) {
 		if (error.code !== 'ENOENT') {
 			throw error;
