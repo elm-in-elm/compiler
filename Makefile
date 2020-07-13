@@ -38,10 +38,12 @@ test: build
 .PHONY: format
 format:
 	npx elm-format $(FORMAT_DIRS) --yes
+	npx xo --fix
 
 .PHONY: lint
 lint:
 	npx elm-format $(FORMAT_DIRS) --validate
+	npx xo
 
 .PHONY: readme_lib
 readme_lib:
