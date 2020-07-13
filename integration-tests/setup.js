@@ -49,8 +49,3 @@ async function cliSnapshot(t, cwd, args, snapshot) {
 		t.snapshot(out, {id: 'out.js'});
 	}
 }
-
-exec.title = (providedTitle, argString) =>
-	`${
-		providedTitle === undefined ? '' : `${providedTitle}:`
-	} elm-in-elm ${argString}`.trim();
