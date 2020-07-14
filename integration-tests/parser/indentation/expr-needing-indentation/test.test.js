@@ -1,8 +1,8 @@
 const test = require('ava');
-const {exec} = require('../../setup');
+const {exec} = require('../../../setup');
 
 test(
-	'desugar: module for the qualified type in the type annotation is not found',
+	'parser: indentation: expr needing indentation',
 	exec,
 	__dirname,
 	['-m', 'src/Main.elm'],

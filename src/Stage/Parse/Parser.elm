@@ -558,9 +558,21 @@ expr =
                             }
                     )
                 )
-            , PP.infixLeft 1 (P.symbol (P.Token "++" ExpectingConcatOperator)) (Located.merge ListConcat)
-            , PP.infixLeft 1 (P.symbol (P.Token "+" ExpectingPlusOperator)) (Located.merge Plus)
-            , PP.infixRight 1 (P.symbol (P.Token "::" ExpectingConsOperator)) (Located.merge Cons)
+            , PP.infixLeft 1
+                (checkIndent (<) ExpectingIndentation
+                    |> P.andThen (\() -> P.symbol (P.Token "++" ExpectingConcatOperator))
+                )
+                (Located.merge ListConcat)
+            , PP.infixLeft 1
+                (checkIndent (<) ExpectingIndentation
+                    |> P.andThen (\() -> P.symbol (P.Token "+" ExpectingPlusOperator))
+                )
+                (Located.merge Plus)
+            , PP.infixRight 1
+                (checkIndent (<) ExpectingIndentation
+                    |> P.andThen (\() -> P.symbol (P.Token "::" ExpectingConsOperator))
+                )
+                (Located.merge Cons)
             ]
         , spaces = ignorables
         }

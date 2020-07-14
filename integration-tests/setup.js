@@ -1,55 +1,51 @@
-const childProcess = require ('child_process');
-const util = require ('util');
+const childProcess = require('child_process');
+const util = require('util');
 const path = require('path');
-const { default: test } = require('ava');
-const fs = require('fs').promises; // needs Node.JS v10+
+const fs = require('fs').promises; // Needs Node.JS v10+
 
 const cliPath = path.join(__dirname, '..', 'cli', 'index.js');
 const execFile = util.promisify(childProcess.execFile);
 
 module.exports = {
-    runCompiler,
-    exec
+	runCompiler,
+	exec
 };
 
 function runCompiler(cwd, args) {
 	return execFile(process.execPath, [cliPath, ...args], {
-        cwd,
-    });
+		cwd
+	});
 }
 
 async function exec(t, cwd, args, func) {
-    try {
-        t.log(await fs.unlink(path.join(cwd, 'out.js')));
-    } catch (e) {
-        if (e.code !== 'ENOENT') {
-            throw e;
-        }
-    }
-    const testOutput = await func(runCompiler(cwd, args), t);
+	try {
+		await fs.unlink(path.join(cwd, 'out.js'));
+	} catch (error) {
+		if (error.code !== 'ENOENT') {
+			throw error;
+		}
+	}
 
-    t.true(Object.prototype.hasOwnProperty.call(testOutput, 'snapshot'))
-    const {snapshot} = testOutput;
+	t.context.cliSnapshot = snapshot => cliSnapshot(t, cwd, args, snapshot);
+	const testOutput = await func(runCompiler(cwd, args), t);
 
-    if (snapshot !== undefined) {
-        t.snapshot(`elm-in-elm ${args.join(' ')}`, {id: `Invocation`});
-        t.snapshot(snapshot.stderr, {id: `Stderr`});
-        t.snapshot(snapshot.stdout, {id: `Stdout`});
-        let out;
-        try {
-            out = await fs.readFile(path.join(cwd, 'out.js'), 'utf-8');
-        } catch (e) {
-            if (e.code !== 'ENOENT') {
-                throw e;
-            }
-        }
-        if (out !== undefined) {
-            t.snapshot(out, {id: `out.js`});
-        }
-    }
+	t.is(testOutput, undefined);
 }
 
-exec.title = (providedTitle, argString) =>
-	`${
-		providedTitle === undefined ? '' : `${providedTitle}:`
-	} elm-in-elm ${argString}`.trim();
+async function cliSnapshot(t, cwd, args, snapshot) {
+	t.snapshot(`elm-in-elm ${args.join(' ')}`, {id: 'Invocation'});
+	t.snapshot(snapshot.stderr, {id: 'Stderr'});
+	t.snapshot(snapshot.stdout, {id: 'Stdout'});
+	let out;
+	try {
+		out = await fs.readFile(path.join(cwd, 'out.js'), 'utf-8');
+	} catch (error) {
+		if (error.code !== 'ENOENT') {
+			throw error;
+		}
+	}
+
+	if (out !== undefined) {
+		t.snapshot(out, {id: 'out.js'});
+	}
+}

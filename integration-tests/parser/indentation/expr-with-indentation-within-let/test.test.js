@@ -1,8 +1,8 @@
 const test = require('ava');
-const {exec} = require('../../setup');
+const {exec} = require('../../../setup');
 
 test(
-	'desugar: unqualified type in the type annotation is found (imported)',
+	'parser: indentation: expr with minimum indentation within let',
 	exec,
 	__dirname,
 	['-m', 'src/Main.elm'],
