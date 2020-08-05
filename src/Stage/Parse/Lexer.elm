@@ -27,7 +27,7 @@ type LexSigil
     | Backslash
     | Underscore
     | Colon
-    | BinaryOperator LexBinaryOperator
+    | Operator LexOperator
 
 
 type LexCommentType
@@ -36,7 +36,7 @@ type LexCommentType
     | DocComment
 
 
-type LexBinaryOperator
+type LexOperator
     = Add
     | Subtract
     | Multiply
@@ -140,43 +140,43 @@ toString item =
         Sigil Underscore ->
             "_"
 
-        Sigil (BinaryOperator Add) ->
+        Sigil (Operator Add) ->
             "+"
 
-        Sigil (BinaryOperator Subtract) ->
+        Sigil (Operator Subtract) ->
             "-"
 
-        Sigil (BinaryOperator Multiply) ->
+        Sigil (Operator Multiply) ->
             "*"
 
-        Sigil (BinaryOperator Divide) ->
+        Sigil (Operator Divide) ->
             "/"
 
-        Sigil (BinaryOperator Exponentiate) ->
+        Sigil (Operator Exponentiate) ->
             "^"
 
-        Sigil (BinaryOperator And) ->
+        Sigil (Operator And) ->
             "&&"
 
-        Sigil (BinaryOperator Or) ->
+        Sigil (Operator Or) ->
             "||"
 
-        Sigil (BinaryOperator Equals) ->
+        Sigil (Operator Equals) ->
             "=="
 
-        Sigil (BinaryOperator GreaterThan) ->
+        Sigil (Operator GreaterThan) ->
             ">"
 
-        Sigil (BinaryOperator GreaterThanEquals) ->
+        Sigil (Operator GreaterThanEquals) ->
             ">="
 
-        Sigil (BinaryOperator LessThan) ->
+        Sigil (Operator LessThan) ->
             "<"
 
-        Sigil (BinaryOperator LessThanEquals) ->
+        Sigil (Operator LessThanEquals) ->
             "<="
 
-        Sigil (BinaryOperator Append) ->
+        Sigil (Operator Append) ->
             "++"
 
         Token s ->
@@ -374,19 +374,19 @@ sigilParser =
     P.oneOf
         [ -- Two character sigils (must come first)
           P.symbol (P.Token "&&" ExpectingSigil)
-            |> P.map (\() -> BinaryOperator And)
+            |> P.map (\() -> Operator And)
         , P.symbol (P.Token "++" ExpectingSigil)
-            |> P.map (\() -> BinaryOperator Append)
+            |> P.map (\() -> Operator Append)
         , P.symbol (P.Token "==" ExpectingSigil)
-            |> P.map (\() -> BinaryOperator Equals)
+            |> P.map (\() -> Operator Equals)
         , P.symbol (P.Token "||" ExpectingSigil)
-            |> P.map (\() -> BinaryOperator Or)
+            |> P.map (\() -> Operator Or)
         , P.symbol (P.Token ".." ExpectingSigil)
             |> P.map (\() -> DoubleDot)
 
         -- Single character sigils
         , P.symbol (P.Token "^" ExpectingSigil)
-            |> P.map (\() -> BinaryOperator Exponentiate)
+            |> P.map (\() -> Operator Exponentiate)
         , P.symbol (P.Token "\\" ExpectingSigil)
             |> P.map (\() -> Backslash)
         , P.symbol (P.Token "_" ExpectingSigil)
@@ -396,23 +396,23 @@ sigilParser =
         , P.symbol (P.Token ")" ExpectingSigil)
             |> P.map (\() -> Bracket Round Close)
         , P.symbol (P.Token ">" ExpectingSigil)
-            |> P.map (\() -> BinaryOperator GreaterThan)
+            |> P.map (\() -> Operator GreaterThan)
         , P.symbol (P.Token "<" ExpectingSigil)
-            |> P.map (\() -> BinaryOperator LessThan)
+            |> P.map (\() -> Operator LessThan)
         , P.symbol (P.Token ">=" ExpectingSigil)
-            |> P.map (\() -> BinaryOperator GreaterThanEquals)
+            |> P.map (\() -> Operator GreaterThanEquals)
         , P.symbol (P.Token "<=" ExpectingSigil)
-            |> P.map (\() -> BinaryOperator LessThanEquals)
+            |> P.map (\() -> Operator LessThanEquals)
         , P.symbol (P.Token "-" ExpectingSigil)
-            |> P.map (\() -> BinaryOperator Subtract)
+            |> P.map (\() -> Operator Subtract)
         , P.symbol (P.Token "+" ExpectingSigil)
-            |> P.map (\() -> BinaryOperator Add)
+            |> P.map (\() -> Operator Add)
         , P.symbol (P.Token "=" ExpectingSigil)
             |> P.map (\() -> Assign)
         , P.symbol (P.Token "/" ExpectingSigil)
-            |> P.map (\() -> BinaryOperator Divide)
+            |> P.map (\() -> Operator Divide)
         , P.symbol (P.Token "*" ExpectingSigil)
-            |> P.map (\() -> BinaryOperator Multiply)
+            |> P.map (\() -> Operator Multiply)
         , P.symbol (P.Token "{" ExpectingSigil)
             |> P.map (\() -> Bracket Curly Open)
         , P.symbol (P.Token "[" ExpectingSigil)
