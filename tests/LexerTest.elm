@@ -825,6 +825,27 @@ expr =
                   )
                 ]
               )
+            , ( "operators"
+              , [ ( "add"
+                  , "5 + 5"
+                  )
+                , ( "sub"
+                  , """
+                    6 - 10
+                    """
+                  )
+                , ( "unary subtract"
+                  , """
+                    - hello
+                    """
+                  )
+                , ( "chained"
+                  , """
+                    5 *5 + 8 + 1 - (4 + 7) ^ 2
+                    """
+                  )
+                ]
+              )
             ]
         )
 
@@ -861,28 +882,27 @@ deadEndToString deadEnd =
         ++ Debug.toString deadEnd.problem
 
 
-
 type_ : Test
 type_ =
     describe "Stage.Parse.Parser.type_"
         (List.map runTest
-            [ ( "int", "Int")
-            , ( "unit", "()")
-            , ( "type var a", "a")
+            [ ( "int", "Int" )
+            , ( "unit", "()" )
+            , ( "type var a", "a" )
             , ( "function"
               , "Int -> ()"
               )
             , ( "multiple-arg function"
               , "Int -> () -> Char"
               )
-            , ( "float", "Float")
-            , ( "char", "Char")
-            , ( "string", "String")
-            , ( "bool", "Bool")
-            , ( "list", "List ()")
+            , ( "float", "Float" )
+            , ( "char", "Char" )
+            , ( "string", "String" )
+            , ( "bool", "Bool" )
+            , ( "list", "List ()" )
             , ( "tuple"
               , "(Int, String)"
-            )
+              )
             , ( "tuple with different whitespace"
               , "( Int,String )"
               )
@@ -933,6 +953,8 @@ type_ =
               )
             ]
         )
+
+
 valueDeclaration : Test
 valueDeclaration =
     -- TODO add various whitespace behavior tests
@@ -986,6 +1008,8 @@ valueDeclaration =
                     |> String.removeNewlinesAtEnds
               )
             ]
+
+
 typeAliasDeclaration : Test
 typeAliasDeclaration =
     describe "Stage.Parse.Parser.typeAliasDeclaration" <|
@@ -1009,6 +1033,8 @@ typeAliasDeclaration =
               , "type alias Foo a = Maybe a"
               )
             ]
+
+
 customTypeDeclaration : Test
 customTypeDeclaration =
     describe "Stage.Parse.Parser.customTypeDeclaration" <|
@@ -1035,6 +1061,8 @@ customTypeDeclaration =
               , "type Foo = Bar | Baz"
               )
             ]
+
+
 portDeclaration : Test
 portDeclaration =
     describe "Stage.Parse.Parser.portDeclaration" <|
