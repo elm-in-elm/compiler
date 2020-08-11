@@ -577,7 +577,7 @@ constructor =
         )
         |= moduleNameWithoutDots
         |= (spacesAndComments
-                |> P.andThen typesWithoutUnestedArrow
+                |> P.andThen userDefinedTypeArgs
            )
 
 
@@ -1658,7 +1658,13 @@ patternList config =
 type_ : Parser_ ( ConcreteType PossiblyQualified, List Comment )
 type_ =
     PP.expression
-        { oneOf = typeOneOf
+        { oneOf =
+            [ PP.literal (withCommentsAfter unitType)
+            , PP.literal (withCommentsAfter varType)
+            , PP.literal (withCommentsAfter recordType)
+            , PP.literal (withCommentsAfter parenthesizedType)
+            , PP.literal userDefinedType
+            ]
         , andThenOneOf =
             [ infixRightWithOperatorResult 1
                 (P.succeed identity
@@ -1679,64 +1685,10 @@ type_ =
         |> P.inContext InType
 
 
-typeWithoutUnestedArrow : Parser_ ( ConcreteType PossiblyQualified, List Comment )
-typeWithoutUnestedArrow =
-    PP.expression
-        { oneOf = typeOneOf
-        , andThenOneOf = []
-        , spaces = P.succeed ()
-        }
-        |> P.inContext InType
-
-
-typeOneOf : List (TypeConfig -> Parser_ ( ConcreteType PossiblyQualified, List Comment ))
-typeOneOf =
-    [ PP.literal (withCommentsAfter varType)
-    , simpleType "()" ConcreteType.Unit
-    , simpleType "Bool" ConcreteType.Bool
-    , simpleType "Int" ConcreteType.Int
-    , simpleType "Float" ConcreteType.Float
-    , simpleType "Char" ConcreteType.Char
-    , simpleType "String" ConcreteType.String
-    , PP.literal listType
-    , PP.literal (withCommentsAfter parenthesizedType)
-    , PP.literal (withCommentsAfter recordType)
-    , PP.literal userDefinedType
-    ]
-
-
-typesWithoutUnestedArrow : List Comment -> Parser_ ( List (ConcreteType PossiblyQualified), List Comment )
-typesWithoutUnestedArrow commentsBefore =
-    P.loop ( [], commentsBefore ) typesWithoutUnestedArrowHelp
-
-
-typesWithoutUnestedArrowHelp : ( List (ConcreteType PossiblyQualified), List Comment ) -> Parser_ (P.Step ( List (ConcreteType PossiblyQualified), List Comment ) ( List (ConcreteType PossiblyQualified), List Comment ))
-typesWithoutUnestedArrowHelp ( acc, commentsBefore {- TODO -} ) =
-    P.oneOf
-        [ {- consider `x : Foo.Bar\nx = 1` vs `x : Foo.Bar\n x`
-
-             Right now we've chomped the `Bar` and we may want to chomp
-             some arguments.
-
-             If the current indent if greater or equal the current column,
-             it means that it will start the `x = ...` declaration.
-             This first parser will succeed and return the accumulation.
-
-          -}
-          checkIndent (>=) ExpectingIndentation
-            |> P.map (\_ -> P.Done ( List.reverse acc, commentsBefore ))
-        , {- The next thing to try is a continuation of the type
-             annotation - custom type args!
-          -}
-          typeWithoutUnestedArrow
-            |> P.map
-                (\( subExpression, commentsAfter ) ->
-                    P.Loop ( subExpression :: acc, commentsAfter )
-                )
-        , {- If the subExpression fails, can be a `->` so we are done with this type -}
-          P.Done ( List.reverse acc, commentsBefore )
-            |> P.succeed
-        ]
+unitType : Parser_ (ConcreteType PossiblyQualified)
+unitType =
+    P.succeed ConcreteType.Unit
+        |. P.keyword (P.Token "()" (ExpectingSimpleType "()"))
 
 
 varType : Parser_ (ConcreteType PossiblyQualified)
@@ -1746,19 +1698,28 @@ varType =
         |> P.inContext InTypeVarType
 
 
-simpleType : String -> ConcreteType PossiblyQualified -> TypeConfig -> Parser_ ( ConcreteType PossiblyQualified, List Comment )
-simpleType name parsedType _ =
-    P.succeed (Tuple.pair parsedType)
-        |. P.keyword (P.Token name (ExpectingSimpleType name))
-        |= spacesAndComments
-
-
-listType : Parser_ ( ConcreteType PossiblyQualified, List Comment )
-listType =
-    P.succeed (Tuple.mapFirst ConcreteType.List)
-        |. P.keyword (P.Token "List" ExpectingListType)
-        |. spacesCommentsAndGreaterIndent
-        |= P.lazy (\_ -> typeWithoutUnestedArrow)
+recordType : Parser_ (ConcreteType PossiblyQualified)
+recordType =
+    P.sequence
+        { start = P.Token "{" ExpectingLeftBrace
+        , separator = P.Token "," ExpectingComma
+        , end = P.Token "}" ExpectingRightBrace
+        , spaces = P.succeed ()
+        , item =
+            P.succeed
+                (\commentsBefore ( name, ( type__, commentsAfter ) ) ->
+                    --TODO
+                    --{ commentsBefore = commentsBefore
+                    --, item = item
+                    --, commentsAfter = commentsAfter
+                    --}
+                    ( name, type__ )
+                )
+                |= spacesCommentsAndGreaterIndent
+                |= typeBinding
+        , trailing = P.Forbidden
+        }
+        |> P.map (Dict.fromList >> ConcreteType.Record)
 
 
 parenthesizedType : Parser_ (ConcreteType PossiblyQualified)
@@ -1807,30 +1768,6 @@ parenthesizedType =
             )
 
 
-recordType : Parser_ (ConcreteType PossiblyQualified)
-recordType =
-    P.sequence
-        { start = P.Token "{" ExpectingLeftBrace
-        , separator = P.Token "," ExpectingComma
-        , end = P.Token "}" ExpectingRightBrace
-        , spaces = P.succeed ()
-        , item =
-            P.succeed
-                (\commentsBefore ( name, ( type__, commentsAfter ) ) ->
-                    --TODO
-                    --{ commentsBefore = commentsBefore
-                    --, item = item
-                    --, commentsAfter = commentsAfter
-                    --}
-                    ( name, type__ )
-                )
-                |= spacesCommentsAndGreaterIndent
-                |= typeBinding
-        , trailing = P.Forbidden
-        }
-        |> P.map (Dict.fromList >> ConcreteType.Record)
-
-
 {-| Examples:
 
   - Maybe a
@@ -1844,17 +1781,13 @@ userDefinedType : Parser_ ( ConcreteType PossiblyQualified, List Comment )
 userDefinedType =
     P.succeed
         (\( modules, name ) ( args, commentsAfter ) ->
-            ( ConcreteType.UserDefinedType
-                { qualifiedness = qualify modules
-                , name = name
-                , args = args
-                }
+            ( processUserDefinedType modules name args
             , commentsAfter
             )
         )
         |= qualifiersAndTypeName
         |= (spacesAndComments
-                |> P.andThen typesWithoutUnestedArrow
+                |> P.andThen userDefinedTypeArgs
            )
         |> P.inContext InUserDefinedType
 
@@ -1881,6 +1814,106 @@ qualifiersAndTypeNameHelp acc =
                 |> P.map (\_ -> True)
             , P.succeed False
             ]
+
+
+userDefinedTypeArgs : List Comment -> Parser_ ( List (ConcreteType PossiblyQualified), List Comment )
+userDefinedTypeArgs commentsBefore =
+    P.loop ( [], commentsBefore ) userDefinedTypeArgsHelp
+
+
+userDefinedTypeArgsHelp : ( List (ConcreteType PossiblyQualified), List Comment ) -> Parser_ (P.Step ( List (ConcreteType PossiblyQualified), List Comment ) ( List (ConcreteType PossiblyQualified), List Comment ))
+userDefinedTypeArgsHelp ( acc, commentsBefore {- TODO -} ) =
+    P.oneOf
+        [ {- consider `x : Foo.Bar\nx = 1` vs `x : Foo.Bar\n x`
+
+             Right now we've chomped the `Bar` and we may want to chomp
+             some arguments.
+
+             If the current indent if greater or equal the current column,
+             it means that it will start the `x = ...` declaration.
+             This first parser will succeed and return the accumulation.
+
+          -}
+          checkIndent (>=) ExpectingIndentation
+            |> P.map (\_ -> P.Done ( List.reverse acc, commentsBefore ))
+        , {- The next thing to try is a continuation of the type
+             annotation - custom type args!
+          -}
+          withCommentsAfter userDefinedTypeArg
+            |> P.map
+                (\( arg, commentsAfter ) ->
+                    P.Loop ( arg :: acc, commentsAfter )
+                )
+        , {- If the subExpression fails, can be a `->` so we are done with this type -}
+          P.Done ( List.reverse acc, commentsBefore )
+            |> P.succeed
+        ]
+
+
+userDefinedTypeArg : Parser_ (ConcreteType PossiblyQualified)
+userDefinedTypeArg =
+    P.oneOf
+        [ unitType
+        , varType
+        , recordType
+        , parenthesizedType
+        , qualifiersAndTypeName
+            |> P.map
+                (\( modules, name ) ->
+                    processUserDefinedType modules name []
+                )
+        ]
+
+
+
+--TODO: Convert on next stage?
+
+
+processUserDefinedType : List String -> String -> List (ConcreteType PossiblyQualified) -> ConcreteType PossiblyQualified
+processUserDefinedType modules name args =
+    let
+        userDefinedType_ =
+            ConcreteType.UserDefinedType
+                { qualifiedness = qualify modules
+                , name = name
+                , args = args
+                }
+    in
+    if List.isEmpty modules || modules == [ "Basics" ] then
+        case args of
+            [] ->
+                case name of
+                    "Bool" ->
+                        ConcreteType.Bool
+
+                    "Int" ->
+                        ConcreteType.Int
+
+                    "Float" ->
+                        ConcreteType.Float
+
+                    "Char" ->
+                        ConcreteType.Char
+
+                    "String" ->
+                        ConcreteType.String
+
+                    _ ->
+                        userDefinedType_
+
+            [ singleArg ] ->
+                case name of
+                    "List" ->
+                        ConcreteType.List singleArg
+
+                    _ ->
+                        userDefinedType_
+
+            _ ->
+                userDefinedType_
+
+    else
+        userDefinedType_
 
 
 
