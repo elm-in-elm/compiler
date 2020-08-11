@@ -320,18 +320,23 @@ exposingAll =
 
 exposingSome : Parser_ Exposing
 exposingSome =
-    sequenceWithCommentsAround
+    P.sequence
         { start = P.Token "(" ExpectingLeftParen
         , separator = P.Token "," ExpectingComma
         , end = P.Token ")" ExpectingRightParen
-        , spacesAndComments = spacesCommentsAndGreaterIndent
-        , item = exposedItem
-        , tagger =
-            \commentsBefore item commentsAfter ->
-                { commentsBefore = commentsBefore
-                , item = item
-                , commentsAfter = commentsAfter
-                }
+        , spaces = P.succeed ()
+        , item =
+            P.succeed
+                (\commentsBefore item commentsAfter ->
+                    { commentsBefore = commentsBefore
+                    , item = item
+                    , commentsAfter = commentsAfter
+                    }
+                )
+                |= spacesCommentsAndGreaterIndent
+                |= exposedItem
+                |= spacesCommentsAndGreaterIndent
+        , trailing = P.Forbidden
         }
         |> P.andThen
             (\list_ ->
@@ -1650,195 +1655,6 @@ patternList config =
         |> located
 
 
-
--- Helpers
-
-
-{-| Parse spaces and comments then check the current defined indentation and the
-current column.
--}
-spacesCommentsAndCheckIndent : (Int -> Int -> Bool) -> ParseProblem -> Parser_ (List Comment)
-spacesCommentsAndCheckIndent check error =
-    P.succeed identity
-        |= spacesAndComments
-        |. checkIndent check error
-
-
-{-| Parse spaces and comments.
--}
-spacesAndComments : Parser_ (List Comment)
-spacesAndComments =
-    P.succeed identity
-        |. spaces
-        |= zeroOrMoreWith spaces comment
-
-
-{-| Parse comment.
--}
-comment : Parser_ Comment
-comment =
-    P.oneOf
-        [ P.lineComment (P.Token "--" ExpectingSingleLineCommentStart)
-            |> P.getChompedString
-            |> located
-            |> P.map (\str -> Comment str SingleLine)
-        , P.multiComment
-            (P.Token "{-" ExpectingMultiLineCommentStart)
-            (P.Token "-}" ExpectingMultiLineCommentEnd)
-            P.Nestable
-            |> P.getChompedString
-            |> located
-            |> P.map (\str -> Comment str MultiLine)
-        ]
-
-
-{-| Parse zero or more spaces.
-
-It will ignore spaces (' ', '\\n' and '\\r') and raise an error if it finds a tab.
-
-The fact that spaces comes last is very important! It can succeed without
-consuming any characters, so if it were the first option, it would always
-succeed and bypass the others!
-
-This possibility of success without consumption is also why wee need the
-ifProgress helper. It detects if there is no more whitespace to consume.
-
--}
-spaces : Parser_ ()
-spaces =
-    P.loop 0 <|
-        ifProgress <|
-            P.oneOf
-                [ P.symbol (P.Token "\t" InvalidTab)
-                    |> P.andThen (\_ -> P.problem InvalidTab)
-                , P.spaces
-                ]
-
-
-{-| Continues a loop if the parser is making progress (consuming anything).
-
-Taken from elm/parser `Parser.multiComment` documentation.
-
--}
-ifProgress : Parser_ a -> Int -> Parser_ (P.Step Int ())
-ifProgress parser offset =
-    P.succeed identity
-        |. parser
-        |= P.getOffset
-        |> P.map
-            (\newOffset ->
-                if offset == newOffset then
-                    P.Done ()
-
-                else
-                    P.Loop newOffset
-            )
-
-
-{-| Check the current indent ([`Parser.getIndent`](https://package.elm-lang.org/packages/elm/parser/latest/Parser#getIndent), previously defined with [`Parser.withIndent`](https://package.elm-lang.org/packages/elm/parser/latest/Parser#withIndent))
-and the current column, in this order, with the given function.
-
-If the check function result is `True` it will succeed, otherwise it will return
-the given problem.
-
-If no indent is defined, the default indent is `0`.
-
--}
-checkIndent : (Int -> Int -> Bool) -> ParseProblem -> Parser_ ()
-checkIndent check error =
-    P.succeed
-        (\indent col ->
-            if check indent col then
-                P.succeed ()
-
-            else
-                P.problem error
-        )
-        |= P.getIndent
-        |= P.getCol
-        |> P.andThen identity
-
-
-{-| Fail if current column <= 1 (these are 1-based, so 1 is leftmost.)
--}
-onlyIndented : Parser_ a -> Parser_ a
-onlyIndented parser =
-    P.succeed identity
-        |. checkIndent (\_ column -> column > 1) ExpectingIndentation
-        |= parser
-
-
-{-| Taken from Punie/elm-parser-extras (original name: `many`), made to work with
-Parser.Advanced.Parser instead of the simple one.
-
-Adapted to behave like \* instead of +.
-
--}
-zeroOrMoreWith : Parser_ () -> Parser_ a -> Parser_ (List a)
-zeroOrMoreWith spaces_ p =
-    P.loop [] (zeroOrMoreHelp spaces_ p)
-
-
-{-| Taken from Punie/elm-parser-extras (original name: `many`), made to work with
-Parser.Advanced.Parser instead of the simple one.
-
-Adapted to behave like \* instead of +.
-
--}
-zeroOrMoreHelp : Parser_ () -> Parser_ a -> List a -> Parser_ (P.Step (List a) (List a))
-zeroOrMoreHelp spaces_ p vs =
-    P.oneOf
-        [ P.backtrackable
-            (P.succeed (\v -> P.Loop (v :: vs))
-                |= p
-                |. spaces_
-            )
-        , P.succeed ()
-            |> P.map (always (P.Done (List.reverse vs)))
-        ]
-
-
-{-| Taken from Punie/elm-parser-extras (original name: `many`), made to work with
-Parser.Advanced.Parser instead of the simple one.
--}
-oneOrMoreWith : Parser_ () -> Parser_ a -> Parser_ (List a)
-oneOrMoreWith spaces_ p =
-    P.loop [] (oneOrMoreHelp spaces_ p)
-
-
-{-| Taken from Punie/elm-parser-extras (original name: `many`), made to work with
-Parser.Advanced.Parser instead of the simple one.
--}
-oneOrMoreHelp : Parser_ () -> Parser_ a -> List a -> Parser_ (P.Step (List a) (List a))
-oneOrMoreHelp spaces_ p vs =
-    P.oneOf
-        [ P.succeed (\v -> P.Loop (v :: vs))
-            |= p
-            |. spaces_
-        , P.succeed ()
-            |> P.map (always (P.Done (List.reverse vs)))
-        ]
-
-
-zeroOrMoreWithSpacesAndCommentsInBetween : Parser_ (List Comment -> ( a, List Comment )) -> List Comment -> Parser_ ( List a, List Comment )
-zeroOrMoreWithSpacesAndCommentsInBetween parser commentsBefore =
-    P.loop ( [], commentsBefore ) (zeroOrMoreWithSpacesAndCommentsInBetweenHelper parser)
-
-
-zeroOrMoreWithSpacesAndCommentsInBetweenHelper : Parser_ (List Comment -> ( a, List Comment )) -> ( List a, List Comment ) -> Parser_ (P.Step ( List a, List Comment ) ( List a, List Comment ))
-zeroOrMoreWithSpacesAndCommentsInBetweenHelper parser ( acc, commentsBefore ) =
-    P.oneOf
-        [ P.succeed
-            (\fn ->
-                fn commentsBefore
-                    |> Tuple.mapFirst (\i -> i :: acc)
-                    |> P.Loop
-            )
-            |= parser
-        , P.succeed (P.Done ( List.reverse acc, commentsBefore ))
-        ]
-
-
 type_ : Parser_ ( ConcreteType PossiblyQualified, List Comment )
 type_ =
     PP.expression
@@ -2067,6 +1883,164 @@ qualifiersAndTypeNameHelp acc =
             ]
 
 
+
+-- Helpers
+
+
+{-| Parse spaces and comments then check the current defined indentation and the
+current column.
+-}
+spacesCommentsAndCheckIndent : (Int -> Int -> Bool) -> ParseProblem -> Parser_ (List Comment)
+spacesCommentsAndCheckIndent check error =
+    P.succeed identity
+        |= spacesAndComments
+        |. checkIndent check error
+
+
+{-| Parse spaces and comments.
+-}
+spacesAndComments : Parser_ (List Comment)
+spacesAndComments =
+    P.succeed identity
+        |. spaces
+        |= zeroOrMoreWith spaces comment
+
+
+{-| Parse comment.
+-}
+comment : Parser_ Comment
+comment =
+    P.oneOf
+        [ P.lineComment (P.Token "--" ExpectingSingleLineCommentStart)
+            |> P.getChompedString
+            |> located
+            |> P.map (\str -> Comment str SingleLine)
+        , P.multiComment
+            (P.Token "{-" ExpectingMultiLineCommentStart)
+            (P.Token "-}" ExpectingMultiLineCommentEnd)
+            P.Nestable
+            |> P.getChompedString
+            |> located
+            |> P.map (\str -> Comment str MultiLine)
+        ]
+
+
+{-| Parse zero or more spaces.
+
+It will ignore spaces (' ', '\\n' and '\\r') and raise an error if it finds a tab.
+
+The fact that spaces comes last is very important! It can succeed without
+consuming any characters, so if it were the first option, it would always
+succeed and bypass the others!
+
+This possibility of success without consumption is also why wee need the
+ifProgress helper. It detects if there is no more whitespace to consume.
+
+-}
+spaces : Parser_ ()
+spaces =
+    P.loop 0 <|
+        ifProgress <|
+            P.oneOf
+                [ P.symbol (P.Token "\t" InvalidTab)
+                    |> P.andThen (\_ -> P.problem InvalidTab)
+                , P.spaces
+                ]
+
+
+{-| Continues a loop if the parser is making progress (consuming anything).
+
+Taken from elm/parser `Parser.multiComment` documentation.
+
+-}
+ifProgress : Parser_ a -> Int -> Parser_ (P.Step Int ())
+ifProgress parser offset =
+    P.succeed identity
+        |. parser
+        |= P.getOffset
+        |> P.map
+            (\newOffset ->
+                if offset == newOffset then
+                    P.Done ()
+
+                else
+                    P.Loop newOffset
+            )
+
+
+{-| Check the current indent ([`Parser.getIndent`](https://package.elm-lang.org/packages/elm/parser/latest/Parser#getIndent), previously defined with [`Parser.withIndent`](https://package.elm-lang.org/packages/elm/parser/latest/Parser#withIndent))
+and the current column, in this order, with the given function.
+
+If the check function result is `True` it will succeed, otherwise it will return
+the given problem.
+
+If no indent is defined, the default indent is `0`.
+
+-}
+checkIndent : (Int -> Int -> Bool) -> ParseProblem -> Parser_ ()
+checkIndent check error =
+    P.succeed
+        (\indent col ->
+            if check indent col then
+                P.succeed ()
+
+            else
+                P.problem error
+        )
+        |= P.getIndent
+        |= P.getCol
+        |> P.andThen identity
+
+
+{-| Taken from Punie/elm-parser-extras (original name: `many`), made to work with
+Parser.Advanced.Parser instead of the simple one.
+
+Adapted to behave like \* instead of +.
+
+-}
+zeroOrMoreWith : Parser_ () -> Parser_ a -> Parser_ (List a)
+zeroOrMoreWith spaces_ p =
+    P.loop [] (zeroOrMoreHelp spaces_ p)
+
+
+{-| Taken from Punie/elm-parser-extras (original name: `many`), made to work with
+Parser.Advanced.Parser instead of the simple one.
+
+Adapted to behave like \* instead of +.
+
+-}
+zeroOrMoreHelp : Parser_ () -> Parser_ a -> List a -> Parser_ (P.Step (List a) (List a))
+zeroOrMoreHelp spaces_ p vs =
+    P.oneOf
+        [ P.backtrackable
+            (P.succeed (\v -> P.Loop (v :: vs))
+                |= p
+                |. spaces_
+            )
+        , P.succeed ()
+            |> P.map (always (P.Done (List.reverse vs)))
+        ]
+
+
+zeroOrMoreWithSpacesAndCommentsInBetween : Parser_ (List Comment -> ( a, List Comment )) -> List Comment -> Parser_ ( List a, List Comment )
+zeroOrMoreWithSpacesAndCommentsInBetween parser commentsBefore =
+    P.loop ( [], commentsBefore ) (zeroOrMoreWithSpacesAndCommentsInBetweenHelper parser)
+
+
+zeroOrMoreWithSpacesAndCommentsInBetweenHelper : Parser_ (List Comment -> ( a, List Comment )) -> ( List a, List Comment ) -> Parser_ (P.Step ( List a, List Comment ) ( List a, List Comment ))
+zeroOrMoreWithSpacesAndCommentsInBetweenHelper parser ( acc, commentsBefore ) =
+    P.oneOf
+        [ P.succeed
+            (\fn ->
+                fn commentsBefore
+                    |> Tuple.mapFirst (\i -> i :: acc)
+                    |> P.Loop
+            )
+            |= parser
+        , P.succeed (P.Done ( List.reverse acc, commentsBefore ))
+        ]
+
+
 shouldLog : String -> Bool
 shouldLog message =
     False
@@ -2158,38 +2132,6 @@ simpleLog msg parser =
         |= P.getOffset
 
 
-checkNextCharIs : Char -> ParseProblem -> Parser_ ()
-checkNextCharIs mandatoryChar problem =
-    checkNextChar ((==) mandatoryChar) problem
-
-
-checkNextCharIsNot : Char -> ParseProblem -> Parser_ ()
-checkNextCharIsNot forbiddenChar problem =
-    checkNextChar ((/=) forbiddenChar) problem
-
-
-{-| Likely very inefficient...
--}
-checkNextChar : (Char -> Bool) -> ParseProblem -> Parser_ ()
-checkNextChar charPredicate problem =
-    P.succeed
-        (\source offset ->
-            case String.uncons (String.slice offset (offset + 1) source) of
-                Nothing ->
-                    P.problem problem
-
-                Just ( nextChar, _ ) ->
-                    if charPredicate nextChar then
-                        P.succeed ()
-
-                    else
-                        P.problem problem
-        )
-        |= P.getSource
-        |= P.getOffset
-        |> P.andThen identity
-
-
 checkTooMuchIndentation : String -> Parser_ ()
 checkTooMuchIndentation firstSucceedString =
     checkIndent (\indent col -> col == indent + String.length firstSucceedString)
@@ -2199,30 +2141,6 @@ checkTooMuchIndentation firstSucceedString =
 spacesCommentsAndGreaterIndent : Parser_ (List Comment)
 spacesCommentsAndGreaterIndent =
     spacesCommentsAndCheckIndent (<) ExpectingIndentation
-
-
-sequenceWithCommentsAround :
-    { start : P.Token ParseProblem
-    , separator : P.Token ParseProblem
-    , end : P.Token ParseProblem
-    , spacesAndComments : Parser_ (List Comment)
-    , item : Parser_ b
-    , tagger : List Comment -> b -> List Comment -> a
-    }
-    -> Parser_ (List a)
-sequenceWithCommentsAround config =
-    P.sequence
-        { start = config.start
-        , separator = config.separator
-        , end = config.end
-        , spaces = P.succeed ()
-        , item =
-            P.succeed config.tagger
-                |= config.spacesAndComments
-                |= config.item
-                |= config.spacesAndComments
-        , trailing = P.Forbidden
-        }
 
 
 {-| Taken from [dmy/elm-pratt-parser](https://package.elm-lang.org/packages/dmy/elm-pratt-parser/latest/Pratt-Advanced#postfix),
