@@ -1,6 +1,5 @@
 module Stage.Parse.Parser exposing
-    ( State
-    , customTypeDeclaration
+    ( customTypeDeclaration
     , declaration
     , exposingList
     , expr
@@ -11,7 +10,6 @@ module Stage.Parse.Parser exposing
     , module_
     , spacesAndComments
     , typeAliasDeclaration
-    , typeAnnotation
     , type_
     , valueDeclaration
     )
@@ -26,7 +24,8 @@ import Elm.Compiler.Error
         , ParseError(..)
         , ParseProblem(..)
         )
-import Elm.Data.Binding exposing (Binding)
+import Elm.Data.Binding as Binding exposing (Binding)
+import Elm.Data.Comment exposing (Comment, CommentType(..))
 import Elm.Data.Declaration as Declaration
     exposing
         ( Constructor
@@ -37,7 +36,7 @@ import Elm.Data.Exposing exposing (ExposedItem(..), Exposing(..))
 import Elm.Data.FilePath exposing (FilePath)
 import Elm.Data.Import exposing (Import)
 import Elm.Data.Located as Located exposing (Located)
-import Elm.Data.Module exposing (Comment, CommentKind(..), Module, ModuleType(..))
+import Elm.Data.Module exposing (Module, ModuleType(..))
 import Elm.Data.ModuleName exposing (ModuleName)
 import Elm.Data.Qualifiedness exposing (PossiblyQualified(..))
 import Elm.Data.Type.Concrete as ConcreteType exposing (ConcreteType)
@@ -45,30 +44,25 @@ import Elm.Data.TypeAnnotation exposing (TypeAnnotation)
 import Elm.Data.VarName exposing (VarName)
 import Hex
 import List.NonEmpty exposing (NonEmpty)
+import Parser.Advanced as P exposing ((|.), (|=), Parser)
+import Pratt.Advanced as PP
 import Set exposing (Set)
-import Stage.Parse.AdvancedWithState as P exposing (Parser)
-import Stage.Parse.PrattAdvancedWithState as PP
-
-
-type alias State =
-    { comments : List Comment
-    }
 
 
 type alias Parser_ a =
-    Parser ParseContext ParseProblem State a
+    Parser ParseContext ParseProblem a
 
 
 type alias ExprConfig =
-    PP.Config ParseContext ParseProblem State LocatedExpr
+    PP.Config ParseContext ParseProblem ( LocatedExpr, List Comment )
 
 
 type alias PatternConfig =
-    PP.Config ParseContext ParseProblem State LocatedPattern
+    PP.Config ParseContext ParseProblem ( LocatedPattern, List Comment )
 
 
 type alias TypeConfig =
-    PP.Config ParseContext ParseProblem State (ConcreteType PossiblyQualified)
+    PP.Config ParseContext ParseProblem ( ConcreteType PossiblyQualified, List Comment )
 
 
 located : Parser_ p -> Parser_ (Located p)
@@ -81,15 +75,15 @@ located p =
                 }
                 value
         )
-        |> P.keep P.getPosition
-        |> P.keep p
-        |> P.keep P.getPosition
+        |= P.getPosition
+        |= p
+        |= P.getPosition
 
 
 module_ : FilePath -> Parser_ (Module LocatedExpr TypeAnnotation PossiblyQualified)
 module_ filePath =
     P.succeed
-        (\( moduleType_, moduleName_, exposing_ ) imports_ declarations_ comments_ ->
+        (\startComments ( moduleType_, moduleName_, exposing_ ) ( imports_, ( declarations_, commentsAfterDeclarations ) ) ->
             { imports = imports_
             , name = moduleName_
             , filePath = filePath
@@ -106,17 +100,20 @@ module_ filePath =
                     |> Dict.fromList
             , type_ = moduleType_
             , exposing_ = exposing_
-            , comments = List.reverse comments_
+            , startComments = startComments
+            , endComments = commentsAfterDeclarations
             }
         )
-        |> P.ignore spacesAndComments
-        |> P.keep moduleDeclaration
-        |> P.ignore spacesAndComments
-        |> P.keep imports
-        |> P.ignore spacesAndComments
-        |> P.keep declarations
-        |> P.ignore spacesAndComments
-        |> P.keep (P.withState (\{ comments } -> P.succeed comments))
+        |= spacesAndComments
+        |= moduleDeclaration
+        |= (spacesAndComments
+                |> P.andThen imports
+                |> P.andThen
+                    (\( imports_, commentsAfterImports ) ->
+                        declarations commentsAfterImports
+                            |> P.map (Tuple.pair imports_)
+                    )
+           )
         |> P.withIndent 1
         |> P.inContext (InFile filePath)
 
@@ -127,66 +124,114 @@ moduleDeclaration =
         (\moduleType_ moduleName_ exposing_ ->
             ( moduleType_, moduleName_, exposing_ )
         )
-        |> P.keep moduleType
-        |> P.ignore spacesCommentsAndGreaterIndent
-        |> P.keep moduleName
-        |> P.ignore spacesCommentsAndGreaterIndent
-        |> P.ignore (P.keyword (P.Token "exposing" ExpectingExposingKeyword))
-        |> P.ignore spacesCommentsAndGreaterIndent
-        |> P.keep exposingList
+        |= moduleType
+        |. spacesCommentsAndGreaterIndent
+        |= moduleName
+        |. spacesCommentsAndGreaterIndent
+        |. P.keyword (P.Token "exposing" ExpectingExposingKeyword)
+        |. spacesCommentsAndGreaterIndent
+        |= exposingList
 
 
-imports : Parser_ (Dict ModuleName Import)
-imports =
-    zeroOrMoreWithSpacesAndComments import_
+imports : List Comment -> Parser_ ( Dict ModuleName Import, List Comment )
+imports commentsBefore =
+    zeroOrMoreWithSpacesAndCommentsInBetween import_ commentsBefore
         |> P.map
-            (List.map (\dep -> ( dep.moduleName, dep ))
-                >> Dict.fromList
+            (Tuple.mapFirst
+                (List.map (\dep -> ( dep.moduleName, dep ))
+                    >> Dict.fromList
+                )
             )
 
 
-import_ : Parser_ Import
+import_ : Parser_ (List Comment -> ( Import, List Comment ))
 import_ =
     P.succeed
-        (\moduleName_ as_ exposing_ ->
-            { moduleName = moduleName_
-            , as_ = as_
-            , exposing_ = exposing_
-            }
+        (\commentsBeforeModuleName moduleName_ commentsAfterModuleName as_ exposing_ commentsBefore ->
+            let
+                adjusts =
+                    case ( as_, exposing_ ) of
+                        ( Nothing, Nothing ) ->
+                            -- Comments after the module name will be
+                            -- passed to the next parser.
+                            { commentsAfterModuleName = []
+                            , as_ = Nothing
+                            , exposing_ = Nothing
+                            , commentsAfter = commentsAfterModuleName
+                            }
+
+                        ( Just as__, Nothing ) ->
+                            -- Comments after the alias module name will
+                            -- be passed to the next parser.
+                            { commentsAfterModuleName = commentsAfterModuleName
+                            , as_ = Just { as__ | commentsAfterAs = [] }
+                            , exposing_ = Nothing
+                            , commentsAfter = as__.commentsAfterAs
+                            }
+
+                        ( _, Just ( exposing__, commentsAfter ) ) ->
+                            -- Comments after the exposing will be passed
+                            -- to the next parser.
+                            { commentsAfterModuleName = commentsAfterModuleName
+                            , as_ = as_
+                            , exposing_ = Just exposing__
+                            , commentsAfter = commentsAfter
+                            }
+            in
+            ( { commentsBefore = commentsBefore
+              , commentsBeforeModuleName = commentsBeforeModuleName
+              , moduleName = moduleName_
+              , commentsAfterModuleName = adjusts.commentsAfterModuleName
+              , as_ = adjusts.as_
+              , exposing_ = adjusts.exposing_
+              }
+            , adjusts.commentsAfter
+            )
         )
-        |> P.ignore (P.keyword (P.Token "import" ExpectingImportKeyword))
-        |> P.ignore (checkTooMuchIndentation "import")
-        |> P.ignore spacesCommentsAndGreaterIndent
-        |> P.keep moduleName
-        |> P.ignore spacesAndComments
-        |> P.keep
-            (P.oneOf
-                [ P.succeed Just
-                    |> P.ignore (checkIndent (<) ExpectingIndentation)
-                    |> P.ignore (P.keyword (P.Token "as" ExpectingAsKeyword))
-                    |> P.ignore spacesCommentsAndGreaterIndent
-                    |> P.keep moduleNameWithoutDots
-                , P.succeed Nothing
-                ]
-            )
-        |> P.ignore
-            (P.oneOf
-                [ -- not sure if this is idiomatic
-                  P.symbol (P.Token "." ExpectingModuleNameWithoutDots)
-                    |> P.ignore (P.problem ExpectingModuleNameWithoutDots)
-                , spacesAndComments
-                ]
-            )
-        |> P.keep
-            (P.oneOf
-                [ P.succeed Just
-                    |> P.ignore (checkIndent (<) ExpectingIndentation)
-                    |> P.ignore (P.keyword (P.Token "exposing" ExpectingExposingKeyword))
-                    |> P.ignore spacesCommentsAndGreaterIndent
-                    |> P.keep exposingList
-                , P.succeed Nothing
-                ]
-            )
+        |. P.keyword (P.Token "import" ExpectingImportKeyword)
+        |. checkTooMuchIndentation "import"
+        |= spacesCommentsAndGreaterIndent
+        |= moduleName
+        |= spacesAndComments
+        |= P.oneOf
+            [ P.succeed
+                (\commentsBeforeAs as_ commentsAfterAs ->
+                    Just
+                        { commentsBeforeAs = commentsBeforeAs
+                        , as_ = as_
+                        , commentsAfterAs = commentsAfterAs
+                        }
+                )
+                |. checkIndent (<) ExpectingIndentation
+                |. P.keyword (P.Token "as" ExpectingAsKeyword)
+                |= spacesCommentsAndGreaterIndent
+                |= moduleNameWithoutDots
+                |. P.oneOf
+                    [ P.symbol (P.Token "." ExpectingModuleNameWithoutDots)
+                        |> P.andThen (always (P.problem ExpectingModuleNameWithoutDots))
+                    , P.succeed ()
+                    ]
+                |= spacesAndComments
+            , P.succeed Nothing
+            ]
+        |= P.oneOf
+            [ P.succeed
+                (\commentsBeforeExposing exposing_ commentsAfterExposing ->
+                    Just
+                        ( { commentsBeforeExposing = commentsBeforeExposing
+                          , exposing_ = exposing_
+                          }
+                        , commentsAfterExposing
+                        )
+                )
+                |. checkIndent (<) ExpectingIndentation
+                |. P.keyword (P.Token "exposing" ExpectingExposingKeyword)
+                |= spacesCommentsAndGreaterIndent
+                |= exposingList
+                |= spacesAndComments
+            , P.succeed Nothing
+            ]
+        |> P.inContext InImport
 
 
 moduleType : Parser_ ModuleType
@@ -201,27 +246,27 @@ moduleType =
 plainModuleType : Parser_ ModuleType
 plainModuleType =
     P.succeed PlainModule
-        |> P.ignore (P.keyword (P.Token "module" ExpectingModuleKeyword))
-        |> P.ignore (checkTooMuchIndentation "module")
+        |. P.keyword (P.Token "module" ExpectingModuleKeyword)
+        |. checkTooMuchIndentation "module"
 
 
 portModuleType : Parser_ ModuleType
 portModuleType =
     P.succeed PortModule
-        |> P.ignore (P.keyword (P.Token "port" ExpectingPortKeyword))
-        |> P.ignore (checkTooMuchIndentation "port")
-        |> P.ignore spacesCommentsAndGreaterIndent
-        |> P.ignore (P.keyword (P.Token "module" ExpectingModuleKeyword))
+        |. P.keyword (P.Token "port" ExpectingPortKeyword)
+        |. checkTooMuchIndentation "port"
+        |. spacesCommentsAndGreaterIndent
+        |. P.keyword (P.Token "module" ExpectingModuleKeyword)
 
 
 effectModuleType : Parser_ ModuleType
 effectModuleType =
     -- TODO some metadata?
     P.succeed EffectModule
-        |> P.ignore (P.keyword (P.Token "effect" ExpectingEffectKeyword))
-        |> P.ignore (checkTooMuchIndentation "effect")
-        |> P.ignore spacesCommentsAndGreaterIndent
-        |> P.ignore (P.keyword (P.Token "module" ExpectingModuleKeyword))
+        |. P.keyword (P.Token "effect" ExpectingEffectKeyword)
+        |. checkTooMuchIndentation "effect"
+        |. spacesCommentsAndGreaterIndent
+        |. P.keyword (P.Token "module" ExpectingModuleKeyword)
 
 
 moduleName : Parser_ String
@@ -241,14 +286,12 @@ moduleNameHelp acc =
                     |> String.join "."
                     |> P.Done
         )
-        |> P.keep moduleNameWithoutDots
-        |> P.keep
-            (P.oneOf
-                [ P.symbol (P.Token "." ExpectingModuleDot)
-                    |> P.map (\_ -> True)
-                , P.succeed False
-                ]
-            )
+        |= moduleNameWithoutDots
+        |= P.oneOf
+            [ P.symbol (P.Token "." ExpectingModuleDot)
+                |> P.map (\_ -> True)
+            , P.succeed False
+            ]
 
 
 moduleNameWithoutDots : Parser_ String
@@ -277,13 +320,18 @@ exposingAll =
 
 exposingSome : Parser_ Exposing
 exposingSome =
-    P.sequence
+    sequenceWithCommentsAround
         { start = P.Token "(" ExpectingLeftParen
         , separator = P.Token "," ExpectingComma
         , end = P.Token ")" ExpectingRightParen
-        , spaces = spacesCommentsAndGreaterIndent
+        , spacesAndComments = spacesCommentsAndGreaterIndent
         , item = exposedItem
-        , trailing = P.Forbidden
+        , tagger =
+            \commentsBefore item commentsAfter ->
+                { commentsBefore = commentsBefore
+                , item = item
+                , commentsAfter = commentsAfter
+                }
         }
         |> P.andThen
             (\list_ ->
@@ -319,14 +367,12 @@ exposedTypeAndOptionallyAllConstructors =
             else
                 ExposedType name
         )
-        |> P.keep typeOrConstructorName
-        |> P.keep
-            (P.oneOf
-                [ P.succeed True
-                    |> P.ignore (P.symbol (P.Token "(..)" ExpectingExposedTypeDoublePeriod))
-                , P.succeed False
-                ]
-            )
+        |= typeOrConstructorName
+        |= P.oneOf
+            [ P.succeed True
+                |. P.symbol (P.Token "(..)" ExpectingExposedTypeDoublePeriod)
+            , P.succeed False
+            ]
 
 
 typeOrConstructorName : Parser_ String
@@ -361,61 +407,35 @@ reservedWords =
         ]
 
 
-declarations : Parser_ (List (ModuleName -> Declaration LocatedExpr TypeAnnotation PossiblyQualified))
-declarations =
-    zeroOrMoreWithSpacesAndComments declaration
+declarations : List Comment -> Parser_ ( List (ModuleName -> Declaration LocatedExpr TypeAnnotation PossiblyQualified), List Comment )
+declarations commentsBefore =
+    zeroOrMoreWithSpacesAndCommentsInBetween declaration commentsBefore
 
 
-declaration : Parser_ (ModuleName -> Declaration LocatedExpr TypeAnnotation PossiblyQualified)
+declaration : Parser_ (List Comment -> ( ModuleName -> Declaration LocatedExpr TypeAnnotation PossiblyQualified, List Comment ))
 declaration =
     P.succeed
-        (\( name, body ) module__ ->
-            { module_ = module__
-            , name = name
-            , body = body
-            }
+        (\( name, body, commentsAfter ) commentsBefore ->
+            ( \module__ ->
+                { module_ = module__
+                , name = name
+                , commentsBefore = commentsBefore
+                , body = body
+                }
+            , commentsAfter
+            )
         )
-        |> P.keep declarationBody
+        |= declarationBody
         |> P.inContext InDeclaration
 
 
-declarationBody : Parser_ ( String, DeclarationBody LocatedExpr TypeAnnotation PossiblyQualified )
+declarationBody : Parser_ ( String, DeclarationBody LocatedExpr TypeAnnotation PossiblyQualified, List Comment )
 declarationBody =
     P.oneOf
         [ typeAliasDeclaration
         , customTypeDeclaration
-        , valueDeclaration
+        , valueDeclaration Nothing
         ]
-
-
-valueDeclaration : Parser_ ( String, DeclarationBody LocatedExpr TypeAnnotation PossiblyQualified )
-valueDeclaration =
-    P.succeed
-        (\annotation name expr_ ->
-            ( name
-            , Declaration.Value
-                { typeAnnotation = annotation
-                , expression = expr_
-                }
-            )
-        )
-        |> P.keep
-            (P.oneOf
-                -- TODO refactor the `backtrackable` away
-                -- TODO is it even working correctly?
-                [ P.backtrackable
-                    (P.succeed Just
-                        |> P.keep typeAnnotation
-                        |> P.ignore P.spaces
-                    )
-                , P.succeed Nothing
-                ]
-            )
-        |> P.keep varName
-        |> P.ignore spacesCommentsAndGreaterIndent
-        |> P.ignore (P.symbol (P.Token "=" ExpectingEqualsSign))
-        |> P.ignore spacesCommentsAndGreaterIndent
-        |> P.keep expr
 
 
 {-|
@@ -428,26 +448,40 @@ More generally,
      type alias <UserDefinedType> <VarType>* = <Type>
 
 -}
-typeAliasDeclaration : Parser_ ( String, DeclarationBody LocatedExpr TypeAnnotation PossiblyQualified )
+typeAliasDeclaration : Parser_ ( String, DeclarationBody LocatedExpr TypeAnnotation PossiblyQualified, List Comment )
 typeAliasDeclaration =
     P.succeed
-        (\name parameters type__ ->
+        (\commentsBeforeName name ( parameters, commentsAfterParameters ) ( type__, commentsAfter ) ->
             ( name
             , Declaration.TypeAlias
                 { parameters = parameters
                 , definition = type__
                 }
+            , commentsAfter
             )
         )
-        |> P.ignore (P.keyword (P.Token "type alias" ExpectingTypeAlias))
-        |> P.ignore spacesCommentsAndGreaterIndent
-        |> P.keep moduleNameWithoutDots
-        |> P.ignore spacesCommentsAndGreaterIndent
-        |> P.keep (zeroOrMoreWithSpacesAndComments varName)
-        |> P.ignore spacesCommentsAndGreaterIndent
-        |> P.ignore (P.symbol (P.Token "=" ExpectingEqualsSign))
-        |> P.ignore spacesCommentsAndGreaterIndent
-        |> P.keep type_
+        |. P.keyword (P.Token "type alias" ExpectingTypeAlias)
+        |= spacesCommentsAndGreaterIndent
+        |= moduleNameWithoutDots
+        |= (spacesCommentsAndGreaterIndent
+                |> P.andThen
+                    (zeroOrMoreWithSpacesAndCommentsInBetween
+                        (P.succeed
+                            (\parameter commentsAfterParameter commentsBefore ->
+                                {- TODO -}
+                                ( parameter
+                                , commentsAfterParameter
+                                )
+                            )
+                            |= varName
+                            |= spacesCommentsAndGreaterIndent
+                        )
+                    )
+           )
+        |. spacesCommentsAndGreaterIndent
+        |. P.symbol (P.Token "=" ExpectingEqualsSign)
+        |. spacesCommentsAndGreaterIndent
+        |= type_
         |> P.inContext InTypeAlias
 
 
@@ -463,93 +497,240 @@ More generally,
      Constructor := <Name>[ <Type>]*
 
 -}
-customTypeDeclaration : Parser_ ( String, DeclarationBody LocatedExpr TypeAnnotation PossiblyQualified )
+customTypeDeclaration : Parser_ ( String, DeclarationBody LocatedExpr TypeAnnotation PossiblyQualified, List Comment )
 customTypeDeclaration =
     P.succeed
-        (\name parameters constructors_ ->
+        (\name ( parameters, commentsAfterParameters {- TODO -} ) ( constructors_, commentsAfter ) ->
             ( name
             , Declaration.CustomType
                 { parameters = parameters
                 , constructors = constructors_
                 }
+            , commentsAfter
             )
         )
-        |> P.ignore (P.keyword (P.Token "type" ExpectingTypeAlias))
-        |> P.ignore spacesCommentsAndGreaterIndent
-        |> P.keep moduleNameWithoutDots
-        |> P.ignore spacesCommentsAndGreaterIndent
-        |> P.keep (zeroOrMoreWith P.spaces varName)
-        |> P.ignore spacesCommentsAndGreaterIndent
-        |> P.ignore (P.symbol (P.Token "=" ExpectingEqualsSign))
-        |> P.ignore spacesCommentsAndGreaterIndent
-        |> P.keep constructors
+        |. P.keyword (P.Token "type" ExpectingTypeAlias)
+        |. spacesCommentsAndGreaterIndent
+        |= moduleNameWithoutDots
+        |= (spacesCommentsAndGreaterIndent
+                |> P.andThen
+                    (zeroOrMoreWithSpacesAndCommentsInBetween
+                        (P.succeed
+                            (\parameter commentsAfterParameter commentsBefore ->
+                                {- TODO -}
+                                ( parameter
+                                , commentsAfterParameter
+                                )
+                            )
+                            |= varName
+                            |= spacesCommentsAndGreaterIndent
+                        )
+                    )
+           )
+        |. P.symbol (P.Token "=" ExpectingEqualsSign)
+        |= constructors
         |> P.inContext InCustomType
 
 
-constructors : Parser_ (NonEmpty (Constructor PossiblyQualified))
+constructors : Parser_ ( NonEmpty (Constructor PossiblyQualified), List Comment )
 constructors =
-    P.sequence
-        { start = P.Token "" (ParseCompilerBug ConstructorsStartParserFailed)
-        , separator = P.Token "|" ExpectingPipe
-        , end = P.Token "" (ParseCompilerBug ConstructorsEndParserFailed)
-        , spaces = spacesCommentsAndGreaterIndent
-        , item = constructor
-        , trailing = P.Forbidden
-        }
+    {- TODO store comments -}
+    P.succeed Tuple.pair
+        |= spacesCommentsAndGreaterIndent
+        |= P.oneOf
+            [ constructor
+            , P.succeed ()
+                |> P.andThen (\_ -> P.problem EmptyListOfConstructors)
+            ]
         |> P.andThen
-            (\constructors_ ->
-                case List.NonEmpty.fromList constructors_ of
-                    Nothing ->
-                        P.problem EmptyListOfConstructors
-
-                    Just c ->
-                        P.succeed c
+            (\( commentsBefore, ( firstConstructor, commentsAfterFirstConstructor ) ) ->
+                zeroOrMoreWithSpacesAndCommentsInBetween
+                    (P.succeed
+                        (\commentsBeforeConstructor ( constructor_, commentsAfter ) commentsBeforePipe ->
+                            ( constructor_, commentsAfter )
+                        )
+                        |. P.keyword (P.Token "|" ExpectingPipe)
+                        |= spacesCommentsAndGreaterIndent
+                        |= constructor
+                    )
+                    commentsAfterFirstConstructor
+                    |> P.map
+                        (Tuple.mapFirst
+                            (List.NonEmpty.fromCons firstConstructor)
+                        )
             )
         |> P.inContext InConstructors
 
 
-constructor : Parser_ (Constructor PossiblyQualified)
+constructor : Parser_ ( Constructor PossiblyQualified, List Comment )
 constructor =
-    P.succeed Declaration.Constructor
-        |> P.keep moduleNameWithoutDots
-        |> P.ignore spacesCommentsAndGreaterIndent
-        |> P.keep (oneOrMoreWith spacesAndComments type_)
+    P.succeed
+        (\moduleName_ ( types, commentsAfter ) ->
+            ( Declaration.Constructor moduleName_ types
+            , commentsAfter
+            )
+        )
+        |= moduleNameWithoutDots
+        |= (spacesAndComments
+                |> P.andThen typesWithoutUnestedArrow
+           )
 
 
-expr : Parser_ LocatedExpr
+valueDeclaration : Maybe ( TypeAnnotation, List Comment ) -> Parser_ ( String, DeclarationBody LocatedExpr TypeAnnotation PossiblyQualified, List Comment )
+valueDeclaration maybeAnn =
+    P.succeed
+        (\name commentsAfterVarName ->
+            P.oneOf
+                [ P.succeed
+                    (\commentsBeforeType ( type__, commentsAfter ) ->
+                        ( { varName = name
+                          , commentsAfterVarName = commentsAfterVarName
+                          , commentsBeforeType = commentsBeforeType
+                          , type_ = type__
+                          }
+                        , commentsAfter
+                        )
+                    )
+                    |. P.symbol (P.Token ":" ExpectingColon)
+                    |. (case maybeAnn of
+                            Nothing ->
+                                P.succeed ()
+
+                            Just _ ->
+                                P.problem ExpectingTypeAnnotationDefinition
+                       )
+                    |= spacesCommentsAndGreaterIndent
+                    |= type_
+                    |> P.inContext InTypeAnnotation
+                    |> P.andThen (Just >> valueDeclaration)
+                , P.succeed
+                    (\commentsExpression ( expr_, commentsAfter ) ->
+                        ( name
+                        , Declaration.Value
+                            { typeAnnotation = Maybe.map Tuple.first maybeAnn
+                            , commentsAfterTypeAnnotation =
+                                Maybe.map Tuple.second maybeAnn
+                                    |> Maybe.withDefault []
+                            , expression = expr_
+                            }
+                        , commentsAfter
+                        )
+                    )
+                    |. P.symbol (P.Token "=" ExpectingEqualsSign)
+                    |= spacesCommentsAndGreaterIndent
+                    |= expr
+                ]
+        )
+        |= varName
+        |= spacesCommentsAndGreaterIndent
+        |> P.andThen identity
+
+
+expr : Parser_ ( LocatedExpr, List Comment )
 expr =
     PP.expression
         { oneOf =
             [ if_
             , let_
             , lambda
-            , PP.literal literal
-            , always var
-            , unit
-            , list
-            , tuple
-            , record
+            , PP.literal (withCommentsAfter literal)
+            , PP.literal (withCommentsAfter var)
+            , PP.literal (withCommentsAfter unit)
+            , list >> withCommentsAfter
+            , parenthesized >> withCommentsAfter
+            , record >> withCommentsAfter
             , case_
             ]
         , andThenOneOf =
-            -- TODO test this: does `x =\n  call 1\n+ something` work? (it shouldn't: no space before '+')
-            [ PP.infixLeft 99
-                spacesCommentsAndGreaterIndent
-                (Located.merge
-                    (\fn argument ->
-                        Frontend.Call
-                            { fn = fn
-                            , argument = argument
-                            }
+            [ infixLeftWithOperatorResult 1
+                (P.succeed identity
+                    |. P.symbol (P.Token "++" ExpectingConcatOperator)
+                    |= spacesCommentsAndGreaterIndent
+                )
+                (\( locatedLeft, commentsAfterLeft ) commentsBeforeRight ( locatedRight, commentsAfterRight ) ->
+                    ( Located.merge
+                        (\left right ->
+                            ListConcat
+                                { left = left
+                                , commentsAfterLeft = commentsAfterLeft
+                                , commentsBeforeRight = commentsBeforeRight
+                                , right = right
+                                }
+                        )
+                        locatedLeft
+                        locatedRight
+                    , commentsAfterRight
                     )
                 )
-            , PP.infixLeft 1 (P.symbol (P.Token "++" ExpectingConcatOperator)) (Located.merge ListConcat)
-            , PP.infixLeft 1 (P.symbol (P.Token "+" ExpectingPlusOperator)) (Located.merge Plus)
-            , PP.infixRight 1 (P.symbol (P.Token "::" ExpectingConsOperator)) (Located.merge Cons)
+            , infixLeftWithOperatorResult 1
+                (P.succeed identity
+                    |. P.symbol (P.Token "+" ExpectingPlusOperator)
+                    |= spacesCommentsAndGreaterIndent
+                )
+                (\( locatedLeft, commentsAfterLeft ) commentsBeforeRight ( locatedRight, commentsAfterRight ) ->
+                    ( Located.merge
+                        (\left right ->
+                            Plus
+                                { left = left
+                                , commentsAfterLeft = commentsAfterLeft
+                                , commentsBeforeRight = commentsBeforeRight
+                                , right = right
+                                }
+                        )
+                        locatedLeft
+                        locatedRight
+                    , commentsAfterRight
+                    )
+                )
+            , infixRightWithOperatorResult 1
+                (P.succeed identity
+                    |. P.symbol (P.Token "::" ExpectingConsOperator)
+                    |= spacesCommentsAndGreaterIndent
+                )
+                (\( locatedLeft, commentsAfterLeft ) commentsBeforeRight ( locatedRight, commentsAfterRight ) ->
+                    ( Located.merge
+                        (\left right ->
+                            Cons
+                                { left = left
+                                , commentsAfterLeft = commentsAfterLeft
+                                , commentsBeforeRight = commentsBeforeRight
+                                , right = right
+                                }
+                        )
+                        locatedLeft
+                        locatedRight
+                    , commentsAfterRight
+                    )
+                )
+
+            -- TODO test this: does `x =\n  call 1\n+ something` work? (it shouldn't: no space before '+')
+            , PP.infixLeft 99
+                (checkIndent (<) ExpectingIndentation)
+                (\( locatedLeft, commentsAfterLeft ) ( locatedRight, commentsAfterRight ) ->
+                    ( Located.merge
+                        (\left right ->
+                            Frontend.Call
+                                { fn = left
+                                , comments = commentsAfterLeft
+                                , argument = right
+                                }
+                        )
+                        locatedLeft
+                        locatedRight
+                    , commentsAfterRight
+                    )
+                )
             ]
-        , spaces = spacesAndComments
+        , spaces = P.succeed ()
         }
         |> P.inContext InExpr
+
+
+withCommentsAfter : Parser_ a -> Parser_ ( a, List Comment )
+withCommentsAfter parser =
+    P.succeed Tuple.pair
+        |= parser
+        |= spacesAndComments
 
 
 literal : Parser_ LocatedExpr
@@ -590,8 +771,8 @@ literalNumber =
     in
     P.oneOf
         [ P.succeed negateLiteral
-            |> P.ignore (P.symbol (P.Token "-" ExpectingMinusSign))
-            |> P.keep parseLiteralNumber
+            |. P.symbol (P.Token "-" ExpectingMinusSign)
+            |= parseLiteralNumber
         , parseLiteralNumber
         ]
         |> P.inContext InNumber
@@ -637,22 +818,20 @@ character quotes =
     P.oneOf
         [ -- escaped characters have priority
           P.succeed identity
-            |> P.ignore (P.token (P.Token "\\" ExpectingEscapeBackslash))
-            |> P.keep
-                (P.oneOf
-                    [ P.map (\_ -> '\\') (P.token (P.Token "\\" (ExpectingEscapeCharacter '\\')))
-                    , P.map (\_ -> '"') (P.token (P.Token "\"" (ExpectingEscapeCharacter '"'))) -- " (elm-vscode workaround)
-                    , P.map (\_ -> '\'') (P.token (P.Token "'" (ExpectingEscapeCharacter '\'')))
-                    , P.map (\_ -> '\n') (P.token (P.Token "n" (ExpectingEscapeCharacter 'n')))
-                    , P.map (\_ -> '\t') (P.token (P.Token "t" (ExpectingEscapeCharacter 't')))
-                    , P.map (\_ -> '\u{000D}') (P.token (P.Token "r" (ExpectingEscapeCharacter 'r')))
-                    , P.succeed identity
-                        |> P.ignore (P.token (P.Token "u" (ExpectingEscapeCharacter 'u')))
-                        |> P.ignore (P.token (P.Token "{" ExpectingLeftBrace))
-                        |> P.keep unicodeCharacter
-                        |> P.ignore (P.token (P.Token "}" ExpectingRightBrace))
-                    ]
-                )
+            |. P.token (P.Token "\\" ExpectingEscapeBackslash)
+            |= P.oneOf
+                [ P.map (\_ -> '\\') (P.token (P.Token "\\" (ExpectingEscapeCharacter '\\')))
+                , P.map (\_ -> '"') (P.token (P.Token "\"" (ExpectingEscapeCharacter '"'))) -- " (elm-vscode workaround)
+                , P.map (\_ -> '\'') (P.token (P.Token "'" (ExpectingEscapeCharacter '\'')))
+                , P.map (\_ -> '\n') (P.token (P.Token "n" (ExpectingEscapeCharacter 'n')))
+                , P.map (\_ -> '\t') (P.token (P.Token "t" (ExpectingEscapeCharacter 't')))
+                , P.map (\_ -> '\u{000D}') (P.token (P.Token "r" (ExpectingEscapeCharacter 'r')))
+                , P.succeed identity
+                    |. P.token (P.Token "u" (ExpectingEscapeCharacter 'u'))
+                    |. P.token (P.Token "{" ExpectingLeftBrace)
+                    |= unicodeCharacter
+                    |. P.token (P.Token "}" ExpectingRightBrace)
+                ]
             |> P.inContext InCharEscapeMode
         , -- we don't want to eat the closing delimiter
           (case quotes of
@@ -668,7 +847,7 @@ character quotes =
             |> P.andThen (always (P.problem TriedToParseCharacterStoppingDelimiter))
         , -- all other characters (sometimes except newlines)
           P.succeed identity
-            |> P.keep (P.getChompedString (P.chompIf (isAllowedChar quotes) ExpectingChar))
+            |= P.getChompedString (P.chompIf (isAllowedChar quotes) ExpectingChar)
             |> P.andThen
                 (\string ->
                     string
@@ -705,9 +884,9 @@ unicodeCharacter =
 literalChar : Parser_ LocatedExpr
 literalChar =
     P.succeed Char
-        |> P.ignore (P.symbol singleQuote)
-        |> P.keep (character SingleQuote)
-        |> P.ignore (P.symbol singleQuote)
+        |. P.symbol singleQuote
+        |= character SingleQuote
+        |. P.symbol singleQuote
         |> P.inContext InChar
         |> located
 
@@ -715,12 +894,10 @@ literalChar =
 literalString : Parser_ LocatedExpr
 literalString =
     P.succeed String
-        |> P.keep
-            (P.oneOf
-                [ tripleQuoteString
-                , doubleQuoteString
-                ]
-            )
+        |= P.oneOf
+            [ tripleQuoteString
+            , doubleQuoteString
+            ]
         |> P.inContext InString
         |> located
 
@@ -728,18 +905,18 @@ literalString =
 doubleQuoteString : Parser_ String
 doubleQuoteString =
     P.succeed String.fromList
-        |> P.ignore (P.symbol doubleQuote)
-        |> P.keep (zeroOrMoreWith (P.succeed ()) (character DoubleQuote))
-        |> P.ignore (P.symbol doubleQuote)
+        |. P.symbol doubleQuote
+        |= zeroOrMoreWith (P.succeed ()) (character DoubleQuote)
+        |. P.symbol doubleQuote
         |> P.inContext InDoubleQuoteString
 
 
 tripleQuoteString : Parser_ String
 tripleQuoteString =
     P.succeed String.fromList
-        |> P.ignore (P.symbol tripleQuote)
-        |> P.keep (zeroOrMoreWith (P.succeed ()) (character TripleQuote))
-        |> P.ignore (P.symbol tripleQuote)
+        |. P.symbol tripleQuote
+        |= zeroOrMoreWith (P.succeed ()) (character TripleQuote)
+        |. P.symbol tripleQuote
         |> P.inContext InTripleQuoteString
 
 
@@ -805,8 +982,8 @@ qualifiedVarHelp : List String -> Parser_ (P.Step (List String) Expr)
 qualifiedVarHelp acc =
     P.oneOf
         [ P.succeed (\moduleNameStr -> P.Loop (moduleNameStr :: acc))
-            |> P.keep moduleNameWithoutDots
-            |> P.ignore (P.symbol (P.Token "." ExpectingQualifiedVarNameDot))
+            |= moduleNameWithoutDots
+            |. P.symbol (P.Token "." ExpectingQualifiedVarNameDot)
         , varName
             |> P.map
                 (\varName_ ->
@@ -819,12 +996,14 @@ qualifiedVarHelp acc =
         ]
 
 
-lambda : ExprConfig -> Parser_ LocatedExpr
+lambda : ExprConfig -> Parser_ ( LocatedExpr, List Comment )
 lambda config =
     P.succeed
-        (\arguments body ->
-            Frontend.Lambda
+        (\( startRow, startCol ) ( arguments, commentsAfterArguments ) commentsBeforeBody ( body, commentsAfter ) ->
+            ( Frontend.Lambda
                 { arguments = arguments
+                , commentsAfterArguments = commentsAfterArguments
+                , commentsBeforeBody = commentsBeforeBody
                 , body =
                     {- Run the promoting transformation on every subexpression,
                        so that after parsing all the arguments aren't unqualified
@@ -842,112 +1021,176 @@ lambda config =
 
                        TODO add a fuzz test for this invariant?
                     -}
-                    Located.map (Frontend.transform (promoteArguments arguments)) body
+                    Located.map
+                        (Frontend.transform
+                            (promoteArguments (List.map .argument arguments))
+                        )
+                        body
                 }
+                |> Located.located
+                    { start = { row = startRow, col = startCol }
+                    , end = .end (Located.getRegion body)
+                    }
+            , commentsAfter
+            )
         )
-        |> P.ignore (P.symbol (P.Token "\\" ExpectingBackslash))
-        |> P.keep (oneOrMoreWith spacesCommentsAndGreaterIndent varName)
-        |> P.ignore spacesCommentsAndGreaterIndent
-        |> P.ignore (P.symbol (P.Token "->" ExpectingRightArrow))
-        |> P.ignore spacesCommentsAndGreaterIndent
-        |> P.keep (PP.subExpression 0 config)
+        |= P.getPosition
+        |. P.symbol (P.Token "\\" ExpectingBackslash)
+        |= (spacesCommentsAndGreaterIndent
+                |> P.andThen (zeroOrMoreWithSpacesAndCommentsInBetween lambdaArgument)
+           )
+        |. P.keyword (P.Token "->" ExpectingRightArrow)
+        |= spacesCommentsAndGreaterIndent
+        |= PP.subExpression 0 config
         |> P.inContext InLambda
-        |> located
 
 
-if_ : ExprConfig -> Parser_ LocatedExpr
+lambdaArgument : Parser_ (List Comment -> ( { commentsBefore : List Comment, argument : VarName }, List Comment ))
+lambdaArgument =
+    P.succeed
+        (\argument commentsAfter commentsBefore ->
+            ( { commentsBefore = commentsBefore
+              , argument = argument
+              }
+            , commentsAfter
+            )
+        )
+        |= varName
+        |= spacesCommentsAndGreaterIndent
+
+
+if_ : ExprConfig -> Parser_ ( LocatedExpr, List Comment )
 if_ config =
     P.succeed
-        (\test then_ else_ ->
-            Frontend.If
-                { test = test
+        (\( startRow, startCol ) commentsBeforeTest ( test, commentsAfterTest ) commentsBeforeThen ( then_, commentsAfterThen ) commentsBeforeElse ( else_, commentsAfterElse ) ->
+            ( Frontend.If
+                { commentsBeforeTest = commentsBeforeTest
+                , test = test
+                , commentsAfterTest = commentsAfterTest
+                , commentsBeforeThen = commentsBeforeThen
                 , then_ = then_
+                , commentsAfterThen = commentsAfterThen
+                , commentsBeforeElse = commentsBeforeElse
                 , else_ = else_
                 }
+                |> Located.located
+                    { start = { row = startRow, col = startCol }
+                    , end = .end (Located.getRegion else_)
+                    }
+            , commentsAfterElse
+            )
         )
-        |> P.ignore (P.keyword (P.Token "if" ExpectingIf))
-        |> P.keep (PP.subExpression 0 config)
-        |> P.ignore (P.keyword (P.Token "then" ExpectingThen))
-        |> P.keep (PP.subExpression 0 config)
-        |> P.ignore (P.keyword (P.Token "else" ExpectingElse))
-        |> P.keep (PP.subExpression 0 config)
+        |= P.getPosition
+        |. P.keyword (P.Token "if" ExpectingIf)
+        |= spacesAndComments
+        |= PP.subExpression 0 config
+        |. P.keyword (P.Token "then" ExpectingThen)
+        |= spacesAndComments
+        |= PP.subExpression 0 config
+        |. P.keyword (P.Token "else" ExpectingElse)
+        |= spacesAndComments
+        |= PP.subExpression 0 config
         |> P.inContext InIf
-        |> located
 
 
-let_ : ExprConfig -> Parser_ LocatedExpr
+let_ : ExprConfig -> Parser_ ( LocatedExpr, List Comment )
 let_ config =
     P.succeed identity
-        |> P.ignore (P.keyword (P.Token "let" ExpectingLet))
-        |> P.keep P.getCol
+        |= P.getPosition
+        |. P.keyword (P.Token "let" ExpectingLet)
         |> P.andThen
-            (\letIndent ->
-                P.succeed identity
-                    |> P.ignore
-                        (spacesCommentsAndCheckIndent
-                            (\_ col -> letIndent - 3 < col)
-                            ExpectingLetIndentation
+            (\( startRow, startCol ) ->
+                P.succeed
+                    (\commentsBeforeBindings bindingIndent ->
+                        ( { row = startRow, col = startCol }
+                        , commentsBeforeBindings
+                        , bindingIndent
                         )
-                    |> P.keep P.getCol
+                    )
+                    |= spacesCommentsAndCheckIndent
+                        (\_ col -> startCol < col)
+                        ExpectingLetIndentation
+                    |= P.getCol
             )
         |> P.andThen
-            (\bindingIndent ->
+            (\( start, commentsBeforeBindings, bindingIndent ) ->
                 P.succeed
-                    (\bindings body ->
-                        Frontend.Let
+                    (\( bindings, commentsAfterBindings ) commentsBeforeBody ( body, commentsAfterBody ) ->
+                        ( Frontend.Let
                             { bindings = bindings
+                            , commentsAfterBindings = commentsAfterBindings
+                            , commentsBeforeBody = commentsBeforeBody
                             , body = body
                             }
-                    )
-                    |> P.keep
-                        (P.withIndent bindingIndent
-                            (P.loop [] (letBinding config))
+                            |> Located.located
+                                { start = start
+                                , end = .end (Located.getRegion body)
+                                }
+                        , commentsAfterBody
                         )
-                    |> P.ignore spacesCommentsAndGreaterIndent
-                    |> P.keep (PP.subExpression 0 config)
+                    )
+                    |= P.withIndent bindingIndent
+                        (zeroOrMoreWithSpacesAndCommentsInBetween
+                            (letBinding config)
+                            commentsBeforeBindings
+                        )
+                    |. P.keyword (P.Token "in" ExpectingIn)
+                    |= spacesCommentsAndGreaterIndent
+                    |= PP.subExpression 0 config
             )
         |> P.inContext InLet
-        |> located
 
 
-letBinding : ExprConfig -> List (Binding LocatedExpr) -> Parser_ (P.Step (List (Binding LocatedExpr)) (List (Binding LocatedExpr)))
-letBinding config bs =
-    P.oneOf
-        [ P.keyword (P.Token "in" ExpectingIn)
-            |> P.map (\_ -> P.Done (List.reverse bs))
-        , P.succeed (\b -> P.Loop (b :: bs))
-            |> P.ignore (checkIndent (==) ExpectingLetBindingIndentation)
-            |> P.keep (binding config)
-            |> P.ignore spacesAndComments
-        ]
+letBinding :
+    ExprConfig
+    -> Parser_ (List Comment -> ( { commentsBefore : List Comment, binding : Binding.Commented LocatedExpr }, List Comment ))
+letBinding config =
+    P.succeed
+        (\( binding_, commentsAfter ) commentsBefore ->
+            ( { commentsBefore = commentsBefore
+              , binding = binding_
+              }
+            , commentsAfter
+            )
+        )
+        |. checkIndent (==) ExpectingLetBindingIndentation
+        |= binding config
         |> P.inContext InLetBinding
 
 
-recordBinding : ExprConfig -> Parser_ (Binding LocatedExpr)
+recordBinding : ExprConfig -> Parser_ ( Binding.Commented LocatedExpr, List Comment )
 recordBinding config =
-    P.succeed identity
-        |> P.keep (binding config)
+    binding config
         |> P.inContext InRecordBinding
 
 
-binding : ExprConfig -> Parser_ (Binding LocatedExpr)
+binding : ExprConfig -> Parser_ ( Binding.Commented LocatedExpr, List Comment )
 binding config =
-    P.succeed Binding
-        |> P.keep varName
-        |> P.ignore spacesCommentsAndGreaterIndent
-        |> P.ignore (P.symbol (P.Token "=" ExpectingEqualsSign))
-        |> P.ignore spacesCommentsAndGreaterIndent
-        |> P.keep (PP.subExpression 0 config)
+    P.succeed
+        (\name commentsAfterName commentsBeforeBody ( body, commentsAfterBody ) ->
+            ( { name = name
+              , commentsAfterName = commentsAfterName
+              , commentsBeforeBody = commentsBeforeBody
+              , body = body
+              }
+            , commentsAfterBody
+            )
+        )
+        |= varName
+        |= spacesCommentsAndGreaterIndent
+        |. P.symbol (P.Token "=" ExpectingEqualsSign)
+        |= spacesCommentsAndGreaterIndent
+        |= PP.subExpression 0 config
 
 
-typeBinding : TypeConfig -> Parser_ ( VarName, ConcreteType PossiblyQualified )
-typeBinding config =
+typeBinding : Parser_ ( VarName, ( ConcreteType PossiblyQualified, List Comment ) )
+typeBinding =
     P.succeed Tuple.pair
-        |> P.keep varName
-        |> P.ignore spacesCommentsAndGreaterIndent
-        |> P.ignore (P.symbol (P.Token ":" ExpectingColon))
-        |> P.ignore spacesCommentsAndGreaterIndent
-        |> P.keep (PP.subExpression 0 config)
+        |= varName
+        |. spacesCommentsAndGreaterIndent
+        |. P.symbol (P.Token ":" ExpectingColon)
+        |. spacesCommentsAndGreaterIndent
+        |= P.lazy (\_ -> type_)
         |> P.inContext InTypeBinding
 
 
@@ -969,59 +1212,59 @@ promoteArguments arguments expr_ =
             expr_
 
 
-unit : ExprConfig -> Parser_ LocatedExpr
-unit _ =
+unit : Parser_ LocatedExpr
+unit =
     P.succeed Frontend.Unit
-        |> P.ignore (P.keyword (P.Token "()" ExpectingUnit))
+        |. P.keyword (P.Token "()" ExpectingUnit)
         |> P.inContext InUnit
         |> located
 
 
-list : ExprConfig -> Parser_ LocatedExpr
-list config =
-    P.succeed Frontend.List
-        |> P.keep
-            (P.sequence
-                { start = P.Token "[" ExpectingLeftBracket
-                , separator = P.Token "," ExpectingListSeparator
-                , end = P.Token "]" ExpectingRightBracket
-                , spaces = spacesCommentsAndGreaterIndent
-                , item = PP.subExpression 0 config
-                , trailing = P.Forbidden
-                }
-            )
-        |> P.inContext InList
-        |> located
-
-
-tuple : ExprConfig -> Parser_ LocatedExpr
-tuple config =
+parenthesized : ExprConfig -> Parser_ LocatedExpr
+parenthesized config =
     P.sequence
         { start = P.Token "(" ExpectingLeftParen
         , separator = P.Token "," ExpectingTupleSeparator
         , end = P.Token ")" ExpectingRightParen
-        , spaces = spacesCommentsAndGreaterIndent
-        , item = PP.subExpression 0 config
+        , spaces = P.succeed ()
+        , item =
+            P.succeed
+                (\commentsBefore ( expr_, commentsAfter ) ->
+                    { commentsBefore = commentsBefore
+                    , expr = expr_
+                    , commentsAfter = commentsAfter
+                    }
+                )
+                |= spacesCommentsAndGreaterIndent
+                |= PP.subExpression 0 config
         , trailing = P.Forbidden
         }
         |> located
         |> P.andThen
-            (\locatedExpr ->
-                case Located.unwrap locatedExpr of
-                    [ expr1, expr2, expr3 ] ->
-                        Located.map (\_ -> Tuple3 expr1 expr2 expr3)
-                            locatedExpr
-                            |> P.succeed
-                            |> P.inContext InTuple3
+            (\items ->
+                case Located.unwrap items of
+                    [] ->
+                        P.problem ExpectingExpression
 
-                    [ expr1, expr2 ] ->
-                        Located.map (\_ -> Tuple expr1 expr2)
-                            locatedExpr
+                    [ item ] ->
+                        Located.map
+                            (\_ -> Parenthesized item)
+                            items
+                            |> P.succeed
+
+                    [ item1, item2 ] ->
+                        Located.map
+                            (\_ -> Tuple item1 item2)
+                            items
                             |> P.succeed
                             |> P.inContext InTuple
 
-                    [ expr_ ] ->
-                        P.succeed expr_
+                    [ item1, item2, item3 ] ->
+                        Located.map
+                            (\_ -> Tuple3 item1 item2 item3)
+                            items
+                            |> P.succeed
+                            |> P.inContext InTuple
 
                     _ ->
                         P.problem ExpectingMaxThreeTuple
@@ -1030,84 +1273,181 @@ tuple config =
 
 record : ExprConfig -> Parser_ LocatedExpr
 record config =
-    P.succeed Frontend.Record
-        |> P.keep
-            (P.sequence
-                { start = P.Token "{" ExpectingRecordLeftBrace
-                , separator = P.Token "," ExpectingRecordSeparator
-                , end = P.Token "}" ExpectingRecordRightBrace
-                , spaces = spacesCommentsAndGreaterIndent
-                , item = recordBinding config
-                , trailing = P.Forbidden
-                }
-            )
+    P.sequence
+        { start = P.Token "{" ExpectingRecordLeftBrace
+        , separator = P.Token "," ExpectingRecordSeparator
+        , end = P.Token "}" ExpectingRecordRightBrace
+        , spaces = P.succeed ()
+        , item =
+            P.succeed
+                (\commentsBefore ( binding_, commentsAfter ) ->
+                    { commentsBefore = commentsBefore
+                    , binding = binding_
+                    , commentsAfter = commentsAfter
+                    }
+                )
+                |= spacesCommentsAndGreaterIndent
+                |= recordBinding config
+        , trailing = P.Forbidden
+        }
+        |> P.map Frontend.Record
         |> P.inContext InRecord
         |> located
 
 
-case_ : ExprConfig -> Parser_ LocatedExpr
-case_ config =
-    P.succeed
-        (\test branchAlignCol ->
-            P.succeed (Frontend.Case test)
-                |> P.keep
-                    (P.withIndent
-                        branchAlignCol
-                        (oneOrMoreWith spacesAndComments (caseBranch config))
-                    )
-        )
-        |> P.ignore (P.keyword (P.Token "case" ExpectingCase))
-        |> P.ignore spacesAndComments
-        |> P.keep (PP.subExpression 0 config)
-        |> P.ignore spacesAndComments
-        |> P.ignore (P.keyword (P.Token "of" ExpectingOf))
-        |> P.ignore spacesAndComments
-        |> P.keep P.getCol
-        |> P.andThen identity
-        |> P.inContext InCase
+list : ExprConfig -> Parser_ LocatedExpr
+list config =
+    P.sequence
+        { start = P.Token "[" ExpectingLeftBracket
+        , separator = P.Token "," ExpectingListSeparator
+        , end = P.Token "]" ExpectingRightBracket
+        , spaces = P.succeed ()
+        , item =
+            P.succeed
+                (\commentsBefore ( expr_, commentsAfter ) ->
+                    { commentsBefore = commentsBefore
+                    , expr = expr_
+                    , commentsAfter = commentsAfter
+                    }
+                )
+                |= spacesCommentsAndGreaterIndent
+                |= PP.subExpression 0 config
+        , trailing = P.Forbidden
+        }
+        |> P.map Frontend.List
+        |> P.inContext InList
         |> located
 
 
-caseBranch : ExprConfig -> Parser_ { pattern : LocatedPattern, body : LocatedExpr }
+case_ : ExprConfig -> Parser_ ( LocatedExpr, List Comment )
+case_ config =
+    P.succeed
+        (\( startRow, startCol ) commentsBeforeTest ( test, commentsAfterTest ) commentsBeforePattern branchAlignCol ->
+            zeroOrMoreWithSpacesAndCommentsInBetween (caseBranch config)
+                commentsBeforePattern
+                |> P.withIndent branchAlignCol
+                |> P.map
+                    (\( branches, commentsAfter ) ->
+                        ( Frontend.Case
+                            { commentsBeforeTest = commentsBeforeTest
+                            , test = test
+                            , commentsAfterTest = commentsAfterTest
+                            , branches = branches
+                            }
+                            |> Located.located
+                                { start = { row = startRow, col = startCol }
+                                , end =
+                                    --TODO: end is the last branch's end
+                                    { row = startRow, col = startCol }
+                                }
+                        , commentsAfter
+                        )
+                    )
+        )
+        |= P.getPosition
+        |. P.keyword (P.Token "case" ExpectingCase)
+        |= spacesAndComments
+        |= PP.subExpression 0 config
+        |. P.keyword (P.Token "of" ExpectingOf)
+        |= spacesAndComments
+        |= P.getCol
+        |> P.andThen identity
+        |> P.inContext InCase
+
+
+caseBranch :
+    ExprConfig
+    ->
+        Parser_
+            (List Comment
+             ->
+                ( { commentsBeforePattern : List Comment
+                  , pattern : LocatedPattern
+                  , commentsAfterPattern : List Comment
+                  , commentsBeforeBody : List Comment
+                  , body : LocatedExpr
+                  }
+                , List Comment
+                )
+            )
 caseBranch config =
     P.succeed
-        (\pattern_ body ->
-            { pattern = pattern_
-            , body = body
-            }
+        (\( pattern_, commentsAfterPattern ) commentsBeforeBody ( body, commentsAfter ) commentsBeforePattern ->
+            ( { commentsBeforePattern = commentsBeforePattern
+              , pattern = pattern_
+              , commentsAfterPattern = commentsAfterPattern
+              , commentsBeforeBody = commentsBeforeBody
+              , body = body
+              }
+            , commentsAfter
+            )
         )
-        |> P.ignore (checkIndent (==) ExpectingIndentation)
-        |> P.keep pattern
-        |> P.ignore (spacesCommentsAndCheckIndent (<) ExpectingRightArrow)
-        |> P.ignore (P.symbol (P.Token "->" ExpectingRightArrow))
-        |> P.ignore (spacesCommentsAndCheckIndent (<) ExpectingCaseBody)
-        |> P.keep (PP.subExpression 0 config)
+        |. checkIndent (==) ExpectingIndentation
+        |= pattern
+        |. checkIndent (<) ExpectingRightArrow
+        |. P.symbol (P.Token "->" ExpectingRightArrow)
+        |= spacesCommentsAndCheckIndent (<) ExpectingCaseBody
+        |= PP.subExpression 0 config
 
 
-pattern : Parser_ LocatedPattern
+pattern : Parser_ ( LocatedPattern, List Comment )
 pattern =
     PP.expression
         { oneOf =
-            [ PP.literal patternLiteral
-            , patternList
-            , patternTuple
+            [ PP.literal (withCommentsAfter patternLiteral)
+            , patternTuple >> withCommentsAfter
+            , patternList >> withCommentsAfter
             ]
         , andThenOneOf =
-            [ PP.infixRight 1 (P.symbol (P.Token "::" ExpectingConsOperator)) (Located.merge PCons)
-            , PP.postfixWithOperatorResult 1
+            [ infixRightWithOperatorResult 1
                 (P.succeed identity
-                    |> P.ignore (P.keyword (P.Token "as" ExpectingAsKeyword))
-                    |> P.ignore (spacesCommentsAndCheckIndent (<) ExpectingPatternAliasName)
-                    |> P.keep varName
+                    |. P.symbol (P.Token "::" ExpectingConsOperator)
+                    |= spacesCommentsAndCheckIndent (<) ExpectingIndentation
+                )
+                (\( locatedLeft, commentsAfterLeft ) commentsBeforeRight ( locatedRight, commentsAfterRight ) ->
+                    ( Located.merge
+                        (\left right ->
+                            PCons
+                                { left = left
+                                , commentsAfterLeft = commentsAfterLeft
+                                , commentsBeforeRight = commentsBeforeRight
+                                , right = right
+                                }
+                        )
+                        locatedLeft
+                        locatedRight
+                    , commentsAfterRight
+                    )
+                )
+            , postfixWithOperatorResult 99
+                (P.succeed (\a b c -> ( a, b, c ))
+                    |. P.keyword (P.Token "as" ExpectingAsKeyword)
+                    |= spacesCommentsAndCheckIndent (<) ExpectingPatternAliasName
+                    |= varName
+                    |= spacesCommentsAndCheckIndent (<) ExpectingPatternAliasName
                     |> located
                 )
-                (Located.merge
-                    (\pattern_ alias_ ->
-                        PAlias pattern_ (Located.unwrap alias_)
+                (\( locatedPattern, commentsAfterPattern ) locatedAlias ->
+                    let
+                        ( commentsBeforeAlias, alias_, commentsAfter ) =
+                            Located.unwrap locatedAlias
+                    in
+                    ( Located.merge
+                        (\pattern_ _ ->
+                            PAlias
+                                { pattern = pattern_
+                                , commentsAfterPattern = commentsAfterPattern
+                                , commentsBeforeAlias = commentsBeforeAlias
+                                , alias = alias_
+                                }
+                        )
+                        locatedPattern
+                        locatedAlias
+                    , commentsAfter
                     )
                 )
             ]
-        , spaces = spacesAndComments
+        , spaces = P.succeed ()
         }
         |> P.inContext InPattern
 
@@ -1117,10 +1457,10 @@ patternLiteral =
     P.oneOf
         [ patternAnything
         , patternUnit
+        , patternBool
         , patternVar
         , patternChar
         , patternString
-        , patternBool
         , patternNumber
         , patternRecord
         ]
@@ -1129,37 +1469,14 @@ patternLiteral =
 patternAnything : Parser_ LocatedPattern
 patternAnything =
     P.succeed PAnything
-        |> P.ignore (P.symbol (P.Token "_" ExpectingPatternAnything))
+        |. P.symbol (P.Token "_" ExpectingPatternAnything)
         |> located
 
 
 patternUnit : Parser_ LocatedPattern
 patternUnit =
     P.succeed PUnit
-        |> P.ignore (P.keyword (P.Token "()" ExpectingUnit))
-        |> located
-
-
-patternChar : Parser_ LocatedPattern
-patternChar =
-    P.succeed PChar
-        |> P.ignore (P.symbol singleQuote)
-        |> P.keep (character SingleQuote)
-        |> P.ignore (P.symbol singleQuote)
-        |> P.inContext InChar
-        |> located
-
-
-patternString : Parser_ LocatedPattern
-patternString =
-    P.succeed PString
-        |> P.keep
-            (P.oneOf
-                [ tripleQuoteString
-                , doubleQuoteString
-                ]
-            )
-        |> P.inContext InString
+        |. P.keyword (P.Token "()" ExpectingUnit)
         |> located
 
 
@@ -1167,13 +1484,6 @@ patternBool : Parser_ LocatedPattern
 patternBool =
     P.map PBool bool
         |> located
-
-
-patternVar : Parser_ LocatedPattern
-patternVar =
-    P.map PVar varName
-        |> located
-        |> P.inContext InPatternVar
 
 
 patternNumber : Parser_ LocatedPattern
@@ -1204,12 +1514,91 @@ patternNumber =
     in
     P.oneOf
         [ P.succeed negateLiteral
-            |> P.ignore (P.symbol (P.Token "-" ExpectingMinusSign))
-            |> P.keep parseLiteralNumber
+            |. P.symbol (P.Token "-" ExpectingMinusSign)
+            |= parseLiteralNumber
         , parseLiteralNumber
         ]
         |> P.inContext InNumber
         |> located
+
+
+patternChar : Parser_ LocatedPattern
+patternChar =
+    P.succeed PChar
+        |. P.symbol singleQuote
+        |= character SingleQuote
+        |. P.symbol singleQuote
+        |> P.inContext InChar
+        |> located
+
+
+patternString : Parser_ LocatedPattern
+patternString =
+    P.succeed PString
+        |= P.oneOf
+            [ tripleQuoteString
+            , doubleQuoteString
+            ]
+        |> P.inContext InString
+        |> located
+
+
+patternVar : Parser_ LocatedPattern
+patternVar =
+    P.map PVar varName
+        |> located
+        |> P.inContext InPatternVar
+
+
+patternTuple : PatternConfig -> Parser_ LocatedPattern
+patternTuple config =
+    P.sequence
+        { start = P.Token "(" ExpectingLeftParen
+        , separator = P.Token "," ExpectingTupleSeparator
+        , end = P.Token ")" ExpectingRightParen
+        , spaces = P.succeed ()
+        , item =
+            P.succeed
+                (\commentsBefore ( pattern_, commentsAfter ) ->
+                    { commentsBefore = commentsBefore
+                    , pattern = pattern_
+                    , commentsAfter = commentsAfter
+                    }
+                )
+                |= spacesCommentsAndGreaterIndent
+                |= PP.subExpression 0 config
+        , trailing = P.Forbidden
+        }
+        |> located
+        |> P.andThen
+            (\items ->
+                case Located.unwrap items of
+                    [] ->
+                        P.problem ExpectingExpression
+
+                    [ item ] ->
+                        Located.map
+                            (\_ -> PParenthesized item)
+                            items
+                            |> P.succeed
+
+                    [ item1, item2 ] ->
+                        Located.map
+                            (\_ -> PTuple item1 item2)
+                            items
+                            |> P.succeed
+                            |> P.inContext InTuple
+
+                    [ item1, item2, item3 ] ->
+                        Located.map
+                            (\_ -> PTuple3 item1 item2 item3)
+                            items
+                            |> P.succeed
+                            |> P.inContext InTuple
+
+                    _ ->
+                        P.problem ExpectingMaxThreeTuple
+            )
 
 
 patternRecord : Parser_ LocatedPattern
@@ -1218,8 +1607,18 @@ patternRecord =
         { start = P.Token "{" ExpectingRecordLeftBrace
         , separator = P.Token "," ExpectingRecordSeparator
         , end = P.Token "}" ExpectingRecordRightBrace
-        , spaces = spacesCommentsAndGreaterIndent
-        , item = varName
+        , spaces = P.succeed ()
+        , item =
+            P.succeed
+                (\commentsBefore varName_ commentsAfter ->
+                    { commentsBefore = commentsBefore
+                    , varName = varName_
+                    , commentsAfter = commentsAfter
+                    }
+                )
+                |= spacesCommentsAndGreaterIndent
+                |= varName
+                |= spacesCommentsAndGreaterIndent
         , trailing = P.Forbidden
         }
         |> P.map PRecord
@@ -1233,47 +1632,22 @@ patternList config =
         { start = P.Token "[" ExpectingLeftBracket
         , separator = P.Token "," ExpectingListSeparator
         , end = P.Token "]" ExpectingRightBracket
-        , spaces = spacesCommentsAndGreaterIndent
-        , item = PP.subExpression 0 config
+        , spaces = P.succeed ()
+        , item =
+            P.succeed
+                (\commentsBefore ( pattern_, commentsAfter ) ->
+                    { commentsBefore = commentsBefore
+                    , pattern = pattern_
+                    , commentsAfter = commentsAfter
+                    }
+                )
+                |= spacesCommentsAndGreaterIndent
+                |= PP.subExpression 0 config
         , trailing = P.Forbidden
         }
         |> P.map PList
         |> P.inContext InList
         |> located
-
-
-patternTuple : PatternConfig -> Parser_ LocatedPattern
-patternTuple config =
-    P.sequence
-        { start = P.Token "(" ExpectingLeftParen
-        , separator = P.Token "," ExpectingTupleSeparator
-        , end = P.Token ")" ExpectingRightParen
-        , spaces = spacesCommentsAndGreaterIndent
-        , item = PP.subExpression 0 config
-        , trailing = P.Forbidden
-        }
-        |> located
-        |> P.andThen
-            (\locatedPattern ->
-                case Located.unwrap locatedPattern of
-                    [ pattern1, pattern2, pattern3 ] ->
-                        Located.map (\_ -> PTuple3 pattern1 pattern2 pattern3)
-                            locatedPattern
-                            |> P.succeed
-                            |> P.inContext InTuple3
-
-                    [ pattern1, pattern2 ] ->
-                        Located.map (\_ -> PTuple pattern1 pattern2)
-                            locatedPattern
-                            |> P.succeed
-                            |> P.inContext InTuple
-
-                    [ pattern_ ] ->
-                        P.succeed pattern_
-
-                    _ ->
-                        P.problem ExpectingMaxThreeTuple
-            )
 
 
 
@@ -1283,43 +1657,39 @@ patternTuple config =
 {-| Parse spaces and comments then check the current defined indentation and the
 current column.
 -}
-spacesCommentsAndCheckIndent : (Int -> Int -> Bool) -> ParseProblem -> Parser_ ()
+spacesCommentsAndCheckIndent : (Int -> Int -> Bool) -> ParseProblem -> Parser_ (List Comment)
 spacesCommentsAndCheckIndent check error =
-    P.succeed ()
-        |> P.ignore spacesAndComments
-        |> P.ignore (checkIndent check error)
+    P.succeed identity
+        |= spacesAndComments
+        |. checkIndent check error
 
 
 {-| Parse spaces and comments.
 -}
-spacesAndComments : Parser_ ()
+spacesAndComments : Parser_ (List Comment)
 spacesAndComments =
-    P.succeed ()
-        |> P.ignore spaces
-        |> P.ignore (zeroOrMoreWith spaces comment)
+    P.succeed identity
+        |. spaces
+        |= zeroOrMoreWith spaces comment
 
 
-{-| Parse comment and add to the Parser state.
+{-| Parse comment.
 -}
-comment : Parser_ ()
+comment : Parser_ Comment
 comment =
     P.oneOf
-        [ P.lineComment (P.Token "--" ExpectingLeftParen)
+        [ P.lineComment (P.Token "--" ExpectingSingleLineCommentStart)
             |> P.getChompedString
             |> located
             |> P.map (\str -> Comment str SingleLine)
         , P.multiComment
-            (P.Token "{-" ExpectingLeftParen)
-            (P.Token "-}" ExpectingLeftParen)
+            (P.Token "{-" ExpectingMultiLineCommentStart)
+            (P.Token "-}" ExpectingMultiLineCommentEnd)
             P.Nestable
             |> P.getChompedString
             |> located
             |> P.map (\str -> Comment str MultiLine)
         ]
-        |> P.andThen
-            (\cmmnt ->
-                P.updateState (\s -> { s | comments = cmmnt :: s.comments })
-            )
 
 
 {-| Parse zero or more spaces.
@@ -1353,8 +1723,8 @@ Taken from elm/parser `Parser.multiComment` documentation.
 ifProgress : Parser_ a -> Int -> Parser_ (P.Step Int ())
 ifProgress parser offset =
     P.succeed identity
-        |> P.ignore parser
-        |> P.keep P.getOffset
+        |. parser
+        |= P.getOffset
         |> P.map
             (\newOffset ->
                 if offset == newOffset then
@@ -1384,8 +1754,8 @@ checkIndent check error =
             else
                 P.problem error
         )
-        |> P.keep P.getIndent
-        |> P.keep P.getCol
+        |= P.getIndent
+        |= P.getCol
         |> P.andThen identity
 
 
@@ -1394,8 +1764,8 @@ checkIndent check error =
 onlyIndented : Parser_ a -> Parser_ a
 onlyIndented parser =
     P.succeed identity
-        |> P.ignore (checkIndent (\_ column -> column > 1) ExpectingIndentation)
-        |> P.keep parser
+        |. checkIndent (\_ column -> column > 1) ExpectingIndentation
+        |= parser
 
 
 {-| Taken from Punie/elm-parser-extras (original name: `many`), made to work with
@@ -1420,8 +1790,8 @@ zeroOrMoreHelp spaces_ p vs =
     P.oneOf
         [ P.backtrackable
             (P.succeed (\v -> P.Loop (v :: vs))
-                |> P.keep p
-                |> P.ignore spaces_
+                |= p
+                |. spaces_
             )
         , P.succeed ()
             |> P.map (always (P.Done (List.reverse vs)))
@@ -1443,114 +1813,203 @@ oneOrMoreHelp : Parser_ () -> Parser_ a -> List a -> Parser_ (P.Step (List a) (L
 oneOrMoreHelp spaces_ p vs =
     P.oneOf
         [ P.succeed (\v -> P.Loop (v :: vs))
-            |> P.keep p
-            |> P.ignore spaces_
+            |= p
+            |. spaces_
         , P.succeed ()
             |> P.map (always (P.Done (List.reverse vs)))
         ]
 
 
-typeAnnotation : Parser_ TypeAnnotation
-typeAnnotation =
-    P.succeed TypeAnnotation
-        |> P.keep varName
-        |> P.ignore spacesCommentsAndGreaterIndent
-        |> P.ignore (P.symbol (P.Token ":" ExpectingColon))
-        |> P.ignore spacesCommentsAndGreaterIndent
-        |> P.keep type_
-        |> P.inContext InTypeAnnotation
+zeroOrMoreWithSpacesAndCommentsInBetween : Parser_ (List Comment -> ( a, List Comment )) -> List Comment -> Parser_ ( List a, List Comment )
+zeroOrMoreWithSpacesAndCommentsInBetween parser commentsBefore =
+    P.loop ( [], commentsBefore ) (zeroOrMoreWithSpacesAndCommentsInBetweenHelper parser)
 
 
-type_ : Parser_ (ConcreteType PossiblyQualified)
+zeroOrMoreWithSpacesAndCommentsInBetweenHelper : Parser_ (List Comment -> ( a, List Comment )) -> ( List a, List Comment ) -> Parser_ (P.Step ( List a, List Comment ) ( List a, List Comment ))
+zeroOrMoreWithSpacesAndCommentsInBetweenHelper parser ( acc, commentsBefore ) =
+    P.oneOf
+        [ P.succeed
+            (\fn ->
+                fn commentsBefore
+                    |> Tuple.mapFirst (\i -> i :: acc)
+                    |> P.Loop
+            )
+            |= parser
+        , P.succeed (P.Done ( List.reverse acc, commentsBefore ))
+        ]
+
+
+type_ : Parser_ ( ConcreteType PossiblyQualified, List Comment )
 type_ =
     PP.expression
-        { oneOf =
-            [ PP.literal varType
-            , simpleType "Int" ConcreteType.Int
-            , simpleType "Float" ConcreteType.Float
-            , simpleType "Char" ConcreteType.Char
-            , simpleType "String" ConcreteType.String
-            , simpleType "Bool" ConcreteType.Bool
-            , simpleType "()" ConcreteType.Unit
-            , listType
-            , parenthesizedType
-            , recordType
-            , userDefinedType
-            ]
+        { oneOf = typeOneOf
         , andThenOneOf =
-            [ PP.infixRight 1
-                (P.token (P.Token "->" ExpectingRightArrow))
-                (\from to -> ConcreteType.Function { from = from, to = to })
+            [ infixRightWithOperatorResult 1
+                (P.succeed identity
+                    |. P.token (P.Token "->" ExpectingRightArrow)
+                    |= spacesAndComments
+                )
+                (\( from, commentsAfterFrom ) commentsBeforeTo ( to, commentsAfterTo ) ->
+                    ( ConcreteType.Function
+                        { from = from
+                        , to = to
+                        }
+                    , commentsAfterTo
+                    )
+                )
             ]
-        , spaces = spacesAndComments
+        , spaces = P.succeed ()
         }
         |> P.inContext InType
 
 
+typeWithoutUnestedArrow : Parser_ ( ConcreteType PossiblyQualified, List Comment )
+typeWithoutUnestedArrow =
+    PP.expression
+        { oneOf = typeOneOf
+        , andThenOneOf = []
+        , spaces = P.succeed ()
+        }
+        |> P.inContext InType
+
+
+typeOneOf : List (TypeConfig -> Parser_ ( ConcreteType PossiblyQualified, List Comment ))
+typeOneOf =
+    [ PP.literal (withCommentsAfter varType)
+    , simpleType "()" ConcreteType.Unit
+    , simpleType "Bool" ConcreteType.Bool
+    , simpleType "Int" ConcreteType.Int
+    , simpleType "Float" ConcreteType.Float
+    , simpleType "Char" ConcreteType.Char
+    , simpleType "String" ConcreteType.String
+    , PP.literal listType
+    , PP.literal (withCommentsAfter parenthesizedType)
+    , PP.literal (withCommentsAfter recordType)
+    , PP.literal userDefinedType
+    ]
+
+
+typesWithoutUnestedArrow : List Comment -> Parser_ ( List (ConcreteType PossiblyQualified), List Comment )
+typesWithoutUnestedArrow commentsBefore =
+    P.loop ( [], commentsBefore ) typesWithoutUnestedArrowHelp
+
+
+typesWithoutUnestedArrowHelp : ( List (ConcreteType PossiblyQualified), List Comment ) -> Parser_ (P.Step ( List (ConcreteType PossiblyQualified), List Comment ) ( List (ConcreteType PossiblyQualified), List Comment ))
+typesWithoutUnestedArrowHelp ( acc, commentsBefore {- TODO -} ) =
+    P.oneOf
+        [ {- consider `x : Foo.Bar\nx = 1` vs `x : Foo.Bar\n x`
+
+             Right now we've chomped the `Bar` and we may want to chomp
+             some arguments.
+
+             If the current indent if greater or equal the current column,
+             it means that it will start the `x = ...` declaration.
+             This first parser will succeed and return the accumulation.
+
+          -}
+          checkIndent (>=) ExpectingIndentation
+            |> P.map (\_ -> P.Done ( List.reverse acc, commentsBefore ))
+        , {- The next thing to try is a continuation of the type
+             annotation - custom type args!
+          -}
+          typeWithoutUnestedArrow
+            |> P.map
+                (\( subExpression, commentsAfter ) ->
+                    P.Loop ( subExpression :: acc, commentsAfter )
+                )
+        , {- If the subExpression fails, can be a `->` so we are done with this type -}
+          P.Done ( List.reverse acc, commentsBefore )
+            |> P.succeed
+        ]
+
+
 varType : Parser_ (ConcreteType PossiblyQualified)
 varType =
-    varName
-        |> P.getChompedString
-        |> P.map ConcreteType.TypeVar
+    P.succeed ConcreteType.TypeVar
+        |= varName
         |> P.inContext InTypeVarType
 
 
-simpleType : String -> ConcreteType PossiblyQualified -> TypeConfig -> Parser_ (ConcreteType PossiblyQualified)
-simpleType name parsedType config =
-    PP.constant
-        (P.keyword (P.Token name (ExpectingSimpleType name)))
-        parsedType
-        config
+simpleType : String -> ConcreteType PossiblyQualified -> TypeConfig -> Parser_ ( ConcreteType PossiblyQualified, List Comment )
+simpleType name parsedType _ =
+    P.succeed (Tuple.pair parsedType)
+        |. P.keyword (P.Token name (ExpectingSimpleType name))
+        |= spacesAndComments
 
 
-listType : TypeConfig -> Parser_ (ConcreteType PossiblyQualified)
-listType config =
-    P.succeed ConcreteType.List
-        |> P.ignore (P.keyword (P.Token "List" ExpectingListType))
-        |> P.ignore spacesAndComments
-        |> P.keep (PP.subExpression 0 config)
+listType : Parser_ ( ConcreteType PossiblyQualified, List Comment )
+listType =
+    P.succeed (Tuple.mapFirst ConcreteType.List)
+        |. P.keyword (P.Token "List" ExpectingListType)
+        |. spacesCommentsAndGreaterIndent
+        |= P.lazy (\_ -> typeWithoutUnestedArrow)
 
 
-parenthesizedType : TypeConfig -> Parser_ (ConcreteType PossiblyQualified)
-parenthesizedType config =
+parenthesizedType : Parser_ (ConcreteType PossiblyQualified)
+parenthesizedType =
     P.sequence
         { start = P.Token "(" ExpectingLeftParen
         , separator = P.Token "," ExpectingTupleSeparator
         , end = P.Token ")" ExpectingRightParen
-        , spaces = spacesCommentsAndGreaterIndent
-        , item = PP.subExpression 0 config
+        , spaces = P.succeed ()
+        , item =
+            P.succeed
+                (\commentsBefore ( type__, commentsAfter ) ->
+                    --TODO
+                    --{ commentsBefore = commentsBefore
+                    --, item = item
+                    --, commentsAfter = commentsAfter
+                    --}
+                    type__
+                )
+                |= spacesCommentsAndGreaterIndent
+                |= P.lazy (\_ -> type_)
         , trailing = P.Forbidden
         }
         |> P.andThen
             (\types ->
                 case types of
-                    [ type1, type2, type3 ] ->
-                        ConcreteType.Tuple3 type1 type2 type3
-                            |> P.succeed
-                            |> P.inContext InTuple3
+                    [] ->
+                        P.problem ExpectingExpression
+
+                    [ type1 ] ->
+                        P.succeed type1
+                            |> P.inContext InParenthesizedType
 
                     [ type1, type2 ] ->
                         ConcreteType.Tuple type1 type2
                             |> P.succeed
                             |> P.inContext InTuple
 
-                    [ expr_ ] ->
-                        P.succeed expr_
-                            |> P.inContext InParenthesizedType
+                    [ type1, type2, type3 ] ->
+                        ConcreteType.Tuple3 type1 type2 type3
+                            |> P.succeed
+                            |> P.inContext InTuple3
 
                     _ ->
                         P.problem ExpectingMaxThreeTuple
             )
 
 
-recordType : TypeConfig -> Parser_ (ConcreteType PossiblyQualified)
-recordType config =
+recordType : Parser_ (ConcreteType PossiblyQualified)
+recordType =
     P.sequence
         { start = P.Token "{" ExpectingLeftBrace
         , separator = P.Token "," ExpectingComma
         , end = P.Token "}" ExpectingRightBrace
-        , spaces = spacesCommentsAndGreaterIndent -- TODO what about definitions of type aliases etc?
-        , item = typeBinding config
+        , spaces = P.succeed ()
+        , item =
+            P.succeed
+                (\commentsBefore ( name, ( type__, commentsAfter ) ) ->
+                    --TODO
+                    --{ commentsBefore = commentsBefore
+                    --, item = item
+                    --, commentsAfter = commentsAfter
+                    --}
+                    ( name, type__ )
+                )
+                |= spacesCommentsAndGreaterIndent
+                |= typeBinding
         , trailing = P.Forbidden
         }
         |> P.map (Dict.fromList >> ConcreteType.Record)
@@ -1565,46 +2024,23 @@ recordType config =
   - MyModule.MyDataStructure
 
 -}
-userDefinedType : TypeConfig -> Parser_ (ConcreteType PossiblyQualified)
-userDefinedType config =
+userDefinedType : Parser_ ( ConcreteType PossiblyQualified, List Comment )
+userDefinedType =
     P.succeed
-        (\( modules, name ) args ->
-            ConcreteType.UserDefinedType
+        (\( modules, name ) ( args, commentsAfter ) ->
+            ( ConcreteType.UserDefinedType
                 { qualifiedness = qualify modules
                 , name = name
                 , args = args
                 }
+            , commentsAfter
+            )
         )
-        |> P.keep qualifiersAndTypeName
-        |> P.ignore spacesAndComments
-        |> P.keep (P.loop [] (userDefinedTypeHelp config))
+        |= qualifiersAndTypeName
+        |= (spacesAndComments
+                |> P.andThen typesWithoutUnestedArrow
+           )
         |> P.inContext InUserDefinedType
-
-
-userDefinedTypeHelp : TypeConfig -> List (ConcreteType PossiblyQualified) -> Parser_ (P.Step (List (ConcreteType PossiblyQualified)) (List (ConcreteType PossiblyQualified)))
-userDefinedTypeHelp config acc =
-    P.oneOf
-        [ {- consider `x : Foo.Bar\nx = 1` vs `x : Foo.Bar\n x`
-
-             Right now we've chomped the `Bar` and we may want to chomp
-             some arguments.
-
-             If the current indent if greater or equal the current column,
-             it means that it will start the `x = ...` declaration.
-             This first parser will succeed and return the accumulation.
-
-          -}
-          checkIndent (>=) ExpectingIndentation
-            |> P.map (\_ -> P.Done (List.reverse acc))
-        , {- The next thing to try is a continuation of the type
-             annotation - custom type args!
-          -}
-          PP.subExpression 0 config
-            |> P.map (\subExpression -> P.Loop (subExpression :: acc))
-        , {- If the subExpression fails, can be a `->` so we are done with this type -}
-          P.Done (List.reverse acc)
-            |> P.succeed
-        ]
 
 
 qualifiersAndTypeName : Parser_ ( List ModuleName, String )
@@ -1623,14 +2059,12 @@ qualifiersAndTypeNameHelp acc =
             else
                 P.Done ( List.reverse acc, moduleOrTypeName )
         )
-        |> P.keep moduleNameWithoutDots
-        |> P.keep
-            (P.oneOf
-                [ P.symbol (P.Token "." ExpectingQualifiedVarNameDot)
-                    |> P.map (\_ -> True)
-                , P.succeed False
-                ]
-            )
+        |= moduleNameWithoutDots
+        |= P.oneOf
+            [ P.symbol (P.Token "." ExpectingQualifiedVarNameDot)
+                |> P.map (\_ -> True)
+            , P.succeed False
+            ]
 
 
 shouldLog : String -> Bool
@@ -1664,8 +2098,8 @@ log message parser =
                 in
                 ( source, offsetBefore )
             )
-            |> P.keep P.getSource
-            |> P.keep P.getOffset
+            |= P.getSource
+            |= P.getOffset
             |> P.andThen
                 (\( source, offsetBefore ) ->
                     {- Kinda like that logging decoder from Thoughtbot:
@@ -1692,10 +2126,9 @@ log message parser =
                                         in
                                         parseResult_
                                     )
-                                    |> P.keep parser
-                                    |> P.keep P.getOffset
+                                    |= parser
+                                    |= P.getOffset
                                 )
-                                { comments = [] }
                                 remainingSource
                                 |> Debug.log "parse result  "
                     in
@@ -1720,9 +2153,9 @@ simpleLog msg parser =
             in
             result
         )
-        |> P.keep P.getOffset
-        |> P.keep parser
-        |> P.keep P.getOffset
+        |= P.getOffset
+        |= parser
+        |= P.getOffset
 
 
 checkNextCharIs : Char -> ParseProblem -> Parser_ ()
@@ -1752,18 +2185,9 @@ checkNextChar charPredicate problem =
                     else
                         P.problem problem
         )
-        |> P.keep P.getSource
-        |> P.keep P.getOffset
+        |= P.getSource
+        |= P.getOffset
         |> P.andThen identity
-
-
-{-| Taken from Punie/elm-parser-extras (original name: `many`), made to work with
-Parser.Advanced.Parser instead of the simple one.
--}
-zeroOrMoreWithSpacesAndComments : Parser_ a -> Parser_ (List a)
-zeroOrMoreWithSpacesAndComments =
-    --TODO: Maybe rename oneOrMore since it accepts zero results?
-    oneOrMoreWith spacesAndComments
 
 
 checkTooMuchIndentation : String -> Parser_ ()
@@ -1772,6 +2196,71 @@ checkTooMuchIndentation firstSucceedString =
         (TooMuchIndentation firstSucceedString)
 
 
-spacesCommentsAndGreaterIndent : Parser_ ()
+spacesCommentsAndGreaterIndent : Parser_ (List Comment)
 spacesCommentsAndGreaterIndent =
     spacesCommentsAndCheckIndent (<) ExpectingIndentation
+
+
+sequenceWithCommentsAround :
+    { start : P.Token ParseProblem
+    , separator : P.Token ParseProblem
+    , end : P.Token ParseProblem
+    , spacesAndComments : Parser_ (List Comment)
+    , item : Parser_ b
+    , tagger : List Comment -> b -> List Comment -> a
+    }
+    -> Parser_ (List a)
+sequenceWithCommentsAround config =
+    P.sequence
+        { start = config.start
+        , separator = config.separator
+        , end = config.end
+        , spaces = P.succeed ()
+        , item =
+            P.succeed config.tagger
+                |= config.spacesAndComments
+                |= config.item
+                |= config.spacesAndComments
+        , trailing = P.Forbidden
+        }
+
+
+{-| Taken from [dmy/elm-pratt-parser](https://package.elm-lang.org/packages/dmy/elm-pratt-parser/latest/Pratt-Advanced#postfix),
+made to accept the operator parser result.
+
+It differs from an _infix_ expression by not having left _and_ right expressions.
+It has only a left expression and an operator, eg.: 180º (the degree (`º`)
+symbol is the postfix operator).
+
+It can be used to parse Elm's aliasing expressions, like `{ foo } as bar`,
+since only the `{ foo }` is a pattern expression, but we also need the `bar`
+string, which is not another expression.
+
+-}
+postfixWithOperatorResult : Int -> Parser c x a -> (e -> a -> e) -> PP.Config c x e -> ( Int, e -> Parser c x e )
+postfixWithOperatorResult precedence operator apply _ =
+    ( precedence
+    , \left -> P.map (apply left) operator
+    )
+
+
+infixLeftWithOperatorResult : Int -> Parser c x a -> (e -> a -> e -> e) -> PP.Config c x e -> ( Int, e -> Parser c x e )
+infixLeftWithOperatorResult precedence =
+    infixWithOperatorResultHelp ( precedence, precedence )
+
+
+infixRightWithOperatorResult : Int -> Parser c x a -> (e -> a -> e -> e) -> PP.Config c x e -> ( Int, e -> Parser c x e )
+infixRightWithOperatorResult precedence =
+    -- To get right associativity, we use (precedence - 1) for the
+    -- right precedence.
+    infixWithOperatorResultHelp ( precedence, precedence - 1 )
+
+
+infixWithOperatorResultHelp : ( Int, Int ) -> Parser c x a -> (e -> a -> e -> e) -> PP.Config c x e -> ( Int, e -> Parser c x e )
+infixWithOperatorResultHelp ( leftPrecedence, rightPrecedence ) operator apply config =
+    ( leftPrecedence
+    , \left ->
+        P.succeed (apply left)
+            |= operator
+            |= PP.subExpression rightPrecedence config
+    )

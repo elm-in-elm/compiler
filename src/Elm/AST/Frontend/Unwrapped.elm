@@ -3,9 +3,9 @@ module Elm.AST.Frontend.Unwrapped exposing
     , Pattern(..)
     )
 
-{-| Version of [Frontend AST](Elm.AST.Frontend) without the location info.
+{-| Version of [Frontend AST](Elm.AST.Frontend) without the location info or comments.
 
-Handy for parser tests, or when you don't need the location info.
+Handy for parser tests, or when you don't need the location info and the comments.
 
 Convert to it using the [`Elm.AST.Frontend.unwrap`](Elm.AST.Frontend#unwrap).
 
@@ -13,47 +13,68 @@ Convert to it using the [`Elm.AST.Frontend.unwrap`](Elm.AST.Frontend#unwrap).
 
 -}
 
-import Elm.Data.Binding exposing (Binding)
+import Elm.Data.Binding as Binding exposing (Binding)
+import Elm.Data.Comment exposing (Comment)
 import Elm.Data.Qualifiedness exposing (PossiblyQualified)
 import Elm.Data.VarName exposing (VarName)
 
 
 {-| -}
 type Expr
-    = Int Int
+    = Unit
+    | Bool Bool
+    | Int Int
     | Float Float
     | Char Char
     | String String
-    | Bool Bool
     | Var { qualifiedness : PossiblyQualified, name : VarName }
     | Argument VarName
-    | Plus Expr Expr
-    | Cons Expr Expr
-    | ListConcat Expr Expr
-    | Lambda { arguments : List VarName, body : Expr }
-    | Call { fn : Expr, argument : Expr }
-    | If { test : Expr, then_ : Expr, else_ : Expr }
-    | Let { bindings : List (Binding Expr), body : Expr }
-    | List (List Expr)
-    | Unit
     | Tuple Expr Expr
     | Tuple3 Expr Expr Expr
     | Record (List (Binding Expr))
-    | Case Expr (List { pattern : Pattern, body : Expr })
+    | List (List Expr)
+    | Call
+        { fn : Expr
+        , argument : Expr
+        }
+    | Lambda
+        { arguments : List VarName
+        , body : Expr
+        }
+    | Plus Expr Expr
+    | Cons Expr Expr
+    | ListConcat Expr Expr
+    | Let
+        { bindings : List (Binding Expr)
+        , body : Expr
+        }
+    | If
+        { test : Expr
+        , then_ : Expr
+        , else_ : Expr
+        }
+    | Case
+        { test : Expr
+        , branches :
+            List
+                { pattern : Pattern
+                , body : Expr
+                }
+        }
 
 
 type Pattern
     = PAnything
-    | PVar VarName
-    | PRecord (List VarName)
-    | PAlias Pattern VarName
     | PUnit
-    | PTuple Pattern Pattern
-    | PTuple3 Pattern Pattern Pattern
-    | PList (List Pattern)
-    | PCons Pattern Pattern
     | PBool Bool
-    | PChar Char
-    | PString String
     | PInt Int
     | PFloat Float
+    | PChar Char
+    | PString String
+    | PVar VarName
+    | PTuple Pattern Pattern
+    | PTuple3 Pattern Pattern Pattern
+    | PRecord (List VarName)
+    | PList (List Pattern)
+    | PAlias Pattern VarName
+    | PCons Pattern Pattern

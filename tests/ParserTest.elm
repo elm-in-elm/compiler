@@ -1,13 +1,13 @@
 module ParserTest exposing
     ( customTypeDeclaration
     , exposingList
-    , expr
-    , exprComments
+    ,  expr
+       --, exprComments
+
     , imports
     , moduleDeclaration
     , moduleName
     , typeAliasDeclaration
-    , typeAnnotation
     , type_
     , valueDeclaration
     )
@@ -16,6 +16,7 @@ import Dict
 import Elm.AST.Frontend as Frontend
 import Elm.AST.Frontend.Unwrapped exposing (Expr(..), Pattern(..))
 import Elm.Compiler.Error exposing (ParseContext, ParseProblem)
+import Elm.Data.Comment exposing (Comment)
 import Elm.Data.Declaration as Declaration exposing (DeclarationBody)
 import Elm.Data.Exposing exposing (ExposedItem(..), Exposing(..))
 import Elm.Data.Located as Located
@@ -24,15 +25,10 @@ import Elm.Data.Qualifiedness exposing (PossiblyQualified(..))
 import Elm.Data.Type.Concrete as ConcreteType exposing (ConcreteType)
 import Elm.Data.TypeAnnotation exposing (TypeAnnotation)
 import Expect exposing (Expectation)
-import Stage.Parse.AdvancedWithState as P
+import Parser.Advanced as P
 import Stage.Parse.Parser
 import String.Extra as String
 import Test exposing (Test, describe, test)
-
-
-runWithEmptyState p =
-    P.run p { comments = [] }
-        >> Result.map Tuple.second
 
 
 moduleDeclaration : Test
@@ -42,7 +38,7 @@ moduleDeclaration =
             test description <|
                 \() ->
                     input
-                        |> runWithEmptyState Stage.Parse.Parser.moduleDeclaration
+                        |> P.run Stage.Parse.Parser.moduleDeclaration
                         |> Result.toMaybe
                         |> Expect.equal output
     in
@@ -113,7 +109,7 @@ exposingList =
             test description <|
                 \() ->
                     input
-                        |> runWithEmptyState Stage.Parse.Parser.exposingList
+                        |> P.run Stage.Parse.Parser.exposingList
                         |> Result.toMaybe
                         |> Expect.equal output
     in
@@ -140,7 +136,7 @@ exposingList =
                     , ( "works with spaces between items"
                       , "(foo, bar)"
                       , Just
-                            (ExposingSome
+                            (exposingSome
                                 [ ExposedValue "foo"
                                 , ExposedValue "bar"
                                 ]
@@ -149,7 +145,7 @@ exposingList =
                     , ( "works with even more spaces between items"
                       , "(foo  ,  bar)"
                       , Just
-                            (ExposingSome
+                            (exposingSome
                                 [ ExposedValue "foo"
                                 , ExposedValue "bar"
                                 ]
@@ -158,7 +154,7 @@ exposingList =
                     , ( "works with mixed values"
                       , "(foo, Bar, Baz(..))"
                       , Just
-                            (ExposingSome
+                            (exposingSome
                                 [ ExposedValue "foo"
                                 , ExposedType "Bar"
                                 , ExposedTypeAndAllConstructors "Baz"
@@ -168,7 +164,7 @@ exposingList =
                     , ( "allows for newline"
                       , "(foo\n ,bar)"
                       , Just
-                            (ExposingSome
+                            (exposingSome
                                 [ ExposedValue "foo"
                                 , ExposedValue "bar"
                                 ]
@@ -180,7 +176,7 @@ exposingList =
                 (List.map runTest
                     [ ( "works with a value"
                       , "(foo)"
-                      , Just (ExposingSome [ ExposedValue "foo" ])
+                      , Just (exposingSome [ ExposedValue "foo" ])
                       )
                     ]
                 )
@@ -188,7 +184,7 @@ exposingList =
                 (List.map runTest
                     [ ( "works with exposed type"
                       , "(Foo)"
-                      , Just (ExposingSome [ ExposedType "Foo" ])
+                      , Just (exposingSome [ ExposedType "Foo" ])
                       )
                     ]
                 )
@@ -196,7 +192,7 @@ exposingList =
                 (List.map runTest
                     [ ( "works with exposed type and all constructors"
                       , "(Foo(..))"
-                      , Just (ExposingSome [ ExposedTypeAndAllConstructors "Foo" ])
+                      , Just (exposingSome [ ExposedTypeAndAllConstructors "Foo" ])
                       )
                     , ( "doesn't allow spaces between the module name and the double period list"
                       , "(Foo (..))"
@@ -223,8 +219,18 @@ imports =
             test description <|
                 \() ->
                     input
-                        |> runWithEmptyState Stage.Parse.Parser.imports
+                        |> P.run (Stage.Parse.Parser.imports [])
                         |> Result.toMaybe
+                        |> Maybe.map
+                            (Tuple.first
+                                >> Dict.map
+                                    (\_ import_ ->
+                                        { moduleName = import_.moduleName
+                                        , as_ = Maybe.map .as_ import_.as_
+                                        , exposing_ = Maybe.map .exposing_ import_.exposing_
+                                        }
+                                    )
+                            )
                         |> Expect.equal output
     in
     describe "Stage.Parse.Parser.imports"
@@ -336,6 +342,10 @@ imports =
                             ]
                         )
                   )
+                , ( "doesn't work without somethign after as"
+                  , "import Foo as"
+                  , Nothing
+                  )
                 , ( "doesn't work with lowercase alias"
                   , "import Foo as f"
                   , Nothing
@@ -356,13 +366,12 @@ imports =
                               , { moduleName = "Foo"
                                 , as_ = Nothing
                                 , exposing_ =
-                                    Just
-                                        (ExposingSome
-                                            [ ExposedValue "bar"
-                                            , ExposedType "Baz"
-                                            , ExposedTypeAndAllConstructors "Quux"
-                                            ]
-                                        )
+                                    [ ExposedValue "bar"
+                                    , ExposedType "Baz"
+                                    , ExposedTypeAndAllConstructors "Quux"
+                                    ]
+                                        |> exposingSome
+                                        |> Just
                                 }
                               )
                             ]
@@ -377,6 +386,18 @@ imports =
         ]
 
 
+exposingSome : List ExposedItem -> Exposing
+exposingSome =
+    List.map
+        (\i ->
+            { commentsBefore = []
+            , item = i
+            , commentsAfter = []
+            }
+        )
+        >> ExposingSome
+
+
 moduleName : Test
 moduleName =
     let
@@ -384,7 +405,7 @@ moduleName =
             test description <|
                 \() ->
                     input
-                        |> runWithEmptyState Stage.Parse.Parser.moduleName
+                        |> P.run Stage.Parse.Parser.moduleName
                         |> Result.toMaybe
                         |> Expect.equal output
     in
@@ -444,8 +465,8 @@ expr =
             test description <|
                 \() ->
                     input
-                        |> runWithEmptyState Stage.Parse.Parser.expr
-                        |> Result.map Frontend.unwrap
+                        |> P.run Stage.Parse.Parser.expr
+                        |> Result.map (Tuple.first >> Frontend.unwrap)
                         |> expectEqualParseResult input output
     in
     describe "Stage.Parse.Parser.expr"
@@ -836,7 +857,7 @@ expr =
                   , Nothing
                   )
                 , ( "'in' can have any indentation"
-                  , "   let\n    x = 1\nin\n 2"
+                  , "let\n    x = 1\n      in\n 2"
                   , Just
                         (Let
                             { bindings = [ { body = Int 1, name = "x" } ]
@@ -1028,9 +1049,14 @@ expr =
               , [ ( "simple case"
                   , "case True of _->True"
                   , Just
-                        (Case (Bool True)
-                            [ { pattern = PAnything, body = Bool True }
-                            ]
+                        (Case
+                            { test = Bool True
+                            , branches =
+                                [ { pattern = PAnything
+                                  , body = Bool True
+                                  }
+                                ]
+                            }
                         )
                   )
                 , ( "multiline case"
@@ -1041,12 +1067,16 @@ expr =
                         _ -> False
                     """
                         |> String.unindent
+                        |> String.trim
                   , Just
-                        (Case (Int 21)
-                            [ { pattern = PInt 31, body = Bool True }
-                            , { pattern = PInt 5, body = Bool True }
-                            , { pattern = PAnything, body = Bool False }
-                            ]
+                        (Case
+                            { test = Int 21
+                            , branches =
+                                [ { pattern = PInt 31, body = Bool True }
+                                , { pattern = PInt 5, body = Bool True }
+                                , { pattern = PAnything, body = Bool False }
+                                ]
+                            }
                         )
                   )
                 , ( "complex case"
@@ -1060,39 +1090,46 @@ expr =
                             False
                         [_, 45, (67.7)] ->
                             False
-                        fst :: snd :: tail ->
+                        fst :: snd as snd :: tail ->
                             False
                         ({ count } as alias1) as alias2 ->
                             False
                     """
                         |> String.unindent
+                        |> String.trim
                   , Just
-                        (Case (Var { name = "arg", qualifiedness = PossiblyQualified Nothing })
-                            [ { pattern = PTuple (PChar 'c') (PInt 23)
-                              , body = Bool True
-                              }
-                            , { pattern = PString "string", body = Bool True }
-                            , { pattern =
-                                    PTuple
-                                        (PTuple (PVar "arg1") (PVar "arg2"))
-                                        (PFloat 435.4)
-                              , body = Bool False
-                              }
-                            , { pattern = PList [ PAnything, PInt 45, PFloat 67.7 ]
-                              , body = Bool False
-                              }
-                            , { pattern =
-                                    PCons (PVar "fst")
-                                        (PCons (PVar "snd") (PVar "tail"))
-                              , body = Bool False
-                              }
-                            , { pattern =
-                                    PAlias
-                                        (PAlias (PRecord [ "count" ]) "alias1")
-                                        "alias2"
-                              , body = Bool False
-                              }
-                            ]
+                        (Case
+                            { test = Var { name = "arg", qualifiedness = PossiblyQualified Nothing }
+                            , branches =
+                                [ { pattern = PTuple (PChar 'c') (PInt 23)
+                                  , body = Bool True
+                                  }
+                                , { pattern = PString "string", body = Bool True }
+                                , { pattern =
+                                        PTuple
+                                            (PTuple (PVar "arg1") (PVar "arg2"))
+                                            (PFloat 435.4)
+                                  , body = Bool False
+                                  }
+                                , { pattern = PList [ PAnything, PInt 45, PFloat 67.7 ]
+                                  , body = Bool False
+                                  }
+                                , { pattern =
+                                        PCons (PVar "fst")
+                                            (PCons
+                                                (PAlias (PVar "snd") "snd")
+                                                (PVar "tail")
+                                            )
+                                  , body = Bool False
+                                  }
+                                , { pattern =
+                                        PAlias
+                                            (PAlias (PRecord [ "count" ]) "alias1")
+                                            "alias2"
+                                  , body = Bool False
+                                  }
+                                ]
+                            }
                         )
                   )
                 ]
@@ -1101,80 +1138,80 @@ expr =
         )
 
 
-exprComments : Test
-exprComments =
-    let
-        runSection ( description, tests ) =
-            describe description
-                (List.map runTest tests)
 
-        runTest ( description, input, output ) =
-            test description <|
-                \() ->
-                    input
-                        |> P.run Stage.Parse.Parser.expr { comments = [] }
-                        |> Result.toMaybe
-                        |> Maybe.map
-                            (Tuple.first
-                                >> .comments
-                                >> List.map
-                                    (.content
-                                        >> Located.unwrap
-                                    )
-                                -- Comments are automatically reversed
-                                -- when added to Module in Parser.module_
-                                >> List.reverse
-                            )
-                        |> Expect.equal output
-    in
-    describe "Stage.Parse.Parser.expr comments"
-        (List.map runSection
-            [ ( "lambda comments"
-              , [ ( "accepts comments anywhere"
-                  , "\\x {- ML1 -} y -> {- ML2 -} x {- ML3 -} + {- ML4 -} 1 -- SL1"
-                  , Just [ "{- ML1 -}", "{- ML2 -}", "{- ML3 -}", "{- ML4 -}", "-- SL1" ]
-                  )
-                ]
-              )
-            , ( "case comments"
-              , [ ( "accepts comments anywhere"
-                  , """
-                    case  -- SL1
-                      arg -- SL2
-                      of -- SL3
-                        ('c', 23) -> -- SL4
-                            True -- SL5
-                        ("string") {- ML1 -} ->
-                            True
-                        ((arg1, arg2), {- ML2 -} 435.4) ->
-                            {- ML3 -} False
-                        [45, {- ML4 -} (67.7)] ->
-                            False
-                        fst :: snd {- ML5 -} :: tail ->
-                            False
-                        { count } {- ML6 -} as {- ML7 -} alias ->
-                            False
-                    """
-                        |> String.unindent
-                  , Just
-                        [ "-- SL1"
-                        , "-- SL2"
-                        , "-- SL3"
-                        , "-- SL4"
-                        , "-- SL5"
-                        , "{- ML1 -}"
-                        , "{- ML2 -}"
-                        , "{- ML3 -}"
-                        , "{- ML4 -}"
-                        , "{- ML5 -}"
-                        , "{- ML6 -}"
-                        , "{- ML7 -}"
-                        ]
-                  )
-                ]
-              )
-            ]
-        )
+--exprComments : Test
+--exprComments =
+--    let
+--        runSection ( description, tests ) =
+--            describe description
+--                (List.map runTest tests)
+--        runTest ( description, input, output ) =
+--            test description <|
+--                \() ->
+--                    input
+--                        |> P.run Stage.Parse.Parser.expr
+--                        |> Result.toMaybe
+--                        |> Maybe.map
+--                            (Tuple.first
+--                                >> .comments
+--                                >> List.map
+--                                    (.content
+--                                        >> Located.unwrap
+--                                    )
+--                                -- Comments are automatically reversed
+--                                -- when added to Module in Parser.module_
+--                                >> List.reverse
+--                            )
+--                        |> Expect.equal output
+--    in
+--    describe "Stage.Parse.Parser.expr comments"
+--        (List.map runSection
+--            [ ( "lambda comments"
+--              , [ ( "accepts comments anywhere"
+--                  , "\\x {- ML1 -} y -> {- ML2 -} x {- ML3 -} + {- ML4 -} 1 -- SL1"
+--                  , Just [ "{- ML1 -}", "{- ML2 -}", "{- ML3 -}", "{- ML4 -}", "-- SL1" ]
+--                  )
+--                ]
+--              )
+--            , ( "case comments"
+--              , [ ( "accepts comments anywhere"
+--                  , """
+--                    case  -- SL1
+--                      arg -- SL2
+--                      of -- SL3
+--                        ('c', 23) -> -- SL4
+--                            True -- SL5
+--                        ("string") {- ML1 -} ->
+--                            True
+--                        ((arg1, arg2), {- ML2 -} 435.4) ->
+--                            {- ML3 -} False
+--                        [45, {- ML4 -} (67.7)] ->
+--                            False
+--                        fst :: snd {- ML5 -} :: tail ->
+--                            False
+--                        { count } {- ML6 -} as {- ML7 -} alias ->
+--                            False
+--                    """
+--                        |> String.unindent
+--                  , Just
+--                        [ "-- SL1"
+--                        , "-- SL2"
+--                        , "-- SL3"
+--                        , "-- SL4"
+--                        , "-- SL5"
+--                        , "{- ML1 -}"
+--                        , "{- ML2 -}"
+--                        , "{- ML3 -}"
+--                        , "{- ML4 -}"
+--                        , "{- ML5 -}"
+--                        , "{- ML6 -}"
+--                        , "{- ML7 -}"
+--                        ]
+--                  )
+--                ]
+--              )
+--            ]
+--        )
 
 
 expectEqualParseResult :
@@ -1245,8 +1282,9 @@ type_ =
             test description <|
                 \() ->
                     input
-                        |> runWithEmptyState Stage.Parse.Parser.type_
+                        |> P.run Stage.Parse.Parser.type_
                         |> Result.toMaybe
+                        |> Maybe.map Tuple.first
                         |> Expect.equal (Just output)
     in
     describe "Stage.Parse.Parser.type_"
@@ -1302,7 +1340,6 @@ type_ =
             , ( "char", "Char", ConcreteType.Char )
             , ( "string", "String", ConcreteType.String )
             , ( "bool", "Bool", ConcreteType.Bool )
-            , ( "list", "List ()", ConcreteType.List ConcreteType.Unit )
             , ( "parenthesized"
               , "(Int)"
               , ConcreteType.Int
@@ -1318,6 +1355,14 @@ type_ =
               , ConcreteType.Tuple
                     ConcreteType.Int
                     ConcreteType.String
+              )
+            , ( "tuple with different whitespace 2"
+              , "( Int , Bool )"
+              , ConcreteType.Tuple ConcreteType.Int ConcreteType.Bool
+              )
+            , ( "tuple with different whitespace 3"
+              , "(Int,Bool)"
+              , ConcreteType.Tuple ConcreteType.Int ConcreteType.Bool
               )
             , ( "tuple3"
               , "(Int, String, Bool)"
@@ -1391,226 +1436,65 @@ type_ =
                         , ( "y", ConcreteType.String )
                         ]
               )
+            , -- TODO List should be just another UserDefinedType
+              ( "list", "List Int", ConcreteType.List ConcreteType.Int )
+            , ( "list 2"
+              , "List (List ())"
+              , ConcreteType.List (ConcreteType.List ConcreteType.Unit)
+              )
+            , ( "var"
+              , "abcde1213"
+              , ConcreteType.TypeVar "abcde1213"
+              )
+            , -- TODO later do something special about comparable etc!
+              ( "var special"
+              , "comparable"
+              , ConcreteType.TypeVar "comparable"
+              )
+            , ( "user defined type unqualified noargs"
+              , "MyType"
+              , ConcreteType.UserDefinedType
+                    { qualifiedness = PossiblyQualified Nothing
+                    , name = "MyType"
+                    , args = []
+                    }
+              )
+            , ( "user defined type unqualified args"
+              , "MyType Int Float"
+              , ConcreteType.UserDefinedType
+                    { qualifiedness = PossiblyQualified Nothing
+                    , name = "MyType"
+                    , args =
+                        [ ConcreteType.Int
+                        , ConcreteType.Float
+                        ]
+                    }
+              )
+            , ( "user defined type qualified noargs"
+              , "Foo.MyType"
+              , ConcreteType.UserDefinedType
+                    { qualifiedness = PossiblyQualified (Just "Foo")
+                    , name = "MyType"
+                    , args = []
+                    }
+              )
+            , ( "user defined type qualified args"
+              , "Foo.MyType Int Float"
+              , ConcreteType.UserDefinedType
+                    { qualifiedness = PossiblyQualified (Just "Foo")
+                    , name = "MyType"
+                    , args =
+                        [ ConcreteType.Int
+                        , ConcreteType.Float
+                        ]
+                    }
+              )
+
+            -- TODO extensible record
+            -- TODO parentheses behaviour
+            -- TODO whitespace behaviour of `->` type (esp. newlines)
             ]
         )
-
-
-typeAnnotation : Test
-typeAnnotation =
-    let
-        runTest : ( String, String, Maybe TypeAnnotation ) -> Test
-        runTest ( description, input, output ) =
-            test description <|
-                \() ->
-                    input
-                        |> runWithEmptyState Stage.Parse.Parser.typeAnnotation
-                        |> Result.toMaybe
-                        |> Expect.equal output
-
-        xInt : TypeAnnotation
-        xInt =
-            { varName = "x", type_ = ConcreteType.Int }
-    in
-    describe "Stage.Parse.Parser.typeAnnotation"
-        [ describe "various cases" <|
-            List.map runTest <|
-                [ -- TODO extensible record
-                  ( "x int", "x : Int", Just xInt )
-                , ( "x int without whitespace", "x:Int", Just xInt )
-                , ( "x float", "x : Float", Just { varName = "x", type_ = ConcreteType.Float } )
-                , ( "x char", "x : Char", Just { varName = "x", type_ = ConcreteType.Char } )
-                , ( "x string", "x : String", Just { varName = "x", type_ = ConcreteType.String } )
-                , ( "x unit", "x : ()", Just { varName = "x", type_ = ConcreteType.Unit } )
-                , ( "y bool", "y : Bool", Just { varName = "y", type_ = ConcreteType.Bool } )
-                , ( "foo tuple"
-                  , "foo : (Int, Bool)"
-                  , Just { varName = "foo", type_ = ConcreteType.Tuple ConcreteType.Int ConcreteType.Bool }
-                  )
-                , ( "foo tuple with different whitespace 1"
-                  , "foo : ( Int, Bool )"
-                  , Just { varName = "foo", type_ = ConcreteType.Tuple ConcreteType.Int ConcreteType.Bool }
-                  )
-                , ( "foo tuple with different whitespace 2"
-                  , "foo : ( Int , Bool )"
-                  , Just { varName = "foo", type_ = ConcreteType.Tuple ConcreteType.Int ConcreteType.Bool }
-                  )
-                , ( "foo tuple with different whitespace 3"
-                  , "foo : (Int,Bool)"
-                  , Just { varName = "foo", type_ = ConcreteType.Tuple ConcreteType.Int ConcreteType.Bool }
-                  )
-                , ( "foo tuple3"
-                  , "foo : (Int, Bool, String)"
-                  , Just
-                        { varName = "foo"
-                        , type_ =
-                            ConcreteType.Tuple3
-                                ConcreteType.Int
-                                ConcreteType.Bool
-                                ConcreteType.String
-                        }
-                  )
-                , -- TODO List should be just another UserDefinedType
-                  ( "x list", "x : List Int", Just { varName = "x", type_ = ConcreteType.List ConcreteType.Int } )
-                , ( "x list 2"
-                  , "x : List (List ())"
-                  , Just
-                        { varName = "x"
-                        , type_ = ConcreteType.List (ConcreteType.List ConcreteType.Unit)
-                        }
-                  )
-                , ( "x record", "x : {}", Just { varName = "x", type_ = ConcreteType.Record Dict.empty } )
-                , ( "x record 2"
-                  , "x : {foo : Int}"
-                  , Just
-                        { varName = "x"
-                        , type_ =
-                            ConcreteType.Record
-                                (Dict.fromList [ ( "foo", ConcreteType.Int ) ])
-                        }
-                  )
-                , ( "x record 3"
-                  , "x : {foo : Int, bar : ()}"
-                  , Just
-                        { varName = "x"
-                        , type_ =
-                            ConcreteType.Record
-                                (Dict.fromList
-                                    [ ( "foo", ConcreteType.Int )
-                                    , ( "bar", ConcreteType.Unit )
-                                    ]
-                                )
-                        }
-                  )
-                , ( "x var 2"
-                  , "x : abcde1213"
-                  , Just { varName = "x", type_ = ConcreteType.TypeVar "abcde1213" }
-                  )
-                , -- TODO later do something special about comparable etc!
-                  ( "x var special"
-                  , "x : comparable"
-                  , Just { varName = "x", type_ = ConcreteType.TypeVar "comparable" }
-                  )
-                , ( "x function"
-                  , "x : Int -> Bool"
-                  , Just
-                        { varName = "x"
-                        , type_ =
-                            ConcreteType.Function
-                                { from = ConcreteType.Int
-                                , to = ConcreteType.Bool
-                                }
-                        }
-                  )
-                , ( "x 2-arg function"
-                  , "x : Int -> Bool -> String"
-                  , Just
-                        { varName = "x"
-                        , type_ =
-                            ConcreteType.Function
-                                { from = ConcreteType.Int
-                                , to =
-                                    ConcreteType.Function
-                                        { from = ConcreteType.Bool
-                                        , to = ConcreteType.String
-                                        }
-                                }
-                        }
-                  )
-                , ( "x user defined type unqualified noargs"
-                  , "x : MyType"
-                  , Just
-                        { varName = "x"
-                        , type_ =
-                            ConcreteType.UserDefinedType
-                                { qualifiedness = PossiblyQualified Nothing
-                                , name = "MyType"
-                                , args = []
-                                }
-                        }
-                  )
-                , ( "x user defined type unqualified args"
-                  , "x : MyType Int Float"
-                  , Just
-                        { varName = "x"
-                        , type_ =
-                            ConcreteType.UserDefinedType
-                                { qualifiedness = PossiblyQualified Nothing
-                                , name = "MyType"
-                                , args =
-                                    [ ConcreteType.Int
-                                    , ConcreteType.Float
-                                    ]
-                                }
-                        }
-                  )
-                , ( "x user defined type qualified noargs"
-                  , "x : Foo.MyType"
-                  , Just
-                        { varName = "x"
-                        , type_ =
-                            ConcreteType.UserDefinedType
-                                { qualifiedness = PossiblyQualified (Just "Foo")
-                                , name = "MyType"
-                                , args = []
-                                }
-                        }
-                  )
-                , ( "x user defined type qualified args"
-                  , "x : Foo.MyType Int Float"
-                  , Just
-                        { varName = "x"
-                        , type_ =
-                            ConcreteType.UserDefinedType
-                                { qualifiedness = PossiblyQualified (Just "Foo")
-                                , name = "MyType"
-                                , args =
-                                    [ ConcreteType.Int
-                                    , ConcreteType.Float
-                                    ]
-                                }
-                        }
-                  )
-                ]
-        , describe "whitespace behaviour"
-            (List.map runTest
-                [ ( "canonical format", "x : Int", Just xInt )
-                , ( "no spaces", "x:Int", Just xInt )
-                , ( "multiple spaces before", "x   : Int", Just xInt )
-                , ( "multiple spaces after", "x :   Int", Just xInt )
-                , ( "newline and space before", "x\n  : Int", Just xInt )
-                , ( "newline and space after", "x :\n Int", Just xInt )
-                , ( "newline and space near UserDefinedType args"
-                  , "x : Foo.Bar\n a"
-                  , Just
-                        { varName = "x"
-                        , type_ =
-                            ConcreteType.UserDefinedType
-                                { qualifiedness = PossiblyQualified (Just "Foo")
-                                , name = "Bar"
-                                , args = [ ConcreteType.TypeVar "a" ]
-                                }
-                        }
-                  )
-                , ( "newline but not a space near UserDefinedType args means the rest is ignored"
-                  , "x : Foo.Bar\na"
-                  , Just
-                        { varName = "x"
-                        , type_ =
-                            ConcreteType.UserDefinedType
-                                { qualifiedness = PossiblyQualified (Just "Foo")
-                                , name = "Bar"
-                                , args = []
-                                }
-                        }
-                  )
-                , ( "newline before", "x\n: Int", Nothing )
-                , ( "newline after", "x :\nInt", Nothing )
-                ]
-            )
-
-        -- TODO parentheses behaviour
-        -- TODO whitespace behaviour of `->` type (esp. newlines)
-        ]
 
 
 valueDeclaration : Test
@@ -1621,14 +1505,16 @@ valueDeclaration =
             test description <|
                 \() ->
                     input
-                        |> runWithEmptyState Stage.Parse.Parser.valueDeclaration
+                        |> P.run (Stage.Parse.Parser.valueDeclaration Nothing)
                         |> Result.toMaybe
                         |> Maybe.map
-                            (Tuple.mapSecond
-                                (Declaration.mapBody
+                            (\( name_, body, _ ) ->
+                                ( name_
+                                , Declaration.mapBody
                                     Frontend.unwrap
                                     identity
                                     identity
+                                    body
                                 )
                             )
                         |> Expect.equal output
@@ -1640,8 +1526,9 @@ valueDeclaration =
               , Just
                     ( "x"
                     , Declaration.Value
-                        { expression = Unit
-                        , typeAnnotation = Nothing
+                        { typeAnnotation = Nothing
+                        , commentsAfterTypeAnnotation = []
+                        , expression = Unit
                         }
                     )
               )
@@ -1650,16 +1537,58 @@ valueDeclaration =
               , Just
                     ( "y"
                     , Declaration.Value
-                        { expression = Unit
-                        , typeAnnotation =
+                        { typeAnnotation =
                             Just
                                 { varName = "y"
+                                , commentsAfterVarName = []
+                                , commentsBeforeType = []
                                 , type_ = ConcreteType.Unit
                                 }
+                        , commentsAfterTypeAnnotation = []
+                        , expression = Unit
                         }
                     )
               )
             ]
+
+
+
+--, describe "whitespace behaviour"
+--    (List.map runTest
+--        [ ( "canonical format", "x : Int", Just xInt )
+--        , ( "no spaces", "x:Int", Just xInt )
+--        , ( "multiple spaces before", "x   : Int", Just xInt )
+--        , ( "multiple spaces after", "x :   Int", Just xInt )
+--        , ( "newline and space before", "x\n  : Int", Just xInt )
+--        , ( "newline and space after", "x :\n Int", Just xInt )
+--        , ( "newline and space near UserDefinedType args"
+--          , "x : Foo.Bar\n a"
+--          , Just
+--                { varName = "x"
+--                , type_ =
+--                    ConcreteType.UserDefinedType
+--                        { qualifiedness = PossiblyQualified (Just "Foo")
+--                        , name = "Bar"
+--                        , args = [ ConcreteType.TypeVar "a" ]
+--                        }
+--                }
+--          )
+--        , ( "newline but not a space near UserDefinedType args means the rest is ignored"
+--          , "x : Foo.Bar\na"
+--          , Just
+--                { varName = "x"
+--                , type_ =
+--                    ConcreteType.UserDefinedType
+--                        { qualifiedness = PossiblyQualified (Just "Foo")
+--                        , name = "Bar"
+--                        , args = []
+--                        }
+--                }
+--          )
+--        , ( "newline before", "x\n: Int", Nothing )
+--        , ( "newline after", "x :\nInt", Nothing )
+--        ]
+--    )
 
 
 typeAliasDeclaration : Test
@@ -1670,8 +1599,10 @@ typeAliasDeclaration =
             test description <|
                 \() ->
                     input
-                        |> runWithEmptyState Stage.Parse.Parser.typeAliasDeclaration
+                        |> P.run Stage.Parse.Parser.typeAliasDeclaration
                         |> Result.toMaybe
+                        |> Maybe.map
+                            (\( name_, type__, _ ) -> ( name_, type__ ))
                         |> Expect.equal output
     in
     describe "Stage.Parse.Parser.typeAliasDeclaration" <|
@@ -1755,8 +1686,9 @@ customTypeDeclaration =
             test description <|
                 \() ->
                     input
-                        |> runWithEmptyState Stage.Parse.Parser.customTypeDeclaration
+                        |> P.run Stage.Parse.Parser.customTypeDeclaration
                         |> Result.toMaybe
+                        |> Maybe.map (\( name_, decls, _ ) -> ( name_, decls ))
                         |> Expect.equal output
     in
     describe "Stage.Parse.Parser.customTypeDeclaration" <|
@@ -1860,6 +1792,60 @@ customTypeDeclaration =
                                 }
                               ]
                             )
+                        }
+                    )
+              )
+            , ( "doesnt confuse value declaration with parameter"
+              , "type Foo a = Bar a \nx = 2"
+              , Just
+                    ( "Foo"
+                    , Declaration.CustomType
+                        { parameters = [ "a" ]
+                        , constructors =
+                            ( { name = "Bar"
+                              , arguments = [ ConcreteType.TypeVar "a" ]
+                              }
+                            , []
+                            )
+                        }
+                    )
+              )
+            , ( "doesnt accept unested arrow"
+              , "type Foo a -> b = Bar a"
+              , Nothing
+              )
+            , ( "doesnt accept unested arrow 2"
+              , "type Foo = Bar a -> b"
+              , Just
+                    ( "Foo"
+                    , Declaration.CustomType
+                        { constructors =
+                            ( { arguments = [ ConcreteType.TypeVar "a" ]
+                              , name = "Bar"
+                              }
+                            , []
+                            )
+                        , parameters = []
+                        }
+                    )
+              )
+            , ( "accept nested arrow"
+              , "type Foo a b = Bar (a -> b)"
+              , Just
+                    ( "Foo"
+                    , Declaration.CustomType
+                        { constructors =
+                            ( { arguments =
+                                    [ ConcreteType.Function
+                                        { from = ConcreteType.TypeVar "a"
+                                        , to = ConcreteType.TypeVar "b"
+                                        }
+                                    ]
+                              , name = "Bar"
+                              }
+                            , []
+                            )
+                        , parameters = [ "a", "b" ]
                         }
                     )
               )

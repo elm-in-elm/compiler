@@ -14,6 +14,7 @@ module Elm.Data.Declaration exposing
 
 -}
 
+import Elm.Data.Comment exposing (Comment)
 import Elm.Data.ModuleName exposing (ModuleName)
 import Elm.Data.Type.Concrete as ConcreteType exposing (ConcreteType)
 import Elm.Data.VarName exposing (VarName)
@@ -27,6 +28,7 @@ import Stage.InferTypes.SubstitutionMap as SubstitutionMap exposing ({- TODO may
 type alias Declaration expr annotation qualifiedness =
     { module_ : ModuleName
     , name : VarName
+    , commentsBefore : List Comment
     , body : DeclarationBody expr annotation qualifiedness
     }
 
@@ -45,21 +47,21 @@ type alias Declaration expr annotation qualifiedness =
 -}
 type DeclarationBody expr annotation qualifiedness
     = Value
-        { expression : expr
-
-        -- What information from the annotation is yet to be used in the current stage?
-        -----------------------------------
-        -- Nothing: no annotation was given
-        -- Just Never: annotation was given but we successfully used all of it
-        -----------------------------------
-        -- The `annotation` types used are:
-        -- FRONTEND: TypeAnnotation (for which we need to check that the name in the
-        --                           annotation is the same as the name in the declaration)
-        -- CANONICAL: Type (for which we need to check that this advertised type is
-        --                  unifiable with the type of the declaration)
-        -- TYPED: Never (where we've used up all the info from the annotation and
-        --               don't need it anymore)
-        , typeAnnotation : Maybe annotation
+        { -- What information from the annotation is yet to be used in the current stage?
+          -----------------------------------
+          -- Nothing: no annotation was given
+          -- Just Never: annotation was given but we successfully used all of it
+          -----------------------------------
+          -- The `annotation` types used are:
+          -- FRONTEND: TypeAnnotation (for which we need to check that the name in the
+          --                           annotation is the same as the name in the declaration)
+          -- CANONICAL: Type (for which we need to check that this advertised type is
+          --                  unifiable with the type of the declaration)
+          -- TYPED: Never (where we've used up all the info from the annotation and
+          --               don't need it anymore)
+          typeAnnotation : Maybe annotation
+        , commentsAfterTypeAnnotation : List Comment
+        , expression : expr
         }
     | TypeAlias (TypeAliasDeclaration qualifiedness)
     | CustomType
@@ -110,6 +112,7 @@ map :
 map fnExpr fnAnnotation fnQualifiedness declaration =
     { module_ = declaration.module_
     , name = declaration.name
+    , commentsBefore = declaration.commentsBefore
     , body = mapBody fnExpr fnAnnotation fnQualifiedness declaration.body
     }
 
@@ -123,6 +126,7 @@ setAnnotation :
 setAnnotation annotation declaration =
     { module_ = declaration.module_
     , name = declaration.name
+    , commentsBefore = declaration.commentsBefore
     , body =
         declaration.body
             |> mapBody
@@ -142,10 +146,11 @@ mapBody :
     -> DeclarationBody exprB annotationB qualifiednessB
 mapBody fnExpr fnAnnotation fnQualifiedness body =
     case body of
-        Value { expression, typeAnnotation } ->
+        Value { expression, commentsAfterTypeAnnotation, typeAnnotation } ->
             Value
-                { expression = fnExpr expression
-                , typeAnnotation = fnAnnotation typeAnnotation
+                { typeAnnotation = fnAnnotation typeAnnotation
+                , commentsAfterTypeAnnotation = commentsAfterTypeAnnotation
+                , expression = fnExpr expression
                 }
 
         TypeAlias r ->
@@ -176,8 +181,9 @@ combineValue body =
                 |> Result.map
                     (\expr ->
                         Value
-                            { expression = expr
-                            , typeAnnotation = r.typeAnnotation
+                            { typeAnnotation = r.typeAnnotation
+                            , commentsAfterTypeAnnotation = r.commentsAfterTypeAnnotation
+                            , expression = expr
                             }
                     )
 
@@ -230,8 +236,9 @@ combineSubstitutionMap body =
             case r.expression of
                 ( expr, map_ ) ->
                     ( Value
-                        { expression = expr
-                        , typeAnnotation = r.typeAnnotation
+                        { typeAnnotation = r.typeAnnotation
+                        , commentsAfterTypeAnnotation = r.commentsAfterTypeAnnotation
+                        , expression = expr
                         }
                     , map_
                     )

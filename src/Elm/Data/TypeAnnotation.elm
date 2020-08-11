@@ -1,5 +1,6 @@
 module Elm.Data.TypeAnnotation exposing (TypeAnnotation)
 
+import Elm.Data.Comment exposing (Comment)
 import Elm.Data.Qualifiedness exposing (PossiblyQualified)
 import Elm.Data.Type.Concrete exposing (ConcreteType)
 import Elm.Data.VarName exposing (VarName)
@@ -22,5 +23,7 @@ but also qualified:
 -}
 type alias TypeAnnotation =
     { varName : VarName
+    , commentsAfterVarName : List Comment
+    , commentsBeforeType : List Comment
     , type_ : ConcreteType PossiblyQualified
     }

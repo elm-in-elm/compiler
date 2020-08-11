@@ -111,7 +111,7 @@ findPathForEachModule project graph =
                 ExposingSome exposedItems ->
                     exposedItems
                         -- throwing away stuff - see comment for `exposedItemToDeclaration`
-                        |> List.filterMap (exposedItemToDeclaration module_)
+                        |> List.filterMap (.item >> exposedItemToDeclaration module_)
 
         {- We'll be throwing away Nothings created here - those happen if the
            compiler can't find a definition that is supposed to be exposed.

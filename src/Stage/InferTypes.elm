@@ -262,12 +262,14 @@ throwAwayType : Declaration a (ConcreteType Qualified) b -> Declaration a Never 
 throwAwayType decl =
     { module_ = decl.module_
     , name = decl.name
+    , commentsBefore = decl.commentsBefore
     , body =
         case decl.body of
             Declaration.Value r ->
                 Declaration.Value
                     { expression = r.expression
                     , typeAnnotation = Nothing
+                    , commentsAfterTypeAnnotation = r.commentsAfterTypeAnnotation
                     }
 
             Declaration.TypeAlias r ->

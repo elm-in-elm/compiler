@@ -2,7 +2,6 @@ module Elm.Data.Module exposing
     ( Module, ModuleType(..)
     , map
     , unalias, exposes, imports, findModuleOfVar
-    , Comment, CommentKind(..)
     )
 
 {-| Module information (corresponds to a single .elm file).
@@ -17,6 +16,7 @@ Name, imports, contents, etc.
 import Dict exposing (Dict)
 import Dict.Extra as Dict
 import Elm.Compiler.Error exposing (DesugarError(..))
+import Elm.Data.Comment exposing (Comment)
 import Elm.Data.Declaration as Declaration exposing (Declaration)
 import Elm.Data.Exposing exposing (ExposedItem(..), Exposing(..))
 import Elm.Data.FilePath exposing (FilePath)
@@ -38,7 +38,8 @@ type alias Module expr annotation qualifiedness =
     , declarations : Dict VarName (Declaration expr annotation qualifiedness)
     , type_ : ModuleType
     , exposing_ : Exposing
-    , comments : List Comment
+    , startComments : List Comment
+    , endComments : List Comment
     }
 
 
@@ -58,17 +59,6 @@ type ModuleType
     = PlainModule
     | PortModule
     | EffectModule
-
-
-type alias Comment =
-    { content : Located String
-    , kind : CommentKind
-    }
-
-
-type CommentKind
-    = SingleLine
-    | MultiLine
 
 
 {-| Does this module import this module name?
@@ -94,8 +84,8 @@ exposes varName module_ =
 
         ExposingSome items ->
             List.any
-                (\exposedItem ->
-                    case exposedItem of
+                (\{ item } ->
+                    case item of
                         ExposedValue value ->
                             value == varName
 
@@ -130,7 +120,7 @@ Given `import Foo as F`:
 unalias : Module expr annotation qualifiedness -> ModuleName -> Maybe ModuleName
 unalias thisModule moduleName =
     thisModule.imports
-        |> Dict.find (\_ dep -> dep.as_ == Just moduleName)
+        |> Dict.find (\_ dep -> Maybe.map .as_ dep.as_ == Just moduleName)
         |> Maybe.map (Tuple.second >> .moduleName)
 
 
@@ -157,7 +147,8 @@ map fnExpr fnAnnotation fnQualifiedness module_ =
             module_.declarations
     , type_ = module_.type_
     , exposing_ = module_.exposing_
-    , comments = module_.comments
+    , startComments = module_.startComments
+    , endComments = module_.endComments
     }
 
 

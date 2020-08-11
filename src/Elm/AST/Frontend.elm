@@ -16,6 +16,7 @@ still there.
 import Dict exposing (Dict)
 import Elm.AST.Frontend.Unwrapped as Unwrapped
 import Elm.Data.Binding as Binding exposing (Binding)
+import Elm.Data.Comment exposing (Comment)
 import Elm.Data.Located as Located exposing (Located)
 import Elm.Data.Module exposing (Module)
 import Elm.Data.ModuleName exposing (ModuleName)
@@ -51,26 +52,121 @@ type alias LocatedExpr =
 
 {-| -}
 type Expr
-    = Int Int
+    = Unit
+    | Bool Bool
+    | Int Int
     | Float Float
     | Char Char
     | String String
-    | Bool Bool
     | Var { qualifiedness : PossiblyQualified, name : VarName }
     | Argument VarName
-    | Plus LocatedExpr LocatedExpr
-    | Cons LocatedExpr LocatedExpr
-    | ListConcat LocatedExpr LocatedExpr
-    | Lambda { arguments : List VarName, body : LocatedExpr }
-    | Call { fn : LocatedExpr, argument : LocatedExpr }
-    | If { test : LocatedExpr, then_ : LocatedExpr, else_ : LocatedExpr }
-    | Let { bindings : List (Binding LocatedExpr), body : LocatedExpr }
-    | List (List LocatedExpr)
-    | Unit
-    | Tuple LocatedExpr LocatedExpr
-    | Tuple3 LocatedExpr LocatedExpr LocatedExpr
-    | Record (List (Binding LocatedExpr))
-    | Case LocatedExpr (List { pattern : LocatedPattern, body : LocatedExpr })
+    | Parenthesized
+        { commentsBefore : List Comment
+        , expr : LocatedExpr
+        , commentsAfter : List Comment
+        }
+    | Tuple
+        { commentsBefore : List Comment
+        , expr : LocatedExpr
+        , commentsAfter : List Comment
+        }
+        { commentsBefore : List Comment
+        , expr : LocatedExpr
+        , commentsAfter : List Comment
+        }
+    | Tuple3
+        { commentsBefore : List Comment
+        , expr : LocatedExpr
+        , commentsAfter : List Comment
+        }
+        { commentsBefore : List Comment
+        , expr : LocatedExpr
+        , commentsAfter : List Comment
+        }
+        { commentsBefore : List Comment
+        , expr : LocatedExpr
+        , commentsAfter : List Comment
+        }
+    | Record
+        (List
+            { commentsBefore : List Comment
+            , binding : Binding.Commented LocatedExpr
+            , commentsAfter : List Comment
+            }
+        )
+    | List
+        (List
+            { commentsBefore : List Comment
+            , expr : LocatedExpr
+            , commentsAfter : List Comment
+            }
+        )
+    | Call
+        { fn : LocatedExpr
+        , comments : List Comment
+        , argument : LocatedExpr
+        }
+    | Lambda
+        { arguments :
+            List
+                { commentsBefore : List Comment
+                , argument : VarName
+                }
+        , commentsAfterArguments : List Comment
+        , commentsBeforeBody : List Comment
+        , body : LocatedExpr
+        }
+    | Plus
+        { left : LocatedExpr
+        , commentsAfterLeft : List Comment
+        , commentsBeforeRight : List Comment
+        , right : LocatedExpr
+        }
+    | Cons
+        { left : LocatedExpr
+        , commentsAfterLeft : List Comment
+        , commentsBeforeRight : List Comment
+        , right : LocatedExpr
+        }
+    | ListConcat
+        { left : LocatedExpr
+        , commentsAfterLeft : List Comment
+        , commentsBeforeRight : List Comment
+        , right : LocatedExpr
+        }
+    | Let
+        { bindings :
+            List
+                { commentsBefore : List Comment
+                , binding : Binding.Commented LocatedExpr
+                }
+        , commentsAfterBindings : List Comment
+        , commentsBeforeBody : List Comment
+        , body : LocatedExpr
+        }
+    | If
+        { commentsBeforeTest : List Comment
+        , test : LocatedExpr
+        , commentsAfterTest : List Comment
+        , commentsBeforeThen : List Comment
+        , then_ : LocatedExpr
+        , commentsAfterThen : List Comment
+        , commentsBeforeElse : List Comment
+        , else_ : LocatedExpr
+        }
+    | Case
+        { commentsBeforeTest : List Comment
+        , test : LocatedExpr
+        , commentsAfterTest : List Comment
+        , branches :
+            List
+                { commentsBeforePattern : List Comment
+                , pattern : LocatedPattern
+                , commentsAfterPattern : List Comment
+                , commentsBeforeBody : List Comment
+                , body : LocatedExpr
+                }
+        }
 
 
 type alias LocatedPattern =
@@ -79,19 +175,66 @@ type alias LocatedPattern =
 
 type Pattern
     = PAnything
-    | PVar VarName
-    | PRecord (List VarName)
-    | PAlias LocatedPattern VarName
     | PUnit
-    | PTuple LocatedPattern LocatedPattern
-    | PTuple3 LocatedPattern LocatedPattern LocatedPattern
-    | PList (List LocatedPattern)
-    | PCons LocatedPattern LocatedPattern
     | PBool Bool
-    | PChar Char
-    | PString String
     | PInt Int
     | PFloat Float
+    | PChar Char
+    | PString String
+    | PVar VarName
+    | PParenthesized
+        { commentsBefore : List Comment
+        , pattern : LocatedPattern
+        , commentsAfter : List Comment
+        }
+    | PTuple
+        { commentsBefore : List Comment
+        , pattern : LocatedPattern
+        , commentsAfter : List Comment
+        }
+        { commentsBefore : List Comment
+        , pattern : LocatedPattern
+        , commentsAfter : List Comment
+        }
+    | PTuple3
+        { commentsBefore : List Comment
+        , pattern : LocatedPattern
+        , commentsAfter : List Comment
+        }
+        { commentsBefore : List Comment
+        , pattern : LocatedPattern
+        , commentsAfter : List Comment
+        }
+        { commentsBefore : List Comment
+        , pattern : LocatedPattern
+        , commentsAfter : List Comment
+        }
+    | PRecord
+        (List
+            { commentsBefore : List Comment
+            , varName : VarName
+            , commentsAfter : List Comment
+            }
+        )
+    | PList
+        (List
+            { commentsBefore : List Comment
+            , pattern : LocatedPattern
+            , commentsAfter : List Comment
+            }
+        )
+    | PAlias
+        { pattern : LocatedPattern
+        , commentsAfterPattern : List Comment
+        , commentsBeforeAlias : List Comment
+        , alias : VarName
+        }
+    | PCons
+        { left : LocatedPattern
+        , commentsAfterLeft : List Comment
+        , commentsBeforeRight : List Comment
+        , right : LocatedPattern
+        }
 
 
 {-| A helper for the [Transform](/packages/Janiczek/transform/latest/) library.
@@ -104,6 +247,12 @@ recurse f expr =
             Located.map f
     in
     case expr of
+        Unit ->
+            expr
+
+        Bool _ ->
+            expr
+
         Int _ ->
             expr
 
@@ -116,74 +265,103 @@ recurse f expr =
         String _ ->
             expr
 
-        Bool _ ->
-            expr
-
         Var _ ->
             expr
 
         Argument _ ->
             expr
 
-        Plus e1 e2 ->
-            Plus
-                (f_ e1)
-                (f_ e2)
+        Parenthesized item ->
+            Parenthesized
+                { item | expr = f_ item.expr }
 
-        Cons e1 e2 ->
-            Cons
-                (f_ e1)
-                (f_ e2)
+        Tuple item1 item2 ->
+            Tuple
+                { item1 | expr = f_ item1.expr }
+                { item2 | expr = f_ item2.expr }
 
-        ListConcat e1 e2 ->
-            ListConcat (f_ e1) (f_ e2)
+        Tuple3 item1 item2 item3 ->
+            Tuple3
+                { item1 | expr = f_ item1.expr }
+                { item2 | expr = f_ item2.expr }
+                { item3 | expr = f_ item3.expr }
+
+        Record bindings ->
+            Record <|
+                List.map
+                    (\({ binding } as binding_) ->
+                        { binding_ | binding = Binding.mapCommented f_ binding }
+                    )
+                    bindings
+
+        List items ->
+            List <|
+                List.map
+                    (\item_ -> { item_ | expr = f_ item_.expr })
+                    items
+
+        Call ({ fn, argument } as call) ->
+            Call
+                { call
+                    | fn = f_ fn
+                    , argument = f_ argument
+                }
 
         Lambda ({ body } as lambda_) ->
             Lambda { lambda_ | body = f_ body }
 
-        Call { fn, argument } ->
-            Call
-                { fn = f_ fn
-                , argument = f_ argument
+        Plus ({ left, right } as plus) ->
+            Plus
+                { plus
+                    | left = f_ left
+                    , right = f_ right
                 }
 
-        If { test, then_, else_ } ->
-            If
-                { test = f_ test
-                , then_ = f_ then_
-                , else_ = f_ else_
+        Cons ({ left, right } as cons) ->
+            Cons
+                { cons
+                    | left = f_ left
+                    , right = f_ right
                 }
 
-        Let { bindings, body } ->
+        ListConcat ({ left, right } as listConcat) ->
+            ListConcat
+                { listConcat
+                    | left = f_ left
+                    , right = f_ right
+                }
+
+        Let ({ bindings, body } as let_) ->
             Let
-                { bindings = List.map (Binding.map f_) bindings
-                , body = f_ body
+                { let_
+                    | bindings =
+                        List.map
+                            (\({ binding } as binding_) ->
+                                { binding_ | binding = Binding.mapCommented f_ binding }
+                            )
+                            bindings
+                    , body = f_ body
                 }
 
-        List items ->
-            List (List.map f_ items)
+        If ({ test, then_, else_ } as if_) ->
+            If
+                { if_
+                    | test = f_ test
+                    , then_ = f_ then_
+                    , else_ = f_ else_
+                }
 
-        Unit ->
-            expr
-
-        Tuple e1 e2 ->
-            Tuple (f_ e1) (f_ e2)
-
-        Tuple3 e1 e2 e3 ->
-            Tuple3 (f_ e1) (f_ e2) (f_ e3)
-
-        Record bindings ->
-            Record <| List.map (Binding.map f_) bindings
-
-        Case test branches ->
-            Case (f_ test) <|
-                List.map
-                    (\{ pattern, body } ->
-                        { pattern = pattern
-                        , body = f_ body
-                        }
-                    )
-                    branches
+        Case ({ test, branches } as case_) ->
+            Case
+                { case_
+                    | test = f_ test
+                    , branches =
+                        List.map
+                            (\({ body } as branch) ->
+                                { branch | body = f_ body }
+                            )
+                            branches
+                }
 
 
 {-| [Transform](/packages/Janiczek/transform/latest/Transform#transformAll)
@@ -209,6 +387,12 @@ transform pass expr =
 unwrap : LocatedExpr -> Unwrapped.Expr
 unwrap expr =
     case Located.unwrap expr of
+        Unit ->
+            Unwrapped.Unit
+
+        Bool bool ->
+            Unwrapped.Bool bool
+
         Int int ->
             Unwrapped.Int int
 
@@ -221,40 +405,70 @@ unwrap expr =
         String string ->
             Unwrapped.String string
 
-        Bool bool ->
-            Unwrapped.Bool bool
-
         Var var_ ->
             Unwrapped.Var var_
 
         Argument name ->
             Unwrapped.Argument name
 
-        Plus e1 e2 ->
-            Unwrapped.Plus
-                (unwrap e1)
-                (unwrap e2)
+        Parenthesized item ->
+            unwrap item.expr
 
-        Cons e1 e2 ->
-            Unwrapped.Cons
-                (unwrap e1)
-                (unwrap e2)
+        Tuple item1 item2 ->
+            Unwrapped.Tuple
+                (unwrap item1.expr)
+                (unwrap item2.expr)
 
-        ListConcat e1 e2 ->
-            Unwrapped.ListConcat
-                (unwrap e1)
-                (unwrap e2)
+        Tuple3 item1 item2 item3 ->
+            Unwrapped.Tuple3
+                (unwrap item1.expr)
+                (unwrap item2.expr)
+                (unwrap item3.expr)
 
-        Lambda { arguments, body } ->
-            Unwrapped.Lambda
-                { arguments = arguments
-                , body = unwrap body
-                }
+        Record bindings ->
+            Unwrapped.Record <|
+                List.map
+                    (.binding
+                        >> Binding.fromCommented
+                        >> Binding.map unwrap
+                    )
+                    bindings
 
-        Call { fn, argument } ->
+        List list ->
+            Unwrapped.List <|
+                List.map (.expr >> unwrap) list
+
+        Call { fn, comments, argument } ->
             Unwrapped.Call
                 { fn = unwrap fn
                 , argument = unwrap argument
+                }
+
+        Lambda { arguments, body } ->
+            Unwrapped.Lambda
+                { arguments = List.map .argument arguments
+                , body = unwrap body
+                }
+
+        Plus { left, right } ->
+            Unwrapped.Plus (unwrap left) (unwrap right)
+
+        Cons { left, right } ->
+            Unwrapped.Cons (unwrap left) (unwrap right)
+
+        ListConcat { left, right } ->
+            Unwrapped.ListConcat (unwrap left) (unwrap right)
+
+        Let { bindings, body } ->
+            Unwrapped.Let
+                { bindings =
+                    List.map
+                        (.binding
+                            >> Binding.fromCommented
+                            >> Binding.map unwrap
+                        )
+                        bindings
+                , body = unwrap body
                 }
 
         If { test, then_, else_ } ->
@@ -264,46 +478,21 @@ unwrap expr =
                 , else_ = unwrap else_
                 }
 
-        Let { bindings, body } ->
-            Unwrapped.Let
-                { bindings = List.map (Binding.map unwrap) bindings
-                , body = unwrap body
+        Case { test, branches } ->
+            Unwrapped.Case
+                { test = unwrap test
+                , branches =
+                    List.map
+                        (\{ pattern, body } ->
+                            { pattern = unwrapPattern pattern
+                            , body = unwrap body
+                            }
+                        )
+                        branches
                 }
 
-        List list ->
-            Unwrapped.List
-                (List.map unwrap list)
 
-        Unit ->
-            Unwrapped.Unit
-
-        Tuple e1 e2 ->
-            Unwrapped.Tuple
-                (unwrap e1)
-                (unwrap e2)
-
-        Tuple3 e1 e2 e3 ->
-            Unwrapped.Tuple3
-                (unwrap e1)
-                (unwrap e2)
-                (unwrap e3)
-
-        Record bindings ->
-            Unwrapped.Record <|
-                List.map (Binding.map unwrap) bindings
-
-        Case e branches ->
-            Unwrapped.Case (unwrap e) <|
-                List.map
-                    (\branch ->
-                        { pattern = unwrapPattern branch.pattern
-                        , body = unwrap branch.body
-                        }
-                    )
-                    branches
-
-
-{-| Discard the [location metadata](Elm.Data.Located#Located).
+{-| Discard the pattern [location metadata](Elm.Data.Located#Located).
 -}
 unwrapPattern : LocatedPattern -> Unwrapped.Pattern
 unwrapPattern expr =
@@ -311,35 +500,17 @@ unwrapPattern expr =
         PAnything ->
             Unwrapped.PAnything
 
-        PVar varName ->
-            Unwrapped.PVar varName
-
-        PRecord varNames ->
-            Unwrapped.PRecord varNames
-
-        PAlias p varName ->
-            Unwrapped.PAlias (unwrapPattern p) varName
-
         PUnit ->
             Unwrapped.PUnit
 
-        PTuple p1 p2 ->
-            Unwrapped.PTuple (unwrapPattern p1) (unwrapPattern p2)
-
-        PTuple3 p1 p2 p3 ->
-            Unwrapped.PTuple3
-                (unwrapPattern p1)
-                (unwrapPattern p2)
-                (unwrapPattern p3)
-
-        PList ps ->
-            Unwrapped.PList (List.map unwrapPattern ps)
-
-        PCons p1 p2 ->
-            Unwrapped.PCons (unwrapPattern p1) (unwrapPattern p2)
-
         PBool bool ->
             Unwrapped.PBool bool
+
+        PInt int ->
+            Unwrapped.PInt int
+
+        PFloat float ->
+            Unwrapped.PFloat float
 
         PChar char ->
             Unwrapped.PChar char
@@ -347,8 +518,36 @@ unwrapPattern expr =
         PString string ->
             Unwrapped.PString string
 
-        PInt int ->
-            Unwrapped.PInt int
+        PVar varName ->
+            Unwrapped.PVar varName
 
-        PFloat float ->
-            Unwrapped.PFloat float
+        PParenthesized item ->
+            unwrapPattern item.pattern
+
+        PTuple item1 item2 ->
+            Unwrapped.PTuple
+                (unwrapPattern item1.pattern)
+                (unwrapPattern item2.pattern)
+
+        PTuple3 item1 item2 item3 ->
+            Unwrapped.PTuple3
+                (unwrapPattern item1.pattern)
+                (unwrapPattern item2.pattern)
+                (unwrapPattern item3.pattern)
+
+        PRecord varNames ->
+            Unwrapped.PRecord (List.map .varName varNames)
+
+        PList items ->
+            Unwrapped.PList <|
+                List.map
+                    (\{ pattern } -> unwrapPattern pattern)
+                    items
+
+        PAlias { pattern, alias } ->
+            Unwrapped.PAlias (unwrapPattern pattern) alias
+
+        PCons { left, right } ->
+            Unwrapped.PCons
+                (unwrapPattern left)
+                (unwrapPattern right)

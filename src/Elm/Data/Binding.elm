@@ -1,4 +1,7 @@
-module Elm.Data.Binding exposing (Binding, combine, map)
+module Elm.Data.Binding exposing
+    ( Binding, combine, map
+    , Commented, fromCommented, mapCommented
+    )
 
 {-| Binding in the `let...in` expression.
 
@@ -14,8 +17,11 @@ module Elm.Data.Binding exposing (Binding, combine, map)
 contains two bindings: `myNumber` and `answer`.
 
 @docs Binding, combine, map
+@docs Commented, fromCommented, mapCommented
 
 -}
+
+import Elm.Data.Comment exposing (Comment)
 
 
 {-| -}
@@ -51,3 +57,37 @@ combine { name, body } =
             }
         )
         body
+
+
+{-| Binding with comments:
+
+        x {- commentsAfterName -} = {- commentsBeforeBody -} 2
+
+-}
+type alias Commented expr =
+    -- TODO type annotation for the let...in binding
+    { name : String
+    , commentsAfterName : List Comment
+    , commentsBeforeBody : List Comment
+    , body : expr
+    }
+
+
+{-| Create a [Binding](#Binding) from a [Commented](#Commented).
+-}
+fromCommented : Commented e -> Binding e
+fromCommented { name, body } =
+    { name = name
+    , body = body
+    }
+
+
+{-| Apply a function to the expression inside the commented binding.
+-}
+mapCommented : (e1 -> e2) -> Commented e1 -> Commented e2
+mapCommented fn { name, commentsAfterName, commentsBeforeBody, body } =
+    { name = name
+    , commentsAfterName = commentsAfterName
+    , commentsBeforeBody = commentsBeforeBody
+    , body = fn body
+    }

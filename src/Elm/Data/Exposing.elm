@@ -18,13 +18,20 @@ module Elm.Data.Exposing exposing (Exposing(..), ExposedItem(..), name)
 
 -}
 
+import Elm.Data.Comment exposing (Comment)
 import Elm.Data.VarName exposing (VarName)
 
 
 {-| -}
 type Exposing
     = ExposingAll -- exposing (..)
-    | ExposingSome (List ExposedItem) -- exposing (foo, Foo, Bar(..))
+    | ExposingSome
+        (List
+            { commentsBefore : List Comment -- exposing (>{-before-}< foo)
+            , item : ExposedItem -- exposing (>foo<, Foo, Bar(..))
+            , commentsAfter : List Comment -- exposing (foo >{-after-}<)
+            }
+        )
 
 
 {-| -}

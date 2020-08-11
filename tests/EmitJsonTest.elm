@@ -223,9 +223,11 @@ json =
                 [ ( "simple"
                   , { module_ = "Foo"
                     , name = "bar"
+                    , commentsBefore = []
                     , body =
                         Value
                             { typeAnnotation = Nothing
+                            , commentsAfterTypeAnnotation = []
                             , expression = typedInt 1
                             }
                     }

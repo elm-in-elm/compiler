@@ -153,7 +153,8 @@ moduleOfNewType old newDecls =
     , filePath = old.filePath
     , type_ = old.type_
     , exposing_ = old.exposing_
-    , comments = old.comments
+    , startComments = old.startComments
+    , endComments = old.endComments
 
     -- all that code because of this:
     , declarations = newDecls
@@ -189,6 +190,7 @@ declarationOfNewType :
 declarationOfNewType old newBody =
     { name = old.name
     , module_ = old.module_
+    , commentsBefore = old.commentsBefore
 
     -- all that code because of this:
     , body = newBody

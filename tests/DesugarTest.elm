@@ -5,6 +5,7 @@ import Elm.AST.Canonical as Canonical
 import Elm.AST.Canonical.Unwrapped as CanonicalU
 import Elm.AST.Frontend as Frontend
 import Elm.Compiler.Error as Error exposing (DesugarError)
+import Elm.Data.Binding as Binding
 import Elm.Data.Declaration as Declaration exposing (Declaration)
 import Elm.Data.Exposing as Exposing
 import Elm.Data.Import exposing (Import)
@@ -139,11 +140,10 @@ desugarTest =
                     bRegion =
                         { start = { row = 3, col = 3 }, end = { row = 4, col = 4 } }
                 in
-                [ { name = "aaa", body = Located.located aRegion Frontend.Unit }
-                , { name = "aaa", body = Located.located bRegion Frontend.Unit }
+                [ frontendBinding "aaa" (Located.located aRegion Frontend.Unit)
+                , frontendBinding "aaa" (Located.located bRegion Frontend.Unit)
                 ]
-                    |> Frontend.Record
-                    |> located
+                    |> frontendRecord
                     |> Desugar.desugarExpr Dict.empty (moduleFromName "A")
                     |> mapUnwrap
                     |> Expect.equal
@@ -158,18 +158,49 @@ desugarTest =
         ]
 
 
+frontendBinding : String -> Frontend.LocatedExpr -> Binding.Commented Frontend.LocatedExpr
+frontendBinding name body =
+    { name = name
+    , commentsAfterName = []
+    , commentsBeforeBody = []
+    , body = body
+    }
+
+
+frontendRecord : List (Binding.Commented Frontend.LocatedExpr) -> Frontend.LocatedExpr
+frontendRecord bindings =
+    located <|
+        Frontend.Record <|
+            List.map
+                (\b ->
+                    { commentsBefore = []
+                    , binding = b
+                    , commentsAfter = []
+                    }
+                )
+                bindings
+
+
 {-| `frontendLambda "a" "b"` builds `\a b -> a + b`.
 -}
 frontendLambda : String -> String -> Frontend.LocatedExpr
 frontendLambda arg1 arg2 =
     located <|
         Frontend.Lambda
-            { arguments = [ arg1, arg2 ]
+            { arguments =
+                [ { commentsBefore = [], argument = arg1 }
+                , { commentsBefore = [], argument = arg2 }
+                ]
+            , commentsAfterArguments = []
+            , commentsBeforeBody = []
             , body =
                 located <|
                     Frontend.Plus
-                        (located <| Frontend.Argument arg1)
-                        (located <| Frontend.Argument arg2)
+                        { left = located <| Frontend.Argument arg1
+                        , commentsAfterLeft = []
+                        , commentsBeforeRight = []
+                        , right = located <| Frontend.Argument arg2
+                        }
             }
 
 
@@ -254,7 +285,10 @@ buildExpectedResult ( moduleName, varName ) =
 importFromName : ModuleName -> ( ModuleName, Import )
 importFromName moduleName =
     ( moduleName
-    , { moduleName = moduleName
+    , { commentsBefore = []
+      , commentsBeforeModuleName = []
+      , moduleName = moduleName
+      , commentsAfterModuleName = []
       , as_ = Nothing
       , exposing_ = Nothing
       }
@@ -264,13 +298,37 @@ importFromName moduleName =
 exposingValuesInImport : List VarName -> ( ModuleName, Import ) -> ( ModuleName, Import )
 exposingValuesInImport vars ( moduleName, import_ ) =
     ( moduleName
-    , { import_ | exposing_ = Just <| Exposing.ExposingSome <| List.map Exposing.ExposedValue vars }
+    , { import_
+        | exposing_ =
+            Just
+                { commentsBeforeExposing = []
+                , exposing_ =
+                    Exposing.ExposingSome <|
+                        List.map
+                            (\var_ ->
+                                { commentsBefore = []
+                                , item = Exposing.ExposedValue var_
+                                , commentsAfter = []
+                                }
+                            )
+                            vars
+                }
+      }
     )
 
 
 as_ : ModuleName -> ( ModuleName, Import ) -> ( ModuleName, Import )
 as_ alias_ ( moduleName, import_ ) =
-    ( moduleName, { import_ | as_ = Just alias_ } )
+    ( moduleName
+    , { import_
+        | as_ =
+            Just
+                { commentsBeforeAs = []
+                , as_ = alias_
+                , commentsAfterAs = []
+                }
+      }
+    )
 
 
 moduleFromName : ModuleName -> Module expr ann qual
@@ -281,7 +339,8 @@ moduleFromName name =
     , declarations = Dict.empty
     , type_ = Module.PlainModule
     , exposing_ = Exposing.ExposingSome []
-    , comments = []
+    , startComments = []
+    , endComments = []
     }
 
 
@@ -301,9 +360,11 @@ addDeclaration varName module_ =
         decl =
             { module_ = module_.name
             , name = varName
+            , commentsBefore = []
             , body =
                 Declaration.Value
                     { typeAnnotation = Nothing
+                    , commentsAfterTypeAnnotation = []
                     , expression = located <| Frontend.Int 42
                     }
             }
@@ -325,7 +386,18 @@ addDeclarations varNames module_ =
 
 exposingValuesInModule : List VarName -> Module expr ann qual -> Module expr ann qual
 exposingValuesInModule varNames exposable =
-    { exposable | exposing_ = Exposing.ExposingSome (List.map Exposing.ExposedValue varNames) }
+    { exposable
+        | exposing_ =
+            Exposing.ExposingSome <|
+                List.map
+                    (\varName ->
+                        { commentsBefore = []
+                        , item = Exposing.ExposedValue varName
+                        , commentsAfter = []
+                        }
+                    )
+                    varNames
+    }
 
 
 

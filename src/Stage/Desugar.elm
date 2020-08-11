@@ -85,6 +85,12 @@ desugarExpr modules thisModule locatedExpr =
                 )
     in
     case Located.unwrap locatedExpr of
+        Frontend.Unit ->
+            return Canonical.Unit
+
+        Frontend.Bool bool ->
+            return <| Canonical.Bool bool
+
         Frontend.Int int ->
             return <| Canonical.Int int
 
@@ -96,9 +102,6 @@ desugarExpr modules thisModule locatedExpr =
 
         Frontend.String string ->
             return <| Canonical.String string
-
-        Frontend.Bool bool ->
-            return <| Canonical.Bool bool
 
         Frontend.Var var ->
             Module.findModuleOfVar modules thisModule var
@@ -113,17 +116,72 @@ desugarExpr modules thisModule locatedExpr =
         Frontend.Argument varName ->
             return <| Canonical.Argument varName
 
-        Frontend.Plus e1 e2 ->
+        Frontend.Parenthesized e1 ->
+            recurse e1.expr
+
+        Frontend.Tuple e1 e2 ->
+            map2 Canonical.Tuple
+                (recurse e1.expr)
+                (recurse e2.expr)
+
+        Frontend.Tuple3 e1 e2 e3 ->
+            map3 Canonical.Tuple3
+                (recurse e1.expr)
+                (recurse e2.expr)
+                (recurse e3.expr)
+
+        Frontend.Record bindings ->
+            let
+                bindings_ =
+                    List.map (.binding >> Binding.fromCommented) bindings
+            in
+            case maybeDuplicateBindingsError thisModule.name bindings_ of
+                Just error ->
+                    Err error
+
+                Nothing ->
+                    bindings_
+                        |> List.map (Binding.map recurse >> Binding.combine)
+                        |> Result.combine
+                        |> map
+                            (\canonicalBindings ->
+                                canonicalBindings
+                                    |> List.map (\canonicalBinding -> ( canonicalBinding.name, canonicalBinding ))
+                                    |> Dict.fromList
+                                    |> Canonical.Record
+                            )
+
+        Frontend.List items ->
+            List.map (.expr >> recurse) items
+                |> Result.combine
+                |> map Canonical.List
+
+        Frontend.Call { fn, argument } ->
+            map2
+                (\fn_ argument_ ->
+                    Canonical.Call
+                        { fn = fn_
+                        , argument = argument_
+                        }
+                )
+                (recurse fn)
+                (recurse argument)
+
+        Frontend.Lambda { arguments, body } ->
+            recurse body
+                |> Result.map (curryLambda locatedExpr (List.map .argument arguments))
+
+        Frontend.Plus { left, right } ->
             map2 Canonical.Plus
-                (recurse e1)
-                (recurse e2)
+                (recurse left)
+                (recurse right)
 
-        Frontend.Cons e1 e2 ->
+        Frontend.Cons { left, right } ->
             map2 Canonical.Cons
-                (recurse e1)
-                (recurse e2)
+                (recurse left)
+                (recurse right)
 
-        Frontend.ListConcat e1 e2 ->
+        Frontend.ListConcat { left, commentsAfterLeft, commentsBeforeRight, right } ->
             let
                 region =
                     Located.getRegion locatedExpr
@@ -136,27 +194,46 @@ desugarExpr modules thisModule locatedExpr =
                         |> Located.located region
 
                 firstCall =
-                    Frontend.Call { fn = listConcatVar, argument = e1 } |> Located.located region
+                    Frontend.Call
+                        { fn = listConcatVar
+                        , comments = commentsAfterLeft
+                        , argument = left
+                        }
+                        |> Located.located region
 
                 expr =
-                    Frontend.Call { fn = firstCall, argument = e2 } |> Located.located region
+                    Frontend.Call
+                        { fn = firstCall
+                        , comments = commentsBeforeRight
+                        , argument = right
+                        }
+                        |> Located.located region
             in
             recurse expr
 
-        Frontend.Lambda { arguments, body } ->
-            recurse body
-                |> Result.map (curryLambda locatedExpr arguments)
-
-        Frontend.Call { fn, argument } ->
+        Frontend.Let { bindings, body } ->
             map2
-                (\fn_ argument_ ->
-                    Canonical.Call
-                        { fn = fn_
-                        , argument = argument_
+                (\bindings_ body_ ->
+                    Canonical.Let
+                        { bindings =
+                            bindings_
+                                |> List.map (\binding -> ( binding.name, binding ))
+                                |> Dict.fromList
+                        , body = body_
                         }
                 )
-                (recurse fn)
-                (recurse argument)
+                -- TODO a bit mouthful:
+                (Result.combine
+                    (List.map
+                        (.binding
+                            >> Binding.fromCommented
+                            >> Binding.map recurse
+                            >> Binding.combine
+                        )
+                        bindings
+                    )
+                )
+                (recurse body)
 
         Frontend.If { test, then_, else_ } ->
             map3
@@ -171,58 +248,7 @@ desugarExpr modules thisModule locatedExpr =
                 (recurse then_)
                 (recurse else_)
 
-        Frontend.Let { bindings, body } ->
-            map2
-                (\bindings_ body_ ->
-                    Canonical.Let
-                        { bindings =
-                            bindings_
-                                |> List.map (\binding -> ( binding.name, binding ))
-                                |> Dict.fromList
-                        , body = body_
-                        }
-                )
-                -- TODO a bit mouthful:
-                (Result.combine (List.map (Binding.map recurse >> Binding.combine) bindings))
-                (recurse body)
-
-        Frontend.List items ->
-            List.map recurse items
-                |> Result.combine
-                |> map Canonical.List
-
-        Frontend.Tuple e1 e2 ->
-            map2 Canonical.Tuple
-                (recurse e1)
-                (recurse e2)
-
-        Frontend.Tuple3 e1 e2 e3 ->
-            map3 Canonical.Tuple3
-                (recurse e1)
-                (recurse e2)
-                (recurse e3)
-
-        Frontend.Unit ->
-            return Canonical.Unit
-
-        Frontend.Record bindings ->
-            case maybeDuplicateBindingsError thisModule.name bindings of
-                Just error ->
-                    Err error
-
-                Nothing ->
-                    bindings
-                        |> List.map (Binding.map recurse >> Binding.combine)
-                        |> Result.combine
-                        |> map
-                            (\canonicalBindings ->
-                                canonicalBindings
-                                    |> List.map (\canonicalBinding -> ( canonicalBinding.name, canonicalBinding ))
-                                    |> Dict.fromList
-                                    |> Canonical.Record
-                            )
-
-        Frontend.Case test branches ->
+        Frontend.Case { test, branches } ->
             Result.map2
                 (\expr branches_ ->
                     Located.replaceWith
@@ -285,42 +311,17 @@ desugarPattern located =
         Frontend.PAnything ->
             return <| Canonical.PAnything
 
-        Frontend.PVar varName ->
-            return <| Canonical.PVar varName
-
-        Frontend.PRecord varNames ->
-            return <| Canonical.PRecord varNames
-
-        Frontend.PAlias pattern varName ->
-            recurse pattern
-                |> map (\p -> Canonical.PAlias p varName)
-
         Frontend.PUnit ->
             return <| Canonical.PUnit
 
-        Frontend.PTuple pattern1 pattern2 ->
-            map2 Canonical.PTuple
-                (recurse pattern1)
-                (recurse pattern2)
-
-        Frontend.PTuple3 pattern1 pattern2 pattern3 ->
-            map3 Canonical.PTuple3
-                (recurse pattern1)
-                (recurse pattern2)
-                (recurse pattern3)
-
-        Frontend.PList patterns ->
-            List.map recurse patterns
-                |> List.foldr (Result.map2 (::)) (Ok [])
-                |> map Canonical.PList
-
-        Frontend.PCons pattern1 pattern2 ->
-            map2 Canonical.PCons
-                (recurse pattern1)
-                (recurse pattern2)
-
         Frontend.PBool bool ->
             return <| Canonical.PBool bool
+
+        Frontend.PInt int ->
+            return <| Canonical.PInt int
+
+        Frontend.PFloat float ->
+            return <| Canonical.PFloat float
 
         Frontend.PChar char ->
             return <| Canonical.PChar char
@@ -328,11 +329,39 @@ desugarPattern located =
         Frontend.PString string ->
             return <| Canonical.PString string
 
-        Frontend.PInt int ->
-            return <| Canonical.PInt int
+        Frontend.PVar varName ->
+            return <| Canonical.PVar varName
 
-        Frontend.PFloat float ->
-            return <| Canonical.PFloat float
+        Frontend.PParenthesized item ->
+            recurse item.pattern
+
+        Frontend.PTuple item1 item2 ->
+            map2 Canonical.PTuple
+                (recurse item1.pattern)
+                (recurse item2.pattern)
+
+        Frontend.PTuple3 item1 item2 item3 ->
+            map3 Canonical.PTuple3
+                (recurse item1.pattern)
+                (recurse item2.pattern)
+                (recurse item3.pattern)
+
+        Frontend.PRecord varNames ->
+            return <| Canonical.PRecord (List.map .varName varNames)
+
+        Frontend.PList items ->
+            List.map (.pattern >> recurse) items
+                |> List.foldr (Result.map2 (::)) (Ok [])
+                |> map Canonical.PList
+
+        Frontend.PAlias { pattern, alias } ->
+            recurse pattern
+                |> map (\p -> Canonical.PAlias p alias)
+
+        Frontend.PCons { left, right } ->
+            map2 Canonical.PCons
+                (recurse left)
+                (recurse right)
 
 
 desugarQualifiedness :
@@ -521,6 +550,7 @@ checkNamesAgree decl =
             Ok
                 { module_ = decl.module_
                 , name = decl.name
+                , commentsBefore = decl.commentsBefore
                 , body = TypeAlias r
                 }
 
@@ -528,6 +558,7 @@ checkNamesAgree decl =
             Ok
                 { module_ = decl.module_
                 , name = decl.name
+                , commentsBefore = decl.commentsBefore
                 , body = CustomType r
                 }
 
@@ -538,12 +569,14 @@ throwAwayTypeAnnotationName :
 throwAwayTypeAnnotationName decl =
     { module_ = decl.module_
     , name = decl.name
+    , commentsBefore = decl.commentsBefore
     , body =
         case decl.body of
             Value r ->
                 Value
                     { expression = r.expression
                     , typeAnnotation = Maybe.map .type_ r.typeAnnotation
+                    , commentsAfterTypeAnnotation = r.commentsAfterTypeAnnotation
                     }
 
             TypeAlias r ->

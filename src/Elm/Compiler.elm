@@ -142,6 +142,7 @@ import Elm.Data.Type.Concrete exposing (ConcreteType)
 import Elm.Data.TypeAnnotation exposing (TypeAnnotation)
 import Elm.Data.VarName exposing (VarName)
 import OurExtras.Dict as Dict
+import Parser.Advanced as P
 import Result.Extra as Result
 import Stage.Desugar
 import Stage.Desugar.Boilerplate
@@ -150,7 +151,6 @@ import Stage.InferTypes.Boilerplate
 import Stage.InferTypes.SubstitutionMap exposing (SubstitutionMap)
 import Stage.Optimize
 import Stage.Optimize.Boilerplate
-import Stage.Parse.AdvancedWithState as P
 import Stage.Parse.Parser
 
 
@@ -162,15 +162,14 @@ import Stage.Parse.Parser
 what ParseContext or ParseProblem means. Don't expose it.
 -}
 type alias Parser a =
-    P.Parser ParseContext ParseProblem Stage.Parse.Parser.State a
+    P.Parser ParseContext ParseProblem a
 
 
 {-| A helper for a common pattern with our Elm parsers. Don't expose it.
 -}
 parse : Parser a -> FileContents -> Result Error a
 parse parser sourceCode =
-    P.run parser { comments = [] } sourceCode
-        |> Result.map Tuple.second
+    P.run parser sourceCode
         |> Result.mapError
             (\errorList -> ParseError (ParseProblem ( errorList, sourceCode )))
 
@@ -199,6 +198,7 @@ use [`Elm.AST.Frontend.unwrap`](Elm.AST.Frontend#unwrap) to get something like
 parseExpr : FileContents -> Result Error Frontend.LocatedExpr
 parseExpr sourceCode =
     parse Stage.Parse.Parser.expr sourceCode
+        |> Result.map Tuple.first
 
 
 {-| Parse a module (one `*.elm` file). Get a [`Module`](Elm.Data.Module#Module) datastructure back, holding
@@ -289,6 +289,7 @@ into
 parseImport : FileContents -> Result Error Import
 parseImport sourceCode =
     parse Stage.Parse.Parser.import_ sourceCode
+        |> Result.map (\import_ -> Tuple.first (import_ []))
 
 
 {-| Parse a single declaration, like
@@ -309,7 +310,7 @@ parseDeclaration :
     -> Result Error (Declaration Frontend.LocatedExpr TypeAnnotation PossiblyQualified)
 parseDeclaration { moduleName, declaration } =
     parse Stage.Parse.Parser.declaration declaration
-        |> Result.map (\toDeclaration -> toDeclaration moduleName)
+        |> Result.map (\toDeclaration -> Tuple.first (toDeclaration []) moduleName)
 
 
 

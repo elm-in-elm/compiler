@@ -97,6 +97,7 @@ type ParseContext
     | InTypeBinding
     | InPatternVar
     | InPatternRecord
+    | InImport
 
 
 {-| The specific problem the parser encountered. Together with [`ParseContext`](#ParseContext)
@@ -172,9 +173,14 @@ type ParseProblem
     | ExpectingIndentation
     | ExpectingPatternAnything -- `>_< ->`
     | ExpectingMaxThreeTuple
+    | ExpectingExpression
     | ExpectingTypeName
     | ExpectingNewlineAfterTypeAnnotation
+    | ExpectingTypeAnnotationDefinition
     | ExpectingNonSpaceAfterTypeAnnotationNewlines
+    | ExpectingSingleLineCommentStart -- --
+    | ExpectingMultiLineCommentStart -- {-
+    | ExpectingMultiLineCommentEnd -- -}
     | InvalidTab
     | InvalidNumber
     | TriedToParseCharacterStoppingDelimiter
@@ -661,7 +667,33 @@ parseProblemToString problem =
             "ExpectingPatternAnything"
 
         ExpectingMaxThreeTuple ->
+            {- TODO
+               I only accept tuples with two or three items. This has too many:
+
+               39|         x = (1, 2, 3, 4)
+                               ^^^^^^^^^^^^
+               I recommend switching to records. Each item will be named, and you can use the
+               `point.x` syntax to access them.
+
+               Note: Read <https://elm-lang.org/0.19.1/tuples> for more comprehensive advice on
+               working with large chunks of data in Elm.
+            -}
             "ExpectingMaxThreeTuple"
+
+        ExpectingExpression ->
+            {- TODO
+               I am partway through parsing some parentheses, but I got stuck here:
+
+               39|         x = (  )
+                                  ^
+               I was expecting to see an expression like 42 or "hello". Once there is something
+               there, I can probably give a more specific hint!
+
+               Note: This can also happen if run into reserved words like `let` or `as`
+               unexpectedly. Or if I run into operators in unexpected spots. Point is, there
+               are a couple ways I can get confused and give sort of weird advice!
+            -}
+            "ExpectingExpression"
 
         ExpectingTypeName ->
             "ExpectingTypeName"
@@ -669,8 +701,20 @@ parseProblemToString problem =
         ExpectingNewlineAfterTypeAnnotation ->
             "ExpectingNewlineAfterTypeAnnotation"
 
+        ExpectingTypeAnnotationDefinition ->
+            "ExpectingTypeAnnotationDefinition"
+
         ExpectingNonSpaceAfterTypeAnnotationNewlines ->
             "ExpectingNonSpaceAfterTypeAnnotationNewlines"
+
+        ExpectingSingleLineCommentStart ->
+            "ExpectingSingleLineCommentStart"
+
+        ExpectingMultiLineCommentStart ->
+            "ExpectingMultiLineCommentStart"
+
+        ExpectingMultiLineCommentEnd ->
+            "ExpectingMultiLineCommentEnd"
 
         InvalidTab ->
             "InvalidTab"
