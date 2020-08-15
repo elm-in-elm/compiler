@@ -1453,15 +1453,10 @@ case_ config =
 
 shader : ExprConfig -> Parser_ LocatedExpr
 shader config =
-    let
-        startToken =
-            "[glsl|"
-    in
-    P.succeed ()
-        |. P.symbol (P.Token startToken ShaderProblem)
-        |. P.chompUntil (P.Token "|]" ShaderProblem)
-        |> P.getChompedString
-        |> P.map (String.dropLeft (String.length startToken) >> Frontend.Shader)
+    P.succeed Frontend.Shader
+        |. P.symbol (P.Token "[glsl|" ShaderProblem)
+        |= P.getChompedString (P.chompUntil (P.Token "|]" ShaderProblem))
+        |. P.symbol (P.Token "|]" ShaderProblem)
         |> located
 
 

@@ -216,8 +216,8 @@ recurse fn locatedExpr =
                                 )
                                 branches
 
-                    Shader shader ->
-                        Shader shader
+                    Shader _ ->
+                        expr
             )
 
 
