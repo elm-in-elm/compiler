@@ -1362,6 +1362,60 @@ expr =
                   , "[glsl|...|]"
                   , Just (Shader "...")
                   )
+                , ( "vertexShader"
+                  , """
+                    [glsl|
+
+                        attribute vec3 position;
+                        attribute vec3 color;
+                        uniform mat4 perspective;
+                        varying vec3 vcolor;
+                        void main () {
+                            gl_Position = perspective * vec4(position, 1.0);
+                            vcolor = color;
+                        }
+
+                    |]
+                    """
+                        |> String.unindent
+                        |> String.removeNewlinesAtEnds
+                  , Just (Shader """
+
+    attribute vec3 position;
+    attribute vec3 color;
+    uniform mat4 perspective;
+    varying vec3 vcolor;
+    void main () {
+        gl_Position = perspective * vec4(position, 1.0);
+        vcolor = color;
+    }
+
+""")
+                  )
+                , ( "fragmentShader"
+                  , """
+                    [glsl|
+
+                        precision mediump float;
+                        varying vec3 vcolor;
+                        void main () {
+                            gl_FragColor = vec4(vcolor, 1.0);
+                        }
+
+                    |]
+                    """
+                        |> String.unindent
+                        |> String.removeNewlinesAtEnds
+                  , Just (Shader """
+
+    precision mediump float;
+    varying vec3 vcolor;
+    void main () {
+        gl_FragColor = vec4(vcolor, 1.0);
+    }
+
+""")
+                  )
                 ]
               )
             ]
