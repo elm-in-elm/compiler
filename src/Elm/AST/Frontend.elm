@@ -73,6 +73,7 @@ type Expr
     | Tuple3 LocatedExpr LocatedExpr LocatedExpr
     | Record (List (Binding LocatedExpr))
     | Case LocatedExpr (List { pattern : LocatedPattern, body : LocatedExpr })
+    | Shader String
 
 
 type alias LocatedPattern =
@@ -190,6 +191,9 @@ recurse f expr =
                         }
                     )
                     branches
+
+        Shader _ ->
+            expr
 
 
 {-| [Transform](/packages/Janiczek/transform/latest/Transform#transformAll)
@@ -310,6 +314,9 @@ unwrap expr =
                         }
                     )
                     branches
+
+        Shader value ->
+            Unwrapped.Shader value
 
 
 {-| Discard the [location metadata](Elm.Data.Located#Located).

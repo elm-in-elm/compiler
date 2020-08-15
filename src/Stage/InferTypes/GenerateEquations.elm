@@ -428,6 +428,9 @@ generateEquations currentId located =
             , newId
             )
 
+        Typed.Shader _ ->
+            Debug.todo "Shader"
+
 
 findArgumentUsages : VarName -> Typed.LocatedExpr -> List Typed.LocatedExpr
 findArgumentUsages argument bodyExpr =

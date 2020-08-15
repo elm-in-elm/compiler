@@ -181,6 +181,7 @@ type ParseProblem
     | ExpectingScientificNotationPlus
     | ExpectingScientificNotationMinus
     | IntZeroCannotHaveScientificNotation
+    | ShaderProblem
 
 
 type ParseCompilerBug
@@ -639,6 +640,9 @@ parseProblemToString problem =
 
         IntZeroCannotHaveScientificNotation ->
             "IntZeroCannotHaveScientificNotation"
+
+        ShaderProblem ->
+            "ShaderProblem"
 
 
 parseCompilerBugToString : ParseCompilerBug -> String

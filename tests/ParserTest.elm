@@ -1268,7 +1268,7 @@ expr =
                 , ( "multiline"
                   , """
                     { a = 42
-                    , b = "hello" 
+                    , b = "hello"
                     }
                     """
                   , Just
@@ -1354,6 +1354,13 @@ expr =
                               }
                             ]
                         )
+                  )
+                ]
+              )
+            , ( "shader"
+              , [ ( "simple case"
+                  , "[glsl|...|]"
+                  , Just (Shader "...")
                   )
                 ]
               )
@@ -1545,7 +1552,7 @@ type_ =
             , ( "multiline record"
               , """
                 { x : Int
-                , y : String 
+                , y : String
                 }
                 """
                     |> String.unindent

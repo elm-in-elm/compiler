@@ -541,6 +541,7 @@ expr =
             , lambda
             , PP.literal literal
             , always var
+            , shader
             , list
             , parenStartingExpr
             , record
@@ -1447,6 +1448,20 @@ case_ config =
         |= P.getCol
         |> P.andThen identity
         |> P.inContext InCase
+        |> located
+
+
+shader : ExprConfig -> Parser_ LocatedExpr
+shader config =
+    let
+        startToken =
+            "[glsl|"
+    in
+    P.succeed ()
+        |. P.symbol (P.Token startToken ShaderProblem)
+        |. P.chompUntil (P.Token "|]" ShaderProblem)
+        |> P.getChompedString
+        |> P.map (String.dropLeft (String.length startToken) >> Frontend.Shader)
         |> located
 
 

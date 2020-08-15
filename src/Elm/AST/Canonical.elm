@@ -85,6 +85,7 @@ type Expr
     | Tuple3 LocatedExpr LocatedExpr LocatedExpr
     | Record (Dict VarName (Binding LocatedExpr))
     | Case LocatedExpr (List { pattern : LocatedPattern, body : LocatedExpr })
+    | Shader String
 
 
 type alias LocatedPattern =
@@ -211,6 +212,9 @@ unwrap expr =
                         }
                     )
                     branches
+
+        Shader shader ->
+            Unwrapped.Shader shader
 
 
 {-| Discard the [location metadata](Elm.Data.Located#Located).
@@ -370,6 +374,9 @@ fromUnwrapped expr =
                             }
                         )
                         branches
+
+            Unwrapped.Shader shader ->
+                Shader shader
 
 
 {-| Adds [**dummy** locations](Elm.Data.Located#dummyRegion) to the [Unwrapped.Pattern](Elm.AST.Canonical.Unwrapped#Pattern).

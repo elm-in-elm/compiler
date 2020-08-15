@@ -42,6 +42,7 @@ type Expr
     | Tuple3 Expr Expr Expr
     | Record (Dict VarName (Binding Expr))
     | Case Expr (List { pattern : Pattern, body : Expr })
+    | Shader String
 
 
 type Pattern
