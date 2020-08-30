@@ -406,6 +406,10 @@ shrinkExpr expr =
             -- TODO take a stab at this? Do we actually even generate these?
             nope
 
+        CanonicalU.Shader _ ->
+            -- TODO take a stab at this? Do we actually even generate these?
+            nope
+
 
 {-| Shrinks a plus expression.
 

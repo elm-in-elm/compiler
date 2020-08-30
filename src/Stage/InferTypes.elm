@@ -212,6 +212,9 @@ getBetterType substitutionMap typeOrId =
                             Record <|
                                 Dict.map (\_ binding -> getBetterType substitutionMap binding) bindings
 
+                    Shader _ ->
+                        typeOrId
+
 
 unifyWithTypeAnnotation :
     Dict ( ModuleName, VarName ) (ConcreteType Qualified)

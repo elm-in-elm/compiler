@@ -84,6 +84,7 @@ type Expr_
     | Tuple3 LocatedExpr LocatedExpr LocatedExpr
     | Record (Dict VarName (Binding LocatedExpr))
     | Case LocatedExpr (List { pattern : LocatedPattern, body : LocatedExpr })
+    | Shader String
 
 
 type alias LocatedPattern =
@@ -214,6 +215,9 @@ recurse fn locatedExpr =
                                     }
                                 )
                                 branches
+
+                    Shader _ ->
+                        expr
             )
 
 
@@ -307,6 +311,9 @@ recursiveChildren fn locatedExpr =
 
         Case e branches ->
             fn e ++ List.fastConcatMap (.body >> fn) branches
+
+        Shader _ ->
+            []
 
 
 mapExpr : (Expr_ -> Expr_) -> LocatedExpr -> LocatedExpr
@@ -451,6 +458,9 @@ unwrap expr =
                         }
                     )
                     branches
+
+        Shader shader ->
+            Unwrapped.Shader shader
     , type_
     )
 
@@ -610,6 +620,9 @@ dropTypes locatedExpr =
                                     }
                                 )
                                 branches
+
+                    Shader shader ->
+                        Canonical.Shader shader
             )
 
 

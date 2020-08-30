@@ -15,6 +15,7 @@ still there.
 
 import Dict exposing (Dict)
 import Elm.AST.Frontend.Unwrapped as Unwrapped
+import Elm.AST.Shader as Shader
 import Elm.Data.Binding as Binding exposing (Binding)
 import Elm.Data.Located as Located exposing (Located)
 import Elm.Data.Module exposing (Module)
@@ -73,6 +74,12 @@ type Expr
     | Tuple3 LocatedExpr LocatedExpr LocatedExpr
     | Record (List (Binding LocatedExpr))
     | Case LocatedExpr (List { pattern : LocatedPattern, body : LocatedExpr })
+    | Shader
+        String
+        { attribute : Dict VarName Shader.Type
+        , uniform : Dict VarName Shader.Type
+        , varying : Dict VarName Shader.Type
+        }
 
 
 type alias LocatedPattern =
@@ -190,6 +197,9 @@ recurse f expr =
                         }
                     )
                     branches
+
+        Shader _ _ ->
+            expr
 
 
 {-| [Transform](/packages/Janiczek/transform/latest/Transform#transformAll)
@@ -310,6 +320,9 @@ unwrap expr =
                         }
                     )
                     branches
+
+        Shader value types ->
+            Unwrapped.Shader value types
 
 
 {-| Discard the [location metadata](Elm.Data.Located#Located).

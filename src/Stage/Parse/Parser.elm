@@ -17,6 +17,7 @@ module Stage.Parse.Parser exposing
 
 import Dict exposing (Dict)
 import Elm.AST.Frontend as Frontend exposing (Expr(..), LocatedExpr, LocatedPattern, Pattern(..))
+import Elm.AST.Shader as Shader
 import Elm.Compiler.Error
     exposing
         ( Error(..)
@@ -541,6 +542,7 @@ expr =
             , lambda
             , PP.literal literal
             , always var
+            , always shader
             , list
             , parenStartingExpr
             , record
@@ -1448,6 +1450,135 @@ case_ config =
         |> P.andThen identity
         |> P.inContext InCase
         |> located
+
+
+shader : Parser_ LocatedExpr
+shader =
+    P.succeed (Frontend.Shader "TODO")
+        |. P.symbol (P.Token "[glsl|" ShaderProblem)
+        -- |= P.getChompedString (P.chompUntil (P.Token "|]" ShaderProblem))
+        |= glslParser
+        |. P.symbol (P.Token "|]" ShaderProblem)
+        -- |> P.andThen shaderTypes
+        |> located
+
+
+shaderTypes : String -> Parser_ Expr
+shaderTypes value =
+    case P.run glslParser value of
+        Ok types ->
+            P.succeed (Frontend.Shader value types)
+
+        Err err ->
+            P.problem ShaderProblem
+
+
+glslParser :
+    Parser_
+        { attribute : Dict String Shader.Type
+        , uniform : Dict String Shader.Type
+        , varying : Dict String Shader.Type
+        }
+glslParser =
+    P.loop { attribute = Dict.empty, uniform = Dict.empty, varying = Dict.empty } glslParserHelp
+
+
+glslParserHelp :
+    { attribute : Dict String Shader.Type
+    , uniform : Dict String Shader.Type
+    , varying : Dict String Shader.Type
+    }
+    ->
+        Parser_
+            (P.Step
+                { attribute : Dict String Shader.Type
+                , uniform : Dict String Shader.Type
+                , varying : Dict String Shader.Type
+                }
+                { attribute : Dict String Shader.Type
+                , uniform : Dict String Shader.Type
+                , varying : Dict String Shader.Type
+                }
+            )
+glslParserHelp types =
+    P.succeed identity
+        |. P.spaces
+        |= P.oneOf
+            [ P.succeed
+                (\attributeName attributeType ->
+                    P.Loop
+                        { types
+                            | attribute = Dict.insert attributeName attributeType types.attribute
+                        }
+                )
+                |. P.keyword (P.Token "attribute" ShaderProblem)
+                |. P.spaces
+                |= glslVarName
+                |. P.spaces
+                |= glslTypeParser
+                |. P.chompUntil (P.Token "\n" ShaderProblem)
+            , P.succeed
+                (\uniformName uniformType ->
+                    P.Loop
+                        { types
+                            | uniform = Dict.insert uniformName uniformType types.uniform
+                        }
+                )
+                |. P.keyword (P.Token "uniform" ShaderProblem)
+                |. P.spaces
+                |= glslVarName
+                |. P.spaces
+                |= glslTypeParser
+                |. P.chompUntil (P.Token "\n" ShaderProblem)
+            , P.succeed
+                (\varyingName varyingType ->
+                    P.Loop
+                        { types
+                            | varying = Dict.insert varyingName varyingType types.varying
+                        }
+                )
+                |. P.keyword (P.Token "varying" ShaderProblem)
+                |. P.spaces
+                |= glslVarName
+                |. P.spaces
+                |= glslTypeParser
+                |. P.chompUntil (P.Token "\n" ShaderProblem)
+            , P.succeed ()
+                |. P.chompUntil (P.Token "\n" ShaderProblem)
+                |> P.map (\_ -> P.Loop types)
+            , P.succeed ()
+                |> P.map (\_ -> P.Done types)
+            ]
+
+
+glslVarName : Parser_ String
+glslVarName =
+    P.variable
+        { start = Char.isLower
+        , inner = \c -> Char.isAlphaNum c || c == '_'
+        , reserved = Set.empty
+        , expecting = ShaderProblem
+        }
+
+
+glslTypeParser : Parser_ Shader.Type
+glslTypeParser =
+    P.oneOf
+        [ P.succeed Shader.Int
+            |. P.keyword (P.Token "int" ShaderProblem)
+        , P.succeed Shader.Float
+            |. P.keyword (P.Token "float" ShaderProblem)
+        , P.succeed Shader.V2
+            |. P.keyword (P.Token "vec2" ShaderProblem)
+        , P.succeed Shader.V3
+            |. P.keyword (P.Token "vec3" ShaderProblem)
+        , P.succeed Shader.V4
+            |. P.keyword (P.Token "vec4" ShaderProblem)
+        , P.succeed Shader.M4
+            |. P.keyword (P.Token "mat4" ShaderProblem)
+        , P.succeed Shader.Texture
+            |. P.keyword (P.Token "sampler2D" ShaderProblem)
+        ]
 
 
 caseBranch : ExprConfig -> Parser_ { pattern : LocatedPattern, body : LocatedExpr }

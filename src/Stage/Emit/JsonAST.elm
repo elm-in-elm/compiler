@@ -155,6 +155,9 @@ emitExpr located =
                   )
                 ]
 
+        Shader shader ->
+            encode "shader" [ ( "value", Encode.string shader ) ]
+
 
 emitDeclaration : Declaration Typed.LocatedExpr Never Qualified -> Value
 emitDeclaration { module_, name, body } =

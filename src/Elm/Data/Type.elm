@@ -19,6 +19,7 @@ The main confusion point here is "what is the
 -}
 
 import Dict exposing (Dict)
+import Elm.AST.Shader as Shader
 import Elm.Data.VarName exposing (VarName)
 import OurExtras.Dict as Dict
 import OurExtras.List as List
@@ -129,6 +130,11 @@ type Type a
         , name : String
         , args : List (TypeOrId a)
         }
+    | Shader
+        { attribute : Dict VarName Shader.Type
+        , uniform : Dict VarName Shader.Type
+        , varying : Dict VarName Shader.Type
+        }
 
 
 {-| Unwrap the string inside the type variable
@@ -228,6 +234,9 @@ isParametric typeOrId =
                 UserDefinedType { args } ->
                     List.any f args
 
+                Shader _ ->
+                    False
+
 
 varNames : Type a -> List String
 varNames type_ =
@@ -297,6 +306,9 @@ recursiveChildren fn type_ =
         UserDefinedType { args } ->
             List.fastConcatMap fn_ args
 
+        Shader _ ->
+            []
+
 
 {-| Find all the children of this expression (and their children, etc...)
 -}
@@ -344,6 +356,9 @@ recursiveChildren_ fn typeOrId =
 
         Type (UserDefinedType { args }) ->
             List.fastConcatMap fn args
+
+        Type (Shader _) ->
+            []
 
 
 mapTypeOrId : (a -> b) -> TypeOrId a -> TypeOrId b
@@ -413,6 +428,9 @@ mapType fn type_ =
                 , name = r.name
                 , args = List.map f r.args
                 }
+
+        Shader shaderInfo ->
+            Shader shaderInfo
 
 
 combineType : Type (Result err a) -> Result err (Type a)
@@ -489,6 +507,9 @@ combineType type_ =
                     |> List.map f
                     |> Result.Extra.combine
                 )
+
+        Shader shaderInfo ->
+            Ok (Shader shaderInfo)
 
 
 combineTypeOrId : TypeOrId (Result err a) -> Result err (TypeOrId a)

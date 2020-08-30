@@ -187,6 +187,9 @@ unifyTypes t1 t2 aliases substitutionMap =
                 Just aliasedType ->
                     unifyTypes (ConcreteType.toType aliasedType) t2 aliases substitutionMap
 
+        ( Shader _, _ ) ->
+            err
+
 
 unifyVariable :
     Int
@@ -271,3 +274,6 @@ occurs id typeOrId substitutionMap =
 
                 UserDefinedType { args } ->
                     List.any f args
+
+                Shader _ ->
+                    False

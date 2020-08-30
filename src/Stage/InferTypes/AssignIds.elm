@@ -304,6 +304,9 @@ assignIdsHelp currentId located =
             assignId newId <|
                 Typed.Case e_ branches_
 
+        Canonical.Shader shader ->
+            assignId currentId (Typed.Shader shader)
+
 
 assignPatternIds : Int -> Canonical.LocatedPattern -> ( Typed.LocatedPattern, Int )
 assignPatternIds currentId locatedCanonicalPattern =

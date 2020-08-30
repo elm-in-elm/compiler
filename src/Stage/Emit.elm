@@ -564,3 +564,6 @@ findDependenciesOfExpr modules locatedExpr =
             Result.map2 (++)
                 (f e)
                 branchesDependencies
+
+        Shader _ ->
+            Ok []

@@ -3,6 +3,7 @@ module InferTypesTest exposing (isParametric, niceVarName, typeInference, typeTo
 import Dict
 import Elm.AST.Canonical as Canonical
 import Elm.AST.Canonical.Unwrapped as CanonicalU
+import Elm.AST.Shader as Shader
 import Elm.AST.Typed as Typed
 import Elm.Compiler.Error as Error exposing (Error(..), TypeError(..))
 import Elm.Data.Qualifiedness exposing (PossiblyQualified(..), Qualified(..))
@@ -188,6 +189,33 @@ typeInference =
                             [ ( "a", Type Int )
                             , ( "b", Type String )
                             ]
+                    )
+              )
+            ]
+        , runSection "shader"
+            [ ( "simple example"
+              , CanonicalU.Shader """
+
+attribute vec3 position;
+attribute vec3 color;
+uniform mat4 perspective;
+varying vec3 vcolor;
+void main () {
+    gl_Position = perspective * vec4(position, 1.0);
+    vcolor = color;
+}
+
+"""
+              , Ok
+                    (Shader
+                        { attribute =
+                            Dict.fromList
+                                [ ( "position", Shader.V3 )
+                                , ( "color", Shader.V3 )
+                                ]
+                        , uniform = Dict.fromList [ ( "perspective", Shader.M4 ) ]
+                        , varying = Dict.fromList [ ( "vcolor", Shader.V3 ) ]
+                        }
                     )
               )
             ]
