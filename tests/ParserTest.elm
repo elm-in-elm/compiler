@@ -14,6 +14,7 @@ module ParserTest exposing
 import Dict
 import Elm.AST.Frontend as Frontend
 import Elm.AST.Frontend.Unwrapped exposing (Expr(..), Pattern(..))
+import Elm.AST.Shader as Shader
 import Elm.Compiler.Error exposing (ParseContext, ParseProblem)
 import Elm.Data.Declaration as Declaration exposing (DeclarationBody)
 import Elm.Data.Exposing exposing (ExposedItem(..), Exposing(..))
@@ -1360,7 +1361,13 @@ expr =
             , ( "shader"
               , [ ( "simple case"
                   , "[glsl|...|]"
-                  , Just (Shader "...")
+                  , Just
+                        (Shader "..."
+                            { attribute = Dict.empty
+                            , uniform = Dict.empty
+                            , varying = Dict.empty
+                            }
+                        )
                   )
                 , ( "vertexShader"
                   , """
@@ -1379,7 +1386,8 @@ expr =
                     """
                         |> String.unindent
                         |> String.removeNewlinesAtEnds
-                  , Just (Shader """
+                  , Just
+                        (Shader """
 
     attribute vec3 position;
     attribute vec3 color;
@@ -1390,7 +1398,16 @@ expr =
         vcolor = color;
     }
 
-""")
+"""
+                            { attribute =
+                                Dict.fromList
+                                    [ ( "position", Shader.V3 )
+                                    , ( "color", Shader.V3 )
+                                    ]
+                            , uniform = Dict.singleton "perspective" Shader.M4
+                            , varying = Dict.singleton "vcolor" Shader.V3
+                            }
+                        )
                   )
                 , ( "fragmentShader"
                   , """
@@ -1406,7 +1423,8 @@ expr =
                     """
                         |> String.unindent
                         |> String.removeNewlinesAtEnds
-                  , Just (Shader """
+                  , Just
+                        (Shader """
 
     precision mediump float;
     varying vec3 vcolor;
@@ -1414,7 +1432,12 @@ expr =
         gl_FragColor = vec4(vcolor, 1.0);
     }
 
-""")
+"""
+                            { attribute = Dict.empty
+                            , uniform = Dict.empty
+                            , varying = Dict.singleton "vcolor" Shader.V3
+                            }
+                        )
                   )
                 ]
               )

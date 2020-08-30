@@ -331,6 +331,9 @@ toStringType_ qualifiednessToString state type_ =
             else
                 ( "{ " ++ bindingsStr ++ " }", state1 )
 
+        Shader _ ->
+            ( "Shader", state )
+
 
 getName : State -> Int -> ( String, State )
 getName ((State { counter, mapping, used }) as state) varId =
@@ -496,4 +499,7 @@ shouldWrapParens typeOrId =
                     not (List.isEmpty args)
 
                 Record _ ->
+                    False
+
+                Shader _ ->
                     False

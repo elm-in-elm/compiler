@@ -191,6 +191,33 @@ typeInference =
                     )
               )
             ]
+        , runSection "shader"
+            [ ( "simple example"
+              , CanonicalU.Shader """
+
+attribute vec3 position;
+attribute vec3 color;
+uniform mat4 perspective;
+varying vec3 vcolor;
+void main () {
+    gl_Position = perspective * vec4(position, 1.0);
+    vcolor = color;
+}
+
+"""
+              , Ok
+                    (Shader
+                        { attribute =
+                            Dict.fromList
+                                [ ( "position", Type.ShaderV3 )
+                                , ( "color", Type.ShaderV3 )
+                                ]
+                        , uniform = Dict.fromList [ ( "perspective", Type.ShaderM4 ) ]
+                        , varying = Dict.fromList [ ( "vcolor", Type.ShaderV3 ) ]
+                        }
+                    )
+              )
+            ]
         ]
 
 

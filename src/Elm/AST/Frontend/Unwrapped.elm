@@ -13,6 +13,8 @@ Convert to it using the [`Elm.AST.Frontend.unwrap`](Elm.AST.Frontend#unwrap).
 
 -}
 
+import Dict exposing (Dict)
+import Elm.AST.Shader as Shader
 import Elm.Data.Binding exposing (Binding)
 import Elm.Data.Qualifiedness exposing (PossiblyQualified)
 import Elm.Data.VarName exposing (VarName)
@@ -41,7 +43,12 @@ type Expr
     | Tuple3 Expr Expr Expr
     | Record (List (Binding Expr))
     | Case Expr (List { pattern : Pattern, body : Expr })
-    | Shader String
+    | Shader
+        String
+        { attribute : Dict VarName Shader.Type
+        , uniform : Dict VarName Shader.Type
+        , varying : Dict VarName Shader.Type
+        }
 
 
 type Pattern

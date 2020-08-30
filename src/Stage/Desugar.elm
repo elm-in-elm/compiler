@@ -248,7 +248,7 @@ desugarExpr modules thisModule locatedExpr =
                     |> Result.combine
                 )
 
-        Frontend.Shader shader ->
+        Frontend.Shader shader _ ->
             return <| Canonical.Shader shader
 
 
