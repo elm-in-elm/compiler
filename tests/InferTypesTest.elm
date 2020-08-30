@@ -3,6 +3,7 @@ module InferTypesTest exposing (isParametric, niceVarName, typeInference, typeTo
 import Dict
 import Elm.AST.Canonical as Canonical
 import Elm.AST.Canonical.Unwrapped as CanonicalU
+import Elm.AST.Shader as Shader
 import Elm.AST.Typed as Typed
 import Elm.Compiler.Error as Error exposing (Error(..), TypeError(..))
 import Elm.Data.Qualifiedness exposing (PossiblyQualified(..), Qualified(..))
@@ -209,11 +210,11 @@ void main () {
                     (Shader
                         { attribute =
                             Dict.fromList
-                                [ ( "position", Type.ShaderV3 )
-                                , ( "color", Type.ShaderV3 )
+                                [ ( "position", Shader.V3 )
+                                , ( "color", Shader.V3 )
                                 ]
-                        , uniform = Dict.fromList [ ( "perspective", Type.ShaderM4 ) ]
-                        , varying = Dict.fromList [ ( "vcolor", Type.ShaderV3 ) ]
+                        , uniform = Dict.fromList [ ( "perspective", Shader.M4 ) ]
+                        , varying = Dict.fromList [ ( "vcolor", Shader.V3 ) ]
                         }
                     )
               )
