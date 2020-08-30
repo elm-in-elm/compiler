@@ -1454,11 +1454,12 @@ case_ config =
 
 shader : Parser_ LocatedExpr
 shader =
-    P.succeed identity
+    P.succeed (Frontend.Shader "TODO")
         |. P.symbol (P.Token "[glsl|" ShaderProblem)
-        |= P.getChompedString (P.chompUntil (P.Token "|]" ShaderProblem))
+        -- |= P.getChompedString (P.chompUntil (P.Token "|]" ShaderProblem))
+        |= glslParser
         |. P.symbol (P.Token "|]" ShaderProblem)
-        |> P.andThen shaderTypes
+        -- |> P.andThen shaderTypes
         |> located
 
 
