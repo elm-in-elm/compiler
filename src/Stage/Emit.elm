@@ -564,3 +564,14 @@ findDependenciesOfExpr modules locatedExpr =
             Result.map2 (++)
                 (f e)
                 branchesDependencies
+
+        ConstructorValue ({ module_, name } as rec) ->
+            modules
+                |> Dict.get module_
+                |> Result.fromMaybe (ModuleNotFoundForVar rec)
+                |> Result.andThen
+                    (.declarations
+                        >> Dict.get name
+                        >> Result.fromMaybe (DeclarationNotFound rec)
+                    )
+                |> Result.map List.singleton

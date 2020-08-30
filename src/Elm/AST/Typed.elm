@@ -71,6 +71,7 @@ type Expr_
     | String String
     | Bool Bool
     | Var { module_ : ModuleName, name : VarName }
+    | ConstructorValue { module_ : ModuleName, name : VarName }
     | Argument VarName
     | Plus LocatedExpr LocatedExpr
     | Cons LocatedExpr LocatedExpr
@@ -214,6 +215,9 @@ recurse fn locatedExpr =
                                     }
                                 )
                                 branches
+
+                    ConstructorValue rec ->
+                        ConstructorValue rec
             )
 
 
@@ -307,6 +311,9 @@ recursiveChildren fn locatedExpr =
 
         Case e branches ->
             fn e ++ List.fastConcatMap (.body >> fn) branches
+
+        ConstructorValue rec ->
+            []
 
 
 mapExpr : (Expr_ -> Expr_) -> LocatedExpr -> LocatedExpr
@@ -451,6 +458,9 @@ unwrap expr =
                         }
                     )
                     branches
+
+        ConstructorValue rec ->
+            Unwrapped.ConstructorValue rec
     , type_
     )
 
@@ -610,6 +620,9 @@ dropTypes locatedExpr =
                                     }
                                 )
                                 branches
+
+                    ConstructorValue rec ->
+                        Canonical.ConstructorValue rec
             )
 
 

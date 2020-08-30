@@ -132,6 +132,9 @@ emitExpr located =
         Case _ _ ->
             "TODO"
 
+        ConstructorValue _ ->
+            "TODO"
+
 
 emitDeclaration : Declaration Typed.LocatedExpr Never Qualified -> String
 emitDeclaration { module_, name, body } =

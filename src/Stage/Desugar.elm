@@ -248,6 +248,16 @@ desugarExpr modules thisModule locatedExpr =
                     |> Result.combine
                 )
 
+        Frontend.ConstructorValue rec ->
+            Module.findModuleOfVar modules thisModule rec
+                |> map
+                    (\moduleName ->
+                        Canonical.ConstructorValue
+                            { module_ = moduleName
+                            , name = rec.name
+                            }
+                    )
+
 
 desugarPattern :
     Frontend.LocatedPattern

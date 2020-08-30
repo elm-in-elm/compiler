@@ -27,6 +27,7 @@ type Expr
     | String String
     | Bool Bool
     | Var { qualifiedness : PossiblyQualified, name : VarName }
+    | ConstructorValue { qualifiedness : PossiblyQualified, name : VarName }
     | Argument VarName
     | Plus Expr Expr
     | Cons Expr Expr

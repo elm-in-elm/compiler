@@ -1357,6 +1357,79 @@ expr =
                   )
                 ]
               )
+            , ( "constructor values"
+              , [ ( "Nothing"
+                  , "Nothing"
+                  , Just
+                        (ConstructorValue
+                            { qualifiedness = PossiblyQualified Nothing
+                            , name = "Nothing"
+                            }
+                        )
+                  )
+                , ( "Just"
+                  , "Just ()"
+                  , Just
+                        (Call
+                            { fn =
+                                ConstructorValue
+                                    { qualifiedness = PossiblyQualified Nothing
+                                    , name = "Just"
+                                    }
+                            , argument =
+                                Unit
+                            }
+                        )
+                  )
+                , ( "qualified"
+                  , "Maybe.Nothing"
+                  , Just
+                        (ConstructorValue
+                            { qualifiedness = PossiblyQualified (Just "Maybe")
+                            , name = "Nothing"
+                            }
+                        )
+                  )
+                , ( "More args"
+                  , "Heap 1 2"
+                  , Just
+                        (Call
+                            { fn =
+                                Call
+                                    { fn =
+                                        ConstructorValue
+                                            { qualifiedness = PossiblyQualified Nothing
+                                            , name = "Heap"
+                                            }
+                                    , argument = Int 1
+                                    }
+                            , argument = Int 2
+                            }
+                        )
+                  )
+                , ( "Nested"
+                  , "Heap (Just 3)"
+                  , Just
+                        (Call
+                            { fn =
+                                ConstructorValue
+                                    { qualifiedness = PossiblyQualified Nothing
+                                    , name = "Heap"
+                                    }
+                            , argument =
+                                Call
+                                    { fn =
+                                        ConstructorValue
+                                            { qualifiedness = PossiblyQualified Nothing
+                                            , name = "Just"
+                                            }
+                                    , argument = Int 3
+                                    }
+                            }
+                        )
+                  )
+                ]
+              )
             ]
         )
 

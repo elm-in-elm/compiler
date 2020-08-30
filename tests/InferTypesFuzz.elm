@@ -406,6 +406,9 @@ shrinkExpr expr =
             -- TODO take a stab at this? Do we actually even generate these?
             nope
 
+        CanonicalU.ConstructorValue rec ->
+            nope
+
 
 {-| Shrinks a plus expression.
 

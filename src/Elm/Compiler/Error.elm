@@ -86,13 +86,16 @@ type ParseContext
     | InUserDefinedType
     | InModuleNameWithDot
     | InQualifiers
-    | InQualifiersAndTypeName
+    | InQualifiersAndUppercaseName
     | InParenthesizedType
     | InExposedValue
     | InDeclaration
     | InVar
     | InVarName
+    | InNonqualifiedVar
+    | InNonqualifiedConstructor
     | InQualifiedVar
+    | InQualifiedConstructor
     | InTypeBinding
     | InPatternVar
     | InPatternRecord
@@ -117,8 +120,9 @@ type ParseProblem
     | ExposingListCantBeEmpty -- `module Foo.Bar exposing >()<`
     | ExpectingImportKeyword -- `>import< Foo as F exposing (..)`
     | ExpectingAsKeyword -- `import Foo >as< F exposing (..)`
-    | ExpectingModuleNameWithoutDots -- `import Foo as >F< exposing (..)`
-    | ExpectingModuleNamePart -- `Foo.>Bar<.Baz.value`
+    | ExpectingUppercaseNameWithoutDots -- `import Foo as >F< exposing (..)`
+    | ExpectingUppercaseNamePart -- `Foo.>Bar<.Baz.value`
+    | ExpectingLowercaseNamePart
     | ExpectingEqualsSign -- `x >=< 1`
     | ExpectingMinusSign -- `>-<42`
     | ExpectingNumber
@@ -162,7 +166,7 @@ type ParseProblem
     | ExpectingNoIndentation
     | ExpectingPatternAnything -- `>_< ->`
     | ExpectingMaxThreeTuple
-    | ExpectingTypeName
+    | ExpectingUppercaseName
     | ExpectingNewlineAfterTypeAnnotation
     | ExpectingNonSpaceAfterTypeAnnotationNewlines
     | ExpectingZero
@@ -444,11 +448,14 @@ parseProblemToString problem =
         ExpectingAsKeyword ->
             "ExpectingAsKeyword"
 
-        ExpectingModuleNameWithoutDots ->
-            "ExpectingModuleNameWithoutDots"
+        ExpectingUppercaseNameWithoutDots ->
+            "ExpectingUppercaseNameWithoutDots"
 
-        ExpectingModuleNamePart ->
-            "ExpectingModuleNamePart"
+        ExpectingUppercaseNamePart ->
+            "ExpectingUppercaseNamePart"
+
+        ExpectingLowercaseNamePart ->
+            "ExpectingLowercaseNamePart"
 
         ExpectingDot ->
             "ExpectingDot"
@@ -582,8 +589,8 @@ parseProblemToString problem =
         ExpectingMaxThreeTuple ->
             "ExpectingMaxThreeTuple"
 
-        ExpectingTypeName ->
-            "ExpectingTypeName"
+        ExpectingUppercaseName ->
+            "ExpectingUppercaseName"
 
         ExpectingNewlineAfterTypeAnnotation ->
             "ExpectingNewlineAfterTypeAnnotation"

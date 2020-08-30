@@ -155,6 +155,9 @@ emitExpr located =
                   )
                 ]
 
+        ConstructorValue rec ->
+            encode "constructor" [ ( "name", Encode.string (mangleQualifiedVar rec) ) ]
+
 
 emitDeclaration : Declaration Typed.LocatedExpr Never Qualified -> Value
 emitDeclaration { module_, name, body } =

@@ -428,6 +428,13 @@ generateEquations currentId located =
             , newId
             )
 
+        Typed.ConstructorValue rec ->
+            -- TODO how to get the type definition and its arguments into scope here?
+            -- [ equals type_ thatUserDefinedType ]
+            ( []
+            , currentId
+            )
+
 
 findArgumentUsages : VarName -> Typed.LocatedExpr -> List Typed.LocatedExpr
 findArgumentUsages argument bodyExpr =

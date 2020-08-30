@@ -304,6 +304,9 @@ assignIdsHelp currentId located =
             assignId newId <|
                 Typed.Case e_ branches_
 
+        Canonical.ConstructorValue rec ->
+            assignId currentId (Typed.ConstructorValue rec)
+
 
 assignPatternIds : Int -> Canonical.LocatedPattern -> ( Typed.LocatedPattern, Int )
 assignPatternIds currentId locatedCanonicalPattern =

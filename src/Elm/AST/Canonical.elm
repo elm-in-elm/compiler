@@ -72,6 +72,7 @@ type Expr
     | String String
     | Bool Bool
     | Var { module_ : ModuleName, name : VarName }
+    | ConstructorValue { module_ : ModuleName, name : VarName }
     | Argument VarName
     | Plus LocatedExpr LocatedExpr
     | Cons LocatedExpr LocatedExpr
@@ -211,6 +212,12 @@ unwrap expr =
                         }
                     )
                     branches
+
+        ConstructorValue rec ->
+            Unwrapped.ConstructorValue
+                { module_ = rec.module_
+                , name = rec.name
+                }
 
 
 {-| Discard the [location metadata](Elm.Data.Located#Located).
@@ -370,6 +377,12 @@ fromUnwrapped expr =
                             }
                         )
                         branches
+
+            Unwrapped.ConstructorValue rec ->
+                ConstructorValue
+                    { module_ = rec.module_
+                    , name = rec.name
+                    }
 
 
 {-| Adds [**dummy** locations](Elm.Data.Located#dummyRegion) to the [Unwrapped.Pattern](Elm.AST.Canonical.Unwrapped#Pattern).

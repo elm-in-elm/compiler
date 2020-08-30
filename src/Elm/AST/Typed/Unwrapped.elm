@@ -36,6 +36,7 @@ type Expr_
     | String String
     | Bool Bool
     | Var { module_ : ModuleName, name : VarName }
+    | ConstructorValue { module_ : ModuleName, name : VarName }
     | Argument VarName
     | Plus Expr Expr
     | Cons Expr Expr

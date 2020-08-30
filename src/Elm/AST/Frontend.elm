@@ -58,6 +58,7 @@ type Expr
     | String String
     | Bool Bool
     | Var { qualifiedness : PossiblyQualified, name : VarName }
+    | ConstructorValue { qualifiedness : PossiblyQualified, name : VarName }
     | -- Both lambda arguments and let..in bindings
       Argument VarName
     | Plus LocatedExpr LocatedExpr
@@ -191,6 +192,9 @@ recurse f expr =
                     )
                     branches
 
+        ConstructorValue rec ->
+            ConstructorValue rec
+
 
 {-| [Transform](/packages/Janiczek/transform/latest/Transform#transformAll)
 the expression using the provided function.
@@ -310,6 +314,9 @@ unwrap expr =
                         }
                     )
                     branches
+
+        ConstructorValue rec ->
+            Unwrapped.ConstructorValue rec
 
 
 {-| Discard the [location metadata](Elm.Data.Located#Located).

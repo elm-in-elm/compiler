@@ -155,13 +155,13 @@ import_ =
             [ P.succeed Just
                 |. P.keyword (P.Token "as" ExpectingAsKeyword)
                 |. ignorables
-                |= moduleNameWithoutDots
+                |= uppercaseNameWithoutDots
             , P.succeed Nothing
             ]
         |. P.oneOf
             [ -- not sure if this is idiomatic
               dot
-                |. P.problem ExpectingModuleNameWithoutDots
+                |. P.problem ExpectingUppercaseNameWithoutDots
             , ignorables
             ]
         |. ignorables
@@ -223,7 +223,7 @@ moduleName =
         , separator = dot_
         , end = P.Token "" (ParseCompilerBug ModuleNameEndParserFailed)
         , spaces = P.succeed ()
-        , item = moduleNameWithoutDots
+        , item = uppercaseNameWithoutDots
         , trailing = P.Forbidden
         }
         |> P.andThen
@@ -236,13 +236,21 @@ moduleName =
             )
 
 
-moduleNameWithoutDots : Parser_ String
-moduleNameWithoutDots =
+nameWithoutDots : Parser_ ( NameType, String )
+nameWithoutDots =
+    P.oneOf
+        [ P.map (Tuple.pair UppercaseName) uppercaseNameWithoutDots
+        , P.map (Tuple.pair LowercaseName) varName
+        ]
+
+
+uppercaseNameWithoutDots : Parser_ String
+uppercaseNameWithoutDots =
     P.variable
         { start = Char.isUpper
-        , inner = Char.isAlphaNum
+        , inner = \c -> Char.isAlphaNum c || c == '_'
         , reserved = Set.empty
-        , expecting = ExpectingModuleNamePart
+        , expecting = ExpectingUppercaseNamePart
         }
 
 
@@ -451,7 +459,7 @@ typeAliasDeclaration =
         )
         |. P.keyword (P.Token "type alias" ExpectingTypeAlias)
         |. ignorables
-        |= moduleNameWithoutDots
+        |= uppercaseNameWithoutDots
         |. P.symbol (P.Token " " ExpectingSpace)
         |. ignorables
         |= zeroOrMoreWith ignorables varName
@@ -487,7 +495,7 @@ customTypeDeclaration =
         )
         |. P.keyword (P.Token "type" ExpectingTypeAlias)
         |. ignorables
-        |= moduleNameWithoutDots
+        |= uppercaseNameWithoutDots
         |. P.oneOf
             [ P.symbol (P.Token " " ExpectingSpace)
             , P.symbol (P.Token "\n" ExpectingSpace)
@@ -527,7 +535,7 @@ constructors =
 constructor : Parser_ (Constructor PossiblyQualified)
 constructor =
     P.succeed Declaration.Constructor
-        |= moduleNameWithoutDots
+        |= uppercaseNameWithoutDots
         |. ignorables
         |= oneOrMoreWith ignorables (notAtBeginningOfLine type_)
 
@@ -540,7 +548,7 @@ expr =
             , let_
             , lambda
             , PP.literal literal
-            , always var
+            , always varOrConstructorValue
             , list
             , parenStartingExpr
             , record
@@ -1149,21 +1157,63 @@ bool =
         ]
 
 
-var : Parser_ LocatedExpr
-var =
-    P.oneOf
-        [ varName
-            |> P.map
-                (\varName_ ->
-                    Frontend.Var
-                        { qualifiedness = PossiblyQualified Nothing
-                        , name = varName_
+varOrConstructorValue : Parser_ LocatedExpr
+varOrConstructorValue =
+    let
+        -- unqualified constructor OR qualified var OR qualified constructor
+        go : ( List String, NameType, String ) -> Parser_ Expr
+        go ( modules, nameType, lastName ) =
+            P.oneOf
+                [ P.succeed (\( newType, newName ) -> ( lastName :: modules, newType, newName ))
+                    |. dot
+                    |= nameWithoutDots
+                    |> P.andThen go
+                , let
+                    toExpr =
+                        case nameType of
+                            LowercaseName ->
+                                Frontend.Var
+
+                            UppercaseName ->
+                                Frontend.ConstructorValue
+                  in
+                  P.succeed <|
+                    toExpr
+                        { qualifiedness = qualify <| List.reverse modules
+                        , name = lastName
                         }
-                )
-        , qualifiedVar
+                ]
+    in
+    P.oneOf
+        [ nonqualifiedVar
+        , uppercaseNameWithoutDots
+            |> P.andThen (\firstUppercase -> go ( [], UppercaseName, firstUppercase ))
         ]
         |> located
         |> P.inContext InVar
+
+
+nonqualifiedVar : Parser_ Expr
+nonqualifiedVar =
+    varName
+        |> P.map
+            (\varName_ ->
+                Frontend.Var
+                    { qualifiedness = PossiblyQualified Nothing
+                    , name = varName_
+                    }
+            )
+        |> P.inContext InNonqualifiedVar
+
+
+nonqualifiedConstructor : String -> Parser_ Expr
+nonqualifiedConstructor name =
+    P.succeed
+        (Frontend.ConstructorValue
+            { qualifiedness = PossiblyQualified Nothing
+            , name = name
+            }
+        )
 
 
 varName : Parser_ String
@@ -1184,7 +1234,7 @@ qualifiers =
         , separator = dot_
         , end = P.Token "" (ParseCompilerBug QualifiersEndParserFailed)
         , spaces = P.succeed ()
-        , item = moduleNameWithoutDots
+        , item = uppercaseNameWithoutDots
         , trailing = P.Mandatory
         }
         |> P.inContext InQualifiers
@@ -1198,23 +1248,6 @@ qualify modules =
 
         else
             Just <| String.join "." modules
-
-
-qualifiedVar : Parser_ Expr
-qualifiedVar =
-    qualifiers
-        |> P.andThen
-            (\modules ->
-                P.map
-                    (\varName_ ->
-                        Frontend.Var
-                            { qualifiedness = qualify modules
-                            , name = varName_
-                            }
-                    )
-                    varName
-            )
-        |> P.inContext InQualifiedVar
 
 
 lambda : ExprConfig -> Parser_ LocatedExpr
@@ -1967,19 +2000,24 @@ userDefinedType config =
                 , args = args
                 }
         )
-        |= qualifiersAndTypeName
+        |= qualifiersAndUppercaseName
         |= zeroOrMoreWith ignorables (notAtBeginningOfLine (PP.subExpression 0 config))
         |> P.inContext InUserDefinedType
 
 
-qualifiersAndTypeName : Parser_ ( List ModuleName, String )
-qualifiersAndTypeName =
+type NameType
+    = UppercaseName
+    | LowercaseName
+
+
+qualifiersAndUppercaseName : Parser_ ( List ModuleName, String )
+qualifiersAndUppercaseName =
     P.sequence
         { start = P.Token "" (ParseCompilerBug QualifiersStartParserFailed)
         , separator = dot_
         , end = P.Token "" (ParseCompilerBug QualifiersEndParserFailed)
         , spaces = P.succeed ()
-        , item = moduleNameWithoutDots
+        , item = uppercaseNameWithoutDots
         , trailing = P.Forbidden
         }
         |> P.andThen
@@ -1989,9 +2027,9 @@ qualifiersAndTypeName =
                         P.succeed ( List.reverse reversedQualifiers, typeName )
 
                     _ ->
-                        P.problem ExpectingTypeName
+                        P.problem ExpectingUppercaseName
             )
-        |> P.inContext InQualifiersAndTypeName
+        |> P.inContext InQualifiersAndUppercaseName
 
 
 {-| Taken from [dmy/elm-pratt-parser](https://package.elm-lang.org/packages/dmy/elm-pratt-parser/latest/Pratt-Advanced#postfix),
