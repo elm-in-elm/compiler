@@ -11,7 +11,7 @@ type LexItem
     | NumericLiteral String
     | TextLiteral LexLiteralType String
     | Whitespace Int
-    | Newline Int
+    | Newlines (List Int) Int
     | Comment LexCommentType String
     | Invalid String
 
@@ -191,8 +191,13 @@ toString item =
         Whitespace i ->
             String.repeat i " "
 
-        Newline i ->
-            "\n" ++ String.repeat i " "
+        Newlines empties identationSpaces ->
+            (empties
+                |> List.map (\spacesInEmptyLine -> "\n" ++ String.repeat spacesInEmptyLine " ")
+                |> String.join ""
+            )
+                ++ "\n"
+                ++ String.repeat identationSpaces " "
 
         Comment LineComment s ->
             "//" ++ s
@@ -256,12 +261,8 @@ parser =
                      , P.symbol (P.Token " " ExpectingWhitespace)
                         |> P.andThen (\() -> chompSpacesAndCount)
                         |> P.map (\count -> Whitespace (count + 1))
-                     , P.oneOf
-                        [ P.symbol (P.Token "\n\u{000D}" ExpectingNewline)
-                        , P.symbol (P.Token "\n" ExpectingNewline)
-                        ]
-                        |> P.andThen (\() -> chompSpacesAndCount)
-                        |> P.map Newline
+                     , newlinesParser
+                        |> P.map (\( emptyLines, indentation ) -> Newlines emptyLines indentation)
                      ]
                         |> List.map (located >> P.map (\t -> P.Loop (t :: reversed)))
                     )
@@ -269,6 +270,39 @@ parser =
                     |> P.map (\() -> P.Done (List.reverse reversed))
                 ]
         )
+
+
+newlinesParser : Parser_ ( List Int, Int )
+newlinesParser =
+    let
+        eolParser =
+            P.oneOf
+                [ P.symbol (P.Token "\n\u{000D}" ExpectingNewline)
+                , P.symbol (P.Token "\n" ExpectingNewline)
+                ]
+    in
+    eolParser
+        |> P.andThen
+            (\() ->
+                P.loop
+                    []
+                    (\reversed ->
+                        P.succeed
+                            (\spacesOnThisLine isThisLineEmpty ->
+                                if isThisLineEmpty then
+                                    P.Loop (spacesOnThisLine :: reversed)
+
+                                else
+                                    P.Done ( List.reverse reversed, spacesOnThisLine )
+                            )
+                            |= chompSpacesAndCount
+                            |= P.oneOf
+                                [ eolParser
+                                    |> P.map (\() -> True)
+                                , P.succeed False
+                                ]
+                    )
+            )
 
 
 chompSpacesAndCount : Parser_ Int
