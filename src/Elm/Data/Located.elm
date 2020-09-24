@@ -1,5 +1,5 @@
 module Elm.Data.Located exposing
-    ( Located, Region, Position
+    ( Located(..), Region, Position
     , located, unwrap, getRegion, map, merge, replaceWith
     , dummyRegion, mergeRegions, regionToComparable
     , positionToComparable, comparePosition

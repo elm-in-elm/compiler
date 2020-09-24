@@ -1,0 +1,1 @@
+type alias Model = List Int

@@ -225,7 +225,7 @@ runHelp items state =
                         }
 
                     ParseResult_Panic error ->
-                        -- TODO(harry): more violent error heres
+                        -- TODO(harry): more violent error here
                         { previousBlocks =
                             Err ( state.state, Error_Panic error )
                                 :: state.previousBlocks
@@ -380,12 +380,13 @@ parseTypeBlock item =
                         |> ParseResult_Err
 
         Lexer.Newlines _ 0 ->
-            State_BlockStart
-                |> ParseResult_Ok
+            -- TODO(harry): we might be partway through a custom type here,
+            -- adjust error accordingly.
+            Error_PartwayThroughTypeAlias
+                |> ParseResult_Err
 
         Lexer.Newlines _ _ ->
-            State_BlockFirstItem BlockFirstItem_Type
-                |> ParseResult_Ok
+            ParseResult_Skip
 
         Whitespace _ ->
             ParseResult_Skip
@@ -415,8 +416,8 @@ parseTypeAliasName item =
                         |> ParseResult_Err
 
         Lexer.Newlines _ 0 ->
-            State_BlockStart
-                |> ParseResult_Ok
+            Error_PartwayThroughTypeAlias
+                |> ParseResult_Err
 
         Lexer.Newlines _ _ ->
             ParseResult_Skip
@@ -437,8 +438,10 @@ parseAssignment newState item =
                 |> ParseResult_Ok
 
         Lexer.Newlines _ 0 ->
-            State_BlockStart
-                |> ParseResult_Ok
+            -- TODO(harry): we might be partway through almsot anything here,
+            -- adjust error accordingly.
+            Error_PartwayThroughTypeAlias
+                |> ParseResult_Err
 
         Lexer.Newlines _ _ ->
             ParseResult_Skip
@@ -456,7 +459,7 @@ parserTypeExpr :
     -> PartialTypeExpression2
     -> LexItem
     -> ParseResult
-parserTypeExpr newState { stack, current } item =
+parserTypeExpr newState ({ stack, current } as prevExpr) item =
     case item of
         Lexer.Token str ->
             case current of
@@ -591,7 +594,7 @@ parserTypeExpr newState { stack, current } item =
                         |> parseResultFromMaybeResult
 
         Lexer.Newlines _ 0 ->
-            State_BlockStart
+            newState (TypeExpressionResult_Progress prevExpr)
                 |> ParseResult_Ok
 
         Lexer.Newlines _ _ ->

@@ -1,24 +1,39 @@
-module ParserTest2 exposing (test))
+module ParserLexerTest exposing (tests)
 
-import Dict
-import Elm.AST.Frontend as Frontend
-import Elm.AST.Frontend.Unwrapped exposing (Expr(..), Pattern(..))
-import Elm.Compiler.Error exposing (ParseContext, ParseProblem)
-import Elm.Data.Declaration as Declaration exposing (DeclarationBody)
-import Elm.Data.Exposing exposing (ExposedItem(..), Exposing(..))
-import Elm.Data.Module exposing (ModuleType(..))
-import Elm.Data.Qualifiedness exposing (PossiblyQualified(..))
-import Elm.Data.Type.Concrete as ConcreteType exposing (ConcreteType)
-import Elm.Data.TypeAnnotation exposing (TypeAnnotation)
-import Expect exposing (Expectation)
-import OurExtras.String as String
+import Elm.Data.Located as Located exposing (Located)
+import Expect
 import Parser.Advanced as P
-import Stage.Parse.Parser
-import String.Extra as String
+import ParserLexerTestCases
+import Stage.Parse.Contextualize as Contextualize
+import Stage.Parse.Lexer as Lexer
 import Test exposing (Test, describe, test)
 
 
-
--- DO NOT EDIT BELOW THIS LINE
-
-inputs : List (String, List (Located LexItem), )
+tests =
+    describe "parser lexer test cases"
+        (ParserLexerTestCases.testCases
+            |> List.map
+                (\{ name, source, lexed, contextualized } ->
+                    describe name
+                        ([ Just
+                            (test "lexing" <|
+                                \() ->
+                                    source
+                                        |> P.run Lexer.parser
+                                        |> Expect.equal lexed
+                            )
+                         , contextualized
+                            |> Maybe.map
+                                (\contextualized_ ->
+                                    test "parsing" <|
+                                        \() ->
+                                            source
+                                                |> P.run Lexer.parser
+                                                |> Result.map (List.map Located.unwrap >> Contextualize.run)
+                                                |> Expect.equal (Ok contextualized_)
+                                )
+                         ]
+                            |> List.filterMap (\x -> x)
+                        )
+                )
+        )
