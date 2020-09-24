@@ -57,10 +57,10 @@ type Block
 
 
 type State
-    = StateBlockStart
-    | StateErrorRecovery
-    | StateBlockFirstItem BlockFirstItem
-    | StateBlockSecondItem BlockSecondItem
+    = State_BlockStart
+    | State_Error_Recovery
+    | State_BlockFirstItem BlockFirstItem
+    | State_BlockSecondItem BlockSecondItem
 
 
 type alias State_ =
@@ -70,22 +70,22 @@ type alias State_ =
 
 
 type BlockFirstItem
-    = BlockFirstItemType
-    | BlockFirstItemModule
-    | BlockFirstItemName Token.ValueOrFunction
+    = BlockFirstItem_Type
+    | BlockFirstItem_Module
+    | BlockFirstItem_Name Token.ValueOrFunction
 
 
 type BlockSecondItem
-    = BlockSecondItemTypeAlias
-    | BlockSecondItemCustomTypeNamed Token.TypeOrConstructor
+    = BlockSecondItem_TypeAlias
+    | BlockSecondItem_CustomTypeNamed Token.TypeOrConstructor
 
 
 type Error
-    = ErrorInvalidToken LexItem
-    | ErrorMisplacedKeyword Keyword
-    | BlockStartsWithTypeOrConstructor Token.TypeOrConstructor
-    | TypeNameStartsWithLowerCase Token.ValueOrFunction
-    | Panic String
+    = Error_InvalidToken LexItem
+    | Error_MisplacedKeyword Keyword
+    | Error_BlockStartsWithTypeOrConstructor Token.TypeOrConstructor
+    | Error_TypeNameStartsWithLowerCase Token.ValueOrFunction
+    | Error_Panic String
 
 
 parser : List LexItem -> List (Result ( State, Error ) Block)
@@ -93,7 +93,7 @@ parser items =
     parserHelp
         items
         { previousBlocks = []
-        , state = StateBlockStart
+        , state = State_BlockStart
         }
 
 
@@ -104,27 +104,27 @@ parserHelp items state =
             let
                 newState =
                     case state.state of
-                        StateErrorRecovery ->
+                        State_Error_Recovery ->
                             parseBlockStart item
-                                |> Result.withDefault StateErrorRecovery
+                                |> Result.withDefault State_Error_Recovery
                                 |> Ok
 
-                        StateBlockStart ->
+                        State_BlockStart ->
                             parseBlockStart item
 
-                        StateBlockFirstItem BlockFirstItemType ->
+                        State_BlockFirstItem BlockFirstItem_Type ->
                             parseTypeBlock item
 
-                        StateBlockFirstItem BlockFirstItemModule ->
+                        State_BlockFirstItem BlockFirstItem_Module ->
                             Debug.todo ""
 
-                        StateBlockFirstItem (BlockFirstItemName name) ->
+                        State_BlockFirstItem (BlockFirstItem_Name name) ->
                             Debug.todo ""
 
-                        StateBlockSecondItem BlockSecondItemTypeAlias ->
+                        State_BlockSecondItem BlockSecondItem_TypeAlias ->
                             Debug.todo ""
 
-                        StateBlockSecondItem (BlockSecondItemCustomTypeNamed name) ->
+                        State_BlockSecondItem (BlockSecondItem_CustomTypeNamed name) ->
                             Debug.todo ""
             in
             case newState of
@@ -135,7 +135,7 @@ parserHelp items state =
                     parserHelp
                         rest
                         { previousBlocks = Err ( state.state, error ) :: state.previousBlocks
-                        , state = StateErrorRecovery
+                        , state = State_Error_Recovery
                         }
 
         [] ->
@@ -156,25 +156,25 @@ parseBlockStart item =
         Lexer.Token str ->
             case Token.classifyToken str of
                 Token.TokenKeyword Token.Type ->
-                    Ok (StateBlockFirstItem BlockFirstItemType)
+                    Ok (State_BlockFirstItem BlockFirstItem_Type)
 
                 Token.TokenKeyword Token.Module ->
-                    Ok (StateBlockFirstItem BlockFirstItemModule)
+                    Ok (State_BlockFirstItem BlockFirstItem_Module)
 
                 Token.TokenKeyword other ->
-                    Err (ErrorMisplacedKeyword other)
+                    Err (Error_MisplacedKeyword other)
 
                 Token.TokenValueOrFunction valOrFunc ->
-                    Ok (StateBlockFirstItem (BlockFirstItemName valOrFunc))
+                    Ok (State_BlockFirstItem (BlockFirstItem_Name valOrFunc))
 
                 Token.TokenTypeOrConstructor typeOrConstructor ->
-                    Err (BlockStartsWithTypeOrConstructor typeOrConstructor)
+                    Err (Error_BlockStartsWithTypeOrConstructor typeOrConstructor)
 
         Lexer.Newlines _ _ ->
-            Ok StateBlockStart
+            Ok State_BlockStart
 
         _ ->
-            Err (ErrorInvalidToken item)
+            Err (Error_InvalidToken item)
 
 
 parseTypeBlock : LexItem -> Result Error State
@@ -183,25 +183,25 @@ parseTypeBlock item =
         Lexer.Token str ->
             case Token.classifyToken str of
                 Token.TokenKeyword Token.Alias ->
-                    Ok (StateBlockSecondItem BlockSecondItemTypeAlias)
+                    Ok (State_BlockSecondItem BlockSecondItem_TypeAlias)
 
                 Token.TokenKeyword other ->
-                    Err (ErrorMisplacedKeyword other)
+                    Err (Error_MisplacedKeyword other)
 
                 Token.TokenTypeOrConstructor typeOrConstructor ->
-                    Ok (StateBlockSecondItem (BlockSecondItemCustomTypeNamed typeOrConstructor))
+                    Ok (State_BlockSecondItem (BlockSecondItem_CustomTypeNamed typeOrConstructor))
 
                 Token.TokenValueOrFunction valOrFunc ->
-                    Err (TypeNameStartsWithLowerCase valOrFunc)
+                    Err (Error_TypeNameStartsWithLowerCase valOrFunc)
 
         Lexer.Newlines _ 0 ->
-            Ok StateBlockStart
+            Ok State_BlockStart
 
         Lexer.Newlines _ _ ->
-            Ok (StateBlockFirstItem BlockFirstItemType)
+            Ok (State_BlockFirstItem BlockFirstItem_Type)
 
         _ ->
-            Err (ErrorInvalidToken item)
+            Err (Error_InvalidToken item)
 
 
 parserTypeAlias : LexItem -> Result Error State
@@ -210,35 +210,35 @@ parserTypeAlias item =
         Lexer.Token str ->
             case Token.classifyToken str of
                 Token.TokenKeyword other ->
-                    Err (ErrorMisplacedKeyword other)
+                    Err (Error_MisplacedKeyword other)
 
                 Token.TokenTypeOrConstructor typeOrConstructor ->
-                    Ok (StateBlockSecondItem (BlockSecondItemCustomTypeNamed typeOrConstructor))
+                    Ok (State_BlockSecondItem (BlockSecondItem_CustomTypeNamed typeOrConstructor))
 
                 Token.TokenValueOrFunction valOrFunc ->
-                    Err (TypeNameStartsWithLowerCase valOrFunc)
+                    Err (Error_TypeNameStartsWithLowerCase valOrFunc)
 
         Lexer.Newlines _ 0 ->
-            Ok StateBlockStart
+            Ok State_BlockStart
 
         Lexer.Newlines _ _ ->
-            Ok (StateBlockSecondItem BlockSecondItemTypeAlias)
+            Ok (State_BlockSecondItem BlockSecondItem_TypeAlias)
 
         _ ->
-            Err (ErrorInvalidToken item)
+            Err (Error_InvalidToken item)
 
 
 blockFromState : State -> Result Error (Maybe Block)
 blockFromState state =
     case state of
-        StateErrorRecovery ->
+        State_Error_Recovery ->
             Ok Nothing
 
-        StateBlockStart ->
+        State_BlockStart ->
             Ok Nothing
 
-        StateBlockFirstItem firstItem ->
+        State_BlockFirstItem firstItem ->
             Debug.todo "handle incomplete block"
 
-        StateBlockSecondItem firstItem ->
+        State_BlockSecondItem firstItem ->
             Debug.todo "handle incomplete block"
