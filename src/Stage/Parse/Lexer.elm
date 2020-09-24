@@ -17,7 +17,7 @@ type LexItem
 
 
 type LexSigil
-    = Bracket BracketType BracketTodoNameMe
+    = Bracket BracketType BracketRole
     | Assign
     | Pipe
     | Comma
@@ -58,7 +58,7 @@ type BracketType
     | Curly
 
 
-type BracketTodoNameMe
+type BracketRole
     = Open
     | Close
 
@@ -192,7 +192,7 @@ toString item =
             String.repeat i " "
 
         Newlines empties identationSpaces ->
-            (empties
+            (Debug.log "empties" empties
                 |> List.map (\spacesInEmptyLine -> "\n" ++ String.repeat spacesInEmptyLine " ")
                 |> String.join ""
             )

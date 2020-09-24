@@ -6,11 +6,11 @@ import Elm.Data.Exposing
 import Elm.Data.Located as Located exposing (Located)
 import Elm.Data.Module exposing (Module, ModuleType(..))
 import Elm.Data.ModuleName exposing (ModuleName)
-import Elm.Data.Qualifiedness exposing (PossiblyQualified(..))
+import Elm.Data.Qualifiedness as Qualifiedness exposing (PossiblyQualified(..))
 import Elm.Data.Type.Concrete as ConcreteType exposing (ConcreteType)
 import Elm.Data.TypeAnnotation exposing (TypeAnnotation)
 import Elm.Data.VarName exposing (VarName)
-import Stage.Parse.Lexer as Lexer exposing (LexItem)
+import Stage.Parse.Lexer as Lexer exposing (LexItem(..))
 import Stage.Parse.Token as Token exposing (Keyword)
 
 
@@ -50,6 +50,10 @@ type Block
         , name : Elm.Data.ModuleName.ModuleName
         , exposingList : Elm.Data.Exposing.Exposing
         }
+    | TypeAlias
+        { ty : Token.TypeOrConstructor
+        , expr : ConcreteType PossiblyQualified
+        }
     | CustomType
         { ty : VarName
         , constructors : List (Elm.Data.Declaration.Constructor PossiblyQualified)
@@ -60,7 +64,8 @@ type State
     = State_BlockStart
     | State_Error_Recovery
     | State_BlockFirstItem BlockFirstItem
-    | State_BlockSecondItem BlockSecondItem
+    | State_BlockTypeAlias BlockTypeAlias
+    | State_BlockCustomType BlockCustomType
 
 
 type alias State_ =
@@ -75,17 +80,82 @@ type BlockFirstItem
     | BlockFirstItem_Name Token.ValueOrFunction
 
 
-type BlockSecondItem
-    = BlockSecondItem_TypeAlias
-    | BlockSecondItem_CustomTypeNamed Token.TypeOrConstructor
+type BlockTypeAlias
+    = BlockTypeAlias_Keywords
+    | BlockTypeAlias_Named Token.TypeOrConstructor
+    | BlockTypeAlias_NamedAssigns Token.TypeOrConstructor
+    | BlockTypeAlias_Completish Token.TypeOrConstructor PartialTypeExpression2
+    | BlockTypeAlias_Complete Token.TypeOrConstructor PartialTypeExpression
+
+
+type BlockCustomType
+    = BlockCustomType_Named Token.TypeOrConstructor
+    | BlockCustomType_NamedAssigns Token.TypeOrConstructor
+
+
+{-| Notes:
+
+  - Type names can start with a lower case character as it may be generic. If
+    it is generic there should be no args (we do not check this currently
+    though :().
+
+-}
+type PartialTypeExpression
+    = TypeExpression_NamedType
+        { name : String
+        , args : Stack PartialTypeExpression
+        }
+    | TypeExpression_Unit
+
+
+partialTypeExpressionToConcreteType : PartialTypeExpression -> ConcreteType PossiblyQualified
+partialTypeExpressionToConcreteType pte =
+    case pte of
+        TypeExpression_NamedType { name, args } ->
+            ConcreteType.UserDefinedType
+                { qualifiedness = Qualifiedness.PossiblyQualified Nothing
+                , name = name
+                , args =
+                    args
+                        |> toList partialTypeExpressionToConcreteType
+                }
+
+        TypeExpression_Unit ->
+            ConcreteType.Unit
+
+
+type TypeExpressionContext
+    = TypeExpressionContext_Bracket Lexer.BracketType
+    | TypeExpressionContext_Alias
+
+
+type alias PartialTypeExpression2 =
+    { stack : Stack ( TypeExpressionContext, Maybe PartialTypeExpression )
+    , current : ( TypeExpressionContext, Maybe PartialTypeExpression )
+    }
+
+
+type TypeExpressionResult
+    = TypeExpressionResult_Progress PartialTypeExpression2
+    | TypeExpressionResult_Done PartialTypeExpression
+    | TypeExpressionResult_Empty
 
 
 type Error
-    = Error_InvalidToken LexItem
+    = Error_InvalidToken LexItem Expecting
     | Error_MisplacedKeyword Keyword
     | Error_BlockStartsWithTypeOrConstructor Token.TypeOrConstructor
     | Error_TypeNameStartsWithLowerCase Token.ValueOrFunction
+    | Error_UnmatchedBracket Lexer.BracketType Lexer.BracketRole
+    | Error_UnitTypeDoesTakeArgs PartialTypeExpression
+    | Error_PartwayThroughTypeAlias
     | Error_Panic String
+
+
+type Expecting
+    = Expecting_Sigil Lexer.LexSigil
+    | Expecting_Block
+    | Expecting_TypeName
 
 
 parser : List LexItem -> List (Result ( State, Error ) Block)
@@ -99,47 +169,103 @@ parser items =
 
 parserHelp : List LexItem -> State_ -> List (Result ( State, Error ) Block)
 parserHelp items state =
+    let
+        newState =
+            case state.state of
+                State_Error_Recovery ->
+                    parseBlockStart
+                        >> Result.withDefault State_Error_Recovery
+                        >> Ok
+                        >> Just
+
+                State_BlockStart ->
+                    parseBlockStart
+                        >> Just
+
+                State_BlockFirstItem BlockFirstItem_Type ->
+                    parseTypeBlock
+
+                State_BlockFirstItem BlockFirstItem_Module ->
+                    Debug.todo ""
+
+                State_BlockFirstItem (BlockFirstItem_Name name) ->
+                    Debug.todo ""
+
+                State_BlockTypeAlias BlockTypeAlias_Keywords ->
+                    parseTypeAliasName
+
+                State_BlockTypeAlias (BlockTypeAlias_Named name) ->
+                    parseAssignment
+                        (State_BlockTypeAlias (BlockTypeAlias_NamedAssigns name))
+
+                State_BlockTypeAlias (BlockTypeAlias_NamedAssigns name) ->
+                    parserTypeExpr
+                        (\res ->
+                            case res of
+                                TypeExpressionResult_Progress expr ->
+                                    State_BlockTypeAlias (BlockTypeAlias_Completish name expr)
+
+                                TypeExpressionResult_Done expr ->
+                                    State_BlockTypeAlias (BlockTypeAlias_Complete name expr)
+
+                                TypeExpressionResult_Empty ->
+                                    Debug.todo ""
+                        )
+                        { current = ( TypeExpressionContext_Alias, Nothing )
+                        , stack = empty
+                        }
+
+                State_BlockTypeAlias (BlockTypeAlias_Completish name exprSoFar) ->
+                    parserTypeExpr
+                        (\res ->
+                            case res of
+                                TypeExpressionResult_Progress expr ->
+                                    State_BlockTypeAlias (BlockTypeAlias_Completish name expr)
+
+                                TypeExpressionResult_Done expr ->
+                                    State_BlockTypeAlias (BlockTypeAlias_Complete name expr)
+
+                                TypeExpressionResult_Empty ->
+                                    Debug.todo ""
+                        )
+                        exprSoFar
+
+                State_BlockTypeAlias (BlockTypeAlias_Complete name expr) ->
+                    Debug.todo ""
+
+                State_BlockCustomType (BlockCustomType_Named name) ->
+                    parseAssignment
+                        (State_BlockCustomType (BlockCustomType_NamedAssigns name))
+
+                State_BlockCustomType (BlockCustomType_NamedAssigns name) ->
+                    Debug.todo ""
+    in
     case items of
         item :: rest ->
-            let
-                newState =
-                    case state.state of
-                        State_Error_Recovery ->
-                            parseBlockStart item
-                                |> Result.withDefault State_Error_Recovery
-                                |> Ok
-
-                        State_BlockStart ->
-                            parseBlockStart item
-
-                        State_BlockFirstItem BlockFirstItem_Type ->
-                            parseTypeBlock item
-
-                        State_BlockFirstItem BlockFirstItem_Module ->
-                            Debug.todo ""
-
-                        State_BlockFirstItem (BlockFirstItem_Name name) ->
-                            Debug.todo ""
-
-                        State_BlockSecondItem BlockSecondItem_TypeAlias ->
-                            Debug.todo ""
-
-                        State_BlockSecondItem (BlockSecondItem_CustomTypeNamed name) ->
-                            Debug.todo ""
-            in
-            case newState of
-                Ok newState_ ->
+            case newState item of
+                Just (Ok newState_) ->
                     parserHelp rest { previousBlocks = state.previousBlocks, state = newState_ }
 
-                Err error ->
+                Just (Err error) ->
                     parserHelp
                         rest
                         { previousBlocks = Err ( state.state, error ) :: state.previousBlocks
                         , state = State_Error_Recovery
                         }
 
+                Nothing ->
+                    parserHelp rest state
+
         [] ->
-            List.reverse state.previousBlocks
+            List.reverse
+                (case blockFromState state.state of
+                    Nothing ->
+                        state.previousBlocks
+
+                    Just newBlock ->
+                        (newBlock |> Result.mapError (\err -> ( state.state, err )))
+                            :: state.previousBlocks
+                )
 
 
 {-|
@@ -174,71 +300,370 @@ parseBlockStart item =
             Ok State_BlockStart
 
         _ ->
-            Err (Error_InvalidToken item)
+            Err (Error_InvalidToken item Expecting_Block)
 
 
-parseTypeBlock : LexItem -> Result Error State
+parseTypeBlock : LexItem -> Maybe (Result Error State)
 parseTypeBlock item =
     case item of
         Lexer.Token str ->
             case Token.classifyToken str of
                 Token.TokenKeyword Token.Alias ->
-                    Ok (State_BlockSecondItem BlockSecondItem_TypeAlias)
+                    State_BlockTypeAlias BlockTypeAlias_Keywords
+                        |> Ok
+                        |> Just
 
                 Token.TokenKeyword other ->
-                    Err (Error_MisplacedKeyword other)
+                    Error_MisplacedKeyword other
+                        |> Err
+                        |> Just
 
                 Token.TokenTypeOrConstructor typeOrConstructor ->
-                    Ok (State_BlockSecondItem (BlockSecondItem_CustomTypeNamed typeOrConstructor))
+                    State_BlockCustomType (BlockCustomType_Named typeOrConstructor)
+                        |> Ok
+                        |> Just
 
                 Token.TokenValueOrFunction valOrFunc ->
-                    Err (Error_TypeNameStartsWithLowerCase valOrFunc)
+                    Error_TypeNameStartsWithLowerCase valOrFunc
+                        |> Err
+                        |> Just
 
         Lexer.Newlines _ 0 ->
-            Ok State_BlockStart
+            State_BlockStart
+                |> Ok
+                |> Just
 
         Lexer.Newlines _ _ ->
-            Ok (State_BlockFirstItem BlockFirstItem_Type)
+            State_BlockFirstItem BlockFirstItem_Type
+                |> Ok
+                |> Just
+
+        Whitespace _ ->
+            Nothing
 
         _ ->
-            Err (Error_InvalidToken item)
+            -- TODO(harry) indicate that we could also be expecting the `alias`
+            -- keyword.
+            Error_InvalidToken item Expecting_TypeName
+                |> Err
+                |> Just
 
 
-parserTypeAlias : LexItem -> Result Error State
-parserTypeAlias item =
+parseTypeAliasName : LexItem -> Maybe (Result Error State)
+parseTypeAliasName item =
     case item of
         Lexer.Token str ->
             case Token.classifyToken str of
                 Token.TokenKeyword other ->
-                    Err (Error_MisplacedKeyword other)
+                    Error_MisplacedKeyword other
+                        |> Err
+                        |> Just
 
                 Token.TokenTypeOrConstructor typeOrConstructor ->
-                    Ok (State_BlockSecondItem (BlockSecondItem_CustomTypeNamed typeOrConstructor))
+                    State_BlockTypeAlias (BlockTypeAlias_Named typeOrConstructor)
+                        |> Ok
+                        |> Just
 
                 Token.TokenValueOrFunction valOrFunc ->
-                    Err (Error_TypeNameStartsWithLowerCase valOrFunc)
+                    Error_TypeNameStartsWithLowerCase valOrFunc
+                        |> Err
+                        |> Just
 
         Lexer.Newlines _ 0 ->
-            Ok State_BlockStart
+            State_BlockStart
+                |> Ok
+                |> Just
 
         Lexer.Newlines _ _ ->
-            Ok (State_BlockSecondItem BlockSecondItem_TypeAlias)
+            Nothing
+
+        Lexer.Whitespace _ ->
+            Nothing
 
         _ ->
-            Err (Error_InvalidToken item)
+            Error_InvalidToken item Expecting_TypeName
+                |> Err
+                |> Just
 
 
-blockFromState : State -> Result Error (Maybe Block)
+parseAssignment : State -> LexItem -> Maybe (Result Error State)
+parseAssignment newState item =
+    case item of
+        Lexer.Sigil Lexer.Assign ->
+            newState
+                |> Ok
+                |> Just
+
+        Lexer.Newlines _ 0 ->
+            State_BlockStart
+                |> Ok
+                |> Just
+
+        Lexer.Newlines _ _ ->
+            Nothing
+
+        Lexer.Whitespace _ ->
+            Nothing
+
+        _ ->
+            Error_InvalidToken item (Expecting_Sigil Lexer.Assign)
+                |> Err
+                |> Just
+
+
+parserTypeExpr :
+    (TypeExpressionResult -> State)
+    -> PartialTypeExpression2
+    -> LexItem
+    -> Maybe (Result Error State)
+parserTypeExpr newState { stack, current } item =
+    case item of
+        Lexer.Token str ->
+            case current of
+                ( context, Nothing ) ->
+                    newState
+                        ({ stack = stack
+                         , current =
+                            ( context
+                            , Just
+                                (TypeExpression_NamedType
+                                    { name = str
+                                    , args = empty
+                                    }
+                                )
+                            )
+                         }
+                            |> TypeExpressionResult_Progress
+                        )
+                        |> Ok
+                        |> Just
+
+                ( context, Just (TypeExpression_NamedType { name, args }) ) ->
+                    -- TODO(harry): think about how this is fundamentally
+                    -- similar to the definition of custom type constructors.
+                    -- The value of `_context` is key I think.
+                    newState
+                        ({ stack = stack
+                         , current =
+                            ( context
+                            , Just
+                                (TypeExpression_NamedType
+                                    { name = name
+                                    , args =
+                                        TypeExpression_NamedType { name = str, args = empty }
+                                            |> pushOnto args
+                                    }
+                                )
+                            )
+                         }
+                            |> TypeExpressionResult_Progress
+                        )
+                        |> Ok
+                        |> Just
+
+                ( context, Just TypeExpression_Unit ) ->
+                    Error_UnitTypeDoesTakeArgs
+                        (TypeExpression_NamedType
+                            { name = str
+                            , args = empty
+                            }
+                        )
+                        |> Err
+                        |> Just
+
+        Lexer.Sigil (Lexer.Bracket Lexer.Round role) ->
+            case role of
+                Lexer.Open ->
+                    newState
+                        ({ stack =
+                            current
+                                |> pushOnto stack
+                         , current = ( TypeExpressionContext_Bracket Lexer.Round, Nothing )
+                         }
+                            |> TypeExpressionResult_Progress
+                        )
+                        |> Ok
+                        |> Just
+
+                Lexer.Close ->
+                    case current of
+                        ( TypeExpressionContext_Bracket Lexer.Round, mexpr ) ->
+                            case mexpr of
+                                Nothing ->
+                                    (case pop stack of
+                                        Just ( ( newContext, newExprToAddTo ), newStack ) ->
+                                            let
+                                                rnewExpr =
+                                                    case newExprToAddTo of
+                                                        Nothing ->
+                                                            Just TypeExpression_Unit
+                                                                |> Ok
+
+                                                        Just (TypeExpression_NamedType { name, args }) ->
+                                                            Just
+                                                                (TypeExpression_NamedType
+                                                                    { name = name
+                                                                    , args =
+                                                                        TypeExpression_Unit
+                                                                            |> pushOnto args
+                                                                    }
+                                                                )
+                                                                |> Ok
+
+                                                        Just TypeExpression_Unit ->
+                                                            Error_UnitTypeDoesTakeArgs TypeExpression_Unit
+                                                                |> Err
+                                            in
+                                            rnewExpr
+                                                |> Result.map
+                                                    (\newExpr ->
+                                                        { stack = newStack
+                                                        , current = ( newContext, newExpr )
+                                                        }
+                                                            |> TypeExpressionResult_Progress
+                                                    )
+
+                                        Nothing ->
+                                            TypeExpressionResult_Done TypeExpression_Unit
+                                                |> Ok
+                                    )
+                                        |> Result.map newState
+                                        |> Just
+
+                                Just expr ->
+                                    newState
+                                        (case pop stack of
+                                            Just ( newCurrent, newStack ) ->
+                                                { stack = newStack
+                                                , current = Debug.todo "newCurrent"
+                                                }
+                                                    |> TypeExpressionResult_Progress
+
+                                            Nothing ->
+                                                TypeExpressionResult_Done expr
+                                        )
+                                        |> Ok
+                                        |> Just
+
+                        _ ->
+                            -- TODO(harry): can we add information about the
+                            -- bracket we are expecting here?
+                            Error_UnmatchedBracket Lexer.Round Lexer.Close
+                                |> Err
+                                |> Just
+
+        Lexer.Newlines _ 0 ->
+            State_BlockStart
+                |> Ok
+                |> Just
+
+        Lexer.Newlines _ _ ->
+            Nothing
+
+        Lexer.Whitespace _ ->
+            Nothing
+
+        _ ->
+            Error_InvalidToken item (Expecting_Sigil Lexer.Assign)
+                |> Err
+                |> Just
+
+
+blockFromState : State -> Maybe (Result Error Block)
 blockFromState state =
     case state of
         State_Error_Recovery ->
-            Ok Nothing
+            Nothing
 
         State_BlockStart ->
-            Ok Nothing
+            Nothing
 
         State_BlockFirstItem firstItem ->
             Debug.todo "handle incomplete block"
 
-        State_BlockSecondItem firstItem ->
+        State_BlockTypeAlias BlockTypeAlias_Keywords ->
+            Error_PartwayThroughTypeAlias
+                |> Err
+                |> Just
+
+        State_BlockTypeAlias (BlockTypeAlias_Named _) ->
+            Error_PartwayThroughTypeAlias
+                |> Err
+                |> Just
+
+        State_BlockTypeAlias (BlockTypeAlias_NamedAssigns _) ->
+            Error_PartwayThroughTypeAlias
+                |> Err
+                |> Just
+
+        State_BlockTypeAlias (BlockTypeAlias_Completish name { stack, current }) ->
+            let
+                -- _ =
+                --     Debug.log "part" partialExpr
+                ( context, mexpr ) =
+                    current
+            in
+            -- TODO(harry): handle maybe incomplete block
+            case ( pop stack, context, mexpr ) of
+                ( Nothing, TypeExpressionContext_Alias, Just expr ) ->
+                    { ty = name
+                    , expr = partialTypeExpressionToConcreteType expr
+                    }
+                        |> TypeAlias
+                        |> Ok
+                        |> Just
+
+                _ ->
+                    Debug.todo "handle maybe incomplete block"
+
+        State_BlockTypeAlias (BlockTypeAlias_Complete name expr) ->
+            { ty = name
+            , expr = partialTypeExpressionToConcreteType expr
+            }
+                |> TypeAlias
+                |> Ok
+                |> Just
+
+        State_BlockCustomType firstItem ->
             Debug.todo "handle incomplete block"
+
+
+
+-- HELPERS
+
+
+type Stack a
+    = Stack (List a)
+
+
+empty : Stack a
+empty =
+    Stack []
+
+
+singleton : a -> Stack a
+singleton val =
+    Stack [ val ]
+
+
+pushOnto : Stack a -> a -> Stack a
+pushOnto (Stack ls) val =
+    Stack (val :: ls)
+
+
+pop : Stack a -> Maybe ( a, Stack a )
+pop (Stack ls) =
+    case ls of
+        last :: preceding ->
+            Just ( last, Stack preceding )
+
+        [] ->
+            Nothing
+
+
+toList : (a -> b) -> Stack a -> List b
+toList mapper (Stack ls) =
+    List.foldl
+        (\curr prev -> mapper curr :: prev)
+        []
+        ls
