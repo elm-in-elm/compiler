@@ -158,103 +158,35 @@ type Expecting
     | Expecting_TypeName
 
 
-parser : List LexItem -> List (Result ( State, Error ) Block)
-parser items =
-    parserHelp
+run : List LexItem -> List (Result ( State, Error ) Block)
+run items =
+    runHelp
         items
         { previousBlocks = []
         , state = State_BlockStart
         }
 
 
-parserHelp : List LexItem -> State_ -> List (Result ( State, Error ) Block)
-parserHelp items state =
-    let
-        newState =
-            case state.state of
-                State_Error_Recovery ->
-                    parseBlockStart
-                        >> Result.withDefault State_Error_Recovery
-                        >> Ok
-                        >> Just
-
-                State_BlockStart ->
-                    parseBlockStart
-                        >> Just
-
-                State_BlockFirstItem BlockFirstItem_Type ->
-                    parseTypeBlock
-
-                State_BlockFirstItem BlockFirstItem_Module ->
-                    Debug.todo ""
-
-                State_BlockFirstItem (BlockFirstItem_Name name) ->
-                    Debug.todo ""
-
-                State_BlockTypeAlias BlockTypeAlias_Keywords ->
-                    parseTypeAliasName
-
-                State_BlockTypeAlias (BlockTypeAlias_Named name) ->
-                    parseAssignment
-                        (State_BlockTypeAlias (BlockTypeAlias_NamedAssigns name))
-
-                State_BlockTypeAlias (BlockTypeAlias_NamedAssigns name) ->
-                    parserTypeExpr
-                        (\res ->
-                            case res of
-                                TypeExpressionResult_Progress expr ->
-                                    State_BlockTypeAlias (BlockTypeAlias_Completish name expr)
-
-                                TypeExpressionResult_Done expr ->
-                                    State_BlockTypeAlias (BlockTypeAlias_Complete name expr)
-
-                                TypeExpressionResult_Empty ->
-                                    Debug.todo ""
-                        )
-                        { current = ( TypeExpressionContext_Alias, Nothing )
-                        , stack = empty
-                        }
-
-                State_BlockTypeAlias (BlockTypeAlias_Completish name exprSoFar) ->
-                    parserTypeExpr
-                        (\res ->
-                            case res of
-                                TypeExpressionResult_Progress expr ->
-                                    State_BlockTypeAlias (BlockTypeAlias_Completish name expr)
-
-                                TypeExpressionResult_Done expr ->
-                                    State_BlockTypeAlias (BlockTypeAlias_Complete name expr)
-
-                                TypeExpressionResult_Empty ->
-                                    Debug.todo ""
-                        )
-                        exprSoFar
-
-                State_BlockTypeAlias (BlockTypeAlias_Complete name expr) ->
-                    Debug.todo ""
-
-                State_BlockCustomType (BlockCustomType_Named name) ->
-                    parseAssignment
-                        (State_BlockCustomType (BlockCustomType_NamedAssigns name))
-
-                State_BlockCustomType (BlockCustomType_NamedAssigns name) ->
-                    Debug.todo ""
-    in
+runHelp : List LexItem -> State_ -> List (Result ( State, Error ) Block)
+runHelp items state =
     case items of
         item :: rest ->
-            case newState item of
-                Just (Ok newState_) ->
-                    parserHelp rest { previousBlocks = state.previousBlocks, state = newState_ }
+            runHelp
+                rest
+                (case parseAnything state.state item of
+                    Just (Ok newState_) ->
+                        { previousBlocks = state.previousBlocks
+                        , state = newState_
+                        }
 
-                Just (Err error) ->
-                    parserHelp
-                        rest
+                    Just (Err error) ->
                         { previousBlocks = Err ( state.state, error ) :: state.previousBlocks
                         , state = State_Error_Recovery
                         }
 
-                Nothing ->
-                    parserHelp rest state
+                    Nothing ->
+                        state
+                )
 
         [] ->
             List.reverse
@@ -268,12 +200,84 @@ parserHelp items state =
                 )
 
 
+parseAnything : State -> LexItem -> Maybe (Result Error State)
+parseAnything state =
+    case state of
+        State_Error_Recovery ->
+            parseBlockStart
+                >> Result.withDefault State_Error_Recovery
+                >> Ok
+                >> Just
+
+        State_BlockStart ->
+            parseBlockStart
+                >> Just
+
+        State_BlockFirstItem BlockFirstItem_Type ->
+            parseTypeBlock
+
+        State_BlockFirstItem BlockFirstItem_Module ->
+            Debug.todo ""
+
+        State_BlockFirstItem (BlockFirstItem_Name name) ->
+            Debug.todo ""
+
+        State_BlockTypeAlias BlockTypeAlias_Keywords ->
+            parseTypeAliasName
+
+        State_BlockTypeAlias (BlockTypeAlias_Named name) ->
+            parseAssignment
+                (State_BlockTypeAlias (BlockTypeAlias_NamedAssigns name))
+
+        State_BlockTypeAlias (BlockTypeAlias_NamedAssigns name) ->
+            parserTypeExpr
+                (\res ->
+                    case res of
+                        TypeExpressionResult_Progress expr ->
+                            State_BlockTypeAlias (BlockTypeAlias_Completish name expr)
+
+                        TypeExpressionResult_Done expr ->
+                            State_BlockTypeAlias (BlockTypeAlias_Complete name expr)
+
+                        TypeExpressionResult_Empty ->
+                            Debug.todo ""
+                )
+                { current = ( TypeExpressionContext_Alias, Nothing )
+                , stack = empty
+                }
+
+        State_BlockTypeAlias (BlockTypeAlias_Completish name exprSoFar) ->
+            parserTypeExpr
+                (\res ->
+                    case res of
+                        TypeExpressionResult_Progress expr ->
+                            State_BlockTypeAlias (BlockTypeAlias_Completish name expr)
+
+                        TypeExpressionResult_Done expr ->
+                            State_BlockTypeAlias (BlockTypeAlias_Complete name expr)
+
+                        TypeExpressionResult_Empty ->
+                            Debug.todo ""
+                )
+                exprSoFar
+
+        State_BlockTypeAlias (BlockTypeAlias_Complete name expr) ->
+            Debug.todo ""
+
+        State_BlockCustomType (BlockCustomType_Named name) ->
+            parseAssignment
+                (State_BlockCustomType (BlockCustomType_NamedAssigns name))
+
+        State_BlockCustomType (BlockCustomType_NamedAssigns name) ->
+            Debug.todo ""
+
+
 {-|
 
 
 ### Panics
 
-If the LexItem is `Newlines`.
+If the LexItem is a `Newlines` with indentation or is `Whitespace`.
 
 -}
 parseBlockStart : LexItem -> Result Error State
@@ -296,8 +300,16 @@ parseBlockStart item =
                 Token.TokenTypeOrConstructor typeOrConstructor ->
                     Err (Error_BlockStartsWithTypeOrConstructor typeOrConstructor)
 
-        Lexer.Newlines _ _ ->
+        Lexer.Newlines _ 0 ->
             Ok State_BlockStart
+
+        Lexer.Newlines _ _ ->
+            Error_Panic "parseBlockStart expects a block but found some indented content"
+                |> Err
+
+        Lexer.Whitespace _ ->
+            Error_Panic "parseBlockStart expects a block but found some indented content"
+                |> Err
 
         _ ->
             Err (Error_InvalidToken item Expecting_Block)
