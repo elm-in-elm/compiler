@@ -1,5 +1,15 @@
 module Stage.Parse.Contextualize exposing (..)
 
+{-| Here we define parsers. A parser is function
+
+    type alias Parser =
+        Lexer.LexItem -> ParseResult
+
+that takes one lexed item and produces either an error or some state (it can also
+choose to skip the lexed item).
+
+-}
+
 import Elm.AST.Frontend as Frontend exposing (Expr(..), LocatedExpr, LocatedPattern, Pattern(..))
 import Elm.Data.Declaration
 import Elm.Data.Exposing
@@ -68,6 +78,13 @@ type State
     | State_BlockCustomType BlockCustomType
 
 
+type ParseResult
+    = ParseResult_Ok State
+    | ParseResult_Err Error
+    | ParseResult_Skip
+    | ParseResult_Panic String
+
+
 type alias State_ =
     { previousBlocks : List (Result ( State, Error ) Block)
     , state : State
@@ -124,6 +141,29 @@ partialTypeExpressionToConcreteType pte =
             ConcreteType.Unit
 
 
+recoverErrors : ParseResult -> ParseResult
+recoverErrors res =
+    case res of
+        ParseResult_Err _ ->
+            ParseResult_Ok State_Error_Recovery
+
+        _ ->
+            res
+
+
+parseResultFromMaybeResult : Maybe (Result Error State) -> ParseResult
+parseResultFromMaybeResult x =
+    case x of
+        Just (Ok s) ->
+            ParseResult_Ok s
+
+        Just (Err e) ->
+            ParseResult_Err e
+
+        Nothing ->
+            ParseResult_Skip
+
+
 type TypeExpressionContext
     = TypeExpressionContext_Bracket Lexer.BracketType
     | TypeExpressionContext_Alias
@@ -174,17 +214,25 @@ runHelp items state =
             runHelp
                 rest
                 (case parseAnything state.state item of
-                    Just (Ok newState_) ->
+                    ParseResult_Ok newState_ ->
                         { previousBlocks = state.previousBlocks
                         , state = newState_
                         }
 
-                    Just (Err error) ->
+                    ParseResult_Err error ->
                         { previousBlocks = Err ( state.state, error ) :: state.previousBlocks
                         , state = State_Error_Recovery
                         }
 
-                    Nothing ->
+                    ParseResult_Panic error ->
+                        -- TODO(harry): more violent error heres
+                        { previousBlocks =
+                            Err ( state.state, Error_Panic error )
+                                :: state.previousBlocks
+                        , state = State_Error_Recovery
+                        }
+
+                    ParseResult_Skip ->
                         state
                 )
 
@@ -200,18 +248,15 @@ runHelp items state =
                 )
 
 
-parseAnything : State -> LexItem -> Maybe (Result Error State)
+parseAnything : State -> LexItem -> ParseResult
 parseAnything state =
     case state of
         State_Error_Recovery ->
             parseBlockStart
-                >> Result.withDefault State_Error_Recovery
-                >> Ok
-                >> Just
+                >> recoverErrors
 
         State_BlockStart ->
             parseBlockStart
-                >> Just
 
         State_BlockFirstItem BlockFirstItem_Type ->
             parseTypeBlock
@@ -280,154 +325,137 @@ parseAnything state =
 If the LexItem is a `Newlines` with indentation or is `Whitespace`.
 
 -}
-parseBlockStart : LexItem -> Result Error State
+parseBlockStart : LexItem -> ParseResult
 parseBlockStart item =
     case item of
         Lexer.Token str ->
             case Token.classifyToken str of
                 Token.TokenKeyword Token.Type ->
-                    Ok (State_BlockFirstItem BlockFirstItem_Type)
+                    ParseResult_Ok (State_BlockFirstItem BlockFirstItem_Type)
 
                 Token.TokenKeyword Token.Module ->
-                    Ok (State_BlockFirstItem BlockFirstItem_Module)
+                    ParseResult_Ok (State_BlockFirstItem BlockFirstItem_Module)
 
                 Token.TokenKeyword other ->
-                    Err (Error_MisplacedKeyword other)
+                    ParseResult_Err (Error_MisplacedKeyword other)
 
                 Token.TokenValueOrFunction valOrFunc ->
-                    Ok (State_BlockFirstItem (BlockFirstItem_Name valOrFunc))
+                    ParseResult_Ok (State_BlockFirstItem (BlockFirstItem_Name valOrFunc))
 
                 Token.TokenTypeOrConstructor typeOrConstructor ->
-                    Err (Error_BlockStartsWithTypeOrConstructor typeOrConstructor)
+                    ParseResult_Err (Error_BlockStartsWithTypeOrConstructor typeOrConstructor)
 
         Lexer.Newlines _ 0 ->
-            Ok State_BlockStart
+            ParseResult_Ok State_BlockStart
 
         Lexer.Newlines _ _ ->
-            Error_Panic "parseBlockStart expects a block but found some indented content"
-                |> Err
+            ParseResult_Panic "parseBlockStart expects a block but found some indented content"
 
         Lexer.Whitespace _ ->
-            Error_Panic "parseBlockStart expects a block but found some indented content"
-                |> Err
+            ParseResult_Panic "parseBlockStart expects a block but found some indented content"
 
         _ ->
-            Err (Error_InvalidToken item Expecting_Block)
+            ParseResult_Err (Error_InvalidToken item Expecting_Block)
 
 
-parseTypeBlock : LexItem -> Maybe (Result Error State)
+parseTypeBlock : LexItem -> ParseResult
 parseTypeBlock item =
     case item of
         Lexer.Token str ->
             case Token.classifyToken str of
                 Token.TokenKeyword Token.Alias ->
                     State_BlockTypeAlias BlockTypeAlias_Keywords
-                        |> Ok
-                        |> Just
+                        |> ParseResult_Ok
 
                 Token.TokenKeyword other ->
                     Error_MisplacedKeyword other
-                        |> Err
-                        |> Just
+                        |> ParseResult_Err
 
                 Token.TokenTypeOrConstructor typeOrConstructor ->
                     State_BlockCustomType (BlockCustomType_Named typeOrConstructor)
-                        |> Ok
-                        |> Just
+                        |> ParseResult_Ok
 
                 Token.TokenValueOrFunction valOrFunc ->
                     Error_TypeNameStartsWithLowerCase valOrFunc
-                        |> Err
-                        |> Just
+                        |> ParseResult_Err
 
         Lexer.Newlines _ 0 ->
             State_BlockStart
-                |> Ok
-                |> Just
+                |> ParseResult_Ok
 
         Lexer.Newlines _ _ ->
             State_BlockFirstItem BlockFirstItem_Type
-                |> Ok
-                |> Just
+                |> ParseResult_Ok
 
         Whitespace _ ->
-            Nothing
+            ParseResult_Skip
 
         _ ->
             -- TODO(harry) indicate that we could also be expecting the `alias`
             -- keyword.
             Error_InvalidToken item Expecting_TypeName
-                |> Err
-                |> Just
+                |> ParseResult_Err
 
 
-parseTypeAliasName : LexItem -> Maybe (Result Error State)
+parseTypeAliasName : LexItem -> ParseResult
 parseTypeAliasName item =
     case item of
         Lexer.Token str ->
             case Token.classifyToken str of
                 Token.TokenKeyword other ->
                     Error_MisplacedKeyword other
-                        |> Err
-                        |> Just
+                        |> ParseResult_Err
 
                 Token.TokenTypeOrConstructor typeOrConstructor ->
                     State_BlockTypeAlias (BlockTypeAlias_Named typeOrConstructor)
-                        |> Ok
-                        |> Just
+                        |> ParseResult_Ok
 
                 Token.TokenValueOrFunction valOrFunc ->
                     Error_TypeNameStartsWithLowerCase valOrFunc
-                        |> Err
-                        |> Just
+                        |> ParseResult_Err
 
         Lexer.Newlines _ 0 ->
             State_BlockStart
-                |> Ok
-                |> Just
+                |> ParseResult_Ok
 
         Lexer.Newlines _ _ ->
-            Nothing
+            ParseResult_Skip
 
         Lexer.Whitespace _ ->
-            Nothing
+            ParseResult_Skip
 
         _ ->
             Error_InvalidToken item Expecting_TypeName
-                |> Err
-                |> Just
+                |> ParseResult_Err
 
 
-parseAssignment : State -> LexItem -> Maybe (Result Error State)
+parseAssignment : State -> LexItem -> ParseResult
 parseAssignment newState item =
     case item of
         Lexer.Sigil Lexer.Assign ->
             newState
-                |> Ok
-                |> Just
+                |> ParseResult_Ok
 
         Lexer.Newlines _ 0 ->
             State_BlockStart
-                |> Ok
-                |> Just
+                |> ParseResult_Ok
 
         Lexer.Newlines _ _ ->
-            Nothing
+            ParseResult_Skip
 
         Lexer.Whitespace _ ->
-            Nothing
+            ParseResult_Skip
 
         _ ->
             Error_InvalidToken item (Expecting_Sigil Lexer.Assign)
-                |> Err
-                |> Just
+                |> ParseResult_Err
 
 
 parserTypeExpr :
     (TypeExpressionResult -> State)
     -> PartialTypeExpression2
     -> LexItem
-    -> Maybe (Result Error State)
+    -> ParseResult
 parserTypeExpr newState { stack, current } item =
     case item of
         Lexer.Token str ->
@@ -447,8 +475,7 @@ parserTypeExpr newState { stack, current } item =
                          }
                             |> TypeExpressionResult_Progress
                         )
-                        |> Ok
-                        |> Just
+                        |> ParseResult_Ok
 
                 ( context, Just (TypeExpression_NamedType { name, args }) ) ->
                     -- TODO(harry): think about how this is fundamentally
@@ -470,8 +497,7 @@ parserTypeExpr newState { stack, current } item =
                          }
                             |> TypeExpressionResult_Progress
                         )
-                        |> Ok
-                        |> Just
+                        |> ParseResult_Ok
 
                 ( context, Just TypeExpression_Unit ) ->
                     Error_UnitTypeDoesTakeArgs
@@ -480,8 +506,7 @@ parserTypeExpr newState { stack, current } item =
                             , args = empty
                             }
                         )
-                        |> Err
-                        |> Just
+                        |> ParseResult_Err
 
         Lexer.Sigil (Lexer.Bracket Lexer.Round role) ->
             case role of
@@ -494,11 +519,10 @@ parserTypeExpr newState { stack, current } item =
                          }
                             |> TypeExpressionResult_Progress
                         )
-                        |> Ok
-                        |> Just
+                        |> ParseResult_Ok
 
                 Lexer.Close ->
-                    case current of
+                    (case current of
                         ( TypeExpressionContext_Bracket Lexer.Round, mexpr ) ->
                             case mexpr of
                                 Nothing ->
@@ -563,22 +587,22 @@ parserTypeExpr newState { stack, current } item =
                             Error_UnmatchedBracket Lexer.Round Lexer.Close
                                 |> Err
                                 |> Just
+                    )
+                        |> parseResultFromMaybeResult
 
         Lexer.Newlines _ 0 ->
             State_BlockStart
-                |> Ok
-                |> Just
+                |> ParseResult_Ok
 
         Lexer.Newlines _ _ ->
-            Nothing
+            ParseResult_Skip
 
         Lexer.Whitespace _ ->
-            Nothing
+            ParseResult_Skip
 
         _ ->
             Error_InvalidToken item (Expecting_Sigil Lexer.Assign)
-                |> Err
-                |> Just
+                |> ParseResult_Err
 
 
 blockFromState : State -> Maybe (Result Error Block)
