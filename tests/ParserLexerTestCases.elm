@@ -144,7 +144,7 @@ testCases =
                 ]
       , contextualized =
             Just
-                [ Err ( State_BlockTypeAlias BlockTypeAlias_Keywords, Error_PartwayThroughTypeAlias BlockTypeAlias_Keywords )
+                [ Err ( State_BlockTypeAlias BlockTypeAlias_Keywords, Error_PartwayThroughTypeAlias )
                 ]
       }
     , { name = "type-alias-partial-2"
@@ -161,7 +161,7 @@ testCases =
                 ]
       , contextualized =
             Just
-                [ Err ( State_BlockTypeAlias (BlockTypeAlias_Named (TypeOrConstructor "Hi")), Error_PartwayThroughCustomType )
+                [ Err ( State_BlockTypeAlias (BlockTypeAlias_Named (TypeOrConstructor "Hi")), Error_PartwayThroughTypeAlias )
                 ]
       }
     , { name = "type-alias-partial-3"
@@ -180,7 +180,7 @@ testCases =
                 ]
       , contextualized =
             Just
-                [ Err ( State_BlockTypeAlias (BlockTypeAlias_Completish (TypeOrConstructor "Hi") { current = ( TypeExpressionContext_Alias, Nothing ), stack = Stack [] }), Error_PartwayThroughTypeAlias (BlockTypeAlias_Completish (TypeOrConstructor "Hi") { current = ( TypeExpressionContext_Alias, Nothing ), stack = Stack [] }) )
+                [ Err ( State_BlockTypeAlias (BlockTypeAlias_Completish (TypeOrConstructor "Hi") { current = ( TypeExpressionContext_Alias, Nothing ), stack = Stack [] }), Error_PartwayThroughTypeAlias )
                 ]
       }
     , { name = "type-partial"
@@ -193,7 +193,7 @@ testCases =
                 ]
       , contextualized =
             Just
-                [ Err ( State_BlockFirstItem BlockFirstItem_Type, Error_PartwayThroughCustomType )
+                [ Err ( State_BlockFirstItem BlockFirstItem_Type, Error_PartwayThroughTypeAlias )
                 ]
       }
     ]
