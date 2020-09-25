@@ -192,7 +192,7 @@ toString item =
             String.repeat i " "
 
         Newlines empties identationSpaces ->
-            (Debug.log "empties" empties
+            (empties
                 |> List.map (\spacesInEmptyLine -> "\n" ++ String.repeat spacesInEmptyLine " ")
                 |> String.join ""
             )

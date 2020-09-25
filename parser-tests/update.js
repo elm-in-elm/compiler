@@ -5,19 +5,7 @@ const path = require('path');
 const assert = require('assert');
 const {Elm} = require('./elm.js');
 
-const HELP = `
-
-Usage: parser-tests
-
-Convert the elm syntax snippets in ./snippets to source/lexed/contextualized
-test cases in ../ParserLexerTest.elm.
-
-Options:
--h, --help     display this help and exit
-
-`.trim();
-
-const warning_comment_lines = `
+const warningCommentLines = `
 
 -- AUTO GENERATED TEST CASES
 --
@@ -35,19 +23,19 @@ const SNIPPETS_DIR_PATH = path.join(__dirname, 'snippets');
 async function main() {
 	const testFile = await fs.readFile(TEST_FILE_PATH, 'utf-8');
 
-	const epilogueStart = testFile.indexOf(warning_comment_lines[0]);
+	const epilogueStart = testFile.indexOf(warningCommentLines[0]);
 	assert.notStrictEqual(epilogueStart, -1);
 
 	const testFileStart = testFile.slice(0, epilogueStart).trim();
 
 	const snippets = await Promise.all(
-		(await fs.readdir(SNIPPETS_DIR_PATH)).map(async (name) => ({
+		(await fs.readdir(SNIPPETS_DIR_PATH)).sort().map(async (name) => ({
 			name,
 			source: await fs.readFile(path.join(SNIPPETS_DIR_PATH, name), 'utf-8'),
 		}))
 	);
 
-	const tests = await new Promise((resolve, reject) => {
+	const tests = await new Promise((resolve) => {
 		const app = Elm.Update.init({flags: snippets});
 		app.ports.output.subscribe(resolve);
 	});
@@ -55,15 +43,15 @@ async function main() {
 	const newTestFile = [
 		testFileStart,
 		'\n\n',
-		warning_comment_lines.join('\n'),
+		warningCommentLines.join('\n'),
 		'\n',
 		'testCases :',
 		'    List',
-		'       { contextualized : Maybe (List (Result error1 Block))',
-		'       , lexed : Result error (List (Located LexItem))',
-		'       , name : String',
-		'       , source : String',
-		'       }',
+		'        { contextualized : Maybe (List (Result ( State, Error ) Block))',
+		'        , lexed : Result error (List (Located LexItem))',
+		'        , name : String',
+		'        , source : String',
+		'        }',
 		'testCases =',
 		tests,
 	].join('\n');
@@ -73,7 +61,7 @@ async function main() {
 
 main();
 
-// import_re = (r"import\s+((?:[.\w]+\.)?(\w+))\s+(?:as (\w+)\s+)?"
+// Import_re = (r"import\s+((?:[.\w]+\.)?(\w+))\s+(?:as (\w+)\s+)?"
 //              r"exposing\s+\((\w+(?:,\s+\w+)*)\)")
 
 // def processFile(file):

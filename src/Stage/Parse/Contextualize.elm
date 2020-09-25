@@ -188,7 +188,8 @@ type Error
     | Error_TypeNameStartsWithLowerCase Token.ValueOrFunction
     | Error_UnmatchedBracket Lexer.BracketType Lexer.BracketRole
     | Error_UnitTypeDoesTakeArgs PartialTypeExpression
-    | Error_PartwayThroughTypeAlias
+    | Error_PartwayThroughCustomType
+    | Error_PartwayThroughTypeAlias BlockTypeAlias
     | Error_Panic String
 
 
@@ -380,9 +381,9 @@ parseTypeBlock item =
                         |> ParseResult_Err
 
         Lexer.Newlines _ 0 ->
-            -- TODO(harry): we might be partway through a custom type here,
+            -- TODO(harry): we might be partway through a type alias here,
             -- adjust error accordingly.
-            Error_PartwayThroughTypeAlias
+            Error_PartwayThroughCustomType
                 |> ParseResult_Err
 
         Lexer.Newlines _ _ ->
@@ -416,7 +417,7 @@ parseTypeAliasName item =
                         |> ParseResult_Err
 
         Lexer.Newlines _ 0 ->
-            Error_PartwayThroughTypeAlias
+            Error_PartwayThroughTypeAlias BlockTypeAlias_Keywords
                 |> ParseResult_Err
 
         Lexer.Newlines _ _ ->
@@ -440,7 +441,7 @@ parseAssignment newState item =
         Lexer.Newlines _ 0 ->
             -- TODO(harry): we might be partway through almsot anything here,
             -- adjust error accordingly.
-            Error_PartwayThroughTypeAlias
+            Error_PartwayThroughCustomType
                 |> ParseResult_Err
 
         Lexer.Newlines _ _ ->
@@ -620,22 +621,22 @@ blockFromState state =
         State_BlockFirstItem firstItem ->
             Debug.todo "handle incomplete block"
 
-        State_BlockTypeAlias BlockTypeAlias_Keywords ->
-            Error_PartwayThroughTypeAlias
+        State_BlockTypeAlias (BlockTypeAlias_Keywords as ta) ->
+            Error_PartwayThroughTypeAlias ta
                 |> Err
                 |> Just
 
-        State_BlockTypeAlias (BlockTypeAlias_Named _) ->
-            Error_PartwayThroughTypeAlias
+        State_BlockTypeAlias ((BlockTypeAlias_Named _) as ta) ->
+            Error_PartwayThroughTypeAlias ta
                 |> Err
                 |> Just
 
-        State_BlockTypeAlias (BlockTypeAlias_NamedAssigns _) ->
-            Error_PartwayThroughTypeAlias
+        State_BlockTypeAlias ((BlockTypeAlias_NamedAssigns _) as ta) ->
+            Error_PartwayThroughTypeAlias ta
                 |> Err
                 |> Just
 
-        State_BlockTypeAlias (BlockTypeAlias_Completish name { stack, current }) ->
+        State_BlockTypeAlias ((BlockTypeAlias_Completish name { stack, current }) as ta) ->
             let
                 -- _ =
                 --     Debug.log "part" partialExpr
@@ -652,7 +653,19 @@ blockFromState state =
                         |> Ok
                         |> Just
 
-                _ ->
+                ( Nothing, TypeExpressionContext_Alias, Nothing ) ->
+                    Error_PartwayThroughTypeAlias ta
+                        |> Err
+                        |> Just
+
+                x ->
+                    let
+                        _ =
+                            Debug.log "we have" state
+
+                        _ =
+                            Debug.log "we have" x
+                    in
                     Debug.todo "handle maybe incomplete block"
 
         State_BlockTypeAlias (BlockTypeAlias_Complete name expr) ->

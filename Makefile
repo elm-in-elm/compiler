@@ -35,6 +35,13 @@ test: build
 	npx elm-test
 	npx ava
 
+.PHONY: regenerate
+regenerate:
+	cd parser-tests \
+		&& npx elm make Update.elm --output elm.js \
+		&& node update
+	elm-format tests/ParserLexerTestCases.elm --yes
+
 .PHONY: format
 format:
 	npx elm-format $(FORMAT_DIRS) --yes
