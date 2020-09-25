@@ -49,11 +49,7 @@ testCases =
                         { expr =
                             UserDefinedType
                                 { args =
-                                    [ UserDefinedType
-                                        { args = []
-                                        , name = "Int"
-                                        , qualifiedness = PossiblyQualified Nothing
-                                        }
+                                    [ UserDefinedType { args = [], name = "Int", qualifiedness = PossiblyQualified Nothing }
                                     ]
                                 , name = "List"
                                 , qualifiedness = PossiblyQualified Nothing
@@ -89,11 +85,7 @@ testCases =
                         { expr =
                             UserDefinedType
                                 { args =
-                                    [ UserDefinedType
-                                        { args = []
-                                        , name = "Int"
-                                        , qualifiedness = PossiblyQualified Nothing
-                                        }
+                                    [ UserDefinedType { args = [], name = "Int", qualifiedness = PossiblyQualified Nothing }
                                     ]
                                 , name = "List"
                                 , qualifiedness = PossiblyQualified Nothing
@@ -130,11 +122,7 @@ testCases =
                         { expr =
                             UserDefinedType
                                 { args =
-                                    [ UserDefinedType
-                                        { args = []
-                                        , name = "Int"
-                                        , qualifiedness = PossiblyQualified Nothing
-                                        }
+                                    [ UserDefinedType { args = [], name = "Int", qualifiedness = PossiblyQualified Nothing }
                                     ]
                                 , name = "List"
                                 , qualifiedness = PossiblyQualified Nothing
@@ -154,7 +142,10 @@ testCases =
                 , Located { end = { col = 11, row = 1 }, start = { col = 6, row = 1 } } (Token "alias")
                 , Located { end = { col = 1, row = 2 }, start = { col = 11, row = 1 } } (Newlines [] 0)
                 ]
-      , contextualized = Just [ Err ( State_BlockTypeAlias BlockTypeAlias_Keywords, Error_PartwayThroughTypeAlias BlockTypeAlias_Keywords ) ]
+      , contextualized =
+            Just
+                [ Err ( State_BlockTypeAlias BlockTypeAlias_Keywords, Error_PartwayThroughTypeAlias BlockTypeAlias_Keywords )
+                ]
       }
     , { name = "type-alias-partial-2"
       , source = """type alias Hi
@@ -168,7 +159,10 @@ testCases =
                 , Located { end = { col = 14, row = 1 }, start = { col = 12, row = 1 } } (Token "Hi")
                 , Located { end = { col = 1, row = 2 }, start = { col = 14, row = 1 } } (Newlines [] 0)
                 ]
-      , contextualized = Just [ Err ( State_BlockTypeAlias (BlockTypeAlias_Named (TypeOrConstructor "Hi")), Error_PartwayThroughCustomType ) ]
+      , contextualized =
+            Just
+                [ Err ( State_BlockTypeAlias (BlockTypeAlias_Named (TypeOrConstructor "Hi")), Error_PartwayThroughCustomType )
+                ]
       }
     , { name = "type-alias-partial-3"
       , source = """type alias Hi =
@@ -186,20 +180,7 @@ testCases =
                 ]
       , contextualized =
             Just
-                [ Err
-                    ( State_BlockTypeAlias
-                        (BlockTypeAlias_Completish (TypeOrConstructor "Hi")
-                            { current = ( TypeExpressionContext_Alias, Nothing )
-                            , stack = Stack []
-                            }
-                        )
-                    , Error_PartwayThroughTypeAlias
-                        (BlockTypeAlias_Completish (TypeOrConstructor "Hi")
-                            { current = ( TypeExpressionContext_Alias, Nothing )
-                            , stack = Stack []
-                            }
-                        )
-                    )
+                [ Err ( State_BlockTypeAlias (BlockTypeAlias_Completish (TypeOrConstructor "Hi") { current = ( TypeExpressionContext_Alias, Nothing ), stack = Stack [] }), Error_PartwayThroughTypeAlias (BlockTypeAlias_Completish (TypeOrConstructor "Hi") { current = ( TypeExpressionContext_Alias, Nothing ), stack = Stack [] }) )
                 ]
       }
     , { name = "type-partial"
@@ -210,6 +191,9 @@ testCases =
                 [ Located { end = { col = 5, row = 1 }, start = { col = 1, row = 1 } } (Token "type")
                 , Located { end = { col = 1, row = 2 }, start = { col = 5, row = 1 } } (Newlines [] 0)
                 ]
-      , contextualized = Just [ Err ( State_BlockFirstItem BlockFirstItem_Type, Error_PartwayThroughCustomType ) ]
+      , contextualized =
+            Just
+                [ Err ( State_BlockFirstItem BlockFirstItem_Type, Error_PartwayThroughCustomType )
+                ]
       }
     ]

@@ -71,14 +71,12 @@ init snippets =
                             ++ """\"\"\"
       , lexed = """
                             ++ (Debug.toString lexed
-                                    |> String.replace "Located" """
-            Located"""
+                                |> preFormatElmCode
                                )
                             ++ """
       , contextualized ="""
                             ++ (Debug.toString contextualized
-                                    |> String.replace "}" """
-            }"""
+                                |> preFormatElmCode
                                )
                             ++ """
       }"""
@@ -99,3 +97,13 @@ init snippets =
 update : Msg -> Model -> ( Model, Cmd Msg )
 update () model =
     ( model, Cmd.none )
+
+
+preFormatElmCode : String -> String
+preFormatElmCode =
+    {-String.replace "}" """
+    }"""
+    >>-} String.replace "]" """
+    ]"""
+    >> String.replace """[
+    ]""" "[]"
