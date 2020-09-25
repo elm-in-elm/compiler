@@ -497,56 +497,28 @@ parserTypeExpr newState ({ bracketStack, root } as prevExpr) item =
                 -- We are in the top level of the type expression; we have
                 -- found a closing bracket to match every opening bracket we
                 -- have encounted so far whilst parsing the type expression.
+                -- (We may have found no brackets at all so far.)
                 Nothing ->
-                    case root of
-                        Nothing ->
+                    let
+                        rnewRoot =
+                            case root of
+                                Nothing ->
+                                    newType
+                                        |> Ok
+
+                                Just typeExpression ->
+                                    addArgumentTokenToType typeExpression str
+                    in
+                    case rnewRoot of
+                        Ok newRoot ->
                             { bracketStack = empty
-                            , root = Just newType
+                            , root = Just newRoot
                             }
                                 |> TypeExpressionResult_Progress
                                 |> newState
 
-                        Just (TypeExpression_NamedType { name, args }) ->
-                            { bracketStack = empty
-                            , root =
-                                Just
-                                    (TypeExpression_NamedType
-                                        { name = name
-                                        , args =
-                                            newType
-                                                |> pushOnto args
-                                        }
-                                    )
-                            }
-                                |> TypeExpressionResult_Progress
-                                |> newState
-
-                        Just (TypeExpression_PartialRecord existingPartialRecord) ->
-                            case addTokenToPartialRecord existingPartialRecord str of
-                                Ok newPartialRecord ->
-                                    { bracketStack = empty
-                                    , root =
-                                        newPartialRecord
-                                            |> TypeExpression_PartialRecord
-                                            |> Just
-                                    }
-                                        |> TypeExpressionResult_Progress
-                                        |> newState
-
-                                Err e ->
-                                    ParseResult_Err e
-
-                        Just ((TypeExpression_Record _) as ty) ->
-                            Error_TypeDoesNotTakeArgs ty newType
-                                |> ParseResult_Err
-
-                        Just ((TypeExpression_Bracketed _) as ty) ->
-                            Error_TypeDoesNotTakeArgs ty newType
-                                |> ParseResult_Err
-
-                        Just TypeExpression_Unit ->
-                            Error_TypeDoesNotTakeArgs TypeExpression_Unit newType
-                                |> ParseResult_Err
+                        Err e ->
+                            ParseResult_Err e
 
                 -- This is the first item following an opening bracket.
                 Just ( Nothing, rest ) ->
@@ -558,29 +530,12 @@ parserTypeExpr newState ({ bracketStack, root } as prevExpr) item =
                         |> TypeExpressionResult_Progress
                         |> newState
 
-                Just ( Just (TypeExpression_NamedType { name, args }), rest ) ->
-                    { bracketStack =
-                        Just
-                            (TypeExpression_NamedType
-                                { name = name
-                                , args =
-                                    newType
-                                        |> pushOnto args
-                                }
-                            )
-                            |> pushOnto rest
-                    , root = root
-                    }
-                        |> TypeExpressionResult_Progress
-                        |> newState
-
-                Just ( Just (TypeExpression_PartialRecord existingPartialRecord), rest ) ->
-                    case addTokenToPartialRecord existingPartialRecord str of
-                        Ok newPartialRecord ->
+                -- This is an argument to some type that follows an opening bracket.
+                Just ( Just latestTypeExpr, rest ) ->
+                    case addArgumentTokenToType latestTypeExpr str of
+                        Ok newLatestTypeExpr ->
                             { bracketStack =
-                                newPartialRecord
-                                    |> TypeExpression_PartialRecord
-                                    |> Just
+                                Just newLatestTypeExpr
                                     |> pushOnto rest
                             , root = root
                             }
@@ -589,18 +544,6 @@ parserTypeExpr newState ({ bracketStack, root } as prevExpr) item =
 
                         Err e ->
                             ParseResult_Err e
-
-                Just ( Just ((TypeExpression_Bracketed _) as ty), _ ) ->
-                    Error_TypeDoesNotTakeArgs ty newType
-                        |> ParseResult_Err
-
-                Just ( Just ((TypeExpression_Record _) as ty), _ ) ->
-                    Error_TypeDoesNotTakeArgs ty newType
-                        |> ParseResult_Err
-
-                Just ( Just TypeExpression_Unit, _ ) ->
-                    Error_TypeDoesNotTakeArgs TypeExpression_Unit newType
-                        |> ParseResult_Err
 
         Lexer.Sigil (Lexer.Bracket Lexer.Round role) ->
             case role of
@@ -626,38 +569,16 @@ parserTypeExpr newState ({ bracketStack, root } as prevExpr) item =
                                             TypeExpression_Unit
                             in
                             case pop poppedBracketStack of
-                                Just ( newExprToAddTo, rest ) ->
+                                Just ( mnewExprToAddTo, rest ) ->
                                     let
                                         rnewExpr =
-                                            case newExprToAddTo of
+                                            case mnewExprToAddTo of
                                                 Nothing ->
                                                     expr
                                                         |> Ok
 
-                                                Just (TypeExpression_NamedType { name, args }) ->
-                                                    { name = name
-                                                    , args =
-                                                        expr
-                                                            |> pushOnto args
-                                                    }
-                                                        |> TypeExpression_NamedType
-                                                        |> Ok
-
-                                                Just (TypeExpression_PartialRecord partialRecord) ->
-                                                    addTypeToPartialRecord partialRecord expr
-                                                        |> Result.map TypeExpression_PartialRecord
-
-                                                Just TypeExpression_Unit ->
-                                                    Error_TypeDoesNotTakeArgs TypeExpression_Unit expr
-                                                        |> Err
-
-                                                Just ((TypeExpression_Record _) as ty) ->
-                                                    Error_TypeDoesNotTakeArgs ty expr
-                                                        |> Err
-
-                                                Just ((TypeExpression_Bracketed _) as ty) ->
-                                                    Error_TypeDoesNotTakeArgs ty expr
-                                                        |> Err
+                                                Just newExprToAddTo ->
+                                                    addArgumentTypeToType newExprToAddTo expr
                                     in
                                     case rnewExpr of
                                         Ok newExpr ->
@@ -673,52 +594,26 @@ parserTypeExpr newState ({ bracketStack, root } as prevExpr) item =
                                             ParseResult_Err e
 
                                 Nothing ->
-                                    case root of
-                                        Nothing ->
+                                    let
+                                        rnewRoot =
+                                            case root of
+                                                Nothing ->
+                                                    expr
+                                                        |> Ok
+
+                                                Just typeExpression ->
+                                                    addArgumentTypeToType typeExpression expr
+                                    in
+                                    case rnewRoot of
+                                        Ok newRoot ->
                                             { bracketStack = empty
-                                            , root = Just expr
+                                            , root = Just newRoot
                                             }
                                                 |> TypeExpressionResult_Progress
                                                 |> newState
 
-                                        Just (TypeExpression_NamedType { name, args }) ->
-                                            { bracketStack = empty
-                                            , root =
-                                                Just
-                                                    (TypeExpression_NamedType
-                                                        { name = name
-                                                        , args =
-                                                            expr
-                                                                |> pushOnto args
-                                                        }
-                                                    )
-                                            }
-                                                |> TypeExpressionResult_Progress
-                                                |> newState
-
-                                        Just (TypeExpression_PartialRecord partialRecord) ->
-                                            case addTypeToPartialRecord partialRecord expr of
-                                                Ok pr ->
-                                                    { bracketStack = empty
-                                                    , root = Just (TypeExpression_PartialRecord pr)
-                                                    }
-                                                        |> TypeExpressionResult_Progress
-                                                        |> newState
-
-                                                Err e ->
-                                                    ParseResult_Err e
-
-                                        Just TypeExpression_Unit ->
-                                            Error_TypeDoesNotTakeArgs TypeExpression_Unit expr
-                                                |> ParseResult_Err
-
-                                        Just ((TypeExpression_Record _) as ty) ->
-                                            Error_TypeDoesNotTakeArgs ty expr
-                                                |> ParseResult_Err
-
-                                        Just ((TypeExpression_Bracketed _) as ty) ->
-                                            Error_TypeDoesNotTakeArgs ty expr
-                                                |> ParseResult_Err
+                                        Err e ->
+                                            ParseResult_Err e
 
                         _ ->
                             -- TODO(harry): can we add information about the
@@ -736,8 +631,6 @@ parserTypeExpr newState ({ bracketStack, root } as prevExpr) item =
                     TypeExpressionResult_Done expr
                         |> newState
 
-                -- ( TypeExpressionContext_Record (Just expr) ) ->
-                --     Debug.todo ""
                 ( Nothing, Nothing ) ->
                     Error_PartwayThroughTypeAlias
                         |> ParseResult_Err
@@ -931,6 +824,71 @@ addTypeToPartialRecord { firstEntries, lastEntry } expr =
 
         LastEntryOfRecord_KeyValue key (TypeExpression_PartialRecord innerPartialRecord) ->
             addTypeToPartialRecord innerPartialRecord expr
+
+
+addArgumentTokenToType : PartialTypeExpression -> String -> Result Error PartialTypeExpression
+addArgumentTokenToType existingTypeExpr argToAdd =
+    let
+        newType =
+            TypeExpression_NamedType
+                { name = argToAdd
+                , args = empty
+                }
+    in
+    case existingTypeExpr of
+        TypeExpression_NamedType { name, args } ->
+            TypeExpression_NamedType
+                { name = name
+                , args =
+                    newType
+                        |> pushOnto args
+                }
+                |> Ok
+
+        TypeExpression_PartialRecord existingPartialRecord ->
+            addTokenToPartialRecord existingPartialRecord argToAdd
+                |> Result.map TypeExpression_PartialRecord
+
+        (TypeExpression_Bracketed _) as ty ->
+            Error_TypeDoesNotTakeArgs ty newType
+                |> Err
+
+        (TypeExpression_Record _) as ty ->
+            Error_TypeDoesNotTakeArgs ty newType
+                |> Err
+
+        TypeExpression_Unit ->
+            Error_TypeDoesNotTakeArgs TypeExpression_Unit newType
+                |> Err
+
+
+addArgumentTypeToType : PartialTypeExpression -> PartialTypeExpression -> Result Error PartialTypeExpression
+addArgumentTypeToType existingTypeExpr argToAdd =
+    case existingTypeExpr of
+        TypeExpression_NamedType { name, args } ->
+            { name = name
+            , args =
+                argToAdd
+                    |> pushOnto args
+            }
+                |> TypeExpression_NamedType
+                |> Ok
+
+        TypeExpression_PartialRecord partialRecord ->
+            addTypeToPartialRecord partialRecord argToAdd
+                |> Result.map TypeExpression_PartialRecord
+
+        TypeExpression_Unit ->
+            Error_TypeDoesNotTakeArgs TypeExpression_Unit argToAdd
+                |> Err
+
+        (TypeExpression_Record _) as ty ->
+            Error_TypeDoesNotTakeArgs ty argToAdd
+                |> Err
+
+        (TypeExpression_Bracketed _) as ty ->
+            Error_TypeDoesNotTakeArgs ty argToAdd
+                |> Err
 
 
 
