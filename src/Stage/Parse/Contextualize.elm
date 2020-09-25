@@ -507,7 +507,7 @@ parserTypeExpr newState ({ bracketStack, root } as prevExpr) item =
                                         |> Ok
 
                                 Just typeExpression ->
-                                    addArgumentTokenToType typeExpression str
+                                    addArgumentToType typeExpression (TokenOrType_Token str)
                     in
                     case rnewRoot of
                         Ok newRoot ->
@@ -532,7 +532,7 @@ parserTypeExpr newState ({ bracketStack, root } as prevExpr) item =
 
                 -- This is an argument to some type that follows an opening bracket.
                 Just ( Just latestTypeExpr, rest ) ->
-                    case addArgumentTokenToType latestTypeExpr str of
+                    case addArgumentToType latestTypeExpr (TokenOrType_Token str) of
                         Ok newLatestTypeExpr ->
                             { bracketStack =
                                 Just newLatestTypeExpr
@@ -578,7 +578,7 @@ parserTypeExpr newState ({ bracketStack, root } as prevExpr) item =
                                                         |> Ok
 
                                                 Just newExprToAddTo ->
-                                                    addArgumentTypeToType newExprToAddTo expr
+                                                    addArgumentToType newExprToAddTo (TokenOrType_Type expr)
                                     in
                                     case rnewExpr of
                                         Ok newExpr ->
@@ -602,7 +602,7 @@ parserTypeExpr newState ({ bracketStack, root } as prevExpr) item =
                                                         |> Ok
 
                                                 Just typeExpression ->
-                                                    addArgumentTypeToType typeExpression expr
+                                                    addArgumentToType typeExpression (TokenOrType_Type expr)
                                     in
                                     case rnewRoot of
                                         Ok newRoot ->
@@ -700,31 +700,47 @@ blockFromState state =
 -- helper functions
 
 
-addTokenToPartialRecord :
+type TokenOrType
+    = TokenOrType_Token String
+    | TokenOrType_Type PartialTypeExpression
+
+
+addToPartialRecord :
     { firstEntries : Stack ( String, PartialTypeExpression )
     , lastEntry : LastEntryOfRecord
     }
-    -> String
+    -> TokenOrType
     ->
         Result Error
             { firstEntries : Stack ( String, PartialTypeExpression )
             , lastEntry : LastEntryOfRecord
             }
-addTokenToPartialRecord { firstEntries, lastEntry } str =
+addToPartialRecord { firstEntries, lastEntry } tot =
     let
         newType =
-            TypeExpression_NamedType
-                { name = str
-                , args = empty
-                }
+            case tot of
+                TokenOrType_Token str ->
+                    TypeExpression_NamedType
+                        { name = str
+                        , args = empty
+                        }
+
+                TokenOrType_Type ty ->
+                    ty
     in
     case lastEntry of
         LastEntryOfRecord_Empty ->
-            { firstEntries = firstEntries
-            , lastEntry =
-                LastEntryOfRecord_Key str
-            }
-                |> Ok
+            case tot of
+                TokenOrType_Token str ->
+                    { firstEntries = firstEntries
+                    , lastEntry =
+                        LastEntryOfRecord_Key str
+                    }
+                        |> Ok
+
+                TokenOrType_Type _ ->
+                    Error_ExpectedKeyWhilstParsingRecord
+                        |> Err
 
         LastEntryOfRecord_Key key ->
             Error_ExpectedColonWhilstParsingRecord
@@ -765,75 +781,22 @@ addTokenToPartialRecord { firstEntries, lastEntry } str =
                 |> Err
 
         LastEntryOfRecord_KeyValue key (TypeExpression_PartialRecord innerPartialRecord) ->
-            addTokenToPartialRecord innerPartialRecord str
+            addToPartialRecord innerPartialRecord tot
 
 
-addTypeToPartialRecord :
-    { firstEntries : Stack ( String, PartialTypeExpression )
-    , lastEntry : LastEntryOfRecord
-    }
-    -> PartialTypeExpression
-    ->
-        Result Error
-            { firstEntries : Stack ( String, PartialTypeExpression )
-            , lastEntry : LastEntryOfRecord
-            }
-addTypeToPartialRecord { firstEntries, lastEntry } expr =
-    case lastEntry of
-        LastEntryOfRecord_Empty ->
-            Error_ExpectedKeyWhilstParsingRecord
-                |> Err
-
-        LastEntryOfRecord_Key key ->
-            Error_ExpectedColonWhilstParsingRecord
-                |> Err
-
-        LastEntryOfRecord_KeyColon key ->
-            { firstEntries = firstEntries
-            , lastEntry =
-                LastEntryOfRecord_KeyValue key expr
-            }
-                |> Ok
-
-        LastEntryOfRecord_KeyValue key (TypeExpression_NamedType { name, args }) ->
-            { firstEntries = firstEntries
-            , lastEntry =
-                LastEntryOfRecord_KeyValue
-                    key
-                    (TypeExpression_NamedType
-                        { name = name
-                        , args =
-                            expr
-                                |> pushOnto args
-                        }
-                    )
-            }
-                |> Ok
-
-        LastEntryOfRecord_KeyValue _ TypeExpression_Unit ->
-            Error_TypeDoesNotTakeArgs TypeExpression_Unit expr
-                |> Err
-
-        LastEntryOfRecord_KeyValue _ ((TypeExpression_Bracketed _) as ty) ->
-            Error_TypeDoesNotTakeArgs ty expr
-                |> Err
-
-        LastEntryOfRecord_KeyValue _ ((TypeExpression_Record _) as ty) ->
-            Error_TypeDoesNotTakeArgs ty expr
-                |> Err
-
-        LastEntryOfRecord_KeyValue key (TypeExpression_PartialRecord innerPartialRecord) ->
-            addTypeToPartialRecord innerPartialRecord expr
-
-
-addArgumentTokenToType : PartialTypeExpression -> String -> Result Error PartialTypeExpression
-addArgumentTokenToType existingTypeExpr argToAdd =
+addArgumentToType : PartialTypeExpression -> TokenOrType -> Result Error PartialTypeExpression
+addArgumentToType existingTypeExpr argToAdd =
     let
         newType =
-            TypeExpression_NamedType
-                { name = argToAdd
-                , args = empty
-                }
+            case argToAdd of
+                TokenOrType_Token str ->
+                    TypeExpression_NamedType
+                        { name = str
+                        , args = empty
+                        }
+
+                TokenOrType_Type ty ->
+                    ty
     in
     case existingTypeExpr of
         TypeExpression_NamedType { name, args } ->
@@ -846,7 +809,7 @@ addArgumentTokenToType existingTypeExpr argToAdd =
                 |> Ok
 
         TypeExpression_PartialRecord existingPartialRecord ->
-            addTokenToPartialRecord existingPartialRecord argToAdd
+            addToPartialRecord existingPartialRecord argToAdd
                 |> Result.map TypeExpression_PartialRecord
 
         (TypeExpression_Bracketed _) as ty ->
@@ -862,39 +825,8 @@ addArgumentTokenToType existingTypeExpr argToAdd =
                 |> Err
 
 
-addArgumentTypeToType : PartialTypeExpression -> PartialTypeExpression -> Result Error PartialTypeExpression
-addArgumentTypeToType existingTypeExpr argToAdd =
-    case existingTypeExpr of
-        TypeExpression_NamedType { name, args } ->
-            { name = name
-            , args =
-                argToAdd
-                    |> pushOnto args
-            }
-                |> TypeExpression_NamedType
-                |> Ok
-
-        TypeExpression_PartialRecord partialRecord ->
-            addTypeToPartialRecord partialRecord argToAdd
-                |> Result.map TypeExpression_PartialRecord
-
-        TypeExpression_Unit ->
-            Error_TypeDoesNotTakeArgs TypeExpression_Unit argToAdd
-                |> Err
-
-        (TypeExpression_Record _) as ty ->
-            Error_TypeDoesNotTakeArgs ty argToAdd
-                |> Err
-
-        (TypeExpression_Bracketed _) as ty ->
-            Error_TypeDoesNotTakeArgs ty argToAdd
-                |> Err
-
-
-
--- TODO(harry): custom error message here
-
-
+{-| TODO(harry): custom error message here
+-}
 partialTypeExpressionToConcreteType : PartialTypeExpression -> Result () (ConcreteType PossiblyQualified)
 partialTypeExpressionToConcreteType pte =
     case pte of
