@@ -158,11 +158,11 @@ testCases =
                 [ Err
                     ( State_BlockTypeAlias
                         (BlockTypeAlias_Completish (TypeOrConstructor "Hi")
-                            { current = TypeExpressionContext_Nested NestingType_Bracket Nothing
-                            , stack =
+                            { bracketStack =
                                 Stack
-                                    [ TypeExpressionContext_Nested NestingType_TypeAlias (Just (TypeExpression_Bracketed (TypeExpression_NamedType { args = Stack [], name = "Int" })))
+                                    [ Nothing
                                     ]
+                            , root = Just (TypeExpression_Bracketed (TypeExpression_NamedType { args = Stack [], name = "Int" }))
                             }
                         )
                     , Error_TypeDoesNotTakeArgs (TypeExpression_Bracketed (TypeExpression_NamedType { args = Stack [], name = "Int" })) TypeExpression_Unit
@@ -194,14 +194,14 @@ testCases =
                 [ Err
                     ( State_BlockTypeAlias
                         (BlockTypeAlias_Completish (TypeOrConstructor "Hi")
-                            { current = TypeExpressionContext_Nested NestingType_Bracket Nothing
-                            , stack =
+                            { bracketStack =
                                 Stack
-                                    [ TypeExpressionContext_Nested NestingType_TypeAlias (Just (TypeExpression_Bracketed TypeExpression_Unit))
+                                    [ Nothing
                                     ]
+                            , root = Just TypeExpression_Unit
                             }
                         )
-                    , Error_TypeDoesNotTakeArgs (TypeExpression_Bracketed TypeExpression_Unit) TypeExpression_Unit
+                    , Error_TypeDoesNotTakeArgs TypeExpression_Unit TypeExpression_Unit
                     )
                 ]
       }
@@ -231,14 +231,14 @@ testCases =
                 [ Err
                     ( State_BlockTypeAlias
                         (BlockTypeAlias_Completish (TypeOrConstructor "Hi")
-                            { current = TypeExpressionContext_Nested NestingType_Bracket (Just (TypeExpression_NamedType { args = Stack [], name = "Int" }))
-                            , stack =
+                            { bracketStack =
                                 Stack
-                                    [ TypeExpressionContext_Nested NestingType_TypeAlias (Just (TypeExpression_Bracketed TypeExpression_Unit))
+                                    [ Just (TypeExpression_NamedType { args = Stack [], name = "Int" })
                                     ]
+                            , root = Just TypeExpression_Unit
                             }
                         )
-                    , Error_TypeDoesNotTakeArgs (TypeExpression_Bracketed TypeExpression_Unit) (TypeExpression_NamedType { args = Stack [], name = "Int" })
+                    , Error_TypeDoesNotTakeArgs TypeExpression_Unit (TypeExpression_Bracketed (TypeExpression_NamedType { args = Stack [], name = "Int" }))
                     )
                 ]
       }
@@ -339,11 +339,11 @@ List Int
                 [ Err
                     ( State_BlockTypeAlias
                         (BlockTypeAlias_Completish (TypeOrConstructor "Hi")
-                            { current = TypeExpressionContext_Nested NestingType_Bracket Nothing
-                            , stack =
+                            { bracketStack =
                                 Stack
-                                    [ TypeExpressionContext_Nested NestingType_TypeAlias Nothing
+                                    [ Nothing
                                     ]
+                            , root = Nothing
                             }
                         )
                     , Error_PartwayThroughTypeAlias
@@ -374,11 +374,11 @@ List Int
                 [ Err
                     ( State_BlockTypeAlias
                         (BlockTypeAlias_Completish (TypeOrConstructor "Hi")
-                            { current = TypeExpressionContext_Nested NestingType_Bracket (Just (TypeExpression_NamedType { args = Stack [], name = "Int" }))
-                            , stack =
+                            { bracketStack =
                                 Stack
-                                    [ TypeExpressionContext_Nested NestingType_TypeAlias Nothing
+                                    [ Just (TypeExpression_NamedType { args = Stack [], name = "Int" })
                                     ]
+                            , root = Nothing
                             }
                         )
                     , Error_PartwayThroughTypeAlias
