@@ -123,6 +123,7 @@ type PartialTypeExpression
         , args : Stack PartialTypeExpression
         }
     | TypeExpression_Unit
+    | TypeExpression_Bracketed PartialTypeExpression
 
 
 partialTypeExpressionToConcreteType : PartialTypeExpression -> ConcreteType PossiblyQualified
@@ -139,6 +140,9 @@ partialTypeExpressionToConcreteType pte =
 
         TypeExpression_Unit ->
             ConcreteType.Unit
+
+        TypeExpression_Bracketed ty ->
+            partialTypeExpressionToConcreteType ty
 
 
 recoverErrors : ParseResult -> ParseResult
@@ -187,7 +191,7 @@ type Error
     | Error_BlockStartsWithTypeOrConstructor Token.TypeOrConstructor
     | Error_TypeNameStartsWithLowerCase Token.ValueOrFunction
     | Error_UnmatchedBracket Lexer.BracketType Lexer.BracketRole
-    | Error_UnitTypeDoesTakeArgs PartialTypeExpression
+    | Error_TypeDoesTakeArgs PartialTypeExpression PartialTypeExpression
     | Error_PartwayThroughTypeAlias
     | Error_Panic String
 
@@ -502,8 +506,19 @@ parserTypeExpr newState ({ stack, current } as prevExpr) item =
                         )
                         |> ParseResult_Ok
 
+                ( context, Just ((TypeExpression_Bracketed _) as ty) ) ->
+                    Error_TypeDoesTakeArgs
+                        ty
+                        (TypeExpression_NamedType
+                            { name = str
+                            , args = empty
+                            }
+                        )
+                        |> ParseResult_Err
+
                 ( context, Just TypeExpression_Unit ) ->
-                    Error_UnitTypeDoesTakeArgs
+                    Error_TypeDoesTakeArgs
+                        TypeExpression_Unit
                         (TypeExpression_NamedType
                             { name = str
                             , args = empty
@@ -527,62 +542,51 @@ parserTypeExpr newState ({ stack, current } as prevExpr) item =
                 Lexer.Close ->
                     (case current of
                         ( TypeExpressionContext_Bracket Lexer.Round, mexpr ) ->
-                            case mexpr of
-                                Nothing ->
-                                    (case pop stack of
-                                        Just ( ( newContext, newExprToAddTo ), newStack ) ->
-                                            let
-                                                rnewExpr =
-                                                    case newExprToAddTo of
-                                                        Nothing ->
-                                                            Just TypeExpression_Unit
-                                                                |> Ok
-
-                                                        Just (TypeExpression_NamedType { name, args }) ->
-                                                            Just
-                                                                (TypeExpression_NamedType
-                                                                    { name = name
-                                                                    , args =
-                                                                        TypeExpression_Unit
-                                                                            |> pushOnto args
-                                                                    }
-                                                                )
-                                                                |> Ok
-
-                                                        Just TypeExpression_Unit ->
-                                                            Error_UnitTypeDoesTakeArgs TypeExpression_Unit
-                                                                |> Err
-                                            in
-                                            rnewExpr
-                                                |> Result.map
-                                                    (\newExpr ->
-                                                        { stack = newStack
-                                                        , current = ( newContext, newExpr )
-                                                        }
-                                                            |> TypeExpressionResult_Progress
-                                                    )
-
+                            let
+                                expr =
+                                    mexpr |> Maybe.withDefault TypeExpression_Unit
+                            in
+                            (case pop stack of
+                                Just ( ( newContext, newExprToAddTo ), newStack ) ->
+                                    (case newExprToAddTo of
                                         Nothing ->
-                                            TypeExpressionResult_Done TypeExpression_Unit
+                                            TypeExpression_Bracketed expr
+                                                |> Just
                                                 |> Ok
-                                    )
-                                        |> Result.map newState
-                                        |> Just
 
-                                Just expr ->
-                                    newState
-                                        (case pop stack of
-                                            Just ( newCurrent, newStack ) ->
+                                        Just (TypeExpression_NamedType { name, args }) ->
+                                            Just
+                                                (TypeExpression_NamedType
+                                                    { name = name
+                                                    , args =
+                                                        expr
+                                                            |> pushOnto args
+                                                    }
+                                                )
+                                                |> Ok
+
+                                        Just TypeExpression_Unit ->
+                                            Error_TypeDoesTakeArgs TypeExpression_Unit expr
+                                                |> Err
+
+                                        Just ((TypeExpression_Bracketed _) as ty) ->
+                                            Error_TypeDoesTakeArgs ty expr
+                                                |> Err
+                                    )
+                                        |> Result.map
+                                            (\newExpr ->
                                                 { stack = newStack
-                                                , current = Debug.todo "newCurrent"
+                                                , current = ( newContext, newExpr )
                                                 }
                                                     |> TypeExpressionResult_Progress
+                                            )
 
-                                            Nothing ->
-                                                TypeExpressionResult_Done expr
-                                        )
+                                Nothing ->
+                                    TypeExpressionResult_Done expr
                                         |> Ok
-                                        |> Just
+                            )
+                                |> Result.map newState
+                                |> Just
 
                         _ ->
                             -- TODO(harry): can we add information about the
@@ -652,20 +656,10 @@ blockFromState state =
                         |> Ok
                         |> Just
 
-                ( Nothing, TypeExpressionContext_Alias, Nothing ) ->
+                _ ->
                     Error_PartwayThroughTypeAlias
                         |> Err
                         |> Just
-
-                x ->
-                    let
-                        _ =
-                            Debug.log "we have" state
-
-                        _ =
-                            Debug.log "we have" x
-                    in
-                    Debug.todo "handle maybe incomplete block"
 
         State_BlockTypeAlias (BlockTypeAlias_Complete name expr) ->
             { ty = name

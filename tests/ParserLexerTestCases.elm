@@ -132,6 +132,116 @@ testCases =
                     )
                 ]
       }
+    , { name = "type-alias-invalid-multiple-brackets"
+      , source = """type alias Hi = (Int) ()
+"""
+      , lexed =
+            Ok
+                [ Located { end = { col = 5, row = 1 }, start = { col = 1, row = 1 } } (Token "type")
+                , Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Whitespace 1)
+                , Located { end = { col = 11, row = 1 }, start = { col = 6, row = 1 } } (Token "alias")
+                , Located { end = { col = 12, row = 1 }, start = { col = 11, row = 1 } } (Whitespace 1)
+                , Located { end = { col = 14, row = 1 }, start = { col = 12, row = 1 } } (Token "Hi")
+                , Located { end = { col = 15, row = 1 }, start = { col = 14, row = 1 } } (Whitespace 1)
+                , Located { end = { col = 16, row = 1 }, start = { col = 15, row = 1 } } (Sigil Assign)
+                , Located { end = { col = 17, row = 1 }, start = { col = 16, row = 1 } } (Whitespace 1)
+                , Located { end = { col = 18, row = 1 }, start = { col = 17, row = 1 } } (Sigil (Bracket Round Open))
+                , Located { end = { col = 21, row = 1 }, start = { col = 18, row = 1 } } (Token "Int")
+                , Located { end = { col = 22, row = 1 }, start = { col = 21, row = 1 } } (Sigil (Bracket Round Close))
+                , Located { end = { col = 23, row = 1 }, start = { col = 22, row = 1 } } (Whitespace 1)
+                , Located { end = { col = 24, row = 1 }, start = { col = 23, row = 1 } } (Sigil (Bracket Round Open))
+                , Located { end = { col = 25, row = 1 }, start = { col = 24, row = 1 } } (Sigil (Bracket Round Close))
+                , Located { end = { col = 1, row = 2 }, start = { col = 25, row = 1 } } (Newlines [] 0)
+                ]
+      , contextualized =
+            Just
+                [ Err
+                    ( State_BlockTypeAlias
+                        (BlockTypeAlias_Completish (TypeOrConstructor "Hi")
+                            { current = ( TypeExpressionContext_Bracket Round, Nothing )
+                            , stack =
+                                Stack
+                                    [ ( TypeExpressionContext_Alias, Just (TypeExpression_Bracketed (TypeExpression_NamedType { args = Stack [], name = "Int" })) )
+                                    ]
+                            }
+                        )
+                    , Error_TypeDoesTakeArgs (TypeExpression_Bracketed (TypeExpression_NamedType { args = Stack [], name = "Int" })) TypeExpression_Unit
+                    )
+                ]
+      }
+    , { name = "type-alias-invalid-multiple-brackets-2"
+      , source = """type alias Hi = () ()
+"""
+      , lexed =
+            Ok
+                [ Located { end = { col = 5, row = 1 }, start = { col = 1, row = 1 } } (Token "type")
+                , Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Whitespace 1)
+                , Located { end = { col = 11, row = 1 }, start = { col = 6, row = 1 } } (Token "alias")
+                , Located { end = { col = 12, row = 1 }, start = { col = 11, row = 1 } } (Whitespace 1)
+                , Located { end = { col = 14, row = 1 }, start = { col = 12, row = 1 } } (Token "Hi")
+                , Located { end = { col = 15, row = 1 }, start = { col = 14, row = 1 } } (Whitespace 1)
+                , Located { end = { col = 16, row = 1 }, start = { col = 15, row = 1 } } (Sigil Assign)
+                , Located { end = { col = 17, row = 1 }, start = { col = 16, row = 1 } } (Whitespace 1)
+                , Located { end = { col = 18, row = 1 }, start = { col = 17, row = 1 } } (Sigil (Bracket Round Open))
+                , Located { end = { col = 19, row = 1 }, start = { col = 18, row = 1 } } (Sigil (Bracket Round Close))
+                , Located { end = { col = 20, row = 1 }, start = { col = 19, row = 1 } } (Whitespace 1)
+                , Located { end = { col = 21, row = 1 }, start = { col = 20, row = 1 } } (Sigil (Bracket Round Open))
+                , Located { end = { col = 22, row = 1 }, start = { col = 21, row = 1 } } (Sigil (Bracket Round Close))
+                , Located { end = { col = 1, row = 2 }, start = { col = 22, row = 1 } } (Newlines [] 0)
+                ]
+      , contextualized =
+            Just
+                [ Err
+                    ( State_BlockTypeAlias
+                        (BlockTypeAlias_Completish (TypeOrConstructor "Hi")
+                            { current = ( TypeExpressionContext_Bracket Round, Nothing )
+                            , stack =
+                                Stack
+                                    [ ( TypeExpressionContext_Alias, Just (TypeExpression_Bracketed TypeExpression_Unit) )
+                                    ]
+                            }
+                        )
+                    , Error_TypeDoesTakeArgs (TypeExpression_Bracketed TypeExpression_Unit) TypeExpression_Unit
+                    )
+                ]
+      }
+    , { name = "type-alias-invalid-multiple-brackets-3"
+      , source = """type alias Hi = () (Int)
+"""
+      , lexed =
+            Ok
+                [ Located { end = { col = 5, row = 1 }, start = { col = 1, row = 1 } } (Token "type")
+                , Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Whitespace 1)
+                , Located { end = { col = 11, row = 1 }, start = { col = 6, row = 1 } } (Token "alias")
+                , Located { end = { col = 12, row = 1 }, start = { col = 11, row = 1 } } (Whitespace 1)
+                , Located { end = { col = 14, row = 1 }, start = { col = 12, row = 1 } } (Token "Hi")
+                , Located { end = { col = 15, row = 1 }, start = { col = 14, row = 1 } } (Whitespace 1)
+                , Located { end = { col = 16, row = 1 }, start = { col = 15, row = 1 } } (Sigil Assign)
+                , Located { end = { col = 17, row = 1 }, start = { col = 16, row = 1 } } (Whitespace 1)
+                , Located { end = { col = 18, row = 1 }, start = { col = 17, row = 1 } } (Sigil (Bracket Round Open))
+                , Located { end = { col = 19, row = 1 }, start = { col = 18, row = 1 } } (Sigil (Bracket Round Close))
+                , Located { end = { col = 20, row = 1 }, start = { col = 19, row = 1 } } (Whitespace 1)
+                , Located { end = { col = 21, row = 1 }, start = { col = 20, row = 1 } } (Sigil (Bracket Round Open))
+                , Located { end = { col = 24, row = 1 }, start = { col = 21, row = 1 } } (Token "Int")
+                , Located { end = { col = 25, row = 1 }, start = { col = 24, row = 1 } } (Sigil (Bracket Round Close))
+                , Located { end = { col = 1, row = 2 }, start = { col = 25, row = 1 } } (Newlines [] 0)
+                ]
+      , contextualized =
+            Just
+                [ Err
+                    ( State_BlockTypeAlias
+                        (BlockTypeAlias_Completish (TypeOrConstructor "Hi")
+                            { current = ( TypeExpressionContext_Bracket Round, Just (TypeExpression_NamedType { args = Stack [], name = "Int" }) )
+                            , stack =
+                                Stack
+                                    [ ( TypeExpressionContext_Alias, Just (TypeExpression_Bracketed TypeExpression_Unit) )
+                                    ]
+                            }
+                        )
+                    , Error_TypeDoesTakeArgs (TypeExpression_Bracketed TypeExpression_Unit) (TypeExpression_NamedType { args = Stack [], name = "Int" })
+                    )
+                ]
+      }
     , { name = "type-alias-partial"
       , source = """type alias
 """
@@ -181,6 +291,118 @@ testCases =
       , contextualized =
             Just
                 [ Err ( State_BlockTypeAlias (BlockTypeAlias_Completish (TypeOrConstructor "Hi") { current = ( TypeExpressionContext_Alias, Nothing ), stack = Stack [] }), Error_PartwayThroughTypeAlias )
+                ]
+      }
+    , { name = "type-alias-partial-with-bracket"
+      , source = """type alias Hi = (
+"""
+      , lexed =
+            Ok
+                [ Located { end = { col = 5, row = 1 }, start = { col = 1, row = 1 } } (Token "type")
+                , Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Whitespace 1)
+                , Located { end = { col = 11, row = 1 }, start = { col = 6, row = 1 } } (Token "alias")
+                , Located { end = { col = 12, row = 1 }, start = { col = 11, row = 1 } } (Whitespace 1)
+                , Located { end = { col = 14, row = 1 }, start = { col = 12, row = 1 } } (Token "Hi")
+                , Located { end = { col = 15, row = 1 }, start = { col = 14, row = 1 } } (Whitespace 1)
+                , Located { end = { col = 16, row = 1 }, start = { col = 15, row = 1 } } (Sigil Assign)
+                , Located { end = { col = 17, row = 1 }, start = { col = 16, row = 1 } } (Whitespace 1)
+                , Located { end = { col = 18, row = 1 }, start = { col = 17, row = 1 } } (Sigil (Bracket Round Open))
+                , Located { end = { col = 1, row = 2 }, start = { col = 18, row = 1 } } (Newlines [] 0)
+                ]
+      , contextualized =
+            Just
+                [ Err
+                    ( State_BlockTypeAlias
+                        (BlockTypeAlias_Completish (TypeOrConstructor "Hi")
+                            { current = ( TypeExpressionContext_Bracket Round, Nothing )
+                            , stack =
+                                Stack
+                                    [ ( TypeExpressionContext_Alias, Nothing )
+                                    ]
+                            }
+                        )
+                    , Error_PartwayThroughTypeAlias
+                    )
+                ]
+      }
+    , { name = "type-alias-partial-with-bracket-2"
+      , source = """type alias Hi = (
+        Int
+"""
+      , lexed =
+            Ok
+                [ Located { end = { col = 5, row = 1 }, start = { col = 1, row = 1 } } (Token "type")
+                , Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Whitespace 1)
+                , Located { end = { col = 11, row = 1 }, start = { col = 6, row = 1 } } (Token "alias")
+                , Located { end = { col = 12, row = 1 }, start = { col = 11, row = 1 } } (Whitespace 1)
+                , Located { end = { col = 14, row = 1 }, start = { col = 12, row = 1 } } (Token "Hi")
+                , Located { end = { col = 15, row = 1 }, start = { col = 14, row = 1 } } (Whitespace 1)
+                , Located { end = { col = 16, row = 1 }, start = { col = 15, row = 1 } } (Sigil Assign)
+                , Located { end = { col = 17, row = 1 }, start = { col = 16, row = 1 } } (Whitespace 1)
+                , Located { end = { col = 18, row = 1 }, start = { col = 17, row = 1 } } (Sigil (Bracket Round Open))
+                , Located { end = { col = 9, row = 2 }, start = { col = 18, row = 1 } } (Newlines [] 8)
+                , Located { end = { col = 12, row = 2 }, start = { col = 9, row = 2 } } (Token "Int")
+                , Located { end = { col = 1, row = 3 }, start = { col = 12, row = 2 } } (Newlines [] 0)
+                ]
+      , contextualized =
+            Just
+                [ Err
+                    ( State_BlockTypeAlias
+                        (BlockTypeAlias_Completish (TypeOrConstructor "Hi")
+                            { current = ( TypeExpressionContext_Bracket Round, Just (TypeExpression_NamedType { args = Stack [], name = "Int" }) )
+                            , stack =
+                                Stack
+                                    [ ( TypeExpressionContext_Alias, Nothing )
+                                    ]
+                            }
+                        )
+                    , Error_PartwayThroughTypeAlias
+                    )
+                ]
+      }
+    , { name = "type-alias-unit"
+      , source = """type alias Hi = ()
+"""
+      , lexed =
+            Ok
+                [ Located { end = { col = 5, row = 1 }, start = { col = 1, row = 1 } } (Token "type")
+                , Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Whitespace 1)
+                , Located { end = { col = 11, row = 1 }, start = { col = 6, row = 1 } } (Token "alias")
+                , Located { end = { col = 12, row = 1 }, start = { col = 11, row = 1 } } (Whitespace 1)
+                , Located { end = { col = 14, row = 1 }, start = { col = 12, row = 1 } } (Token "Hi")
+                , Located { end = { col = 15, row = 1 }, start = { col = 14, row = 1 } } (Whitespace 1)
+                , Located { end = { col = 16, row = 1 }, start = { col = 15, row = 1 } } (Sigil Assign)
+                , Located { end = { col = 17, row = 1 }, start = { col = 16, row = 1 } } (Whitespace 1)
+                , Located { end = { col = 18, row = 1 }, start = { col = 17, row = 1 } } (Sigil (Bracket Round Open))
+                , Located { end = { col = 19, row = 1 }, start = { col = 18, row = 1 } } (Sigil (Bracket Round Close))
+                , Located { end = { col = 1, row = 2 }, start = { col = 19, row = 1 } } (Newlines [] 0)
+                ]
+      , contextualized =
+            Just
+                [ Ok (TypeAlias { expr = Unit, ty = TypeOrConstructor "Hi" })
+                ]
+      }
+    , { name = "type-alias-with-bracket"
+      , source = """type alias Hi = (Int)
+"""
+      , lexed =
+            Ok
+                [ Located { end = { col = 5, row = 1 }, start = { col = 1, row = 1 } } (Token "type")
+                , Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Whitespace 1)
+                , Located { end = { col = 11, row = 1 }, start = { col = 6, row = 1 } } (Token "alias")
+                , Located { end = { col = 12, row = 1 }, start = { col = 11, row = 1 } } (Whitespace 1)
+                , Located { end = { col = 14, row = 1 }, start = { col = 12, row = 1 } } (Token "Hi")
+                , Located { end = { col = 15, row = 1 }, start = { col = 14, row = 1 } } (Whitespace 1)
+                , Located { end = { col = 16, row = 1 }, start = { col = 15, row = 1 } } (Sigil Assign)
+                , Located { end = { col = 17, row = 1 }, start = { col = 16, row = 1 } } (Whitespace 1)
+                , Located { end = { col = 18, row = 1 }, start = { col = 17, row = 1 } } (Sigil (Bracket Round Open))
+                , Located { end = { col = 21, row = 1 }, start = { col = 18, row = 1 } } (Token "Int")
+                , Located { end = { col = 22, row = 1 }, start = { col = 21, row = 1 } } (Sigil (Bracket Round Close))
+                , Located { end = { col = 1, row = 2 }, start = { col = 22, row = 1 } } (Newlines [] 0)
+                ]
+      , contextualized =
+            Just
+                [ Ok (TypeAlias { expr = UserDefinedType { args = [], name = "Int", qualifiedness = PossiblyQualified Nothing }, ty = TypeOrConstructor "Hi" })
                 ]
       }
     , { name = "type-partial"
