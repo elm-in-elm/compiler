@@ -126,48 +126,6 @@ type PartialTypeExpression
     | TypeExpression_Bracketed PartialTypeExpression
 
 
-partialTypeExpressionToConcreteType : PartialTypeExpression -> ConcreteType PossiblyQualified
-partialTypeExpressionToConcreteType pte =
-    case pte of
-        TypeExpression_NamedType { name, args } ->
-            ConcreteType.UserDefinedType
-                { qualifiedness = Qualifiedness.PossiblyQualified Nothing
-                , name = name
-                , args =
-                    args
-                        |> toList partialTypeExpressionToConcreteType
-                }
-
-        TypeExpression_Unit ->
-            ConcreteType.Unit
-
-        TypeExpression_Bracketed ty ->
-            partialTypeExpressionToConcreteType ty
-
-
-recoverErrors : ParseResult -> ParseResult
-recoverErrors res =
-    case res of
-        ParseResult_Err _ ->
-            ParseResult_Ok State_Error_Recovery
-
-        _ ->
-            res
-
-
-parseResultFromMaybeResult : Maybe (Result Error State) -> ParseResult
-parseResultFromMaybeResult x =
-    case x of
-        Just (Ok s) ->
-            ParseResult_Ok s
-
-        Just (Err e) ->
-            ParseResult_Err e
-
-        Nothing ->
-            ParseResult_Skip
-
-
 type alias PartialTypeExpression2 =
     { root : Maybe PartialTypeExpression
     , bracketStack : Stack (Maybe PartialTypeExpression)
@@ -195,6 +153,10 @@ type Expecting
     = Expecting_Sigil Lexer.LexSigil
     | Expecting_Block
     | Expecting_TypeName
+
+
+
+-- exported functions
 
 
 run : List LexItem -> List (Result ( State, Error ) Block)
@@ -263,6 +225,10 @@ runHelp items state =
                         (newBlock |> Result.mapError (\err -> ( state.state, err )))
                             :: state.previousBlocks
                 )
+
+
+
+-- parsers
 
 
 parseAnything : State -> LexItem -> ParseResult
@@ -752,7 +718,53 @@ blockFromState state =
 
 
 
--- HELPERS
+-- helper functions
+
+
+partialTypeExpressionToConcreteType : PartialTypeExpression -> ConcreteType PossiblyQualified
+partialTypeExpressionToConcreteType pte =
+    case pte of
+        TypeExpression_NamedType { name, args } ->
+            ConcreteType.UserDefinedType
+                { qualifiedness = Qualifiedness.PossiblyQualified Nothing
+                , name = name
+                , args =
+                    args
+                        |> toList partialTypeExpressionToConcreteType
+                }
+
+        TypeExpression_Unit ->
+            ConcreteType.Unit
+
+        TypeExpression_Bracketed ty ->
+            partialTypeExpressionToConcreteType ty
+
+
+recoverErrors : ParseResult -> ParseResult
+recoverErrors res =
+    case res of
+        ParseResult_Err _ ->
+            ParseResult_Ok State_Error_Recovery
+
+        _ ->
+            res
+
+
+parseResultFromMaybeResult : Maybe (Result Error State) -> ParseResult
+parseResultFromMaybeResult x =
+    case x of
+        Just (Ok s) ->
+            ParseResult_Ok s
+
+        Just (Err e) ->
+            ParseResult_Err e
+
+        Nothing ->
+            ParseResult_Skip
+
+
+
+-- stacks
 
 
 type Stack a
