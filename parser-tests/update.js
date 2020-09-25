@@ -40,6 +40,11 @@ async function main() {
 		app.ports.output.subscribe(resolve);
 	});
 
+	if (tests.includes('Panic')) {
+		console.error('ERROR: One or more test cases panicked!');
+		process.exitCode = 1;
+	}
+
 	const newTestFile = [
 		testFileStart,
 		'\n\n',

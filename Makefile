@@ -39,8 +39,10 @@ test: build
 regenerate:
 	cd parser-tests \
 		&& npx elm make Update.elm --output elm.js \
-		&& node update
-	elm-format tests/ParserLexerTestCases.elm --yes
+		&& node update \
+		; CODE=$$? \
+		; elm-format ../tests/ParserLexerTestCases.elm --yes \
+		; exit $$CODE
 
 .PHONY: format
 format:
