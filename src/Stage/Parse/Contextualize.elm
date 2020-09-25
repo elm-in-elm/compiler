@@ -215,30 +215,41 @@ runHelp : List LexItem -> State_ -> List (Result ( State, Error ) Block)
 runHelp items state =
     case items of
         item :: rest ->
-            runHelp
-                rest
-                (case parseAnything state.state item of
-                    ParseResult_Ok newState_ ->
+            case parseAnything state.state item of
+                ParseResult_Ok newState_ ->
+                    runHelp
+                        rest
                         { previousBlocks = state.previousBlocks
                         , state = newState_
                         }
 
-                    ParseResult_Err error ->
+                ParseResult_Err error ->
+                    runHelp
+                        rest
                         { previousBlocks = Err ( state.state, error ) :: state.previousBlocks
-                        , state = State_Error_Recovery
+                        , state =
+                            case item of
+                                Lexer.Newlines _ 0 ->
+                                    State_BlockStart
+
+                                _ ->
+                                    State_Error_Recovery
                         }
 
-                    ParseResult_Panic error ->
-                        -- TODO(harry): more violent error here
+                ParseResult_Panic error ->
+                    -- TODO(harry): more violent error here
+                    runHelp
+                        [{- An empty list to abort parsing. -}]
                         { previousBlocks =
                             Err ( state.state, Error_Panic error )
                                 :: state.previousBlocks
                         , state = State_Error_Recovery
                         }
 
-                    ParseResult_Skip ->
+                ParseResult_Skip ->
+                    runHelp
+                        rest
                         state
-                )
 
         [] ->
             List.reverse
@@ -256,8 +267,15 @@ parseAnything : State -> LexItem -> ParseResult
 parseAnything state =
     case state of
         State_Error_Recovery ->
-            parseBlockStart
-                >> recoverErrors
+            \item ->
+                case item of
+                    Lexer.Newlines _ 0 ->
+                        State_BlockStart
+                            |> ParseResult_Ok
+
+                    _ ->
+                        State_Error_Recovery
+                            |> ParseResult_Ok
 
         State_BlockStart ->
             parseBlockStart
@@ -353,10 +371,10 @@ parseBlockStart item =
             ParseResult_Ok State_BlockStart
 
         Lexer.Newlines _ _ ->
-            ParseResult_Panic "parseBlockStart expects a block but found some indented content"
+            ParseResult_Panic "parseBlockStart expects a block but found some indented content."
 
         Lexer.Whitespace _ ->
-            ParseResult_Panic "parseBlockStart expects a block but found some indented content"
+            ParseResult_Panic "parseBlockStart expects a block but found some whitespace"
 
         _ ->
             ParseResult_Err (Error_InvalidToken item Expecting_Block)
@@ -598,8 +616,23 @@ parserTypeExpr newState ({ stack, current } as prevExpr) item =
                         |> parseResultFromMaybeResult
 
         Lexer.Newlines _ 0 ->
-            newState (TypeExpressionResult_Progress prevExpr)
-                |> ParseResult_Ok
+            (case prevExpr.current of
+                ( _, Nothing ) ->
+                    Error_PartwayThroughTypeAlias
+                        |> Err
+
+                ( TypeExpressionContext_Alias, Just expr ) ->
+                    -- TODO(harry) we need to consider the stack here
+                    TypeExpressionResult_Done expr
+                        |> Ok
+
+                ( TypeExpressionContext_Bracket _, Just expr ) ->
+                    Error_PartwayThroughTypeAlias
+                        |> Err
+            )
+                |> Result.map newState
+                |> Just
+                |> parseResultFromMaybeResult
 
         Lexer.Newlines _ _ ->
             ParseResult_Skip

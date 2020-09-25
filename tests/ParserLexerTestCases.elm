@@ -242,6 +242,31 @@ testCases =
                     )
                 ]
       }
+    , { name = "type-alias-multiline-missing-indentation"
+      , source = """type alias Model =
+List Int
+"""
+      , lexed =
+            Ok
+                [ Located { end = { col = 5, row = 1 }, start = { col = 1, row = 1 } } (Token "type")
+                , Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Whitespace 1)
+                , Located { end = { col = 11, row = 1 }, start = { col = 6, row = 1 } } (Token "alias")
+                , Located { end = { col = 12, row = 1 }, start = { col = 11, row = 1 } } (Whitespace 1)
+                , Located { end = { col = 17, row = 1 }, start = { col = 12, row = 1 } } (Token "Model")
+                , Located { end = { col = 18, row = 1 }, start = { col = 17, row = 1 } } (Whitespace 1)
+                , Located { end = { col = 19, row = 1 }, start = { col = 18, row = 1 } } (Sigil Assign)
+                , Located { end = { col = 1, row = 2 }, start = { col = 19, row = 1 } } (Newlines [] 0)
+                , Located { end = { col = 5, row = 2 }, start = { col = 1, row = 2 } } (Token "List")
+                , Located { end = { col = 6, row = 2 }, start = { col = 5, row = 2 } } (Whitespace 1)
+                , Located { end = { col = 9, row = 2 }, start = { col = 6, row = 2 } } (Token "Int")
+                , Located { end = { col = 1, row = 3 }, start = { col = 9, row = 2 } } (Newlines [] 0)
+                ]
+      , contextualized =
+            Just
+                [ Err ( State_BlockTypeAlias (BlockTypeAlias_NamedAssigns (TypeOrConstructor "Model")), Error_PartwayThroughTypeAlias )
+                , Err ( State_BlockStart, Error_BlockStartsWithTypeOrConstructor (TypeOrConstructor "List") )
+                ]
+      }
     , { name = "type-alias-partial"
       , source = """type alias
 """
@@ -290,7 +315,7 @@ testCases =
                 ]
       , contextualized =
             Just
-                [ Err ( State_BlockTypeAlias (BlockTypeAlias_Completish (TypeOrConstructor "Hi") { current = ( TypeExpressionContext_Alias, Nothing ), stack = Stack [] }), Error_PartwayThroughTypeAlias )
+                [ Err ( State_BlockTypeAlias (BlockTypeAlias_NamedAssigns (TypeOrConstructor "Hi")), Error_PartwayThroughTypeAlias )
                 ]
       }
     , { name = "type-alias-partial-with-bracket"
