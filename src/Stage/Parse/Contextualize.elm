@@ -199,7 +199,7 @@ type Error
     | Error_BlockStartsWithTypeOrConstructor Token.TypeOrConstructor
     | Error_TypeNameStartsWithLowerCase Token.ValueOrFunction
     | Error_UnmatchedBracket Lexer.BracketType Lexer.BracketRole
-    | Error_TypeDoesTakeArgs PartialTypeExpression PartialTypeExpression
+    | Error_TypeDoesNotTakeArgs PartialTypeExpression PartialTypeExpression
     | Error_PartwayThroughTypeAlias
     | Error_Panic String
 
@@ -532,7 +532,7 @@ parserTypeExpr newState ({ stack, current } as prevExpr) item =
                         |> ParseResult_Ok
 
                 TypeExpressionContext_Nested nestingType (Just ((TypeExpression_Bracketed _) as ty)) ->
-                    Error_TypeDoesTakeArgs
+                    Error_TypeDoesNotTakeArgs
                         ty
                         (TypeExpression_NamedType
                             { name = str
@@ -542,7 +542,7 @@ parserTypeExpr newState ({ stack, current } as prevExpr) item =
                         |> ParseResult_Err
 
                 TypeExpressionContext_Nested nestingType (Just TypeExpression_Unit) ->
-                    Error_TypeDoesTakeArgs
+                    Error_TypeDoesNotTakeArgs
                         TypeExpression_Unit
                         (TypeExpression_NamedType
                             { name = str
@@ -591,11 +591,11 @@ parserTypeExpr newState ({ stack, current } as prevExpr) item =
                                                 |> Ok
 
                                         Just TypeExpression_Unit ->
-                                            Error_TypeDoesTakeArgs TypeExpression_Unit expr
+                                            Error_TypeDoesNotTakeArgs TypeExpression_Unit expr
                                                 |> Err
 
                                         Just ((TypeExpression_Bracketed _) as ty) ->
-                                            Error_TypeDoesTakeArgs ty expr
+                                            Error_TypeDoesNotTakeArgs ty expr
                                                 |> Err
                                     )
                                         |> Result.map
@@ -659,10 +659,10 @@ parserTypeExpr newState ({ stack, current } as prevExpr) item =
         --                                         )
         --                                         |> Ok
         --                                 Just TypeExpression_Unit ->
-        --                                     Error_TypeDoesTakeArgs TypeExpression_Unit expr
+        --                                     Error_TypeDoesNotTakeArgs TypeExpression_Unit expr
         --                                         |> Err
         --                                 Just ((TypeExpression_Bracketed _) as ty) ->
-        --                                     Error_TypeDoesTakeArgs ty expr
+        --                                     Error_TypeDoesNotTakeArgs ty expr
         --                                         |> Err
         --                             )
         --                                 |> Result.map

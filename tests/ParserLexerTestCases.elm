@@ -165,7 +165,7 @@ testCases =
                                     ]
                             }
                         )
-                    , Error_TypeDoesTakeArgs (TypeExpression_Bracketed (TypeExpression_NamedType { args = Stack [], name = "Int" })) TypeExpression_Unit
+                    , Error_TypeDoesNotTakeArgs (TypeExpression_Bracketed (TypeExpression_NamedType { args = Stack [], name = "Int" })) TypeExpression_Unit
                     )
                 ]
       }
@@ -201,7 +201,7 @@ testCases =
                                     ]
                             }
                         )
-                    , Error_TypeDoesTakeArgs (TypeExpression_Bracketed TypeExpression_Unit) TypeExpression_Unit
+                    , Error_TypeDoesNotTakeArgs (TypeExpression_Bracketed TypeExpression_Unit) TypeExpression_Unit
                     )
                 ]
       }
@@ -238,7 +238,7 @@ testCases =
                                     ]
                             }
                         )
-                    , Error_TypeDoesTakeArgs (TypeExpression_Bracketed TypeExpression_Unit) (TypeExpression_NamedType { args = Stack [], name = "Int" })
+                    , Error_TypeDoesNotTakeArgs (TypeExpression_Bracketed TypeExpression_Unit) (TypeExpression_NamedType { args = Stack [], name = "Int" })
                     )
                 ]
       }
