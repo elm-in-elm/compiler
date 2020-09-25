@@ -158,10 +158,10 @@ testCases =
                 [ Err
                     ( State_BlockTypeAlias
                         (BlockTypeAlias_Completish (TypeOrConstructor "Hi")
-                            { current = ( TypeExpressionContext_Bracket Round, Nothing )
+                            { current = TypeExpressionContext_Nested NestingType_Bracket Nothing
                             , stack =
                                 Stack
-                                    [ ( TypeExpressionContext_Alias, Just (TypeExpression_Bracketed (TypeExpression_NamedType { args = Stack [], name = "Int" })) )
+                                    [ TypeExpressionContext_Nested NestingType_TypeAlias (Just (TypeExpression_Bracketed (TypeExpression_NamedType { args = Stack [], name = "Int" })))
                                     ]
                             }
                         )
@@ -194,10 +194,10 @@ testCases =
                 [ Err
                     ( State_BlockTypeAlias
                         (BlockTypeAlias_Completish (TypeOrConstructor "Hi")
-                            { current = ( TypeExpressionContext_Bracket Round, Nothing )
+                            { current = TypeExpressionContext_Nested NestingType_Bracket Nothing
                             , stack =
                                 Stack
-                                    [ ( TypeExpressionContext_Alias, Just (TypeExpression_Bracketed TypeExpression_Unit) )
+                                    [ TypeExpressionContext_Nested NestingType_TypeAlias (Just (TypeExpression_Bracketed TypeExpression_Unit))
                                     ]
                             }
                         )
@@ -231,10 +231,10 @@ testCases =
                 [ Err
                     ( State_BlockTypeAlias
                         (BlockTypeAlias_Completish (TypeOrConstructor "Hi")
-                            { current = ( TypeExpressionContext_Bracket Round, Just (TypeExpression_NamedType { args = Stack [], name = "Int" }) )
+                            { current = TypeExpressionContext_Nested NestingType_Bracket (Just (TypeExpression_NamedType { args = Stack [], name = "Int" }))
                             , stack =
                                 Stack
-                                    [ ( TypeExpressionContext_Alias, Just (TypeExpression_Bracketed TypeExpression_Unit) )
+                                    [ TypeExpressionContext_Nested NestingType_TypeAlias (Just (TypeExpression_Bracketed TypeExpression_Unit))
                                     ]
                             }
                         )
@@ -339,10 +339,10 @@ List Int
                 [ Err
                     ( State_BlockTypeAlias
                         (BlockTypeAlias_Completish (TypeOrConstructor "Hi")
-                            { current = ( TypeExpressionContext_Bracket Round, Nothing )
+                            { current = TypeExpressionContext_Nested NestingType_Bracket Nothing
                             , stack =
                                 Stack
-                                    [ ( TypeExpressionContext_Alias, Nothing )
+                                    [ TypeExpressionContext_Nested NestingType_TypeAlias Nothing
                                     ]
                             }
                         )
@@ -374,10 +374,10 @@ List Int
                 [ Err
                     ( State_BlockTypeAlias
                         (BlockTypeAlias_Completish (TypeOrConstructor "Hi")
-                            { current = ( TypeExpressionContext_Bracket Round, Just (TypeExpression_NamedType { args = Stack [], name = "Int" }) )
+                            { current = TypeExpressionContext_Nested NestingType_Bracket (Just (TypeExpression_NamedType { args = Stack [], name = "Int" }))
                             , stack =
                                 Stack
-                                    [ ( TypeExpressionContext_Alias, Nothing )
+                                    [ TypeExpressionContext_Nested NestingType_TypeAlias Nothing
                                     ]
                             }
                         )

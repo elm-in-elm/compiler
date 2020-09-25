@@ -29,10 +29,13 @@ async function main() {
 	const testFileStart = testFile.slice(0, epilogueStart).trim();
 
 	const snippets = await Promise.all(
-		(await fs.readdir(SNIPPETS_DIR_PATH)).sort().map(async (name) => ({
-			name,
-			source: await fs.readFile(path.join(SNIPPETS_DIR_PATH, name), 'utf-8'),
-		}))
+		(await fs.readdir(SNIPPETS_DIR_PATH))
+			.sort()
+			.filter((name) => !name.startsWith('_'))
+			.map(async (name) => ({
+				name,
+				source: await fs.readFile(path.join(SNIPPETS_DIR_PATH, name), 'utf-8'),
+			}))
 	);
 
 	const tests = await new Promise((resolve) => {

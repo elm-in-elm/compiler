@@ -169,13 +169,21 @@ parseResultFromMaybeResult x =
 
 
 type TypeExpressionContext
-    = TypeExpressionContext_Bracket Lexer.BracketType
-    | TypeExpressionContext_Alias
+    = TypeExpressionContext_Nested NestingType (Maybe PartialTypeExpression)
+
+
+
+-- | TypeExpressionContext_Record
+
+
+type NestingType
+    = NestingType_Bracket
+    | NestingType_TypeAlias
 
 
 type alias PartialTypeExpression2 =
-    { stack : Stack ( TypeExpressionContext, Maybe PartialTypeExpression )
-    , current : ( TypeExpressionContext, Maybe PartialTypeExpression )
+    { stack : Stack TypeExpressionContext
+    , current : TypeExpressionContext
     }
 
 
@@ -309,7 +317,7 @@ parseAnything state =
                         TypeExpressionResult_Empty ->
                             Debug.todo ""
                 )
-                { current = ( TypeExpressionContext_Alias, Nothing )
+                { current = TypeExpressionContext_Nested NestingType_TypeAlias Nothing
                 , stack = empty
                 }
 
@@ -485,46 +493,45 @@ parserTypeExpr newState ({ stack, current } as prevExpr) item =
     case item of
         Lexer.Token str ->
             case current of
-                ( context, Nothing ) ->
+                TypeExpressionContext_Nested nestingType Nothing ->
                     newState
                         ({ stack = stack
                          , current =
-                            ( context
-                            , Just
-                                (TypeExpression_NamedType
-                                    { name = str
-                                    , args = empty
-                                    }
+                            TypeExpressionContext_Nested
+                                nestingType
+                                (Just
+                                    (TypeExpression_NamedType
+                                        { name = str
+                                        , args = empty
+                                        }
+                                    )
                                 )
-                            )
                          }
                             |> TypeExpressionResult_Progress
                         )
                         |> ParseResult_Ok
 
-                ( context, Just (TypeExpression_NamedType { name, args }) ) ->
-                    -- TODO(harry): think about how this is fundamentally
-                    -- similar to the definition of custom type constructors.
-                    -- The value of `_context` is key I think.
+                TypeExpressionContext_Nested nestingType (Just (TypeExpression_NamedType { name, args })) ->
                     newState
                         ({ stack = stack
                          , current =
-                            ( context
-                            , Just
-                                (TypeExpression_NamedType
-                                    { name = name
-                                    , args =
-                                        TypeExpression_NamedType { name = str, args = empty }
-                                            |> pushOnto args
-                                    }
+                            TypeExpressionContext_Nested
+                                nestingType
+                                (Just
+                                    (TypeExpression_NamedType
+                                        { name = name
+                                        , args =
+                                            TypeExpression_NamedType { name = str, args = empty }
+                                                |> pushOnto args
+                                        }
+                                    )
                                 )
-                            )
                          }
                             |> TypeExpressionResult_Progress
                         )
                         |> ParseResult_Ok
 
-                ( context, Just ((TypeExpression_Bracketed _) as ty) ) ->
+                TypeExpressionContext_Nested nestingType (Just ((TypeExpression_Bracketed _) as ty)) ->
                     Error_TypeDoesTakeArgs
                         ty
                         (TypeExpression_NamedType
@@ -534,7 +541,7 @@ parserTypeExpr newState ({ stack, current } as prevExpr) item =
                         )
                         |> ParseResult_Err
 
-                ( context, Just TypeExpression_Unit ) ->
+                TypeExpressionContext_Nested nestingType (Just TypeExpression_Unit) ->
                     Error_TypeDoesTakeArgs
                         TypeExpression_Unit
                         (TypeExpression_NamedType
@@ -551,7 +558,7 @@ parserTypeExpr newState ({ stack, current } as prevExpr) item =
                         ({ stack =
                             current
                                 |> pushOnto stack
-                         , current = ( TypeExpressionContext_Bracket Lexer.Round, Nothing )
+                         , current = TypeExpressionContext_Nested NestingType_Bracket Nothing
                          }
                             |> TypeExpressionResult_Progress
                         )
@@ -559,13 +566,13 @@ parserTypeExpr newState ({ stack, current } as prevExpr) item =
 
                 Lexer.Close ->
                     (case current of
-                        ( TypeExpressionContext_Bracket Lexer.Round, mexpr ) ->
+                        TypeExpressionContext_Nested NestingType_Bracket mexpr ->
                             let
                                 expr =
                                     mexpr |> Maybe.withDefault TypeExpression_Unit
                             in
                             (case pop stack of
-                                Just ( ( newContext, newExprToAddTo ), newStack ) ->
+                                Just ( TypeExpressionContext_Nested newNestingType newExprToAddTo, newStack ) ->
                                     (case newExprToAddTo of
                                         Nothing ->
                                             TypeExpression_Bracketed expr
@@ -594,7 +601,7 @@ parserTypeExpr newState ({ stack, current } as prevExpr) item =
                                         |> Result.map
                                             (\newExpr ->
                                                 { stack = newStack
-                                                , current = ( newContext, newExpr )
+                                                , current = TypeExpressionContext_Nested newNestingType newExpr
                                                 }
                                                     |> TypeExpressionResult_Progress
                                             )
@@ -615,18 +622,84 @@ parserTypeExpr newState ({ stack, current } as prevExpr) item =
                     )
                         |> parseResultFromMaybeResult
 
+        -- Lexer.Sigil (Lexer.Bracket Lexer.Curly role) ->
+        --     case role of
+        --         Lexer.Open ->
+        --             newState
+        --                 ({ stack =
+        --                     current
+        --                         |> pushOnto stack
+        --                  , current = TypeExpressionContext_Record Nothing
+        --                  }
+        --                     |> TypeExpressionResult_Progress
+        --                 )
+        --                 |> ParseResult_Ok
+        --         Lexer.Close ->
+        --             (case current of
+        --                 ( TypeExpressionContext_Bracket, mexpr ) ->
+        --                     let
+        --                         expr =
+        --                             mexpr |> Maybe.withDefault TypeExpression_Unit
+        --                     in
+        --                     (case pop stack of
+        --                         Just ( ( newContext, newExprToAddTo ), newStack ) ->
+        --                             (case newExprToAddTo of
+        --                                 Nothing ->
+        --                                     TypeExpression_Bracketed expr
+        --                                         |> Just
+        --                                         |> Ok
+        --                                 Just (TypeExpression_NamedType { name, args }) ->
+        --                                     Just
+        --                                         (TypeExpression_NamedType
+        --                                             { name = name
+        --                                             , args =
+        --                                                 expr
+        --                                                     |> pushOnto args
+        --                                             }
+        --                                         )
+        --                                         |> Ok
+        --                                 Just TypeExpression_Unit ->
+        --                                     Error_TypeDoesTakeArgs TypeExpression_Unit expr
+        --                                         |> Err
+        --                                 Just ((TypeExpression_Bracketed _) as ty) ->
+        --                                     Error_TypeDoesTakeArgs ty expr
+        --                                         |> Err
+        --                             )
+        --                                 |> Result.map
+        --                                     (\newExpr ->
+        --                                         { stack = newStack
+        --                                         , current = ( newContext, newExpr )
+        --                                         }
+        --                                             |> TypeExpressionResult_Progress
+        --                                     )
+        --                         Nothing ->
+        --                             TypeExpressionResult_Done expr
+        --                                 |> Ok
+        --                     )
+        --                         |> Result.map newState
+        --                         |> Just
+        --                 _ ->
+        --                     -- TODO(harry): can we add information about the
+        --                     -- bracket we are expecting here?
+        --                     Error_UnmatchedBracket Lexer.Round Lexer.Close
+        --                         |> Err
+        --                         |> Just
+        --             )
+        --                 |> parseResultFromMaybeResult
         Lexer.Newlines _ 0 ->
             (case prevExpr.current of
-                ( _, Nothing ) ->
+                TypeExpressionContext_Nested _ Nothing ->
                     Error_PartwayThroughTypeAlias
                         |> Err
 
-                ( TypeExpressionContext_Alias, Just expr ) ->
+                TypeExpressionContext_Nested NestingType_TypeAlias (Just expr) ->
                     -- TODO(harry) we need to consider the stack here
                     TypeExpressionResult_Done expr
                         |> Ok
 
-                ( TypeExpressionContext_Bracket _, Just expr ) ->
+                -- ( TypeExpressionContext_Record (Just expr) ) ->
+                --     Debug.todo ""
+                TypeExpressionContext_Nested NestingType_Bracket (Just expr) ->
                     Error_PartwayThroughTypeAlias
                         |> Err
             )
@@ -673,15 +746,8 @@ blockFromState state =
                 |> Just
 
         State_BlockTypeAlias (BlockTypeAlias_Completish name { stack, current }) ->
-            let
-                -- _ =
-                --     Debug.log "part" partialExpr
-                ( context, mexpr ) =
-                    current
-            in
-            -- TODO(harry): handle maybe incomplete block
-            case ( pop stack, context, mexpr ) of
-                ( Nothing, TypeExpressionContext_Alias, Just expr ) ->
+            case ( pop stack, current ) of
+                ( Nothing, TypeExpressionContext_Nested NestingType_TypeAlias (Just expr) ) ->
                     { ty = name
                     , expr = partialTypeExpressionToConcreteType expr
                     }
