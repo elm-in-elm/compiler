@@ -127,6 +127,7 @@ type PartialTypeExpression
         }
     | TypeExpression_Unit
     | TypeExpression_Bracketed PartialTypeExpression
+    | TypeExpression_Tuple PartialTypeExpression PartialTypeExpression (List PartialTypeExpression)
     | TypeExpression_Record (Stack ( String, PartialTypeExpression ))
 
 
@@ -144,7 +145,7 @@ type alias PartialRecord =
 
 
 type NestingType
-    = NestingType_Bracket (Maybe PartialTypeExpression)
+    = NestingType_Bracket ( Stack PartialTypeExpression, Maybe PartialTypeExpression )
     | NestingType_PartialRecord PartialRecord
 
 
@@ -169,6 +170,13 @@ type Error
     | Error_ExpectedColonWhilstParsingRecord
     | Error_ExpectedKeyWhilstParsingRecord
     | Error_TypeDoesNotTakeArgs PartialTypeExpression PartialTypeExpression
+    | Error_TooManyTupleArgs
+        --
+        (ConcreteType PossiblyQualified)
+        (ConcreteType PossiblyQualified)
+        (ConcreteType PossiblyQualified)
+        (ConcreteType PossiblyQualified)
+        (List (ConcreteType PossiblyQualified))
     | Error_PartwayThroughTypeAlias
     | Error_Panic String
 
@@ -308,8 +316,8 @@ parseAnything state =
                                         |> TypeAlias
                                         |> ParseResult_Complete
 
-                                Err () ->
-                                    Error_PartwayThroughTypeAlias
+                                Err (ToConcreteTypeError_TooManyTupleArgs a b c d e) ->
+                                    Error_TooManyTupleArgs a b c d e
                                         |> ParseResult_Err
 
                         TypeExpressionResult_Empty ->
@@ -336,8 +344,8 @@ parseAnything state =
                                         |> TypeAlias
                                         |> ParseResult_Complete
 
-                                Err () ->
-                                    Error_PartwayThroughTypeAlias
+                                Err (ToConcreteTypeError_TooManyTupleArgs a b c d e) ->
+                                    Error_TooManyTupleArgs a b c d e
                                         |> ParseResult_Err
 
                         TypeExpressionResult_Empty ->
@@ -503,7 +511,7 @@ parserTypeExpr newState prevExpr item =
 
         Lexer.Sigil (Lexer.Bracket Lexer.Round Lexer.Open) ->
             { nestingStack =
-                NestingType_Bracket Nothing
+                NestingType_Bracket ( empty, Nothing )
                     |> pushOnto prevExpr.nestingStack
             , root = prevExpr.root
             }
@@ -512,22 +520,50 @@ parserTypeExpr newState prevExpr item =
 
         Lexer.Sigil (Lexer.Bracket Lexer.Round Lexer.Close) ->
             case pop prevExpr.nestingStack of
-                Just ( NestingType_Bracket mexpr, poppedNestingStack ) ->
+                Just ( NestingType_Bracket ( argStack, mexpr ), poppedNestingStack ) ->
                     let
-                        expr =
-                            case mexpr of
-                                Just expr_ ->
-                                    TypeExpression_Bracketed expr_
+                        rexpr =
+                            if argStack /= empty && mexpr == Nothing then
+                                -- We have a trailing comma!
+                                Error_UnmatchedBracket Lexer.Round Lexer.Close
+                                    |> Err
 
-                                Nothing ->
-                                    TypeExpression_Unit
+                            else
+                                let
+                                    fullArgsList =
+                                        (case mexpr of
+                                            Just expr ->
+                                                expr |> pushOnto argStack
+
+                                            Nothing ->
+                                                argStack
+                                        )
+                                            |> toList (\x -> x)
+                                in
+                                case fullArgsList of
+                                    [] ->
+                                        TypeExpression_Unit
+                                            |> Ok
+
+                                    first :: [] ->
+                                        TypeExpression_Bracketed first
+                                            |> Ok
+
+                                    first :: second :: rest ->
+                                        TypeExpression_Tuple first second rest
+                                            |> Ok
                     in
-                    exprAppend
-                        { nestingStack = poppedNestingStack
-                        , root = prevExpr.root
-                        }
-                        (TokenOrType_Type expr)
-                        |> partialTypeExpressionToParseResult newState
+                    case rexpr of
+                        Ok expr ->
+                            exprAppend
+                                { nestingStack = poppedNestingStack
+                                , root = prevExpr.root
+                                }
+                                (TokenOrType_Type expr)
+                                |> partialTypeExpressionToParseResult newState
+
+                        Err e ->
+                            ParseResult_Err e
 
                 _ ->
                     -- TODO(harry): can we add information about the
@@ -641,12 +677,12 @@ exprAppend { nestingStack, root } tot =
                     )
 
         -- We are within a nested bracket.
-        Just ( NestingType_Bracket mostNested, rest ) ->
+        Just ( NestingType_Bracket ( argStack, mostNested ), rest ) ->
             addArgumentToType tot mostNested
                 |> Result.map
                     (\newLatestTypeExpr ->
                         { nestingStack =
-                            NestingType_Bracket (Just newLatestTypeExpr)
+                            NestingType_Bracket ( argStack, Just newLatestTypeExpr )
                                 |> pushOnto rest
                         , root = root
                         }
@@ -702,7 +738,7 @@ blockFromState state =
                                 }
                                     |> TypeAlias
                             )
-                        |> Result.mapError (\() -> Error_PartwayThroughTypeAlias)
+                        |> Result.mapError (\(ToConcreteTypeError_TooManyTupleArgs a b c d e) -> Error_TooManyTupleArgs a b c d e)
                         |> Just
 
                 _ ->
@@ -788,6 +824,10 @@ addToPartialRecord tot { firstEntries, lastEntry } =
             Error_TypeDoesNotTakeArgs ty newType
                 |> Err
 
+        LastEntryOfRecord_KeyValue _ ((TypeExpression_Tuple _ _ _) as ty) ->
+            Error_TypeDoesNotTakeArgs ty newType
+                |> Err
+
         LastEntryOfRecord_KeyValue _ ((TypeExpression_Record _) as ty) ->
             Error_TypeDoesNotTakeArgs ty newType
                 |> Err
@@ -825,6 +865,10 @@ addArgumentToType argToAdd mexistingTypeExpr =
             Error_TypeDoesNotTakeArgs ty newType
                 |> Err
 
+        Just ((TypeExpression_Tuple _ _ _) as ty) ->
+            Error_TypeDoesNotTakeArgs ty newType
+                |> Err
+
         Just ((TypeExpression_Record _) as ty) ->
             Error_TypeDoesNotTakeArgs ty newType
                 |> Err
@@ -839,6 +883,12 @@ type ThingToAddToPartialRecord
     | ThingToAddToPartialRecord_Comma
 
 
+{-| TODO(harry): We can add things to a tuple too! Rename this function
+appropriately.
+
+TODO(harry): We can inline this function.
+
+-}
 addThingToPartialRecord :
     ThingToAddToPartialRecord
     -> PartialTypeExpression2
@@ -877,6 +927,19 @@ addThingToPartialRecord thing prevExpr item newState =
                                 }
                             )
 
+                Just ( NestingType_Bracket ( argStack, Just expr ), rest ) ->
+                    case thing of
+                        ThingToAddToPartialRecord_Colon ->
+                            Err ()
+
+                        ThingToAddToPartialRecord_Comma ->
+                            { nestingStack =
+                                NestingType_Bracket ( expr |> pushOnto argStack, Nothing )
+                                    |> pushOnto rest
+                            , root = prevExpr.root
+                            }
+                                |> Ok
+
                 _ ->
                     Err ()
     in
@@ -896,15 +959,25 @@ partialTypeExpressionToParseResult newState rnewPartialType =
             ParseResult_Err e
 
 
+type ToConcreteTypeError
+    = ToConcreteTypeError_TooManyTupleArgs
+        --
+        (ConcreteType PossiblyQualified)
+        (ConcreteType PossiblyQualified)
+        (ConcreteType PossiblyQualified)
+        (ConcreteType PossiblyQualified)
+        (List (ConcreteType PossiblyQualified))
+
+
 {-| TODO(harry): custom error message here
 -}
-partialTypeExpressionToConcreteType : PartialTypeExpression -> Result () (ConcreteType PossiblyQualified)
+partialTypeExpressionToConcreteType : PartialTypeExpression -> Result ToConcreteTypeError (ConcreteType PossiblyQualified)
 partialTypeExpressionToConcreteType pte =
     case pte of
         TypeExpression_NamedType { name, args } ->
             args
                 |> toList partialTypeExpressionToConcreteType
-                |> collectList
+                |> collectList (\x -> x)
                 |> Result.map
                     (\goodArgs ->
                         { qualifiedness = Qualifiedness.PossiblyQualified Nothing
@@ -921,6 +994,31 @@ partialTypeExpressionToConcreteType pte =
         TypeExpression_Bracketed ty ->
             partialTypeExpressionToConcreteType ty
 
+        TypeExpression_Tuple first second [] ->
+            Result.map2
+                ConcreteType.Tuple
+                (partialTypeExpressionToConcreteType first)
+                (partialTypeExpressionToConcreteType second)
+
+        TypeExpression_Tuple first second (third :: []) ->
+            Result.map3
+                ConcreteType.Tuple3
+                (partialTypeExpressionToConcreteType first)
+                (partialTypeExpressionToConcreteType second)
+                (partialTypeExpressionToConcreteType third)
+
+        TypeExpression_Tuple first second (third :: fouth :: rest) ->
+            Result.map5
+                ToConcreteTypeError_TooManyTupleArgs
+                (partialTypeExpressionToConcreteType first)
+                (partialTypeExpressionToConcreteType second)
+                (partialTypeExpressionToConcreteType third)
+                (partialTypeExpressionToConcreteType fouth)
+                (rest
+                    |> collectList partialTypeExpressionToConcreteType
+                )
+                |> Result.andThen Err
+
         TypeExpression_Record keyValues ->
             keyValues
                 |> toList
@@ -928,7 +1026,7 @@ partialTypeExpressionToConcreteType pte =
                         partialTypeExpressionToConcreteType value
                             |> Result.map (\concreteValue -> ( key, concreteValue ))
                     )
-                |> collectList
+                |> collectList (\x -> x)
                 |> Result.map
                     (\goodKeyValues ->
                         Dict.fromList goodKeyValues
@@ -946,19 +1044,21 @@ recoverErrors res =
             res
 
 
-collectList : List (Result e o) -> Result e (List o)
+collectList : (a -> Result e o) -> List a -> Result e (List o)
 collectList =
     collectListHelp []
 
 
-collectListHelp : List o -> List (Result e o) -> Result e (List o)
-collectListHelp new old =
+collectListHelp : List o -> (a -> Result e o) -> List a -> Result e (List o)
+collectListHelp new func old =
     case old of
-        (Ok curr) :: rest ->
-            collectListHelp (curr :: new) rest
+        curr :: rest ->
+            case func curr of
+                Ok o ->
+                    collectListHelp (o :: new) func rest
 
-        (Err e) :: rest ->
-            Err e
+                Err e ->
+                    Err e
 
         [] ->
             Ok new

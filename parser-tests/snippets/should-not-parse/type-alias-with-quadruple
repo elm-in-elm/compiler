@@ -1,0 +1,2 @@
+type alias Hi = (Int, A, B, C, D)
+type alias Hi = (A Int, C D E F, H I (J K), L M () O P)
