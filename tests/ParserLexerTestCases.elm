@@ -404,7 +404,7 @@ List Int
                 ]
       , contextualized =
             Just
-                [ Err ( State_BlockTypeAlias (BlockTypeAlias_NamedAssigns (TypeOrConstructor "Ty")), Error_InvalidToken (Sigil (Bracket Curly Open)) (Expecting_Sigil Assign) )
+                [ Err ( State_BlockTypeAlias (BlockTypeAlias_Completish (TypeOrConstructor "Ty") { bracketStack = Stack [], root = Just (TypeExpression_PartialRecord { firstEntries = Stack [], lastEntry = LastEntryOfRecord_Empty }) }), Error_InvalidToken (Sigil (Bracket Curly Close)) Expecting_Unknown )
                 ]
       }
     , { name = "type-alias-record-empty-multiline"
@@ -436,7 +436,7 @@ List Int
                 ]
       , contextualized =
             Just
-                [ Err ( State_BlockTypeAlias (BlockTypeAlias_NamedAssigns (TypeOrConstructor "Ty")), Error_InvalidToken (Sigil (Bracket Curly Open)) (Expecting_Sigil Assign) )
+                [ Err ( State_BlockTypeAlias (BlockTypeAlias_Completish (TypeOrConstructor "Ty") { bracketStack = Stack [], root = Just (TypeExpression_PartialRecord { firstEntries = Stack [], lastEntry = LastEntryOfRecord_Empty }) }), Error_InvalidToken (Sigil (Bracket Curly Close)) Expecting_Unknown )
                 ]
       }
     , { name = "type-alias-record-half-empty"
@@ -457,7 +457,47 @@ List Int
                 ]
       , contextualized =
             Just
-                [ Err ( State_BlockTypeAlias (BlockTypeAlias_NamedAssigns (TypeOrConstructor "Ty")), Error_InvalidToken (Sigil (Bracket Curly Open)) (Expecting_Sigil Assign) )
+                [ Err ( State_BlockTypeAlias (BlockTypeAlias_Completish (TypeOrConstructor "Ty") { bracketStack = Stack [], root = Just (TypeExpression_PartialRecord { firstEntries = Stack [], lastEntry = LastEntryOfRecord_Empty }) }), Error_PartwayThroughTypeAlias )
+                ]
+      }
+    , { name = "type-alias-record-in-bracket"
+      , source = """type alias Ty = ({ hi: 6 })
+"""
+      , lexed =
+            Ok
+                [ Located { end = { col = 5, row = 1 }, start = { col = 1, row = 1 } } (Token "type")
+                , Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Whitespace 1)
+                , Located { end = { col = 11, row = 1 }, start = { col = 6, row = 1 } } (Token "alias")
+                , Located { end = { col = 12, row = 1 }, start = { col = 11, row = 1 } } (Whitespace 1)
+                , Located { end = { col = 14, row = 1 }, start = { col = 12, row = 1 } } (Token "Ty")
+                , Located { end = { col = 15, row = 1 }, start = { col = 14, row = 1 } } (Whitespace 1)
+                , Located { end = { col = 16, row = 1 }, start = { col = 15, row = 1 } } (Sigil Assign)
+                , Located { end = { col = 17, row = 1 }, start = { col = 16, row = 1 } } (Whitespace 1)
+                , Located { end = { col = 18, row = 1 }, start = { col = 17, row = 1 } } (Sigil (Bracket Round Open))
+                , Located { end = { col = 19, row = 1 }, start = { col = 18, row = 1 } } (Sigil (Bracket Curly Open))
+                , Located { end = { col = 20, row = 1 }, start = { col = 19, row = 1 } } (Whitespace 1)
+                , Located { end = { col = 22, row = 1 }, start = { col = 20, row = 1 } } (Token "hi")
+                , Located { end = { col = 23, row = 1 }, start = { col = 22, row = 1 } } (Sigil Colon)
+                , Located { end = { col = 24, row = 1 }, start = { col = 23, row = 1 } } (Whitespace 1)
+                , Located { end = { col = 25, row = 1 }, start = { col = 24, row = 1 } } (Token "6")
+                , Located { end = { col = 26, row = 1 }, start = { col = 25, row = 1 } } (Whitespace 1)
+                , Located { end = { col = 27, row = 1 }, start = { col = 26, row = 1 } } (Sigil (Bracket Curly Close))
+                , Located { end = { col = 28, row = 1 }, start = { col = 27, row = 1 } } (Sigil (Bracket Round Close))
+                , Located { end = { col = 1, row = 2 }, start = { col = 28, row = 1 } } (Newlines [] 0)
+                ]
+      , contextualized =
+            Just
+                [ Ok
+                    (TypeAlias
+                        { expr =
+                            Record
+                                (Dict.fromList
+                                    [ ( "hi", UserDefinedType { args = [], name = "6", qualifiedness = PossiblyQualified Nothing } )
+                                    ]
+                                )
+                        , ty = TypeOrConstructor "Ty"
+                        }
+                    )
                 ]
       }
     , { name = "type-alias-record-missing-colon"
@@ -484,7 +524,7 @@ List Int
                 ]
       , contextualized =
             Just
-                [ Err ( State_BlockTypeAlias (BlockTypeAlias_NamedAssigns (TypeOrConstructor "Ty")), Error_InvalidToken (Sigil (Bracket Curly Open)) (Expecting_Sigil Assign) )
+                [ Err ( State_BlockTypeAlias (BlockTypeAlias_Completish (TypeOrConstructor "Ty") { bracketStack = Stack [], root = Just (TypeExpression_PartialRecord { firstEntries = Stack [], lastEntry = LastEntryOfRecord_Key "hi" }) }), Error_ExpectedColonWhilstParsingRecord )
                 ]
       }
     , { name = "type-alias-record-simple"
@@ -512,7 +552,17 @@ List Int
                 ]
       , contextualized =
             Just
-                [ Err ( State_BlockTypeAlias (BlockTypeAlias_NamedAssigns (TypeOrConstructor "Ty")), Error_InvalidToken (Sigil (Bracket Curly Open)) (Expecting_Sigil Assign) )
+                [ Ok
+                    (TypeAlias
+                        { expr =
+                            Record
+                                (Dict.fromList
+                                    [ ( "hi", UserDefinedType { args = [], name = "6", qualifiedness = PossiblyQualified Nothing } )
+                                    ]
+                                )
+                        , ty = TypeOrConstructor "Ty"
+                        }
+                    )
                 ]
       }
     , { name = "type-alias-record-two-entries"
@@ -546,7 +596,18 @@ List Int
                 ]
       , contextualized =
             Just
-                [ Err ( State_BlockTypeAlias (BlockTypeAlias_NamedAssigns (TypeOrConstructor "Ty")), Error_InvalidToken (Sigil (Bracket Curly Open)) (Expecting_Sigil Assign) )
+                [ Ok
+                    (TypeAlias
+                        { expr =
+                            Record
+                                (Dict.fromList
+                                    [ ( "buy", UserDefinedType { args = [], name = "8", qualifiedness = PossiblyQualified Nothing } )
+                                    , ( "hi", UserDefinedType { args = [], name = "6", qualifiedness = PossiblyQualified Nothing } )
+                                    ]
+                                )
+                        , ty = TypeOrConstructor "Ty"
+                        }
+                    )
                 ]
       }
     , { name = "type-alias-unit"

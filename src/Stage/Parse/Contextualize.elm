@@ -168,6 +168,9 @@ type Expecting
     = Expecting_Sigil Lexer.LexSigil
     | Expecting_Block
     | Expecting_TypeName
+      -- TODO(harry): reduce number of cases where we do not know what sigil we
+      -- are expecting.
+    | Expecting_Unknown
 
 
 
@@ -566,6 +569,191 @@ parserTypeExpr newState ({ bracketStack, root } as prevExpr) item =
                             Error_UnmatchedBracket Lexer.Round Lexer.Close
                                 |> ParseResult_Err
 
+        Lexer.Sigil (Lexer.Bracket Lexer.Curly Lexer.Open) ->
+            let
+                newType =
+                    TypeExpression_PartialRecord
+                        { firstEntries = empty
+                        , lastEntry = LastEntryOfRecord_Empty
+                        }
+            in
+            case pop bracketStack of
+                Nothing ->
+                    addArgumentToType root (TokenOrType_Type newType)
+                        |> Result.map
+                            (\newRoot ->
+                                { bracketStack = empty
+                                , root = Just newRoot
+                                }
+                            )
+                        |> partialTypeExpressionToParseResult newState
+
+                Just ( mlatestTypeExpr, rest ) ->
+                    addArgumentToType mlatestTypeExpr (TokenOrType_Type newType)
+                        |> Result.map
+                            (\newLatestTypeExpr ->
+                                { bracketStack =
+                                    Just newLatestTypeExpr
+                                        |> pushOnto rest
+                                , root = root
+                                }
+                            )
+                        |> partialTypeExpressionToParseResult newState
+
+        Lexer.Sigil Lexer.Colon ->
+            case pop bracketStack of
+                Nothing ->
+                    case root of
+                        Just (TypeExpression_PartialRecord { firstEntries, lastEntry }) ->
+                            case lastEntry of
+                                LastEntryOfRecord_Key key ->
+                                    { bracketStack = empty
+                                    , root =
+                                        TypeExpression_PartialRecord
+                                            { firstEntries = firstEntries
+                                            , lastEntry = LastEntryOfRecord_KeyColon key
+                                            }
+                                            |> Just
+                                    }
+                                        |> TypeExpressionResult_Progress
+                                        |> newState
+
+                                _ ->
+                                    Error_InvalidToken item Expecting_Unknown
+                                        |> ParseResult_Err
+
+                        _ ->
+                            Error_InvalidToken item Expecting_Unknown
+                                |> ParseResult_Err
+
+                -- We are within a nested bracket.
+                Just ( mlatestTypeExpr, rest ) ->
+                    case mlatestTypeExpr of
+                        Just (TypeExpression_PartialRecord { firstEntries, lastEntry }) ->
+                            case lastEntry of
+                                LastEntryOfRecord_Key key ->
+                                    { bracketStack =
+                                        TypeExpression_PartialRecord
+                                            { firstEntries = firstEntries
+                                            , lastEntry = LastEntryOfRecord_KeyColon key
+                                            }
+                                            |> Just
+                                            |> pushOnto rest
+                                    , root = root
+                                    }
+                                        |> TypeExpressionResult_Progress
+                                        |> newState
+
+                                _ ->
+                                    Error_InvalidToken item Expecting_Unknown
+                                        |> ParseResult_Err
+
+                        _ ->
+                            Error_InvalidToken item Expecting_Unknown
+                                |> ParseResult_Err
+
+        Lexer.Sigil Lexer.Comma ->
+            case pop bracketStack of
+                Nothing ->
+                    case root of
+                        Just (TypeExpression_PartialRecord { firstEntries, lastEntry }) ->
+                            case lastEntry of
+                                LastEntryOfRecord_KeyValue key value ->
+                                    { bracketStack = empty
+                                    , root =
+                                        TypeExpression_PartialRecord
+                                            { firstEntries = ( key, value ) |> pushOnto firstEntries
+                                            , lastEntry = LastEntryOfRecord_Empty
+                                            }
+                                            |> Just
+                                    }
+                                        |> TypeExpressionResult_Progress
+                                        |> newState
+
+                                _ ->
+                                    Error_InvalidToken item Expecting_Unknown
+                                        |> ParseResult_Err
+
+                        _ ->
+                            Error_InvalidToken item Expecting_Unknown
+                                |> ParseResult_Err
+
+                -- We are within a nested bracket.
+                Just ( mlatestTypeExpr, rest ) ->
+                    case mlatestTypeExpr of
+                        Just (TypeExpression_PartialRecord { firstEntries, lastEntry }) ->
+                            case lastEntry of
+                                LastEntryOfRecord_KeyValue key value ->
+                                    { bracketStack =
+                                        TypeExpression_PartialRecord
+                                            { firstEntries = ( key, value ) |> pushOnto firstEntries
+                                            , lastEntry = LastEntryOfRecord_Empty
+                                            }
+                                            |> Just
+                                            |> pushOnto rest
+                                    , root = root
+                                    }
+                                        |> TypeExpressionResult_Progress
+                                        |> newState
+
+                                _ ->
+                                    Error_InvalidToken item Expecting_Unknown
+                                        |> ParseResult_Err
+
+                        _ ->
+                            Error_InvalidToken item Expecting_Unknown
+                                |> ParseResult_Err
+
+        Lexer.Sigil (Lexer.Bracket Lexer.Curly Lexer.Close) ->
+            case pop bracketStack of
+                Nothing ->
+                    case root of
+                        Just (TypeExpression_PartialRecord { firstEntries, lastEntry }) ->
+                            case lastEntry of
+                                LastEntryOfRecord_KeyValue key value ->
+                                    { bracketStack = empty
+                                    , root =
+                                        ( key, value )
+                                            |> pushOnto firstEntries
+                                            |> TypeExpression_Record
+                                            |> Just
+                                    }
+                                        |> TypeExpressionResult_Progress
+                                        |> newState
+
+                                _ ->
+                                    Error_InvalidToken item Expecting_Unknown
+                                        |> ParseResult_Err
+
+                        _ ->
+                            Error_InvalidToken item Expecting_Unknown
+                                |> ParseResult_Err
+
+                -- We are within a nested bracket.
+                Just ( mlatestTypeExpr, rest ) ->
+                    case mlatestTypeExpr of
+                        Just (TypeExpression_PartialRecord { firstEntries, lastEntry }) ->
+                            case lastEntry of
+                                LastEntryOfRecord_KeyValue key value ->
+                                    { bracketStack =
+                                        ( key, value )
+                                            |> pushOnto firstEntries
+                                            |> TypeExpression_Record
+                                            |> Just
+                                            |> pushOnto rest
+                                    , root = root
+                                    }
+                                        |> TypeExpressionResult_Progress
+                                        |> newState
+
+                                _ ->
+                                    Error_InvalidToken item Expecting_Unknown
+                                        |> ParseResult_Err
+
+                        _ ->
+                            Error_InvalidToken item Expecting_Unknown
+                                |> ParseResult_Err
+
         Lexer.Newlines _ 0 ->
             case ( pop prevExpr.bracketStack, prevExpr.root ) of
                 ( Just _, _ ) ->
@@ -587,7 +775,7 @@ parserTypeExpr newState ({ bracketStack, root } as prevExpr) item =
             ParseResult_Skip
 
         _ ->
-            Error_InvalidToken item (Expecting_Sigil Lexer.Assign)
+            Error_InvalidToken item Expecting_Unknown
                 |> ParseResult_Err
 
 
