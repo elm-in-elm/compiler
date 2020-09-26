@@ -491,7 +491,7 @@ parserTypeExpr :
 parserTypeExpr newState prevExpr item =
     case item of
         Lexer.Token str ->
-            exprAppend prevExpr (\typeExpr -> addArgumentToType typeExpr (TokenOrType_Token str))
+            exprAppend prevExpr (addArgumentToType (TokenOrType_Token str))
                 |> partialTypeExpressionToParseResult newState
 
         Lexer.Sigil (Lexer.Bracket Lexer.Round role) ->
@@ -521,7 +521,7 @@ parserTypeExpr newState prevExpr item =
                                 { bracketStack = poppedBracketStack
                                 , root = prevExpr.root
                                 }
-                                (\typeExpr -> addArgumentToType typeExpr (TokenOrType_Type expr))
+                                (addArgumentToType (TokenOrType_Type expr))
                                 |> partialTypeExpressionToParseResult newState
 
                         _ ->
@@ -538,7 +538,7 @@ parserTypeExpr newState prevExpr item =
                         , lastEntry = LastEntryOfRecord_Empty
                         }
             in
-            exprAppend prevExpr (\typeExpr -> addArgumentToType typeExpr (TokenOrType_Type newType))
+            exprAppend prevExpr (addArgumentToType (TokenOrType_Type newType))
                 |> partialTypeExpressionToParseResult newState
 
         Lexer.Sigil Lexer.Colon ->
@@ -705,16 +705,17 @@ type TokenOrType
 
 
 addToPartialRecord :
-    { firstEntries : Stack ( String, PartialTypeExpression )
-    , lastEntry : LastEntryOfRecord
-    }
-    -> TokenOrType
+    TokenOrType
+    ->
+        { firstEntries : Stack ( String, PartialTypeExpression )
+        , lastEntry : LastEntryOfRecord
+        }
     ->
         Result Error
             { firstEntries : Stack ( String, PartialTypeExpression )
             , lastEntry : LastEntryOfRecord
             }
-addToPartialRecord { firstEntries, lastEntry } tot =
+addToPartialRecord tot { firstEntries, lastEntry } =
     let
         newType =
             case tot of
@@ -780,7 +781,7 @@ addToPartialRecord { firstEntries, lastEntry } tot =
                 |> Err
 
         LastEntryOfRecord_KeyValue key (TypeExpression_PartialRecord innerPartialRecord) ->
-            addToPartialRecord innerPartialRecord tot
+            addToPartialRecord tot innerPartialRecord
                 |> Result.map
                     (\newInnerPartialRecord ->
                         { firstEntries = firstEntries
@@ -792,8 +793,8 @@ addToPartialRecord { firstEntries, lastEntry } tot =
                     )
 
 
-addArgumentToType : Maybe PartialTypeExpression -> TokenOrType -> Result Error PartialTypeExpression
-addArgumentToType mexistingTypeExpr argToAdd =
+addArgumentToType : TokenOrType -> Maybe PartialTypeExpression -> Result Error PartialTypeExpression
+addArgumentToType argToAdd mexistingTypeExpr =
     let
         newType =
             case argToAdd of
@@ -821,7 +822,7 @@ addArgumentToType mexistingTypeExpr argToAdd =
                 |> Ok
 
         Just (TypeExpression_PartialRecord existingPartialRecord) ->
-            addToPartialRecord existingPartialRecord argToAdd
+            addToPartialRecord argToAdd existingPartialRecord
                 |> Result.map TypeExpression_PartialRecord
 
         Just ((TypeExpression_Bracketed _) as ty) ->
