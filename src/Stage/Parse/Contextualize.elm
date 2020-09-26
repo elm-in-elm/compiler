@@ -127,10 +127,6 @@ type PartialTypeExpression
         }
     | TypeExpression_Unit
     | TypeExpression_Bracketed PartialTypeExpression
-    | TypeExpression_PartialRecord
-        { firstEntries : Stack ( String, PartialTypeExpression )
-        , lastEntry : LastEntryOfRecord
-        }
     | TypeExpression_Record (Stack ( String, PartialTypeExpression ))
 
 
@@ -141,8 +137,15 @@ type LastEntryOfRecord
     | LastEntryOfRecord_KeyValue String PartialTypeExpression
 
 
+type alias PartialRecord =
+    { firstEntries : Stack ( String, PartialTypeExpression )
+    , lastEntry : LastEntryOfRecord
+    }
+
+
 type NestingType
     = NestingType_Bracket (Maybe PartialTypeExpression)
+    | NestingType_PartialRecord PartialRecord
 
 
 type alias PartialTypeExpression2 =
@@ -495,7 +498,7 @@ parserTypeExpr :
 parserTypeExpr newState prevExpr item =
     case item of
         Lexer.Token str ->
-            exprAppend prevExpr (addArgumentToType (TokenOrType_Token str))
+            exprAppend prevExpr (TokenOrType_Token str)
                 |> partialTypeExpressionToParseResult newState
 
         Lexer.Sigil (Lexer.Bracket Lexer.Round Lexer.Open) ->
@@ -523,7 +526,7 @@ parserTypeExpr newState prevExpr item =
                         { nestingStack = poppedNestingStack
                         , root = prevExpr.root
                         }
-                        (addArgumentToType (TokenOrType_Type expr))
+                        (TokenOrType_Type expr)
                         |> partialTypeExpressionToParseResult newState
 
                 _ ->
@@ -533,15 +536,16 @@ parserTypeExpr newState prevExpr item =
                         |> ParseResult_Err
 
         Lexer.Sigil (Lexer.Bracket Lexer.Curly Lexer.Open) ->
-            let
-                newType =
-                    TypeExpression_PartialRecord
-                        { firstEntries = empty
-                        , lastEntry = LastEntryOfRecord_Empty
-                        }
-            in
-            exprAppend prevExpr (addArgumentToType (TokenOrType_Type newType))
-                |> partialTypeExpressionToParseResult newState
+            { nestingStack =
+                NestingType_PartialRecord
+                    { firstEntries = empty
+                    , lastEntry = LastEntryOfRecord_Empty
+                    }
+                    |> pushOnto prevExpr.nestingStack
+            , root = prevExpr.root
+            }
+                |> TypeExpressionResult_Progress
+                |> newState
 
         Lexer.Sigil Lexer.Colon ->
             addThingToPartialRecord ThingToAddToPartialRecord_Colon prevExpr item newState
@@ -550,7 +554,47 @@ parserTypeExpr newState prevExpr item =
             addThingToPartialRecord ThingToAddToPartialRecord_Comma prevExpr item newState
 
         Lexer.Sigil (Lexer.Bracket Lexer.Curly Lexer.Close) ->
-            addThingToPartialRecord ThingToAddToPartialRecord_Close prevExpr item newState
+            case pop prevExpr.nestingStack of
+                Just ( NestingType_PartialRecord { firstEntries, lastEntry }, poppedNestingStack ) ->
+                    let
+                        fromRecord record =
+                            let
+                                tot =
+                                    record
+                                        |> TypeExpression_Record
+                                        |> TokenOrType_Type
+                            in
+                            exprAppend
+                                { nestingStack = poppedNestingStack
+                                , root = prevExpr.root
+                                }
+                                tot
+                                |> partialTypeExpressionToParseResult newState
+                    in
+                    case lastEntry of
+                        LastEntryOfRecord_KeyValue key value ->
+                            ( key, value )
+                                |> pushOnto firstEntries
+                                |> fromRecord
+
+                        LastEntryOfRecord_Empty ->
+                            if firstEntries == empty then
+                                empty
+                                    |> fromRecord
+
+                            else
+                                Error_InvalidToken item Expecting_Unknown
+                                    |> ParseResult_Err
+
+                        _ ->
+                            Error_InvalidToken item Expecting_Unknown
+                                |> ParseResult_Err
+
+                _ ->
+                    -- TODO(harry): can we add information about the
+                    -- bracket we are expecting here?
+                    Error_UnmatchedBracket Lexer.Curly Lexer.Close
+                        |> ParseResult_Err
 
         Lexer.Newlines _ 0 ->
             case ( pop prevExpr.nestingStack, prevExpr.root ) of
@@ -579,16 +623,16 @@ parserTypeExpr newState prevExpr item =
 
 exprAppend :
     PartialTypeExpression2
-    -> (Maybe PartialTypeExpression -> Result Error PartialTypeExpression)
+    -> TokenOrType
     -> Result Error PartialTypeExpression2
-exprAppend { nestingStack, root } append =
+exprAppend { nestingStack, root } tot =
     case pop nestingStack of
         -- We are in the top level of the type expression; we have
         -- found a closing bracket to match every opening bracket we
         -- have encountered so far whilst parsing the type expression.
         -- (We may have found no brackets at all so far.)
         Nothing ->
-            append root
+            addArgumentToType tot root
                 |> Result.map
                     (\newRoot ->
                         { nestingStack = empty
@@ -597,12 +641,23 @@ exprAppend { nestingStack, root } append =
                     )
 
         -- We are within a nested bracket.
-        Just ( NestingType_Bracket mlatestTypeExpr, rest ) ->
-            append mlatestTypeExpr
+        Just ( NestingType_Bracket mostNested, rest ) ->
+            addArgumentToType tot mostNested
                 |> Result.map
                     (\newLatestTypeExpr ->
                         { nestingStack =
                             NestingType_Bracket (Just newLatestTypeExpr)
+                                |> pushOnto rest
+                        , root = root
+                        }
+                    )
+
+        Just ( NestingType_PartialRecord existingPartialRecord, rest ) ->
+            addToPartialRecord tot existingPartialRecord
+                |> Result.map
+                    (\newPartialRecord ->
+                        { nestingStack =
+                            NestingType_PartialRecord newPartialRecord
                                 |> pushOnto rest
                         , root = root
                         }
@@ -670,15 +725,8 @@ type TokenOrType
 
 addToPartialRecord :
     TokenOrType
-    ->
-        { firstEntries : Stack ( String, PartialTypeExpression )
-        , lastEntry : LastEntryOfRecord
-        }
-    ->
-        Result Error
-            { firstEntries : Stack ( String, PartialTypeExpression )
-            , lastEntry : LastEntryOfRecord
-            }
+    -> PartialRecord
+    -> Result Error PartialRecord
 addToPartialRecord tot { firstEntries, lastEntry } =
     let
         newType =
@@ -744,18 +792,6 @@ addToPartialRecord tot { firstEntries, lastEntry } =
             Error_TypeDoesNotTakeArgs ty newType
                 |> Err
 
-        LastEntryOfRecord_KeyValue key (TypeExpression_PartialRecord innerPartialRecord) ->
-            addToPartialRecord tot innerPartialRecord
-                |> Result.map
-                    (\newInnerPartialRecord ->
-                        { firstEntries = firstEntries
-                        , lastEntry =
-                            LastEntryOfRecord_KeyValue
-                                key
-                                (TypeExpression_PartialRecord newInnerPartialRecord)
-                        }
-                    )
-
 
 addArgumentToType : TokenOrType -> Maybe PartialTypeExpression -> Result Error PartialTypeExpression
 addArgumentToType argToAdd mexistingTypeExpr =
@@ -785,10 +821,6 @@ addArgumentToType argToAdd mexistingTypeExpr =
                 }
                 |> Ok
 
-        Just (TypeExpression_PartialRecord existingPartialRecord) ->
-            addToPartialRecord argToAdd existingPartialRecord
-                |> Result.map TypeExpression_PartialRecord
-
         Just ((TypeExpression_Bracketed _) as ty) ->
             Error_TypeDoesNotTakeArgs ty newType
                 |> Err
@@ -805,7 +837,6 @@ addArgumentToType argToAdd mexistingTypeExpr =
 type ThingToAddToPartialRecord
     = ThingToAddToPartialRecord_Colon
     | ThingToAddToPartialRecord_Comma
-    | ThingToAddToPartialRecord_Close
 
 
 addThingToPartialRecord :
@@ -815,72 +846,43 @@ addThingToPartialRecord :
     -> (TypeExpressionResult -> ParseResult)
     -> ParseResult
 addThingToPartialRecord thing prevExpr item newState =
-    exprAppend
-        prevExpr
-        (\typeExpr ->
-            case typeExpr of
-                Just (TypeExpression_PartialRecord pr) ->
-                    addThingToPartialRecordHelp thing pr
-                        |> Result.mapError (\() -> Error_InvalidToken item Expecting_Unknown)
+    let
+        getNewPartialRecord { firstEntries, lastEntry } =
+            case ( thing, lastEntry ) of
+                ( ThingToAddToPartialRecord_Colon, LastEntryOfRecord_Key key ) ->
+                    { firstEntries = firstEntries
+                    , lastEntry = LastEntryOfRecord_KeyColon key
+                    }
+                        |> Ok
+
+                ( ThingToAddToPartialRecord_Comma, LastEntryOfRecord_KeyValue key value ) ->
+                    { firstEntries = ( key, value ) |> pushOnto firstEntries
+                    , lastEntry = LastEntryOfRecord_Empty
+                    }
+                        |> Ok
 
                 _ ->
-                    Error_InvalidToken item Expecting_Unknown
-                        |> Err
-        )
+                    Err ()
+
+        newNestedTypeExpression =
+            case pop prevExpr.nestingStack of
+                Just ( NestingType_PartialRecord existingPartialRecord, rest ) ->
+                    getNewPartialRecord existingPartialRecord
+                        |> Result.map
+                            (\newPartialRecord ->
+                                { nestingStack =
+                                    NestingType_PartialRecord newPartialRecord
+                                        |> pushOnto rest
+                                , root = prevExpr.root
+                                }
+                            )
+
+                _ ->
+                    Err ()
+    in
+    newNestedTypeExpression
+        |> Result.mapError (\() -> Error_InvalidToken item Expecting_Unknown)
         |> partialTypeExpressionToParseResult newState
-
-
-addThingToPartialRecordHelp :
-    ThingToAddToPartialRecord
-    ->
-        { firstEntries : Stack ( String, PartialTypeExpression )
-        , lastEntry : LastEntryOfRecord
-        }
-    -> Result () PartialTypeExpression
-addThingToPartialRecordHelp thing { firstEntries, lastEntry } =
-    case ( thing, lastEntry ) of
-        ( ThingToAddToPartialRecord_Colon, LastEntryOfRecord_Key key ) ->
-            { firstEntries = firstEntries
-            , lastEntry = LastEntryOfRecord_KeyColon key
-            }
-                |> TypeExpression_PartialRecord
-                |> Ok
-
-        -- Must come before other `LastEntryOfRecord_KeyValue` cases!
-        ( _, LastEntryOfRecord_KeyValue key (TypeExpression_PartialRecord pr) ) ->
-            addThingToPartialRecordHelp thing pr
-                |> Result.map
-                    (\newPr ->
-                        { firstEntries = firstEntries
-                        , lastEntry =
-                            LastEntryOfRecord_KeyValue key newPr
-                        }
-                            |> TypeExpression_PartialRecord
-                    )
-
-        ( ThingToAddToPartialRecord_Comma, LastEntryOfRecord_KeyValue key value ) ->
-            { firstEntries = ( key, value ) |> pushOnto firstEntries
-            , lastEntry = LastEntryOfRecord_Empty
-            }
-                |> TypeExpression_PartialRecord
-                |> Ok
-
-        ( ThingToAddToPartialRecord_Close, LastEntryOfRecord_Empty ) ->
-            if firstEntries == empty then
-                TypeExpression_Record empty
-                    |> Ok
-
-            else
-                Err ()
-
-        ( ThingToAddToPartialRecord_Close, LastEntryOfRecord_KeyValue key value ) ->
-            ( key, value )
-                |> pushOnto firstEntries
-                |> TypeExpression_Record
-                |> Ok
-
-        _ ->
-            Err ()
 
 
 partialTypeExpressionToParseResult : (TypeExpressionResult -> ParseResult) -> Result Error PartialTypeExpression2 -> ParseResult
@@ -918,9 +920,6 @@ partialTypeExpressionToConcreteType pte =
 
         TypeExpression_Bracketed ty ->
             partialTypeExpressionToConcreteType ty
-
-        TypeExpression_PartialRecord ty ->
-            Err ()
 
         TypeExpression_Record keyValues ->
             keyValues

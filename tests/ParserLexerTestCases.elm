@@ -745,7 +745,18 @@ List Int
                 ]
       , contextualized =
             Just
-                [ Err ( State_BlockTypeAlias (BlockTypeAlias_Completish (TypeOrConstructor "Ty") { nestingStack = Stack [], root = Just (TypeExpression_PartialRecord { firstEntries = Stack [], lastEntry = LastEntryOfRecord_Empty }) }), Error_PartwayThroughTypeAlias )
+                [ Err
+                    ( State_BlockTypeAlias
+                        (BlockTypeAlias_Completish (TypeOrConstructor "Ty")
+                            { nestingStack =
+                                Stack
+                                    [ NestingType_PartialRecord { firstEntries = Stack [], lastEntry = LastEntryOfRecord_Empty }
+                                    ]
+                            , root = Nothing
+                            }
+                        )
+                    , Error_PartwayThroughTypeAlias
+                    )
                 ]
       }
     , { name = "type-alias-record-missing-colon"
@@ -772,7 +783,18 @@ List Int
                 ]
       , contextualized =
             Just
-                [ Err ( State_BlockTypeAlias (BlockTypeAlias_Completish (TypeOrConstructor "Ty") { nestingStack = Stack [], root = Just (TypeExpression_PartialRecord { firstEntries = Stack [], lastEntry = LastEntryOfRecord_Key "hi" }) }), Error_ExpectedColonWhilstParsingRecord )
+                [ Err
+                    ( State_BlockTypeAlias
+                        (BlockTypeAlias_Completish (TypeOrConstructor "Ty")
+                            { nestingStack =
+                                Stack
+                                    [ NestingType_PartialRecord { firstEntries = Stack [], lastEntry = LastEntryOfRecord_Key "hi" }
+                                    ]
+                            , root = Nothing
+                            }
+                        )
+                    , Error_ExpectedColonWhilstParsingRecord
+                    )
                 ]
       }
     , { name = "type-partial"
