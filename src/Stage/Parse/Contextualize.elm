@@ -494,41 +494,39 @@ parserTypeExpr newState prevExpr item =
             exprAppend prevExpr (addArgumentToType (TokenOrType_Token str))
                 |> partialTypeExpressionToParseResult newState
 
-        Lexer.Sigil (Lexer.Bracket Lexer.Round role) ->
-            case role of
-                Lexer.Open ->
-                    { bracketStack =
-                        Nothing
-                            |> pushOnto prevExpr.bracketStack
-                    , root = prevExpr.root
-                    }
-                        |> TypeExpressionResult_Progress
-                        |> newState
+        Lexer.Sigil (Lexer.Bracket Lexer.Round Lexer.Open) ->
+            { bracketStack =
+                Nothing
+                    |> pushOnto prevExpr.bracketStack
+            , root = prevExpr.root
+            }
+                |> TypeExpressionResult_Progress
+                |> newState
 
-                Lexer.Close ->
-                    case pop prevExpr.bracketStack of
-                        Just ( mexpr, poppedBracketStack ) ->
-                            let
-                                expr =
-                                    case mexpr of
-                                        Just expr_ ->
-                                            TypeExpression_Bracketed expr_
+        Lexer.Sigil (Lexer.Bracket Lexer.Round Lexer.Close) ->
+            case pop prevExpr.bracketStack of
+                Just ( mexpr, poppedBracketStack ) ->
+                    let
+                        expr =
+                            case mexpr of
+                                Just expr_ ->
+                                    TypeExpression_Bracketed expr_
 
-                                        Nothing ->
-                                            TypeExpression_Unit
-                            in
-                            exprAppend
-                                { bracketStack = poppedBracketStack
-                                , root = prevExpr.root
-                                }
-                                (addArgumentToType (TokenOrType_Type expr))
-                                |> partialTypeExpressionToParseResult newState
+                                Nothing ->
+                                    TypeExpression_Unit
+                    in
+                    exprAppend
+                        { bracketStack = poppedBracketStack
+                        , root = prevExpr.root
+                        }
+                        (addArgumentToType (TokenOrType_Type expr))
+                        |> partialTypeExpressionToParseResult newState
 
-                        _ ->
-                            -- TODO(harry): can we add information about the
-                            -- bracket we are expecting here?
-                            Error_UnmatchedBracket Lexer.Round Lexer.Close
-                                |> ParseResult_Err
+                _ ->
+                    -- TODO(harry): can we add information about the
+                    -- bracket we are expecting here?
+                    Error_UnmatchedBracket Lexer.Round Lexer.Close
+                        |> ParseResult_Err
 
         Lexer.Sigil (Lexer.Bracket Lexer.Curly Lexer.Open) ->
             let
