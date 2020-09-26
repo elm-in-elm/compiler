@@ -488,50 +488,25 @@ parserTypeExpr :
     -> PartialTypeExpression2
     -> LexItem
     -> ParseResult
-parserTypeExpr newState ({ bracketStack, root } as prevExpr) item =
+parserTypeExpr newState prevExpr item =
     case item of
         Lexer.Token str ->
-            case pop bracketStack of
-                -- We are in the top level of the type expression; we have
-                -- found a closing bracket to match every opening bracket we
-                -- have encountered so far whilst parsing the type expression.
-                -- (We may have found no brackets at all so far.)
-                Nothing ->
-                    addArgumentToType root (TokenOrType_Token str)
-                        |> Result.map
-                            (\newRoot ->
-                                { bracketStack = empty
-                                , root = Just newRoot
-                                }
-                            )
-                        |> partialTypeExpressionToParseResult newState
-
-                -- We are within a nested bracket.
-                Just ( mlatestTypeExpr, rest ) ->
-                    addArgumentToType mlatestTypeExpr (TokenOrType_Token str)
-                        |> Result.map
-                            (\newLatestTypeExpr ->
-                                { bracketStack =
-                                    Just newLatestTypeExpr
-                                        |> pushOnto rest
-                                , root = root
-                                }
-                            )
-                        |> partialTypeExpressionToParseResult newState
+            exprAppend prevExpr (\typeExpr -> addArgumentToType typeExpr (TokenOrType_Token str))
+                |> partialTypeExpressionToParseResult newState
 
         Lexer.Sigil (Lexer.Bracket Lexer.Round role) ->
             case role of
                 Lexer.Open ->
                     { bracketStack =
                         Nothing
-                            |> pushOnto bracketStack
-                    , root = root
+                            |> pushOnto prevExpr.bracketStack
+                    , root = prevExpr.root
                     }
                         |> TypeExpressionResult_Progress
                         |> newState
 
                 Lexer.Close ->
-                    case pop bracketStack of
+                    case pop prevExpr.bracketStack of
                         Just ( mexpr, poppedBracketStack ) ->
                             let
                                 expr =
@@ -542,28 +517,12 @@ parserTypeExpr newState ({ bracketStack, root } as prevExpr) item =
                                         Nothing ->
                                             TypeExpression_Unit
                             in
-                            case pop poppedBracketStack of
-                                Just ( mnewExprToAddTo, rest ) ->
-                                    addArgumentToType mnewExprToAddTo (TokenOrType_Type expr)
-                                        |> Result.map
-                                            (\newExpr ->
-                                                { bracketStack =
-                                                    Just newExpr
-                                                        |> pushOnto rest
-                                                , root = root
-                                                }
-                                            )
-                                        |> partialTypeExpressionToParseResult newState
-
-                                Nothing ->
-                                    addArgumentToType root (TokenOrType_Type expr)
-                                        |> Result.map
-                                            (\newRoot ->
-                                                { bracketStack = empty
-                                                , root = Just newRoot
-                                                }
-                                            )
-                                        |> partialTypeExpressionToParseResult newState
+                            exprAppend
+                                { bracketStack = poppedBracketStack
+                                , root = prevExpr.root
+                                }
+                                (\typeExpr -> addArgumentToType typeExpr (TokenOrType_Type expr))
+                                |> partialTypeExpressionToParseResult newState
 
                         _ ->
                             -- TODO(harry): can we add information about the
@@ -579,155 +538,55 @@ parserTypeExpr newState ({ bracketStack, root } as prevExpr) item =
                         , lastEntry = LastEntryOfRecord_Empty
                         }
             in
-            case pop bracketStack of
-                Nothing ->
-                    addArgumentToType root (TokenOrType_Type newType)
-                        |> Result.map
-                            (\newRoot ->
-                                { bracketStack = empty
-                                , root = Just newRoot
-                                }
-                            )
-                        |> partialTypeExpressionToParseResult newState
-
-                Just ( mlatestTypeExpr, rest ) ->
-                    addArgumentToType mlatestTypeExpr (TokenOrType_Type newType)
-                        |> Result.map
-                            (\newLatestTypeExpr ->
-                                { bracketStack =
-                                    Just newLatestTypeExpr
-                                        |> pushOnto rest
-                                , root = root
-                                }
-                            )
-                        |> partialTypeExpressionToParseResult newState
+            exprAppend prevExpr (\typeExpr -> addArgumentToType typeExpr (TokenOrType_Type newType))
+                |> partialTypeExpressionToParseResult newState
 
         Lexer.Sigil Lexer.Colon ->
-            case pop bracketStack of
-                Nothing ->
-                    case root of
+            exprAppend
+                prevExpr
+                (\typeExpr ->
+                    case typeExpr of
                         Just (TypeExpression_PartialRecord pr) ->
                             addColonToPartialTypeExpression pr
-                                |> Result.map
-                                    (\newPr ->
-                                        { bracketStack = empty
-                                        , root =
-                                            newPr
-                                                |> TypeExpression_PartialRecord
-                                                |> Just
-                                        }
-                                    )
+                                |> Result.map TypeExpression_PartialRecord
                                 |> Result.mapError (\() -> Error_InvalidToken item Expecting_Unknown)
-                                |> partialTypeExpressionToParseResult newState
 
                         _ ->
                             Error_InvalidToken item Expecting_Unknown
-                                |> ParseResult_Err
-
-                Just ( mlatestTypeExpr, rest ) ->
-                    case mlatestTypeExpr of
-                        Just (TypeExpression_PartialRecord pr) ->
-                            addColonToPartialTypeExpression pr
-                                |> Result.map
-                                    (\newPr ->
-                                        { bracketStack =
-                                            newPr
-                                                |> TypeExpression_PartialRecord
-                                                |> Just
-                                                |> pushOnto rest
-                                        , root = root
-                                        }
-                                    )
-                                |> Result.mapError (\() -> Error_InvalidToken item Expecting_Unknown)
-                                |> partialTypeExpressionToParseResult newState
-
-                        _ ->
-                            Error_InvalidToken item Expecting_Unknown
-                                |> ParseResult_Err
+                                |> Err
+                )
+                |> partialTypeExpressionToParseResult newState
 
         Lexer.Sigil Lexer.Comma ->
-            case pop bracketStack of
-                Nothing ->
-                    case root of
+            exprAppend
+                prevExpr
+                (\typeExpr ->
+                    case typeExpr of
                         Just (TypeExpression_PartialRecord pr) ->
                             addCommaToPartialTypeExpression pr
-                                |> Result.map
-                                    (\newPr ->
-                                        { bracketStack = empty
-                                        , root =
-                                            newPr
-                                                |> TypeExpression_PartialRecord
-                                                |> Just
-                                        }
-                                    )
+                                |> Result.map TypeExpression_PartialRecord
                                 |> Result.mapError (\() -> Error_InvalidToken item Expecting_Unknown)
-                                |> partialTypeExpressionToParseResult newState
 
                         _ ->
                             Error_InvalidToken item Expecting_Unknown
-                                |> ParseResult_Err
-
-                Just ( mlatestTypeExpr, rest ) ->
-                    case mlatestTypeExpr of
-                        Just (TypeExpression_PartialRecord pr) ->
-                            addCommaToPartialTypeExpression pr
-                                |> Result.map
-                                    (\newPr ->
-                                        { bracketStack =
-                                            newPr
-                                                |> TypeExpression_PartialRecord
-                                                |> Just
-                                                |> pushOnto rest
-                                        , root = root
-                                        }
-                                    )
-                                |> Result.mapError (\() -> Error_InvalidToken item Expecting_Unknown)
-                                |> partialTypeExpressionToParseResult newState
-
-                        _ ->
-                            Error_InvalidToken item Expecting_Unknown
-                                |> ParseResult_Err
+                                |> Err
+                )
+                |> partialTypeExpressionToParseResult newState
 
         Lexer.Sigil (Lexer.Bracket Lexer.Curly Lexer.Close) ->
-            case pop bracketStack of
-                Nothing ->
-                    case root of
+            exprAppend
+                prevExpr
+                (\typeExpr ->
+                    case typeExpr of
                         Just (TypeExpression_PartialRecord pr) ->
                             addCloseToPartialTypeExpression pr
-                                |> Result.map
-                                    (\newPr ->
-                                        { bracketStack = empty
-                                        , root =
-                                            newPr
-                                                |> Just
-                                        }
-                                    )
                                 |> Result.mapError (\() -> Error_InvalidToken item Expecting_Unknown)
-                                |> partialTypeExpressionToParseResult newState
 
                         _ ->
                             Error_InvalidToken item Expecting_Unknown
-                                |> ParseResult_Err
-
-                Just ( mlatestTypeExpr, rest ) ->
-                    case mlatestTypeExpr of
-                        Just (TypeExpression_PartialRecord pr) ->
-                            addCloseToPartialTypeExpression pr
-                                |> Result.map
-                                    (\newPr ->
-                                        { bracketStack =
-                                            newPr
-                                                |> Just
-                                                |> pushOnto rest
-                                        , root = root
-                                        }
-                                    )
-                                |> Result.mapError (\() -> Error_InvalidToken item Expecting_Unknown)
-                                |> partialTypeExpressionToParseResult newState
-
-                        _ ->
-                            Error_InvalidToken item Expecting_Unknown
-                                |> ParseResult_Err
+                                |> Err
+                )
+                |> partialTypeExpressionToParseResult newState
 
         Lexer.Newlines _ 0 ->
             case ( pop prevExpr.bracketStack, prevExpr.root ) of
@@ -752,6 +611,38 @@ parserTypeExpr newState ({ bracketStack, root } as prevExpr) item =
         _ ->
             Error_InvalidToken item Expecting_Unknown
                 |> ParseResult_Err
+
+
+exprAppend :
+    PartialTypeExpression2
+    -> (Maybe PartialTypeExpression -> Result Error PartialTypeExpression)
+    -> Result Error PartialTypeExpression2
+exprAppend { bracketStack, root } append =
+    case pop bracketStack of
+        -- We are in the top level of the type expression; we have
+        -- found a closing bracket to match every opening bracket we
+        -- have encountered so far whilst parsing the type expression.
+        -- (We may have found no brackets at all so far.)
+        Nothing ->
+            append root
+                |> Result.map
+                    (\newRoot ->
+                        { bracketStack = empty
+                        , root = Just newRoot
+                        }
+                    )
+
+        -- We are within a nested bracket.
+        Just ( mlatestTypeExpr, rest ) ->
+            append mlatestTypeExpr
+                |> Result.map
+                    (\newLatestTypeExpr ->
+                        { bracketStack =
+                            Just newLatestTypeExpr
+                                |> pushOnto rest
+                        , root = root
+                        }
+                    )
 
 
 blockFromState : State -> Maybe (Result Error Block)
