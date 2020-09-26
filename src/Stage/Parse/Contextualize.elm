@@ -486,64 +486,33 @@ parserTypeExpr :
 parserTypeExpr newState ({ bracketStack, root } as prevExpr) item =
     case item of
         Lexer.Token str ->
-            let
-                newType =
-                    TypeExpression_NamedType
-                        { name = str
-                        , args = empty
-                        }
-            in
             case pop bracketStack of
                 -- We are in the top level of the type expression; we have
                 -- found a closing bracket to match every opening bracket we
-                -- have encounted so far whilst parsing the type expression.
+                -- have encountered so far whilst parsing the type expression.
                 -- (We may have found no brackets at all so far.)
                 Nothing ->
-                    let
-                        rnewRoot =
-                            case root of
-                                Nothing ->
-                                    newType
-                                        |> Ok
+                    addArgumentToType root (TokenOrType_Token str)
+                        |> Result.map
+                            (\newRoot ->
+                                { bracketStack = empty
+                                , root = Just newRoot
+                                }
+                            )
+                        |> partialTypeExpressionToParseResult newState
 
-                                Just typeExpression ->
-                                    addArgumentToType typeExpression (TokenOrType_Token str)
-                    in
-                    case rnewRoot of
-                        Ok newRoot ->
-                            { bracketStack = empty
-                            , root = Just newRoot
-                            }
-                                |> TypeExpressionResult_Progress
-                                |> newState
-
-                        Err e ->
-                            ParseResult_Err e
-
-                -- This is the first item following an opening bracket.
-                Just ( Nothing, rest ) ->
-                    { bracketStack =
-                        Just newType
-                            |> pushOnto rest
-                    , root = root
-                    }
-                        |> TypeExpressionResult_Progress
-                        |> newState
-
-                -- This is an argument to some type that follows an opening bracket.
-                Just ( Just latestTypeExpr, rest ) ->
-                    case addArgumentToType latestTypeExpr (TokenOrType_Token str) of
-                        Ok newLatestTypeExpr ->
-                            { bracketStack =
-                                Just newLatestTypeExpr
-                                    |> pushOnto rest
-                            , root = root
-                            }
-                                |> TypeExpressionResult_Progress
-                                |> newState
-
-                        Err e ->
-                            ParseResult_Err e
+                -- We are within a nested bracket.
+                Just ( mlatestTypeExpr, rest ) ->
+                    addArgumentToType mlatestTypeExpr (TokenOrType_Token str)
+                        |> Result.map
+                            (\newLatestTypeExpr ->
+                                { bracketStack =
+                                    Just newLatestTypeExpr
+                                        |> pushOnto rest
+                                , root = root
+                                }
+                            )
+                        |> partialTypeExpressionToParseResult newState
 
         Lexer.Sigil (Lexer.Bracket Lexer.Round role) ->
             case role of
@@ -570,50 +539,26 @@ parserTypeExpr newState ({ bracketStack, root } as prevExpr) item =
                             in
                             case pop poppedBracketStack of
                                 Just ( mnewExprToAddTo, rest ) ->
-                                    let
-                                        rnewExpr =
-                                            case mnewExprToAddTo of
-                                                Nothing ->
-                                                    expr
-                                                        |> Ok
-
-                                                Just newExprToAddTo ->
-                                                    addArgumentToType newExprToAddTo (TokenOrType_Type expr)
-                                    in
-                                    case rnewExpr of
-                                        Ok newExpr ->
-                                            { bracketStack =
-                                                Just newExpr
-                                                    |> pushOnto rest
-                                            , root = root
-                                            }
-                                                |> TypeExpressionResult_Progress
-                                                |> newState
-
-                                        Err e ->
-                                            ParseResult_Err e
+                                    addArgumentToType mnewExprToAddTo (TokenOrType_Type expr)
+                                        |> Result.map
+                                            (\newExpr ->
+                                                { bracketStack =
+                                                    Just newExpr
+                                                        |> pushOnto rest
+                                                , root = root
+                                                }
+                                            )
+                                        |> partialTypeExpressionToParseResult newState
 
                                 Nothing ->
-                                    let
-                                        rnewRoot =
-                                            case root of
-                                                Nothing ->
-                                                    expr
-                                                        |> Ok
-
-                                                Just typeExpression ->
-                                                    addArgumentToType typeExpression (TokenOrType_Type expr)
-                                    in
-                                    case rnewRoot of
-                                        Ok newRoot ->
-                                            { bracketStack = empty
-                                            , root = Just newRoot
-                                            }
-                                                |> TypeExpressionResult_Progress
-                                                |> newState
-
-                                        Err e ->
-                                            ParseResult_Err e
+                                    addArgumentToType root (TokenOrType_Type expr)
+                                        |> Result.map
+                                            (\newRoot ->
+                                                { bracketStack = empty
+                                                , root = Just newRoot
+                                                }
+                                            )
+                                        |> partialTypeExpressionToParseResult newState
 
                         _ ->
                             -- TODO(harry): can we add information about the
@@ -784,8 +729,8 @@ addToPartialRecord { firstEntries, lastEntry } tot =
             addToPartialRecord innerPartialRecord tot
 
 
-addArgumentToType : PartialTypeExpression -> TokenOrType -> Result Error PartialTypeExpression
-addArgumentToType existingTypeExpr argToAdd =
+addArgumentToType : Maybe PartialTypeExpression -> TokenOrType -> Result Error PartialTypeExpression
+addArgumentToType mexistingTypeExpr argToAdd =
     let
         newType =
             case argToAdd of
@@ -798,8 +743,12 @@ addArgumentToType existingTypeExpr argToAdd =
                 TokenOrType_Type ty ->
                     ty
     in
-    case existingTypeExpr of
-        TypeExpression_NamedType { name, args } ->
+    case mexistingTypeExpr of
+        Nothing ->
+            newType
+                |> Ok
+
+        Just (TypeExpression_NamedType { name, args }) ->
             TypeExpression_NamedType
                 { name = name
                 , args =
@@ -808,21 +757,32 @@ addArgumentToType existingTypeExpr argToAdd =
                 }
                 |> Ok
 
-        TypeExpression_PartialRecord existingPartialRecord ->
+        Just (TypeExpression_PartialRecord existingPartialRecord) ->
             addToPartialRecord existingPartialRecord argToAdd
                 |> Result.map TypeExpression_PartialRecord
 
-        (TypeExpression_Bracketed _) as ty ->
+        Just ((TypeExpression_Bracketed _) as ty) ->
             Error_TypeDoesNotTakeArgs ty newType
                 |> Err
 
-        (TypeExpression_Record _) as ty ->
+        Just ((TypeExpression_Record _) as ty) ->
             Error_TypeDoesNotTakeArgs ty newType
                 |> Err
 
-        TypeExpression_Unit ->
+        Just TypeExpression_Unit ->
             Error_TypeDoesNotTakeArgs TypeExpression_Unit newType
                 |> Err
+
+
+partialTypeExpressionToParseResult : (TypeExpressionResult -> ParseResult) -> Result Error PartialTypeExpression2 -> ParseResult
+partialTypeExpressionToParseResult newState rnewPartialType =
+    case rnewPartialType of
+        Ok newPartialType ->
+            TypeExpressionResult_Progress newPartialType
+                |> newState
+
+        Err e ->
+            ParseResult_Err e
 
 
 {-| TODO(harry): custom error message here
