@@ -542,51 +542,13 @@ parserTypeExpr newState prevExpr item =
                 |> partialTypeExpressionToParseResult newState
 
         Lexer.Sigil Lexer.Colon ->
-            exprAppend
-                prevExpr
-                (\typeExpr ->
-                    case typeExpr of
-                        Just (TypeExpression_PartialRecord pr) ->
-                            addColonToPartialTypeExpression pr
-                                |> Result.map TypeExpression_PartialRecord
-                                |> Result.mapError (\() -> Error_InvalidToken item Expecting_Unknown)
-
-                        _ ->
-                            Error_InvalidToken item Expecting_Unknown
-                                |> Err
-                )
-                |> partialTypeExpressionToParseResult newState
+            addThingToPartialRecord ThingToAddToPartialRecord_Colon prevExpr item newState
 
         Lexer.Sigil Lexer.Comma ->
-            exprAppend
-                prevExpr
-                (\typeExpr ->
-                    case typeExpr of
-                        Just (TypeExpression_PartialRecord pr) ->
-                            addCommaToPartialTypeExpression pr
-                                |> Result.map TypeExpression_PartialRecord
-                                |> Result.mapError (\() -> Error_InvalidToken item Expecting_Unknown)
-
-                        _ ->
-                            Error_InvalidToken item Expecting_Unknown
-                                |> Err
-                )
-                |> partialTypeExpressionToParseResult newState
+            addThingToPartialRecord ThingToAddToPartialRecord_Comma prevExpr item newState
 
         Lexer.Sigil (Lexer.Bracket Lexer.Curly Lexer.Close) ->
-            exprAppend
-                prevExpr
-                (\typeExpr ->
-                    case typeExpr of
-                        Just (TypeExpression_PartialRecord pr) ->
-                            addCloseToPartialTypeExpression pr
-                                |> Result.mapError (\() -> Error_InvalidToken item Expecting_Unknown)
-
-                        _ ->
-                            Error_InvalidToken item Expecting_Unknown
-                                |> Err
-                )
-                |> partialTypeExpressionToParseResult newState
+            addThingToPartialRecord ThingToAddToPartialRecord_Close prevExpr item newState
 
         Lexer.Newlines _ 0 ->
             case ( pop prevExpr.bracketStack, prevExpr.root ) of
@@ -838,97 +800,70 @@ addArgumentToType argToAdd mexistingTypeExpr =
                 |> Err
 
 
-{-| TODO(harry): custom error message here
--}
-addColonToPartialTypeExpression :
-    { firstEntries : Stack ( String, PartialTypeExpression )
-    , lastEntry : LastEntryOfRecord
-    }
+type ThingToAddToPartialRecord
+    = ThingToAddToPartialRecord_Colon
+    | ThingToAddToPartialRecord_Comma
+    | ThingToAddToPartialRecord_Close
+
+
+addThingToPartialRecord :
+    ThingToAddToPartialRecord
+    -> PartialTypeExpression2
+    -> Lexer.LexItem
+    -> (TypeExpressionResult -> ParseResult)
+    -> ParseResult
+addThingToPartialRecord thing prevExpr item newState =
+    exprAppend
+        prevExpr
+        (\typeExpr ->
+            case typeExpr of
+                Just (TypeExpression_PartialRecord pr) ->
+                    addThingToPartialRecordHelp thing pr
+                        |> Result.mapError (\() -> Error_InvalidToken item Expecting_Unknown)
+
+                _ ->
+                    Error_InvalidToken item Expecting_Unknown
+                        |> Err
+        )
+        |> partialTypeExpressionToParseResult newState
+
+
+addThingToPartialRecordHelp :
+    ThingToAddToPartialRecord
     ->
-        Result ()
-            { firstEntries : Stack ( String, PartialTypeExpression )
-            , lastEntry : LastEntryOfRecord
-            }
-addColonToPartialTypeExpression { firstEntries, lastEntry } =
-    case lastEntry of
-        LastEntryOfRecord_Key key ->
+        { firstEntries : Stack ( String, PartialTypeExpression )
+        , lastEntry : LastEntryOfRecord
+        }
+    -> Result () PartialTypeExpression
+addThingToPartialRecordHelp thing { firstEntries, lastEntry } =
+    case ( thing, lastEntry ) of
+        ( ThingToAddToPartialRecord_Colon, LastEntryOfRecord_Key key ) ->
             { firstEntries = firstEntries
             , lastEntry = LastEntryOfRecord_KeyColon key
             }
+                |> TypeExpression_PartialRecord
                 |> Ok
 
-        LastEntryOfRecord_KeyValue key (TypeExpression_PartialRecord pr) ->
-            addColonToPartialTypeExpression pr
+        -- Must come before other `LastEntryOfRecord_KeyValue` cases!
+        ( _, LastEntryOfRecord_KeyValue key (TypeExpression_PartialRecord pr) ) ->
+            addThingToPartialRecordHelp thing pr
                 |> Result.map
                     (\newPr ->
                         { firstEntries = firstEntries
                         , lastEntry =
-                            LastEntryOfRecord_KeyValue
-                                key
-                                (TypeExpression_PartialRecord newPr)
-                        }
-                    )
-
-        _ ->
-            Err ()
-
-
-{-| TODO(harry): custom error message here
--}
-addCommaToPartialTypeExpression :
-    { firstEntries : Stack ( String, PartialTypeExpression )
-    , lastEntry : LastEntryOfRecord
-    }
-    ->
-        Result ()
-            { firstEntries : Stack ( String, PartialTypeExpression )
-            , lastEntry : LastEntryOfRecord
-            }
-addCommaToPartialTypeExpression { firstEntries, lastEntry } =
-    case lastEntry of
-        LastEntryOfRecord_KeyValue key (TypeExpression_PartialRecord pr) ->
-            addCommaToPartialTypeExpression pr
-                |> Result.map
-                    (\newPr ->
-                        { firstEntries = firstEntries
-                        , lastEntry =
-                            LastEntryOfRecord_KeyValue
-                                key
-                                (TypeExpression_PartialRecord newPr)
-                        }
-                    )
-
-        LastEntryOfRecord_KeyValue key value ->
-            { firstEntries = ( key, value ) |> pushOnto firstEntries
-            , lastEntry = LastEntryOfRecord_Empty
-            }
-                |> Ok
-
-        _ ->
-            Err ()
-
-
-{-| TODO(harry): custom error message here
--}
-addCloseToPartialTypeExpression :
-    { firstEntries : Stack ( String, PartialTypeExpression )
-    , lastEntry : LastEntryOfRecord
-    }
-    -> Result () PartialTypeExpression
-addCloseToPartialTypeExpression { firstEntries, lastEntry } =
-    case lastEntry of
-        LastEntryOfRecord_KeyValue key (TypeExpression_PartialRecord pr) ->
-            addCloseToPartialTypeExpression pr
-                |> Result.map
-                    (\newPte ->
-                        { firstEntries = firstEntries
-                        , lastEntry =
-                            LastEntryOfRecord_KeyValue key newPte
+                            LastEntryOfRecord_KeyValue key newPr
                         }
                             |> TypeExpression_PartialRecord
                     )
 
-        LastEntryOfRecord_KeyValue key value ->
+        ( ThingToAddToPartialRecord_Comma, LastEntryOfRecord_KeyValue key value ) ->
+            { firstEntries = ( key, value ) |> pushOnto firstEntries
+            , lastEntry = LastEntryOfRecord_Empty
+            }
+                |> TypeExpression_PartialRecord
+                |> Ok
+
+        ( ThingToAddToPartialRecord_Close, LastEntryOfRecord_KeyValue key value ) ->
             ( key, value )
                 |> pushOnto firstEntries
                 |> TypeExpression_Record
