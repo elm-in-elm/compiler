@@ -17,8 +17,31 @@ const warningCommentLines = `
 	.trim()
 	.split('\n');
 
+function typeOfResultCases(shouldParse) {
+	const resultArgs = shouldParse ? 'never Block' : '(State, Error) never';
+	return `
+    List
+        { contextualized : Maybe (List (Result ${resultArgs} ))
+        , lexed : Result Never (List (Located LexItem))
+        , name : String
+        , source : String
+        }
+`;
+}
+
 const TEST_FILE_PATH = path.join(__dirname, '..', 'tests', 'ParserLexerTestCases.elm');
-const SNIPPETS_DIR_PATH = path.join(__dirname, 'snippets');
+const BASE_SNIPPETS_DIR_PATH = path.join(__dirname, 'snippets');
+const SNIPPETS_DIR_PATH = Object.freeze({
+	shouldParse: path.join(BASE_SNIPPETS_DIR_PATH, 'should-parse'),
+	shouldNotParse: path.join(BASE_SNIPPETS_DIR_PATH, 'should-not-parse')
+});
+
+function getTestCase(snippets) {
+	return new Promise(resolve => {
+		const app = Elm.Update.init({flags: snippets});
+		app.ports.output.subscribe(resolve);
+	});
+}
 
 async function main() {
 	const testFile = await fs.readFile(TEST_FILE_PATH, 'utf-8');
@@ -29,21 +52,38 @@ async function main() {
 	const testFileStart = testFile.slice(0, epilogueStart).trim();
 
 	const snippets = await Promise.all(
-		(await fs.readdir(SNIPPETS_DIR_PATH))
-			.sort()
-			.filter((name) => !name.startsWith('_'))
-			.map(async (name) => ({
-				name,
-				source: await fs.readFile(path.join(SNIPPETS_DIR_PATH, name), 'utf-8'),
-			}))
+		Object.entries(SNIPPETS_DIR_PATH).map(async ([category, dirPath]) => {
+			let files;
+			try {
+				files = await fs.readdir(dirPath);
+			} catch (error) {
+				if (error.code === 'ENOENT') {
+					return [category, []];
+				}
+
+				throw error;
+			}
+
+			return [
+				category,
+				await Promise.all(
+					files
+						.sort()
+						.filter(name => !name.startsWith('_'))
+						.map(async name => ({
+							name,
+							source: await fs.readFile(path.join(dirPath, name), 'utf-8')
+						}))
+				)
+			];
+		})
 	);
 
-	const tests = await new Promise((resolve) => {
-		const app = Elm.Update.init({flags: snippets});
-		app.ports.output.subscribe(resolve);
-	});
+	const testCases = await Promise.all(
+		snippets.map(async ([category, snippets2]) => [category, await getTestCase(snippets2)])
+	);
 
-	if (tests.includes('Panic')) {
+	if (testCases.some(tests => tests.includes('Panic'))) {
 		console.error('ERROR: One or more test cases panicked!');
 		process.exitCode = 1;
 	}
@@ -53,15 +93,15 @@ async function main() {
 		'\n\n',
 		warningCommentLines.join('\n'),
 		'\n',
-		'testCases :',
-		'    List',
-		'        { contextualized : Maybe (List (Result ( State, Error ) Block))',
-		'        , lexed : Result error (List (Located LexItem))',
-		'        , name : String',
-		'        , source : String',
-		'        }',
-		'testCases =',
-		tests,
+		testCases
+			.flatMap(([category, testCases]) => [
+				`${category}TestCases :`,
+				typeOfResultCases(category === 'shouldParse'),
+				`${category}TestCases =`,
+				testCases,
+				'\n'
+			])
+			.join('\n')
 	].join('\n');
 
 	await fs.writeFile(TEST_FILE_PATH, newTestFile);

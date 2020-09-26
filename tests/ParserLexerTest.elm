@@ -11,29 +11,49 @@ import Test exposing (Test, describe, test)
 
 tests =
     describe "parser lexer test cases"
-        (ParserLexerTestCases.testCases
-            |> List.map
-                (\{ name, source, lexed, contextualized } ->
-                    describe name
-                        ([ Just
-                            (test "lexing" <|
-                                \() ->
-                                    source
-                                        |> P.run Lexer.parser
-                                        |> Expect.equal lexed
+        [ describe "lexing"
+            ((ParserLexerTestCases.shouldParseTestCases ++ ParserLexerTestCases.shouldNotParseTestCases)
+                |> List.map
+                    (\{ name, source, lexed } ->
+                        test name <|
+                            \() ->
+                                source
+                                    |> P.run Lexer.parser
+                                    |> Expect.equal (lexed |> Result.mapError never)
+                    )
+            )
+        , describe "should parse"
+            (ParserLexerTestCases.shouldParseTestCases
+                |> List.filterMap
+                    (\{ name, source, lexed, contextualized } ->
+                        Maybe.map2
+                            (\contextualized_ lexed_ ->
+                                test name <|
+                                    \() ->
+                                        lexed_
+                                            |> List.map Located.unwrap
+                                            |> Contextualize.run
+                                            |> Expect.equal contextualized_
                             )
-                         , contextualized
-                            |> Maybe.map
-                                (\contextualized_ ->
-                                    test "parsing" <|
-                                        \() ->
-                                            source
-                                                |> P.run Lexer.parser
-                                                |> Result.map (List.map Located.unwrap >> Contextualize.run)
-                                                |> Expect.equal (Ok contextualized_)
-                                )
-                         ]
-                            |> List.filterMap (\x -> x)
-                        )
-                )
-        )
+                            contextualized
+                            (Result.toMaybe lexed)
+                    )
+            )
+        , describe "should not parse"
+            (ParserLexerTestCases.shouldNotParseTestCases
+                |> List.filterMap
+                    (\{ name, source, lexed, contextualized } ->
+                        Maybe.map2
+                            (\contextualized_ lexed_ ->
+                                test name <|
+                                    \() ->
+                                        lexed_
+                                            |> List.map Located.unwrap
+                                            |> Contextualize.run
+                                            |> Expect.equal contextualized_
+                            )
+                            contextualized
+                            (Result.toMaybe lexed)
+                    )
+            )
+        ]
