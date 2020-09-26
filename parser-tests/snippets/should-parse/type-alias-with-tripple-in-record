@@ -1,0 +1,4 @@
+type alias Hi =
+    { a: (Int, Int, Int)
+    , b: ({ good_bye: () })
+    }

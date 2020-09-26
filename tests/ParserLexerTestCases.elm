@@ -571,6 +571,79 @@ type alias Hi = ((), (), ())
                 , Ok (TypeAlias { expr = Tuple3 Unit Unit Unit, ty = TypeOrConstructor "Hi" })
                 ]
       }
+    , { name = "type-alias-with-tripple-in-record"
+      , source = """type alias Hi =
+    { a: (Int, Int, Int)
+    , b: ({ good_bye: () })
+    }
+"""
+      , lexed =
+            Ok
+                [ Located { end = { col = 5, row = 1 }, start = { col = 1, row = 1 } } (Token "type")
+                , Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Whitespace 1)
+                , Located { end = { col = 11, row = 1 }, start = { col = 6, row = 1 } } (Token "alias")
+                , Located { end = { col = 12, row = 1 }, start = { col = 11, row = 1 } } (Whitespace 1)
+                , Located { end = { col = 14, row = 1 }, start = { col = 12, row = 1 } } (Token "Hi")
+                , Located { end = { col = 15, row = 1 }, start = { col = 14, row = 1 } } (Whitespace 1)
+                , Located { end = { col = 16, row = 1 }, start = { col = 15, row = 1 } } (Sigil Assign)
+                , Located { end = { col = 5, row = 2 }, start = { col = 16, row = 1 } } (Newlines [] 4)
+                , Located { end = { col = 6, row = 2 }, start = { col = 5, row = 2 } } (Sigil (Bracket Curly Open))
+                , Located { end = { col = 7, row = 2 }, start = { col = 6, row = 2 } } (Whitespace 1)
+                , Located { end = { col = 8, row = 2 }, start = { col = 7, row = 2 } } (Token "a")
+                , Located { end = { col = 9, row = 2 }, start = { col = 8, row = 2 } } (Sigil Colon)
+                , Located { end = { col = 10, row = 2 }, start = { col = 9, row = 2 } } (Whitespace 1)
+                , Located { end = { col = 11, row = 2 }, start = { col = 10, row = 2 } } (Sigil (Bracket Round Open))
+                , Located { end = { col = 14, row = 2 }, start = { col = 11, row = 2 } } (Token "Int")
+                , Located { end = { col = 15, row = 2 }, start = { col = 14, row = 2 } } (Sigil Comma)
+                , Located { end = { col = 16, row = 2 }, start = { col = 15, row = 2 } } (Whitespace 1)
+                , Located { end = { col = 19, row = 2 }, start = { col = 16, row = 2 } } (Token "Int")
+                , Located { end = { col = 20, row = 2 }, start = { col = 19, row = 2 } } (Sigil Comma)
+                , Located { end = { col = 21, row = 2 }, start = { col = 20, row = 2 } } (Whitespace 1)
+                , Located { end = { col = 24, row = 2 }, start = { col = 21, row = 2 } } (Token "Int")
+                , Located { end = { col = 25, row = 2 }, start = { col = 24, row = 2 } } (Sigil (Bracket Round Close))
+                , Located { end = { col = 5, row = 3 }, start = { col = 25, row = 2 } } (Newlines [] 4)
+                , Located { end = { col = 6, row = 3 }, start = { col = 5, row = 3 } } (Sigil Comma)
+                , Located { end = { col = 7, row = 3 }, start = { col = 6, row = 3 } } (Whitespace 1)
+                , Located { end = { col = 8, row = 3 }, start = { col = 7, row = 3 } } (Token "b")
+                , Located { end = { col = 9, row = 3 }, start = { col = 8, row = 3 } } (Sigil Colon)
+                , Located { end = { col = 10, row = 3 }, start = { col = 9, row = 3 } } (Whitespace 1)
+                , Located { end = { col = 11, row = 3 }, start = { col = 10, row = 3 } } (Sigil (Bracket Round Open))
+                , Located { end = { col = 12, row = 3 }, start = { col = 11, row = 3 } } (Sigil (Bracket Curly Open))
+                , Located { end = { col = 13, row = 3 }, start = { col = 12, row = 3 } } (Whitespace 1)
+                , Located { end = { col = 21, row = 3 }, start = { col = 13, row = 3 } } (Token "good_bye")
+                , Located { end = { col = 22, row = 3 }, start = { col = 21, row = 3 } } (Sigil Colon)
+                , Located { end = { col = 23, row = 3 }, start = { col = 22, row = 3 } } (Whitespace 1)
+                , Located { end = { col = 24, row = 3 }, start = { col = 23, row = 3 } } (Sigil (Bracket Round Open))
+                , Located { end = { col = 25, row = 3 }, start = { col = 24, row = 3 } } (Sigil (Bracket Round Close))
+                , Located { end = { col = 26, row = 3 }, start = { col = 25, row = 3 } } (Whitespace 1)
+                , Located { end = { col = 27, row = 3 }, start = { col = 26, row = 3 } } (Sigil (Bracket Curly Close))
+                , Located { end = { col = 28, row = 3 }, start = { col = 27, row = 3 } } (Sigil (Bracket Round Close))
+                , Located { end = { col = 5, row = 4 }, start = { col = 28, row = 3 } } (Newlines [] 4)
+                , Located { end = { col = 6, row = 4 }, start = { col = 5, row = 4 } } (Sigil (Bracket Curly Close))
+                , Located { end = { col = 1, row = 5 }, start = { col = 6, row = 4 } } (Newlines [] 0)
+                ]
+      , contextualized =
+            Just
+                [ Ok
+                    (TypeAlias
+                        { expr =
+                            Record
+                                (Dict.fromList
+                                    [ ( "a", Tuple3 (UserDefinedType { args = [], name = "Int", qualifiedness = PossiblyQualified Nothing }) (UserDefinedType { args = [], name = "Int", qualifiedness = PossiblyQualified Nothing }) (UserDefinedType { args = [], name = "Int", qualifiedness = PossiblyQualified Nothing }) )
+                                    , ( "b"
+                                      , Record
+                                            (Dict.fromList
+                                                [ ( "good_bye", Unit )
+                                                ]
+                                            )
+                                      )
+                                    ]
+                                )
+                        , ty = TypeOrConstructor "Hi"
+                        }
+                    )
+                ]
+      }
     ]
 
 
@@ -1158,7 +1231,7 @@ type alias Hi = (A Int, C D E F, H I (J K), L M () O P)
       , source = """type alias Hi = (Int,
 
 
-type alias Hi2 = (Int)
+
 """
       , lexed =
             Ok
@@ -1173,25 +1246,14 @@ type alias Hi2 = (Int)
                 , Located { end = { col = 18, row = 1 }, start = { col = 17, row = 1 } } (Sigil (Bracket Round Open))
                 , Located { end = { col = 21, row = 1 }, start = { col = 18, row = 1 } } (Token "Int")
                 , Located { end = { col = 22, row = 1 }, start = { col = 21, row = 1 } } (Sigil Comma)
-                , Located { end = { col = 1, row = 4 }, start = { col = 22, row = 1 } }
+                , Located { end = { col = 1, row = 5 }, start = { col = 22, row = 1 } }
                     (Newlines
                         [ 0
+                        , 0
                         , 0
                         ]
                         0
                     )
-                , Located { end = { col = 5, row = 4 }, start = { col = 1, row = 4 } } (Token "type")
-                , Located { end = { col = 6, row = 4 }, start = { col = 5, row = 4 } } (Whitespace 1)
-                , Located { end = { col = 11, row = 4 }, start = { col = 6, row = 4 } } (Token "alias")
-                , Located { end = { col = 12, row = 4 }, start = { col = 11, row = 4 } } (Whitespace 1)
-                , Located { end = { col = 15, row = 4 }, start = { col = 12, row = 4 } } (Token "Hi2")
-                , Located { end = { col = 16, row = 4 }, start = { col = 15, row = 4 } } (Whitespace 1)
-                , Located { end = { col = 17, row = 4 }, start = { col = 16, row = 4 } } (Sigil Assign)
-                , Located { end = { col = 18, row = 4 }, start = { col = 17, row = 4 } } (Whitespace 1)
-                , Located { end = { col = 19, row = 4 }, start = { col = 18, row = 4 } } (Sigil (Bracket Round Open))
-                , Located { end = { col = 22, row = 4 }, start = { col = 19, row = 4 } } (Token "Int")
-                , Located { end = { col = 23, row = 4 }, start = { col = 22, row = 4 } } (Sigil (Bracket Round Close))
-                , Located { end = { col = 1, row = 5 }, start = { col = 23, row = 4 } } (Newlines [] 0)
                 ]
       , contextualized =
             Just
@@ -1212,7 +1274,6 @@ type alias Hi2 = (Int)
                         )
                     , Error_PartwayThroughTypeAlias
                     )
-                , Ok (TypeAlias { expr = UserDefinedType { args = [], name = "Int", qualifiedness = PossiblyQualified Nothing }, ty = TypeOrConstructor "Hi2" })
                 ]
       }
     , { name = "type-partial"
