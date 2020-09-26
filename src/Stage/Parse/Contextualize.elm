@@ -863,6 +863,14 @@ addThingToPartialRecordHelp thing { firstEntries, lastEntry } =
                 |> TypeExpression_PartialRecord
                 |> Ok
 
+        ( ThingToAddToPartialRecord_Close, LastEntryOfRecord_Empty ) ->
+            if firstEntries == empty then
+                TypeExpression_Record empty
+                    |> Ok
+
+            else
+                Err ()
+
         ( ThingToAddToPartialRecord_Close, LastEntryOfRecord_KeyValue key value ) ->
             ( key, value )
                 |> pushOnto firstEntries

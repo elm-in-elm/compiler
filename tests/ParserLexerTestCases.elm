@@ -1,5 +1,6 @@
 module ParserLexerTestCases exposing (testCases)
 
+import Dict
 import Elm.Data.Located as Located exposing (Located(..))
 import Elm.Data.Qualifiedness exposing (PossiblyQualified(..))
 import Elm.Data.Type.Concrete exposing (ConcreteType(..))
@@ -404,7 +405,7 @@ List Int
                 ]
       , contextualized =
             Just
-                [ Err ( State_BlockTypeAlias (BlockTypeAlias_Completish (TypeOrConstructor "Ty") { bracketStack = Stack [], root = Just (TypeExpression_PartialRecord { firstEntries = Stack [], lastEntry = LastEntryOfRecord_Empty }) }), Error_InvalidToken (Sigil (Bracket Curly Close)) Expecting_Unknown )
+                [ Ok (TypeAlias { expr = Record (Dict.fromList []), ty = TypeOrConstructor "Ty" })
                 ]
       }
     , { name = "type-alias-record-empty-multiline"
@@ -436,7 +437,7 @@ List Int
                 ]
       , contextualized =
             Just
-                [ Err ( State_BlockTypeAlias (BlockTypeAlias_Completish (TypeOrConstructor "Ty") { bracketStack = Stack [], root = Just (TypeExpression_PartialRecord { firstEntries = Stack [], lastEntry = LastEntryOfRecord_Empty }) }), Error_InvalidToken (Sigil (Bracket Curly Close)) Expecting_Unknown )
+                [ Ok (TypeAlias { expr = Record (Dict.fromList []), ty = TypeOrConstructor "Ty" })
                 ]
       }
     , { name = "type-alias-record-half-empty"
