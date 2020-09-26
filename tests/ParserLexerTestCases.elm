@@ -500,9 +500,9 @@ shouldNotParseTestCases =
                 [ Err
                     ( State_BlockTypeAlias
                         (BlockTypeAlias_Completish (TypeOrConstructor "Hi")
-                            { bracketStack =
+                            { nestingStack =
                                 Stack
-                                    [ Nothing
+                                    [ NestingType_Bracket Nothing
                                     ]
                             , root = Just (TypeExpression_Bracketed (TypeExpression_NamedType { args = Stack [], name = "Int" }))
                             }
@@ -536,9 +536,9 @@ shouldNotParseTestCases =
                 [ Err
                     ( State_BlockTypeAlias
                         (BlockTypeAlias_Completish (TypeOrConstructor "Hi")
-                            { bracketStack =
+                            { nestingStack =
                                 Stack
-                                    [ Nothing
+                                    [ NestingType_Bracket Nothing
                                     ]
                             , root = Just TypeExpression_Unit
                             }
@@ -573,9 +573,9 @@ shouldNotParseTestCases =
                 [ Err
                     ( State_BlockTypeAlias
                         (BlockTypeAlias_Completish (TypeOrConstructor "Hi")
-                            { bracketStack =
+                            { nestingStack =
                                 Stack
-                                    [ Just (TypeExpression_NamedType { args = Stack [], name = "Int" })
+                                    [ NestingType_Bracket (Just (TypeExpression_NamedType { args = Stack [], name = "Int" }))
                                     ]
                             , root = Just TypeExpression_Unit
                             }
@@ -681,9 +681,9 @@ List Int
                 [ Err
                     ( State_BlockTypeAlias
                         (BlockTypeAlias_Completish (TypeOrConstructor "Hi")
-                            { bracketStack =
+                            { nestingStack =
                                 Stack
-                                    [ Nothing
+                                    [ NestingType_Bracket Nothing
                                     ]
                             , root = Nothing
                             }
@@ -716,9 +716,9 @@ List Int
                 [ Err
                     ( State_BlockTypeAlias
                         (BlockTypeAlias_Completish (TypeOrConstructor "Hi")
-                            { bracketStack =
+                            { nestingStack =
                                 Stack
-                                    [ Just (TypeExpression_NamedType { args = Stack [], name = "Int" })
+                                    [ NestingType_Bracket (Just (TypeExpression_NamedType { args = Stack [], name = "Int" }))
                                     ]
                             , root = Nothing
                             }
@@ -745,7 +745,7 @@ List Int
                 ]
       , contextualized =
             Just
-                [ Err ( State_BlockTypeAlias (BlockTypeAlias_Completish (TypeOrConstructor "Ty") { bracketStack = Stack [], root = Just (TypeExpression_PartialRecord { firstEntries = Stack [], lastEntry = LastEntryOfRecord_Empty }) }), Error_PartwayThroughTypeAlias )
+                [ Err ( State_BlockTypeAlias (BlockTypeAlias_Completish (TypeOrConstructor "Ty") { nestingStack = Stack [], root = Just (TypeExpression_PartialRecord { firstEntries = Stack [], lastEntry = LastEntryOfRecord_Empty }) }), Error_PartwayThroughTypeAlias )
                 ]
       }
     , { name = "type-alias-record-missing-colon"
@@ -772,7 +772,7 @@ List Int
                 ]
       , contextualized =
             Just
-                [ Err ( State_BlockTypeAlias (BlockTypeAlias_Completish (TypeOrConstructor "Ty") { bracketStack = Stack [], root = Just (TypeExpression_PartialRecord { firstEntries = Stack [], lastEntry = LastEntryOfRecord_Key "hi" }) }), Error_ExpectedColonWhilstParsingRecord )
+                [ Err ( State_BlockTypeAlias (BlockTypeAlias_Completish (TypeOrConstructor "Ty") { nestingStack = Stack [], root = Just (TypeExpression_PartialRecord { firstEntries = Stack [], lastEntry = LastEntryOfRecord_Key "hi" }) }), Error_ExpectedColonWhilstParsingRecord )
                 ]
       }
     , { name = "type-partial"

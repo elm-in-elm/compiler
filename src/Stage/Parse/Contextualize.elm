@@ -141,9 +141,13 @@ type LastEntryOfRecord
     | LastEntryOfRecord_KeyValue String PartialTypeExpression
 
 
+type NestingType
+    = NestingType_Bracket (Maybe PartialTypeExpression)
+
+
 type alias PartialTypeExpression2 =
     { root : Maybe PartialTypeExpression
-    , bracketStack : Stack (Maybe PartialTypeExpression)
+    , nestingStack : Stack NestingType
     }
 
 
@@ -309,7 +313,7 @@ parseAnything state =
                             Debug.todo ""
                 )
                 { root = Nothing
-                , bracketStack = empty
+                , nestingStack = empty
                 }
 
         State_BlockTypeAlias (BlockTypeAlias_Completish name exprSoFar) ->
@@ -495,17 +499,17 @@ parserTypeExpr newState prevExpr item =
                 |> partialTypeExpressionToParseResult newState
 
         Lexer.Sigil (Lexer.Bracket Lexer.Round Lexer.Open) ->
-            { bracketStack =
-                Nothing
-                    |> pushOnto prevExpr.bracketStack
+            { nestingStack =
+                NestingType_Bracket Nothing
+                    |> pushOnto prevExpr.nestingStack
             , root = prevExpr.root
             }
                 |> TypeExpressionResult_Progress
                 |> newState
 
         Lexer.Sigil (Lexer.Bracket Lexer.Round Lexer.Close) ->
-            case pop prevExpr.bracketStack of
-                Just ( mexpr, poppedBracketStack ) ->
+            case pop prevExpr.nestingStack of
+                Just ( NestingType_Bracket mexpr, poppedNestingStack ) ->
                     let
                         expr =
                             case mexpr of
@@ -516,7 +520,7 @@ parserTypeExpr newState prevExpr item =
                                     TypeExpression_Unit
                     in
                     exprAppend
-                        { bracketStack = poppedBracketStack
+                        { nestingStack = poppedNestingStack
                         , root = prevExpr.root
                         }
                         (addArgumentToType (TokenOrType_Type expr))
@@ -549,7 +553,7 @@ parserTypeExpr newState prevExpr item =
             addThingToPartialRecord ThingToAddToPartialRecord_Close prevExpr item newState
 
         Lexer.Newlines _ 0 ->
-            case ( pop prevExpr.bracketStack, prevExpr.root ) of
+            case ( pop prevExpr.nestingStack, prevExpr.root ) of
                 ( Just _, _ ) ->
                     Error_PartwayThroughTypeAlias
                         |> ParseResult_Err
@@ -577,8 +581,8 @@ exprAppend :
     PartialTypeExpression2
     -> (Maybe PartialTypeExpression -> Result Error PartialTypeExpression)
     -> Result Error PartialTypeExpression2
-exprAppend { bracketStack, root } append =
-    case pop bracketStack of
+exprAppend { nestingStack, root } append =
+    case pop nestingStack of
         -- We are in the top level of the type expression; we have
         -- found a closing bracket to match every opening bracket we
         -- have encountered so far whilst parsing the type expression.
@@ -587,18 +591,18 @@ exprAppend { bracketStack, root } append =
             append root
                 |> Result.map
                     (\newRoot ->
-                        { bracketStack = empty
+                        { nestingStack = empty
                         , root = Just newRoot
                         }
                     )
 
         -- We are within a nested bracket.
-        Just ( mlatestTypeExpr, rest ) ->
+        Just ( NestingType_Bracket mlatestTypeExpr, rest ) ->
             append mlatestTypeExpr
                 |> Result.map
                     (\newLatestTypeExpr ->
-                        { bracketStack =
-                            Just newLatestTypeExpr
+                        { nestingStack =
+                            NestingType_Bracket (Just newLatestTypeExpr)
                                 |> pushOnto rest
                         , root = root
                         }
@@ -632,8 +636,8 @@ blockFromState state =
                 |> Err
                 |> Just
 
-        State_BlockTypeAlias (BlockTypeAlias_Completish name { bracketStack, root }) ->
-            case ( pop bracketStack, root ) of
+        State_BlockTypeAlias (BlockTypeAlias_Completish name { nestingStack, root }) ->
+            case ( pop nestingStack, root ) of
                 ( Nothing, Just expr ) ->
                     partialTypeExpressionToConcreteType expr
                         |> Result.map
