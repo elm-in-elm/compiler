@@ -18,9 +18,11 @@ import Elm.Data.Located as Located exposing (Located)
 import Elm.Data.Module exposing (Module, ModuleType(..))
 import Elm.Data.ModuleName exposing (ModuleName)
 import Elm.Data.Qualifiedness as Qualifiedness exposing (PossiblyQualified(..))
+import Elm.Data.Type exposing (Type)
 import Elm.Data.Type.Concrete as ConcreteType exposing (ConcreteType)
 import Elm.Data.TypeAnnotation exposing (TypeAnnotation)
 import Elm.Data.VarName exposing (VarName)
+import Parser exposing (oneOf)
 import Stage.Parse.Lexer as Lexer exposing (LexItem(..))
 import Stage.Parse.Token as Token exposing (Keyword)
 
@@ -604,49 +606,40 @@ parserTypeExpr newState ({ bracketStack, root } as prevExpr) item =
             case pop bracketStack of
                 Nothing ->
                     case root of
-                        Just (TypeExpression_PartialRecord { firstEntries, lastEntry }) ->
-                            case lastEntry of
-                                LastEntryOfRecord_Key key ->
-                                    { bracketStack = empty
-                                    , root =
-                                        TypeExpression_PartialRecord
-                                            { firstEntries = firstEntries
-                                            , lastEntry = LastEntryOfRecord_KeyColon key
-                                            }
-                                            |> Just
-                                    }
-                                        |> TypeExpressionResult_Progress
-                                        |> newState
-
-                                _ ->
-                                    Error_InvalidToken item Expecting_Unknown
-                                        |> ParseResult_Err
+                        Just (TypeExpression_PartialRecord pr) ->
+                            addColonToPartialTypeExpression pr
+                                |> Result.map
+                                    (\newPr ->
+                                        { bracketStack = empty
+                                        , root =
+                                            newPr
+                                                |> TypeExpression_PartialRecord
+                                                |> Just
+                                        }
+                                    )
+                                |> Result.mapError (\() -> Error_InvalidToken item Expecting_Unknown)
+                                |> partialTypeExpressionToParseResult newState
 
                         _ ->
                             Error_InvalidToken item Expecting_Unknown
                                 |> ParseResult_Err
 
-                -- We are within a nested bracket.
                 Just ( mlatestTypeExpr, rest ) ->
                     case mlatestTypeExpr of
-                        Just (TypeExpression_PartialRecord { firstEntries, lastEntry }) ->
-                            case lastEntry of
-                                LastEntryOfRecord_Key key ->
-                                    { bracketStack =
-                                        TypeExpression_PartialRecord
-                                            { firstEntries = firstEntries
-                                            , lastEntry = LastEntryOfRecord_KeyColon key
-                                            }
-                                            |> Just
-                                            |> pushOnto rest
-                                    , root = root
-                                    }
-                                        |> TypeExpressionResult_Progress
-                                        |> newState
-
-                                _ ->
-                                    Error_InvalidToken item Expecting_Unknown
-                                        |> ParseResult_Err
+                        Just (TypeExpression_PartialRecord pr) ->
+                            addColonToPartialTypeExpression pr
+                                |> Result.map
+                                    (\newPr ->
+                                        { bracketStack =
+                                            newPr
+                                                |> TypeExpression_PartialRecord
+                                                |> Just
+                                                |> pushOnto rest
+                                        , root = root
+                                        }
+                                    )
+                                |> Result.mapError (\() -> Error_InvalidToken item Expecting_Unknown)
+                                |> partialTypeExpressionToParseResult newState
 
                         _ ->
                             Error_InvalidToken item Expecting_Unknown
@@ -656,49 +649,40 @@ parserTypeExpr newState ({ bracketStack, root } as prevExpr) item =
             case pop bracketStack of
                 Nothing ->
                     case root of
-                        Just (TypeExpression_PartialRecord { firstEntries, lastEntry }) ->
-                            case lastEntry of
-                                LastEntryOfRecord_KeyValue key value ->
-                                    { bracketStack = empty
-                                    , root =
-                                        TypeExpression_PartialRecord
-                                            { firstEntries = ( key, value ) |> pushOnto firstEntries
-                                            , lastEntry = LastEntryOfRecord_Empty
-                                            }
-                                            |> Just
-                                    }
-                                        |> TypeExpressionResult_Progress
-                                        |> newState
-
-                                _ ->
-                                    Error_InvalidToken item Expecting_Unknown
-                                        |> ParseResult_Err
+                        Just (TypeExpression_PartialRecord pr) ->
+                            addCommaToPartialTypeExpression pr
+                                |> Result.map
+                                    (\newPr ->
+                                        { bracketStack = empty
+                                        , root =
+                                            newPr
+                                                |> TypeExpression_PartialRecord
+                                                |> Just
+                                        }
+                                    )
+                                |> Result.mapError (\() -> Error_InvalidToken item Expecting_Unknown)
+                                |> partialTypeExpressionToParseResult newState
 
                         _ ->
                             Error_InvalidToken item Expecting_Unknown
                                 |> ParseResult_Err
 
-                -- We are within a nested bracket.
                 Just ( mlatestTypeExpr, rest ) ->
                     case mlatestTypeExpr of
-                        Just (TypeExpression_PartialRecord { firstEntries, lastEntry }) ->
-                            case lastEntry of
-                                LastEntryOfRecord_KeyValue key value ->
-                                    { bracketStack =
-                                        TypeExpression_PartialRecord
-                                            { firstEntries = ( key, value ) |> pushOnto firstEntries
-                                            , lastEntry = LastEntryOfRecord_Empty
-                                            }
-                                            |> Just
-                                            |> pushOnto rest
-                                    , root = root
-                                    }
-                                        |> TypeExpressionResult_Progress
-                                        |> newState
-
-                                _ ->
-                                    Error_InvalidToken item Expecting_Unknown
-                                        |> ParseResult_Err
+                        Just (TypeExpression_PartialRecord pr) ->
+                            addCommaToPartialTypeExpression pr
+                                |> Result.map
+                                    (\newPr ->
+                                        { bracketStack =
+                                            newPr
+                                                |> TypeExpression_PartialRecord
+                                                |> Just
+                                                |> pushOnto rest
+                                        , root = root
+                                        }
+                                    )
+                                |> Result.mapError (\() -> Error_InvalidToken item Expecting_Unknown)
+                                |> partialTypeExpressionToParseResult newState
 
                         _ ->
                             Error_InvalidToken item Expecting_Unknown
@@ -708,47 +692,38 @@ parserTypeExpr newState ({ bracketStack, root } as prevExpr) item =
             case pop bracketStack of
                 Nothing ->
                     case root of
-                        Just (TypeExpression_PartialRecord { firstEntries, lastEntry }) ->
-                            case lastEntry of
-                                LastEntryOfRecord_KeyValue key value ->
-                                    { bracketStack = empty
-                                    , root =
-                                        ( key, value )
-                                            |> pushOnto firstEntries
-                                            |> TypeExpression_Record
-                                            |> Just
-                                    }
-                                        |> TypeExpressionResult_Progress
-                                        |> newState
-
-                                _ ->
-                                    Error_InvalidToken item Expecting_Unknown
-                                        |> ParseResult_Err
+                        Just (TypeExpression_PartialRecord pr) ->
+                            addCloseToPartialTypeExpression pr
+                                |> Result.map
+                                    (\newPr ->
+                                        { bracketStack = empty
+                                        , root =
+                                            newPr
+                                                |> Just
+                                        }
+                                    )
+                                |> Result.mapError (\() -> Error_InvalidToken item Expecting_Unknown)
+                                |> partialTypeExpressionToParseResult newState
 
                         _ ->
                             Error_InvalidToken item Expecting_Unknown
                                 |> ParseResult_Err
 
-                -- We are within a nested bracket.
                 Just ( mlatestTypeExpr, rest ) ->
                     case mlatestTypeExpr of
-                        Just (TypeExpression_PartialRecord { firstEntries, lastEntry }) ->
-                            case lastEntry of
-                                LastEntryOfRecord_KeyValue key value ->
-                                    { bracketStack =
-                                        ( key, value )
-                                            |> pushOnto firstEntries
-                                            |> TypeExpression_Record
-                                            |> Just
-                                            |> pushOnto rest
-                                    , root = root
-                                    }
-                                        |> TypeExpressionResult_Progress
-                                        |> newState
-
-                                _ ->
-                                    Error_InvalidToken item Expecting_Unknown
-                                        |> ParseResult_Err
+                        Just (TypeExpression_PartialRecord pr) ->
+                            addCloseToPartialTypeExpression pr
+                                |> Result.map
+                                    (\newPr ->
+                                        { bracketStack =
+                                            newPr
+                                                |> Just
+                                                |> pushOnto rest
+                                        , root = root
+                                        }
+                                    )
+                                |> Result.mapError (\() -> Error_InvalidToken item Expecting_Unknown)
+                                |> partialTypeExpressionToParseResult newState
 
                         _ ->
                             Error_InvalidToken item Expecting_Unknown
@@ -915,6 +890,15 @@ addToPartialRecord { firstEntries, lastEntry } tot =
 
         LastEntryOfRecord_KeyValue key (TypeExpression_PartialRecord innerPartialRecord) ->
             addToPartialRecord innerPartialRecord tot
+                |> Result.map
+                    (\newInnerPartialRecord ->
+                        { firstEntries = firstEntries
+                        , lastEntry =
+                            LastEntryOfRecord_KeyValue
+                                key
+                                (TypeExpression_PartialRecord newInnerPartialRecord)
+                        }
+                    )
 
 
 addArgumentToType : Maybe PartialTypeExpression -> TokenOrType -> Result Error PartialTypeExpression
@@ -960,6 +944,106 @@ addArgumentToType mexistingTypeExpr argToAdd =
         Just TypeExpression_Unit ->
             Error_TypeDoesNotTakeArgs TypeExpression_Unit newType
                 |> Err
+
+
+{-| TODO(harry): custom error message here
+-}
+addColonToPartialTypeExpression :
+    { firstEntries : Stack ( String, PartialTypeExpression )
+    , lastEntry : LastEntryOfRecord
+    }
+    ->
+        Result ()
+            { firstEntries : Stack ( String, PartialTypeExpression )
+            , lastEntry : LastEntryOfRecord
+            }
+addColonToPartialTypeExpression { firstEntries, lastEntry } =
+    case lastEntry of
+        LastEntryOfRecord_Key key ->
+            { firstEntries = firstEntries
+            , lastEntry = LastEntryOfRecord_KeyColon key
+            }
+                |> Ok
+
+        LastEntryOfRecord_KeyValue key (TypeExpression_PartialRecord pr) ->
+            addColonToPartialTypeExpression pr
+                |> Result.map
+                    (\newPr ->
+                        { firstEntries = firstEntries
+                        , lastEntry =
+                            LastEntryOfRecord_KeyValue
+                                key
+                                (TypeExpression_PartialRecord newPr)
+                        }
+                    )
+
+        _ ->
+            Err ()
+
+
+{-| TODO(harry): custom error message here
+-}
+addCommaToPartialTypeExpression :
+    { firstEntries : Stack ( String, PartialTypeExpression )
+    , lastEntry : LastEntryOfRecord
+    }
+    ->
+        Result ()
+            { firstEntries : Stack ( String, PartialTypeExpression )
+            , lastEntry : LastEntryOfRecord
+            }
+addCommaToPartialTypeExpression { firstEntries, lastEntry } =
+    case lastEntry of
+        LastEntryOfRecord_KeyValue key (TypeExpression_PartialRecord pr) ->
+            addCommaToPartialTypeExpression pr
+                |> Result.map
+                    (\newPr ->
+                        { firstEntries = firstEntries
+                        , lastEntry =
+                            LastEntryOfRecord_KeyValue
+                                key
+                                (TypeExpression_PartialRecord newPr)
+                        }
+                    )
+
+        LastEntryOfRecord_KeyValue key value ->
+            { firstEntries = ( key, value ) |> pushOnto firstEntries
+            , lastEntry = LastEntryOfRecord_Empty
+            }
+                |> Ok
+
+        _ ->
+            Err ()
+
+
+{-| TODO(harry): custom error message here
+-}
+addCloseToPartialTypeExpression :
+    { firstEntries : Stack ( String, PartialTypeExpression )
+    , lastEntry : LastEntryOfRecord
+    }
+    -> Result () PartialTypeExpression
+addCloseToPartialTypeExpression { firstEntries, lastEntry } =
+    case lastEntry of
+        LastEntryOfRecord_KeyValue key (TypeExpression_PartialRecord pr) ->
+            addCloseToPartialTypeExpression pr
+                |> Result.map
+                    (\newPte ->
+                        { firstEntries = firstEntries
+                        , lastEntry =
+                            LastEntryOfRecord_KeyValue key newPte
+                        }
+                            |> TypeExpression_PartialRecord
+                    )
+
+        LastEntryOfRecord_KeyValue key value ->
+            ( key, value )
+                |> pushOnto firstEntries
+                |> TypeExpression_Record
+                |> Ok
+
+        _ ->
+            Err ()
 
 
 partialTypeExpressionToParseResult : (TypeExpressionResult -> ParseResult) -> Result Error PartialTypeExpression2 -> ParseResult

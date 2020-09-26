@@ -1,0 +1,4 @@
+type alias Ty =
+    { hi:  { a: 7, b: List String }
+    , ih: CustomType A B C (D E)
+    }
