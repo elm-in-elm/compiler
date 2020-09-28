@@ -133,6 +133,58 @@ shouldParseTestCases =
                     )
                 ]
       }
+    , { name = "type-alias-record-3-entries"
+      , source = """type alias Ty = { a: A, b: B, c: C }
+"""
+      , lexed =
+            Ok
+                [ Located { end = { col = 5, row = 1 }, start = { col = 1, row = 1 } } (Token "type")
+                , Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Whitespace 1)
+                , Located { end = { col = 11, row = 1 }, start = { col = 6, row = 1 } } (Token "alias")
+                , Located { end = { col = 12, row = 1 }, start = { col = 11, row = 1 } } (Whitespace 1)
+                , Located { end = { col = 14, row = 1 }, start = { col = 12, row = 1 } } (Token "Ty")
+                , Located { end = { col = 15, row = 1 }, start = { col = 14, row = 1 } } (Whitespace 1)
+                , Located { end = { col = 16, row = 1 }, start = { col = 15, row = 1 } } (Sigil Assign)
+                , Located { end = { col = 17, row = 1 }, start = { col = 16, row = 1 } } (Whitespace 1)
+                , Located { end = { col = 18, row = 1 }, start = { col = 17, row = 1 } } (Sigil (Bracket Curly Open))
+                , Located { end = { col = 19, row = 1 }, start = { col = 18, row = 1 } } (Whitespace 1)
+                , Located { end = { col = 20, row = 1 }, start = { col = 19, row = 1 } } (Token "a")
+                , Located { end = { col = 21, row = 1 }, start = { col = 20, row = 1 } } (Sigil Colon)
+                , Located { end = { col = 22, row = 1 }, start = { col = 21, row = 1 } } (Whitespace 1)
+                , Located { end = { col = 23, row = 1 }, start = { col = 22, row = 1 } } (Token "A")
+                , Located { end = { col = 24, row = 1 }, start = { col = 23, row = 1 } } (Sigil Comma)
+                , Located { end = { col = 25, row = 1 }, start = { col = 24, row = 1 } } (Whitespace 1)
+                , Located { end = { col = 26, row = 1 }, start = { col = 25, row = 1 } } (Token "b")
+                , Located { end = { col = 27, row = 1 }, start = { col = 26, row = 1 } } (Sigil Colon)
+                , Located { end = { col = 28, row = 1 }, start = { col = 27, row = 1 } } (Whitespace 1)
+                , Located { end = { col = 29, row = 1 }, start = { col = 28, row = 1 } } (Token "B")
+                , Located { end = { col = 30, row = 1 }, start = { col = 29, row = 1 } } (Sigil Comma)
+                , Located { end = { col = 31, row = 1 }, start = { col = 30, row = 1 } } (Whitespace 1)
+                , Located { end = { col = 32, row = 1 }, start = { col = 31, row = 1 } } (Token "c")
+                , Located { end = { col = 33, row = 1 }, start = { col = 32, row = 1 } } (Sigil Colon)
+                , Located { end = { col = 34, row = 1 }, start = { col = 33, row = 1 } } (Whitespace 1)
+                , Located { end = { col = 35, row = 1 }, start = { col = 34, row = 1 } } (Token "C")
+                , Located { end = { col = 36, row = 1 }, start = { col = 35, row = 1 } } (Whitespace 1)
+                , Located { end = { col = 37, row = 1 }, start = { col = 36, row = 1 } } (Sigil (Bracket Curly Close))
+                , Located { end = { col = 1, row = 2 }, start = { col = 37, row = 1 } } (Newlines [] 0)
+                ]
+      , contextualized =
+            Just
+                [ Ok
+                    (TypeAlias
+                        { expr =
+                            Record
+                                (Dict.fromList
+                                    [ ( "a", UserDefinedType { args = [], name = "A", qualifiedness = PossiblyQualified Nothing } )
+                                    , ( "b", UserDefinedType { args = [], name = "B", qualifiedness = PossiblyQualified Nothing } )
+                                    , ( "c", UserDefinedType { args = [], name = "C", qualifiedness = PossiblyQualified Nothing } )
+                                    ]
+                                )
+                        , ty = TypeOrConstructor "Ty"
+                        }
+                    )
+                ]
+      }
     , { name = "type-alias-record-empty"
       , source = """type alias Ty = {}
 """
@@ -313,16 +365,16 @@ shouldParseTestCases =
                                     , ( "ih"
                                       , UserDefinedType
                                             { args =
-                                                [ UserDefinedType
+                                                [ UserDefinedType { args = [], name = "A", qualifiedness = PossiblyQualified Nothing }
+                                                , UserDefinedType { args = [], name = "B", qualifiedness = PossiblyQualified Nothing }
+                                                , UserDefinedType { args = [], name = "C", qualifiedness = PossiblyQualified Nothing }
+                                                , UserDefinedType
                                                     { args =
                                                         [ UserDefinedType { args = [], name = "E", qualifiedness = PossiblyQualified Nothing }
                                                         ]
                                                     , name = "D"
                                                     , qualifiedness = PossiblyQualified Nothing
                                                     }
-                                                , UserDefinedType { args = [], name = "C", qualifiedness = PossiblyQualified Nothing }
-                                                , UserDefinedType { args = [], name = "B", qualifiedness = PossiblyQualified Nothing }
-                                                , UserDefinedType { args = [], name = "A", qualifiedness = PossiblyQualified Nothing }
                                                 ]
                                             , name = "CustomType"
                                             , qualifiedness = PossiblyQualified Nothing
@@ -1145,9 +1197,9 @@ type alias Hi = (A Int, C D E F, H I (J K), L M () O P)
                         )
                         (UserDefinedType
                             { args =
-                                [ UserDefinedType { args = [], name = "F", qualifiedness = PossiblyQualified Nothing }
+                                [ UserDefinedType { args = [], name = "D", qualifiedness = PossiblyQualified Nothing }
                                 , UserDefinedType { args = [], name = "E", qualifiedness = PossiblyQualified Nothing }
-                                , UserDefinedType { args = [], name = "D", qualifiedness = PossiblyQualified Nothing }
+                                , UserDefinedType { args = [], name = "F", qualifiedness = PossiblyQualified Nothing }
                                 ]
                             , name = "C"
                             , qualifiedness = PossiblyQualified Nothing
@@ -1155,14 +1207,14 @@ type alias Hi = (A Int, C D E F, H I (J K), L M () O P)
                         )
                         (UserDefinedType
                             { args =
-                                [ UserDefinedType
+                                [ UserDefinedType { args = [], name = "I", qualifiedness = PossiblyQualified Nothing }
+                                , UserDefinedType
                                     { args =
                                         [ UserDefinedType { args = [], name = "K", qualifiedness = PossiblyQualified Nothing }
                                         ]
                                     , name = "J"
                                     , qualifiedness = PossiblyQualified Nothing
                                     }
-                                , UserDefinedType { args = [], name = "I", qualifiedness = PossiblyQualified Nothing }
                                 ]
                             , name = "H"
                             , qualifiedness = PossiblyQualified Nothing
@@ -1170,10 +1222,10 @@ type alias Hi = (A Int, C D E F, H I (J K), L M () O P)
                         )
                         (UserDefinedType
                             { args =
-                                [ UserDefinedType { args = [], name = "P", qualifiedness = PossiblyQualified Nothing }
-                                , UserDefinedType { args = [], name = "O", qualifiedness = PossiblyQualified Nothing }
+                                [ UserDefinedType { args = [], name = "M", qualifiedness = PossiblyQualified Nothing }
                                 , Unit
-                                , UserDefinedType { args = [], name = "M", qualifiedness = PossiblyQualified Nothing }
+                                , UserDefinedType { args = [], name = "O", qualifiedness = PossiblyQualified Nothing }
+                                , UserDefinedType { args = [], name = "P", qualifiedness = PossiblyQualified Nothing }
                                 ]
                             , name = "L"
                             , qualifiedness = PossiblyQualified Nothing
