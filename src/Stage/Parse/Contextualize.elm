@@ -1061,7 +1061,7 @@ collectListHelp new func old =
                     Err e
 
         [] ->
-            Ok new
+            Ok (List.reverse new)
 
 
 parseResultFromMaybeResult : Maybe (Result Error State) -> ParseResult
