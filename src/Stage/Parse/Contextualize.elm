@@ -128,7 +128,7 @@ type PartialTypeExpression
     | TypeExpression_Unit
     | TypeExpression_Bracketed PartialTypeExpression
     | TypeExpression_Tuple PartialTypeExpression PartialTypeExpression (List PartialTypeExpression)
-    | TypeExpression_Record (Stack ( String, PartialTypeExpression ))
+    | TypeExpression_Record (List ( String, PartialTypeExpression ))
 
 
 type LastEntryOfRecord
@@ -611,11 +611,12 @@ parserTypeExpr newState prevExpr item =
                         LastEntryOfRecord_KeyValue key value ->
                             ( key, value )
                                 |> pushOnto firstEntries
+                                |> toList (\x -> x)
                                 |> fromRecord
 
                         LastEntryOfRecord_Empty ->
                             if firstEntries == empty then
-                                empty
+                                []
                                     |> fromRecord
 
                             else
@@ -1021,12 +1022,11 @@ partialTypeExpressionToConcreteType pte =
 
         TypeExpression_Record keyValues ->
             keyValues
-                |> toList
+                |> collectList
                     (\( key, value ) ->
                         partialTypeExpressionToConcreteType value
                             |> Result.map (\concreteValue -> ( key, concreteValue ))
                     )
-                |> collectList (\x -> x)
                 |> Result.map
                     (\goodKeyValues ->
                         Dict.fromList goodKeyValues
