@@ -117,8 +117,7 @@ shouldParseTestCases =
                 , Located { end = { col = 28, row = 1 }, start = { col = 27, row = 1 } } (Whitespace 1)
                 , Located { end = { col = 31, row = 1 }, start = { col = 28, row = 1 } } (Token "Int")
                 , Located { end = { col = 32, row = 1 }, start = { col = 31, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 33, row = 1 }, start = { col = 32, row = 1 } } (Sigil (Operator Subtract))
-                , Located { end = { col = 34, row = 1 }, start = { col = 33, row = 1 } } (Sigil (Operator GreaterThan))
+                , Located { end = { col = 34, row = 1 }, start = { col = 32, row = 1 } } (Sigil ThinArrow)
                 , Located { end = { col = 35, row = 1 }, start = { col = 34, row = 1 } } (Whitespace 1)
                 , Located { end = { col = 39, row = 1 }, start = { col = 35, row = 1 } } (Token "List")
                 , Located { end = { col = 40, row = 1 }, start = { col = 39, row = 1 } } (Whitespace 1)
@@ -145,7 +144,7 @@ shouldParseTestCases =
                             , parents = []
                             }
                         )
-                    , Error_InvalidToken (Sigil (Operator Subtract)) Expecting_Unknown
+                    , Error_InvalidToken (Sigil ThinArrow) Expecting_Unknown
                     )
                 ]
       }
@@ -168,8 +167,7 @@ shouldParseTestCases =
                 , Located { end = { col = 30, row = 1 }, start = { col = 29, row = 1 } } (Whitespace 1)
                 , Located { end = { col = 33, row = 1 }, start = { col = 30, row = 1 } } (Token "Int")
                 , Located { end = { col = 34, row = 1 }, start = { col = 33, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 35, row = 1 }, start = { col = 34, row = 1 } } (Sigil (Operator Subtract))
-                , Located { end = { col = 36, row = 1 }, start = { col = 35, row = 1 } } (Sigil (Operator GreaterThan))
+                , Located { end = { col = 36, row = 1 }, start = { col = 34, row = 1 } } (Sigil ThinArrow)
                 , Located { end = { col = 37, row = 1 }, start = { col = 36, row = 1 } } (Whitespace 1)
                 , Located { end = { col = 41, row = 1 }, start = { col = 37, row = 1 } } (Token "List")
                 , Located { end = { col = 42, row = 1 }, start = { col = 41, row = 1 } } (Whitespace 1)
@@ -222,8 +220,7 @@ shouldParseTestCases =
                 , Located { end = { col = 42, row = 1 }, start = { col = 41, row = 1 } } (Whitespace 1)
                 , Located { end = { col = 43, row = 1 }, start = { col = 42, row = 1 } } (Sigil (Bracket Curly Close))
                 , Located { end = { col = 44, row = 1 }, start = { col = 43, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 45, row = 1 }, start = { col = 44, row = 1 } } (Sigil (Operator Subtract))
-                , Located { end = { col = 46, row = 1 }, start = { col = 45, row = 1 } } (Sigil (Operator GreaterThan))
+                , Located { end = { col = 46, row = 1 }, start = { col = 44, row = 1 } } (Sigil ThinArrow)
                 , Located { end = { col = 47, row = 1 }, start = { col = 46, row = 1 } } (Whitespace 1)
                 , Located { end = { col = 48, row = 1 }, start = { col = 47, row = 1 } } (Sigil (Bracket Curly Open))
                 , Located { end = { col = 49, row = 1 }, start = { col = 48, row = 1 } } (Sigil (Bracket Curly Close))
@@ -254,7 +251,7 @@ shouldParseTestCases =
                             , ( "d", TypeExpression_NamedType { args = Stack [], name = "E" } )
                             ]
                         )
-                        (Sigil (Operator Subtract))
+                        (Sigil ThinArrow)
                     )
                 ]
       }
@@ -274,8 +271,7 @@ shouldParseTestCases =
                 , Located { end = { col = 24, row = 1 }, start = { col = 23, row = 1 } } (Sigil (Bracket Round Open))
                 , Located { end = { col = 25, row = 1 }, start = { col = 24, row = 1 } } (Sigil (Bracket Round Close))
                 , Located { end = { col = 26, row = 1 }, start = { col = 25, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 27, row = 1 }, start = { col = 26, row = 1 } } (Sigil (Operator Subtract))
-                , Located { end = { col = 28, row = 1 }, start = { col = 27, row = 1 } } (Sigil (Operator GreaterThan))
+                , Located { end = { col = 28, row = 1 }, start = { col = 26, row = 1 } } (Sigil ThinArrow)
                 , Located { end = { col = 29, row = 1 }, start = { col = 28, row = 1 } } (Whitespace 1)
                 , Located { end = { col = 30, row = 1 }, start = { col = 29, row = 1 } } (Sigil (Bracket Round Open))
                 , Located { end = { col = 33, row = 1 }, start = { col = 30, row = 1 } } (Token "Int")
@@ -289,7 +285,7 @@ shouldParseTestCases =
             Just
                 [ Err
                     ( State_BlockTypeAlias (BlockTypeAlias_Complete (TypeOrConstructor "Function") TypeExpression_Unit)
-                    , Error_ExtraItemAfterBlock TypeExpression_Unit (Sigil (Operator Subtract))
+                    , Error_ExtraItemAfterBlock TypeExpression_Unit (Sigil ThinArrow)
                     )
                 ]
       }

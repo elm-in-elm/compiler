@@ -417,6 +417,12 @@ sigilParser =
             |> P.map (\() -> Operator Or)
         , P.symbol (P.Token ".." ExpectingSigil)
             |> P.map (\() -> DoubleDot)
+        , P.symbol (P.Token "->" ExpectingSigil)
+            |> P.map (\() -> ThinArrow)
+        , P.symbol (P.Token ">=" ExpectingSigil)
+            |> P.map (\() -> Operator GreaterThanEquals)
+        , P.symbol (P.Token "<=" ExpectingSigil)
+            |> P.map (\() -> Operator LessThanEquals)
 
         -- Single character sigils
         , P.symbol (P.Token "^" ExpectingSigil)
@@ -433,10 +439,6 @@ sigilParser =
             |> P.map (\() -> Operator GreaterThan)
         , P.symbol (P.Token "<" ExpectingSigil)
             |> P.map (\() -> Operator LessThan)
-        , P.symbol (P.Token ">=" ExpectingSigil)
-            |> P.map (\() -> Operator GreaterThanEquals)
-        , P.symbol (P.Token "<=" ExpectingSigil)
-            |> P.map (\() -> Operator LessThanEquals)
         , P.symbol (P.Token "-" ExpectingSigil)
             |> P.map (\() -> Operator Subtract)
         , P.symbol (P.Token "+" ExpectingSigil)
