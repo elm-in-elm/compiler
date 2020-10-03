@@ -53,7 +53,7 @@ tests =
                         )
                 )
             , describe "should parse"
-                (ParserLexerTestCases.shouldNotParseTestCases
+                (ParserLexerTestCases.shouldParseTestCases
                     |> List.map
                         (\{ name, source, lexed, contextualized } ->
                             test name <|
