@@ -107,3 +107,5 @@ preFormatElmCode =
     ]"""
     >> String.replace """[
     ]""" "[]"
+    >> String.replace """Err (""" """Err (
+    """

@@ -19,7 +19,7 @@ import Test exposing (Test, describe, test)
 
 shouldParseTestCases :
     List
-        { contextualized : Maybe (List (Result never Block))
+        { contextualized : Maybe (List (Result ( State, Error ) Block))
         , lexed : Result Never (List (Located LexItem))
         , name : String
         , source : String
@@ -97,6 +97,199 @@ shouldParseTestCases =
                                 )
                         , ty = TypeOrConstructor "Ty"
                         }
+                    )
+                ]
+      }
+    , { name = "type-alias-function"
+      , source = """type alias Function = List Int -> List (List Int)
+"""
+      , lexed =
+            Ok
+                [ Located { end = { col = 5, row = 1 }, start = { col = 1, row = 1 } } (Token "type")
+                , Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Whitespace 1)
+                , Located { end = { col = 11, row = 1 }, start = { col = 6, row = 1 } } (Token "alias")
+                , Located { end = { col = 12, row = 1 }, start = { col = 11, row = 1 } } (Whitespace 1)
+                , Located { end = { col = 20, row = 1 }, start = { col = 12, row = 1 } } (Token "Function")
+                , Located { end = { col = 21, row = 1 }, start = { col = 20, row = 1 } } (Whitespace 1)
+                , Located { end = { col = 22, row = 1 }, start = { col = 21, row = 1 } } (Sigil Assign)
+                , Located { end = { col = 23, row = 1 }, start = { col = 22, row = 1 } } (Whitespace 1)
+                , Located { end = { col = 27, row = 1 }, start = { col = 23, row = 1 } } (Token "List")
+                , Located { end = { col = 28, row = 1 }, start = { col = 27, row = 1 } } (Whitespace 1)
+                , Located { end = { col = 31, row = 1 }, start = { col = 28, row = 1 } } (Token "Int")
+                , Located { end = { col = 32, row = 1 }, start = { col = 31, row = 1 } } (Whitespace 1)
+                , Located { end = { col = 33, row = 1 }, start = { col = 32, row = 1 } } (Sigil (Operator Subtract))
+                , Located { end = { col = 34, row = 1 }, start = { col = 33, row = 1 } } (Sigil (Operator GreaterThan))
+                , Located { end = { col = 35, row = 1 }, start = { col = 34, row = 1 } } (Whitespace 1)
+                , Located { end = { col = 39, row = 1 }, start = { col = 35, row = 1 } } (Token "List")
+                , Located { end = { col = 40, row = 1 }, start = { col = 39, row = 1 } } (Whitespace 1)
+                , Located { end = { col = 41, row = 1 }, start = { col = 40, row = 1 } } (Sigil (Bracket Round Open))
+                , Located { end = { col = 45, row = 1 }, start = { col = 41, row = 1 } } (Token "List")
+                , Located { end = { col = 46, row = 1 }, start = { col = 45, row = 1 } } (Whitespace 1)
+                , Located { end = { col = 49, row = 1 }, start = { col = 46, row = 1 } } (Token "Int")
+                , Located { end = { col = 50, row = 1 }, start = { col = 49, row = 1 } } (Sigil (Bracket Round Close))
+                , Located { end = { col = 1, row = 2 }, start = { col = 50, row = 1 } } (Newlines [] 0)
+                ]
+      , contextualized =
+            Just
+                [ Err
+                    ( State_BlockTypeAlias
+                        (BlockTypeAlias_Completish (TypeOrConstructor "Function")
+                            { nesting =
+                                NestingLeafType_TypeWithArgs
+                                    { args =
+                                        Stack
+                                            [ TypeExpression_NamedType { args = Stack [], name = "Int" }
+                                            ]
+                                    , name = "List"
+                                    }
+                            , parents = []
+                            }
+                        )
+                    , Error_InvalidToken (Sigil (Operator Subtract)) Expecting_Unknown
+                    )
+                ]
+      }
+    , { name = "type-alias-function-generic"
+      , source = """type alias Function a = List Int -> List (List a)
+"""
+      , lexed =
+            Ok
+                [ Located { end = { col = 5, row = 1 }, start = { col = 1, row = 1 } } (Token "type")
+                , Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Whitespace 1)
+                , Located { end = { col = 11, row = 1 }, start = { col = 6, row = 1 } } (Token "alias")
+                , Located { end = { col = 12, row = 1 }, start = { col = 11, row = 1 } } (Whitespace 1)
+                , Located { end = { col = 20, row = 1 }, start = { col = 12, row = 1 } } (Token "Function")
+                , Located { end = { col = 21, row = 1 }, start = { col = 20, row = 1 } } (Whitespace 1)
+                , Located { end = { col = 22, row = 1 }, start = { col = 21, row = 1 } } (Token "a")
+                , Located { end = { col = 23, row = 1 }, start = { col = 22, row = 1 } } (Whitespace 1)
+                , Located { end = { col = 24, row = 1 }, start = { col = 23, row = 1 } } (Sigil Assign)
+                , Located { end = { col = 25, row = 1 }, start = { col = 24, row = 1 } } (Whitespace 1)
+                , Located { end = { col = 29, row = 1 }, start = { col = 25, row = 1 } } (Token "List")
+                , Located { end = { col = 30, row = 1 }, start = { col = 29, row = 1 } } (Whitespace 1)
+                , Located { end = { col = 33, row = 1 }, start = { col = 30, row = 1 } } (Token "Int")
+                , Located { end = { col = 34, row = 1 }, start = { col = 33, row = 1 } } (Whitespace 1)
+                , Located { end = { col = 35, row = 1 }, start = { col = 34, row = 1 } } (Sigil (Operator Subtract))
+                , Located { end = { col = 36, row = 1 }, start = { col = 35, row = 1 } } (Sigil (Operator GreaterThan))
+                , Located { end = { col = 37, row = 1 }, start = { col = 36, row = 1 } } (Whitespace 1)
+                , Located { end = { col = 41, row = 1 }, start = { col = 37, row = 1 } } (Token "List")
+                , Located { end = { col = 42, row = 1 }, start = { col = 41, row = 1 } } (Whitespace 1)
+                , Located { end = { col = 43, row = 1 }, start = { col = 42, row = 1 } } (Sigil (Bracket Round Open))
+                , Located { end = { col = 47, row = 1 }, start = { col = 43, row = 1 } } (Token "List")
+                , Located { end = { col = 48, row = 1 }, start = { col = 47, row = 1 } } (Whitespace 1)
+                , Located { end = { col = 49, row = 1 }, start = { col = 48, row = 1 } } (Token "a")
+                , Located { end = { col = 50, row = 1 }, start = { col = 49, row = 1 } } (Sigil (Bracket Round Close))
+                , Located { end = { col = 1, row = 2 }, start = { col = 50, row = 1 } } (Newlines [] 0)
+                ]
+      , contextualized =
+            Just
+                [ Err
+                    ( State_BlockTypeAlias (BlockTypeAlias_Named (TypeOrConstructor "Function"))
+                    , Error_InvalidToken (Token "a") (Expecting_Sigil Assign)
+                    )
+                ]
+      }
+    , { name = "type-alias-function-record"
+      , source = """type alias Function = { a: { b: C}, d: E } -> {}
+"""
+      , lexed =
+            Ok
+                [ Located { end = { col = 5, row = 1 }, start = { col = 1, row = 1 } } (Token "type")
+                , Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Whitespace 1)
+                , Located { end = { col = 11, row = 1 }, start = { col = 6, row = 1 } } (Token "alias")
+                , Located { end = { col = 12, row = 1 }, start = { col = 11, row = 1 } } (Whitespace 1)
+                , Located { end = { col = 20, row = 1 }, start = { col = 12, row = 1 } } (Token "Function")
+                , Located { end = { col = 21, row = 1 }, start = { col = 20, row = 1 } } (Whitespace 1)
+                , Located { end = { col = 22, row = 1 }, start = { col = 21, row = 1 } } (Sigil Assign)
+                , Located { end = { col = 23, row = 1 }, start = { col = 22, row = 1 } } (Whitespace 1)
+                , Located { end = { col = 24, row = 1 }, start = { col = 23, row = 1 } } (Sigil (Bracket Curly Open))
+                , Located { end = { col = 25, row = 1 }, start = { col = 24, row = 1 } } (Whitespace 1)
+                , Located { end = { col = 26, row = 1 }, start = { col = 25, row = 1 } } (Token "a")
+                , Located { end = { col = 27, row = 1 }, start = { col = 26, row = 1 } } (Sigil Colon)
+                , Located { end = { col = 28, row = 1 }, start = { col = 27, row = 1 } } (Whitespace 1)
+                , Located { end = { col = 29, row = 1 }, start = { col = 28, row = 1 } } (Sigil (Bracket Curly Open))
+                , Located { end = { col = 30, row = 1 }, start = { col = 29, row = 1 } } (Whitespace 1)
+                , Located { end = { col = 31, row = 1 }, start = { col = 30, row = 1 } } (Token "b")
+                , Located { end = { col = 32, row = 1 }, start = { col = 31, row = 1 } } (Sigil Colon)
+                , Located { end = { col = 33, row = 1 }, start = { col = 32, row = 1 } } (Whitespace 1)
+                , Located { end = { col = 34, row = 1 }, start = { col = 33, row = 1 } } (Token "C")
+                , Located { end = { col = 35, row = 1 }, start = { col = 34, row = 1 } } (Sigil (Bracket Curly Close))
+                , Located { end = { col = 36, row = 1 }, start = { col = 35, row = 1 } } (Sigil Comma)
+                , Located { end = { col = 37, row = 1 }, start = { col = 36, row = 1 } } (Whitespace 1)
+                , Located { end = { col = 38, row = 1 }, start = { col = 37, row = 1 } } (Token "d")
+                , Located { end = { col = 39, row = 1 }, start = { col = 38, row = 1 } } (Sigil Colon)
+                , Located { end = { col = 40, row = 1 }, start = { col = 39, row = 1 } } (Whitespace 1)
+                , Located { end = { col = 41, row = 1 }, start = { col = 40, row = 1 } } (Token "E")
+                , Located { end = { col = 42, row = 1 }, start = { col = 41, row = 1 } } (Whitespace 1)
+                , Located { end = { col = 43, row = 1 }, start = { col = 42, row = 1 } } (Sigil (Bracket Curly Close))
+                , Located { end = { col = 44, row = 1 }, start = { col = 43, row = 1 } } (Whitespace 1)
+                , Located { end = { col = 45, row = 1 }, start = { col = 44, row = 1 } } (Sigil (Operator Subtract))
+                , Located { end = { col = 46, row = 1 }, start = { col = 45, row = 1 } } (Sigil (Operator GreaterThan))
+                , Located { end = { col = 47, row = 1 }, start = { col = 46, row = 1 } } (Whitespace 1)
+                , Located { end = { col = 48, row = 1 }, start = { col = 47, row = 1 } } (Sigil (Bracket Curly Open))
+                , Located { end = { col = 49, row = 1 }, start = { col = 48, row = 1 } } (Sigil (Bracket Curly Close))
+                , Located { end = { col = 1, row = 2 }, start = { col = 49, row = 1 } } (Newlines [] 0)
+                ]
+      , contextualized =
+            Just
+                [ Err
+                    ( State_BlockTypeAlias
+                        (BlockTypeAlias_Complete (TypeOrConstructor "Function")
+                            (TypeExpression_Record
+                                [ ( "a"
+                                  , TypeExpression_Record
+                                        [ ( "b", TypeExpression_NamedType { args = Stack [], name = "C" } )
+                                        ]
+                                  )
+                                , ( "d", TypeExpression_NamedType { args = Stack [], name = "E" } )
+                                ]
+                            )
+                        )
+                    , Error_ExtraItemAfterBlock
+                        (TypeExpression_Record
+                            [ ( "a"
+                              , TypeExpression_Record
+                                    [ ( "b", TypeExpression_NamedType { args = Stack [], name = "C" } )
+                                    ]
+                              )
+                            , ( "d", TypeExpression_NamedType { args = Stack [], name = "E" } )
+                            ]
+                        )
+                        (Sigil (Operator Subtract))
+                    )
+                ]
+      }
+    , { name = "type-alias-function-tuple"
+      , source = """type alias Function = () -> (Int, String)
+"""
+      , lexed =
+            Ok
+                [ Located { end = { col = 5, row = 1 }, start = { col = 1, row = 1 } } (Token "type")
+                , Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Whitespace 1)
+                , Located { end = { col = 11, row = 1 }, start = { col = 6, row = 1 } } (Token "alias")
+                , Located { end = { col = 12, row = 1 }, start = { col = 11, row = 1 } } (Whitespace 1)
+                , Located { end = { col = 20, row = 1 }, start = { col = 12, row = 1 } } (Token "Function")
+                , Located { end = { col = 21, row = 1 }, start = { col = 20, row = 1 } } (Whitespace 1)
+                , Located { end = { col = 22, row = 1 }, start = { col = 21, row = 1 } } (Sigil Assign)
+                , Located { end = { col = 23, row = 1 }, start = { col = 22, row = 1 } } (Whitespace 1)
+                , Located { end = { col = 24, row = 1 }, start = { col = 23, row = 1 } } (Sigil (Bracket Round Open))
+                , Located { end = { col = 25, row = 1 }, start = { col = 24, row = 1 } } (Sigil (Bracket Round Close))
+                , Located { end = { col = 26, row = 1 }, start = { col = 25, row = 1 } } (Whitespace 1)
+                , Located { end = { col = 27, row = 1 }, start = { col = 26, row = 1 } } (Sigil (Operator Subtract))
+                , Located { end = { col = 28, row = 1 }, start = { col = 27, row = 1 } } (Sigil (Operator GreaterThan))
+                , Located { end = { col = 29, row = 1 }, start = { col = 28, row = 1 } } (Whitespace 1)
+                , Located { end = { col = 30, row = 1 }, start = { col = 29, row = 1 } } (Sigil (Bracket Round Open))
+                , Located { end = { col = 33, row = 1 }, start = { col = 30, row = 1 } } (Token "Int")
+                , Located { end = { col = 34, row = 1 }, start = { col = 33, row = 1 } } (Sigil Comma)
+                , Located { end = { col = 35, row = 1 }, start = { col = 34, row = 1 } } (Whitespace 1)
+                , Located { end = { col = 41, row = 1 }, start = { col = 35, row = 1 } } (Token "String")
+                , Located { end = { col = 42, row = 1 }, start = { col = 41, row = 1 } } (Sigil (Bracket Round Close))
+                , Located { end = { col = 1, row = 2 }, start = { col = 42, row = 1 } } (Newlines [] 0)
+                ]
+      , contextualized =
+            Just
+                [ Err
+                    ( State_BlockTypeAlias (BlockTypeAlias_Complete (TypeOrConstructor "Function") TypeExpression_Unit)
+                    , Error_ExtraItemAfterBlock TypeExpression_Unit (Sigil (Operator Subtract))
                     )
                 ]
       }
@@ -555,6 +748,43 @@ shouldParseTestCases =
                 [ Ok (TypeAlias { expr = UserDefinedType { args = [], name = "Int", qualifiedness = PossiblyQualified Nothing }, ty = TypeOrConstructor "Hi" })
                 ]
       }
+    , { name = "type-alias-with-bracket-2"
+      , source = """type alias Hi = (List Int)
+"""
+      , lexed =
+            Ok
+                [ Located { end = { col = 5, row = 1 }, start = { col = 1, row = 1 } } (Token "type")
+                , Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Whitespace 1)
+                , Located { end = { col = 11, row = 1 }, start = { col = 6, row = 1 } } (Token "alias")
+                , Located { end = { col = 12, row = 1 }, start = { col = 11, row = 1 } } (Whitespace 1)
+                , Located { end = { col = 14, row = 1 }, start = { col = 12, row = 1 } } (Token "Hi")
+                , Located { end = { col = 15, row = 1 }, start = { col = 14, row = 1 } } (Whitespace 1)
+                , Located { end = { col = 16, row = 1 }, start = { col = 15, row = 1 } } (Sigil Assign)
+                , Located { end = { col = 17, row = 1 }, start = { col = 16, row = 1 } } (Whitespace 1)
+                , Located { end = { col = 18, row = 1 }, start = { col = 17, row = 1 } } (Sigil (Bracket Round Open))
+                , Located { end = { col = 22, row = 1 }, start = { col = 18, row = 1 } } (Token "List")
+                , Located { end = { col = 23, row = 1 }, start = { col = 22, row = 1 } } (Whitespace 1)
+                , Located { end = { col = 26, row = 1 }, start = { col = 23, row = 1 } } (Token "Int")
+                , Located { end = { col = 27, row = 1 }, start = { col = 26, row = 1 } } (Sigil (Bracket Round Close))
+                , Located { end = { col = 1, row = 2 }, start = { col = 27, row = 1 } } (Newlines [] 0)
+                ]
+      , contextualized =
+            Just
+                [ Ok
+                    (TypeAlias
+                        { expr =
+                            UserDefinedType
+                                { args =
+                                    [ UserDefinedType { args = [], name = "Int", qualifiedness = PossiblyQualified Nothing }
+                                    ]
+                                , name = "List"
+                                , qualifiedness = PossiblyQualified Nothing
+                                }
+                        , ty = TypeOrConstructor "Hi"
+                        }
+                    )
+                ]
+      }
     , { name = "type-alias-with-pair"
       , source = """type alias Hi = (Int, List String)
 type alias Hi = (Int)
@@ -741,7 +971,7 @@ type alias Hi = ((), (), ())
 
 shouldNotParseTestCases :
     List
-        { contextualized : Maybe (List (Result ( State, Error ) never))
+        { contextualized : Maybe (List (Result ( State, Error ) Block))
         , lexed : Result Never (List (Located LexItem))
         , name : String
         , source : String
@@ -771,16 +1001,8 @@ shouldNotParseTestCases =
       , contextualized =
             Just
                 [ Err
-                    ( State_BlockTypeAlias
-                        (BlockTypeAlias_Completish (TypeOrConstructor "Hi")
-                            { nestingStack =
-                                Stack
-                                    [ NestingType_Bracket ( Stack [], Nothing )
-                                    ]
-                            , root = Just (TypeExpression_Bracketed (TypeExpression_NamedType { args = Stack [], name = "Int" }))
-                            }
-                        )
-                    , Error_TypeDoesNotTakeArgs (TypeExpression_Bracketed (TypeExpression_NamedType { args = Stack [], name = "Int" })) TypeExpression_Unit
+                    ( State_BlockTypeAlias (BlockTypeAlias_Complete (TypeOrConstructor "Hi") (TypeExpression_Bracketed (TypeExpression_NamedType { args = Stack [], name = "Int" })))
+                    , Error_ExtraItemAfterBlock (TypeExpression_Bracketed (TypeExpression_NamedType { args = Stack [], name = "Int" })) (Sigil (Bracket Round Open))
                     )
                 ]
       }
@@ -807,16 +1029,8 @@ shouldNotParseTestCases =
       , contextualized =
             Just
                 [ Err
-                    ( State_BlockTypeAlias
-                        (BlockTypeAlias_Completish (TypeOrConstructor "Hi")
-                            { nestingStack =
-                                Stack
-                                    [ NestingType_Bracket ( Stack [], Nothing )
-                                    ]
-                            , root = Just TypeExpression_Unit
-                            }
-                        )
-                    , Error_TypeDoesNotTakeArgs TypeExpression_Unit TypeExpression_Unit
+                    ( State_BlockTypeAlias (BlockTypeAlias_Complete (TypeOrConstructor "Hi") TypeExpression_Unit)
+                    , Error_ExtraItemAfterBlock TypeExpression_Unit (Sigil (Bracket Round Open))
                     )
                 ]
       }
@@ -844,16 +1058,8 @@ shouldNotParseTestCases =
       , contextualized =
             Just
                 [ Err
-                    ( State_BlockTypeAlias
-                        (BlockTypeAlias_Completish (TypeOrConstructor "Hi")
-                            { nestingStack =
-                                Stack
-                                    [ NestingType_Bracket ( Stack [], Just (TypeExpression_NamedType { args = Stack [], name = "Int" }) )
-                                    ]
-                            , root = Just TypeExpression_Unit
-                            }
-                        )
-                    , Error_TypeDoesNotTakeArgs TypeExpression_Unit (TypeExpression_Bracketed (TypeExpression_NamedType { args = Stack [], name = "Int" }))
+                    ( State_BlockTypeAlias (BlockTypeAlias_Complete (TypeOrConstructor "Hi") TypeExpression_Unit)
+                    , Error_ExtraItemAfterBlock TypeExpression_Unit (Sigil (Bracket Round Open))
                     )
                 ]
       }
@@ -878,8 +1084,14 @@ List Int
                 ]
       , contextualized =
             Just
-                [ Err ( State_BlockTypeAlias (BlockTypeAlias_NamedAssigns (TypeOrConstructor "Model")), Error_PartwayThroughTypeAlias )
-                , Err ( State_BlockStart, Error_BlockStartsWithTypeOrConstructor (TypeOrConstructor "List") )
+                [ Err
+                    ( State_BlockTypeAlias (BlockTypeAlias_NamedAssigns (TypeOrConstructor "Model"))
+                    , Error_PartwayThroughTypeAlias
+                    )
+                , Err
+                    ( State_BlockStart
+                    , Error_BlockStartsWithTypeOrConstructor (TypeOrConstructor "List")
+                    )
                 ]
       }
     , { name = "type-alias-partial"
@@ -894,7 +1106,10 @@ List Int
                 ]
       , contextualized =
             Just
-                [ Err ( State_BlockTypeAlias BlockTypeAlias_Keywords, Error_PartwayThroughTypeAlias )
+                [ Err
+                    ( State_BlockTypeAlias BlockTypeAlias_Keywords
+                    , Error_PartwayThroughTypeAlias
+                    )
                 ]
       }
     , { name = "type-alias-partial-2"
@@ -911,7 +1126,10 @@ List Int
                 ]
       , contextualized =
             Just
-                [ Err ( State_BlockTypeAlias (BlockTypeAlias_Named (TypeOrConstructor "Hi")), Error_PartwayThroughTypeAlias )
+                [ Err
+                    ( State_BlockTypeAlias (BlockTypeAlias_Named (TypeOrConstructor "Hi"))
+                    , Error_PartwayThroughTypeAlias
+                    )
                 ]
       }
     , { name = "type-alias-partial-3"
@@ -930,7 +1148,10 @@ List Int
                 ]
       , contextualized =
             Just
-                [ Err ( State_BlockTypeAlias (BlockTypeAlias_NamedAssigns (TypeOrConstructor "Hi")), Error_PartwayThroughTypeAlias )
+                [ Err
+                    ( State_BlockTypeAlias (BlockTypeAlias_NamedAssigns (TypeOrConstructor "Hi"))
+                    , Error_PartwayThroughTypeAlias
+                    )
                 ]
       }
     , { name = "type-alias-partial-with-bracket"
@@ -952,15 +1173,7 @@ List Int
       , contextualized =
             Just
                 [ Err
-                    ( State_BlockTypeAlias
-                        (BlockTypeAlias_Completish (TypeOrConstructor "Hi")
-                            { nestingStack =
-                                Stack
-                                    [ NestingType_Bracket ( Stack [], Nothing )
-                                    ]
-                            , root = Nothing
-                            }
-                        )
+                    ( State_BlockTypeAlias (BlockTypeAlias_Completish (TypeOrConstructor "Hi") { nesting = NestingLeafType_Bracket (Stack []) Nothing, parents = [] })
                     , Error_PartwayThroughTypeAlias
                     )
                 ]
@@ -989,11 +1202,10 @@ List Int
                 [ Err
                     ( State_BlockTypeAlias
                         (BlockTypeAlias_Completish (TypeOrConstructor "Hi")
-                            { nestingStack =
-                                Stack
-                                    [ NestingType_Bracket ( Stack [], Just (TypeExpression_NamedType { args = Stack [], name = "Int" }) )
-                                    ]
-                            , root = Nothing
+                            { nesting = NestingLeafType_TypeWithArgs { args = Stack [], name = "Int" }
+                            , parents =
+                                [ NestingParentType_Bracket (Stack [])
+                                ]
                             }
                         )
                     , Error_PartwayThroughTypeAlias
@@ -1019,15 +1231,7 @@ List Int
       , contextualized =
             Just
                 [ Err
-                    ( State_BlockTypeAlias
-                        (BlockTypeAlias_Completish (TypeOrConstructor "Ty")
-                            { nestingStack =
-                                Stack
-                                    [ NestingType_PartialRecord { firstEntries = Stack [], lastEntry = LastEntryOfRecord_Empty }
-                                    ]
-                            , root = Nothing
-                            }
-                        )
+                    ( State_BlockTypeAlias (BlockTypeAlias_Completish (TypeOrConstructor "Ty") { nesting = NestingLeafType_PartialRecord { firstEntries = Stack [], lastEntry = LastEntryOfRecord_Empty }, parents = [] })
                     , Error_PartwayThroughTypeAlias
                     )
                 ]
@@ -1057,15 +1261,7 @@ List Int
       , contextualized =
             Just
                 [ Err
-                    ( State_BlockTypeAlias
-                        (BlockTypeAlias_Completish (TypeOrConstructor "Ty")
-                            { nestingStack =
-                                Stack
-                                    [ NestingType_PartialRecord { firstEntries = Stack [], lastEntry = LastEntryOfRecord_Key "hi" }
-                                    ]
-                            , root = Nothing
-                            }
-                        )
+                    ( State_BlockTypeAlias (BlockTypeAlias_Completish (TypeOrConstructor "Ty") { nesting = NestingLeafType_PartialRecord { firstEntries = Stack [], lastEntry = LastEntryOfRecord_Key "hi" }, parents = [] })
                     , Error_ExpectedColonWhilstParsingRecord
                     )
                 ]
@@ -1151,18 +1347,14 @@ type alias Hi = (A Int, C D E F, H I (J K), L M () O P)
             Just
                 [ Err
                     ( State_BlockTypeAlias
-                        (BlockTypeAlias_Completish (TypeOrConstructor "Hi")
-                            { nestingStack = Stack []
-                            , root =
-                                Just
-                                    (TypeExpression_Tuple (TypeExpression_NamedType { args = Stack [], name = "Int" })
-                                        (TypeExpression_NamedType { args = Stack [], name = "A" })
-                                        [ TypeExpression_NamedType { args = Stack [], name = "B" }
-                                        , TypeExpression_NamedType { args = Stack [], name = "C" }
-                                        , TypeExpression_NamedType { args = Stack [], name = "D" }
-                                        ]
-                                    )
-                            }
+                        (BlockTypeAlias_Complete (TypeOrConstructor "Hi")
+                            (TypeExpression_Tuple (TypeExpression_NamedType { args = Stack [], name = "Int" })
+                                (TypeExpression_NamedType { args = Stack [], name = "A" })
+                                [ TypeExpression_NamedType { args = Stack [], name = "B" }
+                                , TypeExpression_NamedType { args = Stack [], name = "C" }
+                                , TypeExpression_NamedType { args = Stack [], name = "D" }
+                                ]
+                            )
                         )
                     , Error_TooManyTupleArgs (UserDefinedType { args = [], name = "Int", qualifiedness = PossiblyQualified Nothing })
                         (UserDefinedType { args = [], name = "A", qualifiedness = PossiblyQualified Nothing })
@@ -1173,58 +1365,54 @@ type alias Hi = (A Int, C D E F, H I (J K), L M () O P)
                     )
                 , Err
                     ( State_BlockTypeAlias
-                        (BlockTypeAlias_Completish (TypeOrConstructor "Hi")
-                            { nestingStack = Stack []
-                            , root =
-                                Just
-                                    (TypeExpression_Tuple
-                                        (TypeExpression_NamedType
-                                            { args =
-                                                Stack
-                                                    [ TypeExpression_NamedType { args = Stack [], name = "Int" }
-                                                    ]
-                                            , name = "A"
-                                            }
-                                        )
-                                        (TypeExpression_NamedType
-                                            { args =
-                                                Stack
-                                                    [ TypeExpression_NamedType { args = Stack [], name = "F" }
-                                                    , TypeExpression_NamedType { args = Stack [], name = "E" }
-                                                    , TypeExpression_NamedType { args = Stack [], name = "D" }
-                                                    ]
-                                            , name = "C"
-                                            }
-                                        )
-                                        [ TypeExpression_NamedType
-                                            { args =
-                                                Stack
-                                                    [ TypeExpression_Bracketed
-                                                        (TypeExpression_NamedType
-                                                            { args =
-                                                                Stack
-                                                                    [ TypeExpression_NamedType { args = Stack [], name = "K" }
-                                                                    ]
-                                                            , name = "J"
-                                                            }
-                                                        )
-                                                    , TypeExpression_NamedType { args = Stack [], name = "I" }
-                                                    ]
-                                            , name = "H"
-                                            }
-                                        , TypeExpression_NamedType
-                                            { args =
-                                                Stack
-                                                    [ TypeExpression_NamedType { args = Stack [], name = "P" }
-                                                    , TypeExpression_NamedType { args = Stack [], name = "O" }
-                                                    , TypeExpression_Unit
-                                                    , TypeExpression_NamedType { args = Stack [], name = "M" }
-                                                    ]
-                                            , name = "L"
-                                            }
-                                        ]
-                                    )
-                            }
+                        (BlockTypeAlias_Complete (TypeOrConstructor "Hi")
+                            (TypeExpression_Tuple
+                                (TypeExpression_NamedType
+                                    { args =
+                                        Stack
+                                            [ TypeExpression_NamedType { args = Stack [], name = "Int" }
+                                            ]
+                                    , name = "A"
+                                    }
+                                )
+                                (TypeExpression_NamedType
+                                    { args =
+                                        Stack
+                                            [ TypeExpression_NamedType { args = Stack [], name = "F" }
+                                            , TypeExpression_NamedType { args = Stack [], name = "E" }
+                                            , TypeExpression_NamedType { args = Stack [], name = "D" }
+                                            ]
+                                    , name = "C"
+                                    }
+                                )
+                                [ TypeExpression_NamedType
+                                    { args =
+                                        Stack
+                                            [ TypeExpression_Bracketed
+                                                (TypeExpression_NamedType
+                                                    { args =
+                                                        Stack
+                                                            [ TypeExpression_NamedType { args = Stack [], name = "K" }
+                                                            ]
+                                                    , name = "J"
+                                                    }
+                                                )
+                                            , TypeExpression_NamedType { args = Stack [], name = "I" }
+                                            ]
+                                    , name = "H"
+                                    }
+                                , TypeExpression_NamedType
+                                    { args =
+                                        Stack
+                                            [ TypeExpression_NamedType { args = Stack [], name = "P" }
+                                            , TypeExpression_NamedType { args = Stack [], name = "O" }
+                                            , TypeExpression_Unit
+                                            , TypeExpression_NamedType { args = Stack [], name = "M" }
+                                            ]
+                                    , name = "L"
+                                    }
+                                ]
+                            )
                         )
                     , Error_TooManyTupleArgs
                         (UserDefinedType
@@ -1303,16 +1491,14 @@ type alias Hi = (A Int, C D E F, H I (J K), L M () O P)
                 [ Err
                     ( State_BlockTypeAlias
                         (BlockTypeAlias_Completish (TypeOrConstructor "Hi")
-                            { nestingStack =
-                                Stack
-                                    [ NestingType_Bracket
-                                        ( Stack
-                                            [ TypeExpression_NamedType { args = Stack [], name = "Int" }
-                                            ]
-                                        , Nothing
-                                        )
-                                    ]
-                            , root = Nothing
+                            { nesting =
+                                NestingLeafType_Bracket
+                                    (Stack
+                                        [ TypeExpression_NamedType { args = Stack [], name = "Int" }
+                                        ]
+                                    )
+                                    Nothing
+                            , parents = []
                             }
                         )
                     , Error_InvalidToken (Sigil Comma) Expecting_Unknown
@@ -1352,16 +1538,14 @@ type alias Hi = (A Int, C D E F, H I (J K), L M () O P)
                 [ Err
                     ( State_BlockTypeAlias
                         (BlockTypeAlias_Completish (TypeOrConstructor "Hi")
-                            { nestingStack =
-                                Stack
-                                    [ NestingType_Bracket
-                                        ( Stack
-                                            [ TypeExpression_NamedType { args = Stack [], name = "Int" }
-                                            ]
-                                        , Nothing
-                                        )
-                                    ]
-                            , root = Nothing
+                            { nesting =
+                                NestingLeafType_Bracket
+                                    (Stack
+                                        [ TypeExpression_NamedType { args = Stack [], name = "Int" }
+                                        ]
+                                    )
+                                    Nothing
+                            , parents = []
                             }
                         )
                     , Error_PartwayThroughTypeAlias
@@ -1378,7 +1562,10 @@ type alias Hi = (A Int, C D E F, H I (J K), L M () O P)
                 ]
       , contextualized =
             Just
-                [ Err ( State_BlockFirstItem BlockFirstItem_Type, Error_PartwayThroughTypeAlias )
+                [ Err
+                    ( State_BlockFirstItem BlockFirstItem_Type
+                    , Error_PartwayThroughTypeAlias
+                    )
                 ]
       }
     ]

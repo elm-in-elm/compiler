@@ -17,27 +17,24 @@ const warningCommentLines = `
 	.trim()
 	.split('\n');
 
-function typeOfResultCases(shouldParse) {
-	const resultArgs = shouldParse ? 'never Block' : '(State, Error) never';
-	return `
+const TYPE_OF_RESULT_CASES = `
     List
-        { contextualized : Maybe (List (Result ${resultArgs} ))
+        { contextualized : Maybe (List (Result (State, Error) Block))
         , lexed : Result Never (List (Located LexItem))
         , name : String
         , source : String
         }
 `;
-}
 
 const TEST_FILE_PATH = path.join(__dirname, '..', 'tests', 'ParserLexerTestCases.elm');
 const BASE_SNIPPETS_DIR_PATH = path.join(__dirname, 'snippets');
 const SNIPPETS_DIR_PATH = Object.freeze({
 	shouldParse: path.join(BASE_SNIPPETS_DIR_PATH, 'should-parse'),
-	shouldNotParse: path.join(BASE_SNIPPETS_DIR_PATH, 'should-not-parse')
+	shouldNotParse: path.join(BASE_SNIPPETS_DIR_PATH, 'should-not-parse'),
 });
 
 function getTestCase(snippets) {
-	return new Promise(resolve => {
+	return new Promise((resolve) => {
 		const app = Elm.Update.init({flags: snippets});
 		app.ports.output.subscribe(resolve);
 	});
@@ -69,12 +66,12 @@ async function main() {
 				await Promise.all(
 					files
 						.sort()
-						.filter(name => !name.startsWith('_'))
-						.map(async name => ({
+						.filter((name) => !name.startsWith('_'))
+						.map(async (name) => ({
 							name,
-							source: await fs.readFile(path.join(dirPath, name), 'utf-8')
+							source: await fs.readFile(path.join(dirPath, name), 'utf-8'),
 						}))
-				)
+				),
 			];
 		})
 	);
@@ -83,7 +80,7 @@ async function main() {
 		snippets.map(async ([category, snippets2]) => [category, await getTestCase(snippets2)])
 	);
 
-	if (testCases.some(tests => tests.includes('Panic'))) {
+	if (testCases.some((tests) => tests.includes('Panic'))) {
 		console.error('ERROR: One or more test cases panicked!');
 		process.exitCode = 1;
 	}
@@ -96,12 +93,12 @@ async function main() {
 		testCases
 			.flatMap(([category, testCases]) => [
 				`${category}TestCases :`,
-				typeOfResultCases(category === 'shouldParse'),
+				TYPE_OF_RESULT_CASES,
 				`${category}TestCases =`,
 				testCases,
-				'\n'
+				'\n',
 			])
-			.join('\n')
+			.join('\n'),
 	].join('\n');
 
 	await fs.writeFile(TEST_FILE_PATH, newTestFile);

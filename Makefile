@@ -39,7 +39,7 @@ test: build
 regenerate:
 	cd parser-tests \
 		&& npx elm make Update.elm --output elm.js \
-		&& node update \
+		&& node --unhandled-rejections=strict update \
 		; CODE=$$? \
 		; elm-format ../tests/ParserLexerTestCases.elm --yes \
 		; exit $$CODE
