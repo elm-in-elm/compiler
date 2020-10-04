@@ -91,7 +91,7 @@ type ParseResult
 
 
 type alias State_ =
-    { previousBlocks : List (Result ( State, Error ) Block)
+    { previousBlocks : List RunResult
     , state : State
     }
 
@@ -212,7 +212,16 @@ type Expecting
 -- exported functions
 
 
-run : List LexItem -> List (Result ( State, Error ) Block)
+type alias RunResult =
+    Result
+        { state : State
+        , item : Maybe =LexItem
+        , error : Error
+        }
+        Block
+
+
+run : List LexItem -> List RunResult
 run items =
     runHelp
         items
@@ -221,7 +230,7 @@ run items =
         }
 
 
-runHelp : List LexItem -> State_ -> List (Result ( State, Error ) Block)
+runHelp : List LexItem -> State_ -> List RunResult
 runHelp items state =
     case items of
         item :: rest ->
@@ -243,7 +252,13 @@ runHelp items state =
                 ParseResult_Err error ->
                     runHelp
                         rest
-                        { previousBlocks = Err ( state.state, error ) :: state.previousBlocks
+                        { previousBlocks =
+                            Err
+                                { state = state.state
+                                , item = Just item
+                                , error = error
+                                }
+                                :: state.previousBlocks
                         , state =
                             case item of
                                 Lexer.Newlines _ 0 ->
@@ -258,7 +273,11 @@ runHelp items state =
                     runHelp
                         [{- An empty list to abort parsing. -}]
                         { previousBlocks =
-                            Err ( state.state, Error_Panic error )
+                            Err
+                                { state = state.state
+                                , item = Just item
+                                , error = Error_Panic error
+                                }
                                 :: state.previousBlocks
                         , state = State_Error_Recovery
                         }
@@ -275,7 +294,15 @@ runHelp items state =
                         state.previousBlocks
 
                     Just newBlock ->
-                        (newBlock |> Result.mapError (\err -> ( state.state, err )))
+                        (newBlock
+                            |> Result.mapError
+                                (\err ->
+                                    { state = state.state
+                                    , item = Nothing
+                                    , error = err
+                                    }
+                                )
+                        )
                             :: state.previousBlocks
                 )
 

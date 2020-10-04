@@ -47,7 +47,7 @@ init snippets =
             snippets
                 |> List.map (.source >> P.run Lexer.parser)
 
-        mrcontextualized : List (Maybe (List (Result ( Contextualize.State, Contextualize.Error ) Contextualize.Block)))
+        mrcontextualized : List (Maybe (List Contextualize.RunResult))
         mrcontextualized =
             rlexed
                 |> List.map

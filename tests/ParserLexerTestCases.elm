@@ -19,7 +19,7 @@ import Test exposing (Test, describe, test)
 
 shouldParseTestCases :
     List
-        { contextualized : Maybe (List (Result ( State, Error ) Block))
+        { contextualized : Maybe (List Contextualize.RunResult)
         , lexed : Result Never (List (Located LexItem))
         , name : String
         , source : String
@@ -131,21 +131,23 @@ shouldParseTestCases =
       , contextualized =
             Just
                 [ Err
-                    ( State_BlockTypeAlias
-                        (BlockTypeAlias_Completish (TypeOrConstructor "Function")
-                            { nesting =
-                                NestingLeafType_TypeWithArgs
-                                    { args =
-                                        Stack
-                                            [ TypeExpression_NamedType { args = Stack [], name = "Int" }
-                                            ]
-                                    , name = "List"
-                                    }
-                            , parents = []
-                            }
-                        )
-                    , Error_InvalidToken (Sigil ThinArrow) Expecting_Unknown
-                    )
+                    { error = Error_InvalidToken (Sigil ThinArrow) Expecting_Unknown
+                    , item = Just (Sigil ThinArrow)
+                    , state =
+                        State_BlockTypeAlias
+                            (BlockTypeAlias_Completish (TypeOrConstructor "Function")
+                                { nesting =
+                                    NestingLeafType_TypeWithArgs
+                                        { args =
+                                            Stack
+                                                [ TypeExpression_NamedType { args = Stack [], name = "Int" }
+                                                ]
+                                        , name = "List"
+                                        }
+                                , parents = []
+                                }
+                            )
+                    }
                 ]
       }
     , { name = "type-alias-function-generic"
@@ -180,10 +182,7 @@ shouldParseTestCases =
                 ]
       , contextualized =
             Just
-                [ Err
-                    ( State_BlockTypeAlias (BlockTypeAlias_Named (TypeOrConstructor "Function"))
-                    , Error_InvalidToken (Token "a") (Expecting_Sigil Assign)
-                    )
+                [ Err { error = Error_InvalidToken (Token "a") (Expecting_Sigil Assign), item = Just (Token "a"), state = State_BlockTypeAlias (BlockTypeAlias_Named (TypeOrConstructor "Function")) }
                 ]
       }
     , { name = "type-alias-function-record"
@@ -229,8 +228,8 @@ shouldParseTestCases =
       , contextualized =
             Just
                 [ Err
-                    ( State_BlockTypeAlias
-                        (BlockTypeAlias_Complete (TypeOrConstructor "Function")
+                    { error =
+                        Error_ExtraItemAfterBlock
                             (TypeExpression_Record
                                 [ ( "a"
                                   , TypeExpression_Record
@@ -240,19 +239,22 @@ shouldParseTestCases =
                                 , ( "d", TypeExpression_NamedType { args = Stack [], name = "E" } )
                                 ]
                             )
-                        )
-                    , Error_ExtraItemAfterBlock
-                        (TypeExpression_Record
-                            [ ( "a"
-                              , TypeExpression_Record
-                                    [ ( "b", TypeExpression_NamedType { args = Stack [], name = "C" } )
+                            (Sigil ThinArrow)
+                    , item = Just (Sigil ThinArrow)
+                    , state =
+                        State_BlockTypeAlias
+                            (BlockTypeAlias_Complete (TypeOrConstructor "Function")
+                                (TypeExpression_Record
+                                    [ ( "a"
+                                      , TypeExpression_Record
+                                            [ ( "b", TypeExpression_NamedType { args = Stack [], name = "C" } )
+                                            ]
+                                      )
+                                    , ( "d", TypeExpression_NamedType { args = Stack [], name = "E" } )
                                     ]
-                              )
-                            , ( "d", TypeExpression_NamedType { args = Stack [], name = "E" } )
-                            ]
-                        )
-                        (Sigil ThinArrow)
-                    )
+                                )
+                            )
+                    }
                 ]
       }
     , { name = "type-alias-function-tuple"
@@ -283,10 +285,7 @@ shouldParseTestCases =
                 ]
       , contextualized =
             Just
-                [ Err
-                    ( State_BlockTypeAlias (BlockTypeAlias_Complete (TypeOrConstructor "Function") TypeExpression_Unit)
-                    , Error_ExtraItemAfterBlock TypeExpression_Unit (Sigil ThinArrow)
-                    )
+                [ Err { error = Error_ExtraItemAfterBlock TypeExpression_Unit (Sigil ThinArrow), item = Just (Sigil ThinArrow), state = State_BlockTypeAlias (BlockTypeAlias_Complete (TypeOrConstructor "Function") TypeExpression_Unit) }
                 ]
       }
     , { name = "type-alias-funky-indentation"
@@ -967,7 +966,7 @@ type alias Hi = ((), (), ())
 
 shouldNotParseTestCases :
     List
-        { contextualized : Maybe (List (Result ( State, Error ) Block))
+        { contextualized : Maybe (List Contextualize.RunResult)
         , lexed : Result Never (List (Located LexItem))
         , name : String
         , source : String
@@ -996,10 +995,7 @@ shouldNotParseTestCases =
                 ]
       , contextualized =
             Just
-                [ Err
-                    ( State_BlockTypeAlias (BlockTypeAlias_Complete (TypeOrConstructor "Hi") (TypeExpression_Bracketed (TypeExpression_NamedType { args = Stack [], name = "Int" })))
-                    , Error_ExtraItemAfterBlock (TypeExpression_Bracketed (TypeExpression_NamedType { args = Stack [], name = "Int" })) (Sigil (Bracket Round Open))
-                    )
+                [ Err { error = Error_ExtraItemAfterBlock (TypeExpression_Bracketed (TypeExpression_NamedType { args = Stack [], name = "Int" })) (Sigil (Bracket Round Open)), item = Just (Sigil (Bracket Round Open)), state = State_BlockTypeAlias (BlockTypeAlias_Complete (TypeOrConstructor "Hi") (TypeExpression_Bracketed (TypeExpression_NamedType { args = Stack [], name = "Int" }))) }
                 ]
       }
     , { name = "type-alias-invalid-multiple-brackets-2"
@@ -1024,10 +1020,7 @@ shouldNotParseTestCases =
                 ]
       , contextualized =
             Just
-                [ Err
-                    ( State_BlockTypeAlias (BlockTypeAlias_Complete (TypeOrConstructor "Hi") TypeExpression_Unit)
-                    , Error_ExtraItemAfterBlock TypeExpression_Unit (Sigil (Bracket Round Open))
-                    )
+                [ Err { error = Error_ExtraItemAfterBlock TypeExpression_Unit (Sigil (Bracket Round Open)), item = Just (Sigil (Bracket Round Open)), state = State_BlockTypeAlias (BlockTypeAlias_Complete (TypeOrConstructor "Hi") TypeExpression_Unit) }
                 ]
       }
     , { name = "type-alias-invalid-multiple-brackets-3"
@@ -1053,10 +1046,7 @@ shouldNotParseTestCases =
                 ]
       , contextualized =
             Just
-                [ Err
-                    ( State_BlockTypeAlias (BlockTypeAlias_Complete (TypeOrConstructor "Hi") TypeExpression_Unit)
-                    , Error_ExtraItemAfterBlock TypeExpression_Unit (Sigil (Bracket Round Open))
-                    )
+                [ Err { error = Error_ExtraItemAfterBlock TypeExpression_Unit (Sigil (Bracket Round Open)), item = Just (Sigil (Bracket Round Open)), state = State_BlockTypeAlias (BlockTypeAlias_Complete (TypeOrConstructor "Hi") TypeExpression_Unit) }
                 ]
       }
     , { name = "type-alias-multiline-missing-indentation"
@@ -1080,14 +1070,8 @@ List Int
                 ]
       , contextualized =
             Just
-                [ Err
-                    ( State_BlockTypeAlias (BlockTypeAlias_NamedAssigns (TypeOrConstructor "Model"))
-                    , Error_PartwayThroughTypeAlias
-                    )
-                , Err
-                    ( State_BlockStart
-                    , Error_BlockStartsWithTypeOrConstructor (TypeOrConstructor "List")
-                    )
+                [ Err { error = Error_PartwayThroughTypeAlias, item = Just (Newlines [] 0), state = State_BlockTypeAlias (BlockTypeAlias_NamedAssigns (TypeOrConstructor "Model")) }
+                , Err { error = Error_BlockStartsWithTypeOrConstructor (TypeOrConstructor "List"), item = Just (Token "List"), state = State_BlockStart }
                 ]
       }
     , { name = "type-alias-partial"
@@ -1102,10 +1086,7 @@ List Int
                 ]
       , contextualized =
             Just
-                [ Err
-                    ( State_BlockTypeAlias BlockTypeAlias_Keywords
-                    , Error_PartwayThroughTypeAlias
-                    )
+                [ Err { error = Error_PartwayThroughTypeAlias, item = Just (Newlines [] 0), state = State_BlockTypeAlias BlockTypeAlias_Keywords }
                 ]
       }
     , { name = "type-alias-partial-2"
@@ -1122,10 +1103,7 @@ List Int
                 ]
       , contextualized =
             Just
-                [ Err
-                    ( State_BlockTypeAlias (BlockTypeAlias_Named (TypeOrConstructor "Hi"))
-                    , Error_PartwayThroughTypeAlias
-                    )
+                [ Err { error = Error_PartwayThroughTypeAlias, item = Just (Newlines [] 0), state = State_BlockTypeAlias (BlockTypeAlias_Named (TypeOrConstructor "Hi")) }
                 ]
       }
     , { name = "type-alias-partial-3"
@@ -1144,10 +1122,7 @@ List Int
                 ]
       , contextualized =
             Just
-                [ Err
-                    ( State_BlockTypeAlias (BlockTypeAlias_NamedAssigns (TypeOrConstructor "Hi"))
-                    , Error_PartwayThroughTypeAlias
-                    )
+                [ Err { error = Error_PartwayThroughTypeAlias, item = Just (Newlines [] 0), state = State_BlockTypeAlias (BlockTypeAlias_NamedAssigns (TypeOrConstructor "Hi")) }
                 ]
       }
     , { name = "type-alias-partial-with-bracket"
@@ -1168,10 +1143,7 @@ List Int
                 ]
       , contextualized =
             Just
-                [ Err
-                    ( State_BlockTypeAlias (BlockTypeAlias_Completish (TypeOrConstructor "Hi") { nesting = NestingLeafType_Bracket (Stack []) Nothing, parents = [] })
-                    , Error_PartwayThroughTypeAlias
-                    )
+                [ Err { error = Error_PartwayThroughTypeAlias, item = Just (Newlines [] 0), state = State_BlockTypeAlias (BlockTypeAlias_Completish (TypeOrConstructor "Hi") { nesting = NestingLeafType_Bracket (Stack []) Nothing, parents = [] }) }
                 ]
       }
     , { name = "type-alias-partial-with-bracket-2"
@@ -1196,16 +1168,18 @@ List Int
       , contextualized =
             Just
                 [ Err
-                    ( State_BlockTypeAlias
-                        (BlockTypeAlias_Completish (TypeOrConstructor "Hi")
-                            { nesting = NestingLeafType_TypeWithArgs { args = Stack [], name = "Int" }
-                            , parents =
-                                [ NestingParentType_Bracket (Stack [])
-                                ]
-                            }
-                        )
-                    , Error_PartwayThroughTypeAlias
-                    )
+                    { error = Error_PartwayThroughTypeAlias
+                    , item = Just (Newlines [] 0)
+                    , state =
+                        State_BlockTypeAlias
+                            (BlockTypeAlias_Completish (TypeOrConstructor "Hi")
+                                { nesting = NestingLeafType_TypeWithArgs { args = Stack [], name = "Int" }
+                                , parents =
+                                    [ NestingParentType_Bracket (Stack [])
+                                    ]
+                                }
+                            )
+                    }
                 ]
       }
     , { name = "type-alias-record-half-empty"
@@ -1226,10 +1200,7 @@ List Int
                 ]
       , contextualized =
             Just
-                [ Err
-                    ( State_BlockTypeAlias (BlockTypeAlias_Completish (TypeOrConstructor "Ty") { nesting = NestingLeafType_PartialRecord { firstEntries = Stack [], lastEntry = LastEntryOfRecord_Empty }, parents = [] })
-                    , Error_PartwayThroughTypeAlias
-                    )
+                [ Err { error = Error_PartwayThroughTypeAlias, item = Just (Newlines [] 0), state = State_BlockTypeAlias (BlockTypeAlias_Completish (TypeOrConstructor "Ty") { nesting = NestingLeafType_PartialRecord { firstEntries = Stack [], lastEntry = LastEntryOfRecord_Empty }, parents = [] }) }
                 ]
       }
     , { name = "type-alias-record-missing-colon"
@@ -1256,10 +1227,7 @@ List Int
                 ]
       , contextualized =
             Just
-                [ Err
-                    ( State_BlockTypeAlias (BlockTypeAlias_Completish (TypeOrConstructor "Ty") { nesting = NestingLeafType_PartialRecord { firstEntries = Stack [], lastEntry = LastEntryOfRecord_Key "hi" }, parents = [] })
-                    , Error_ExpectedColonWhilstParsingRecord
-                    )
+                [ Err { error = Error_ExpectedColonWhilstParsingRecord, item = Just (Token "j7"), state = State_BlockTypeAlias (BlockTypeAlias_Completish (TypeOrConstructor "Ty") { nesting = NestingLeafType_PartialRecord { firstEntries = Stack [], lastEntry = LastEntryOfRecord_Key "hi" }, parents = [] }) }
                 ]
       }
     , { name = "type-alias-with-quadruple"
@@ -1342,121 +1310,127 @@ type alias Hi = (A Int, C D E F, H I (J K), L M () O P)
       , contextualized =
             Just
                 [ Err
-                    ( State_BlockTypeAlias
-                        (BlockTypeAlias_Complete (TypeOrConstructor "Hi")
-                            (TypeExpression_Tuple (TypeExpression_NamedType { args = Stack [], name = "Int" })
-                                (TypeExpression_NamedType { args = Stack [], name = "A" })
-                                [ TypeExpression_NamedType { args = Stack [], name = "B" }
-                                , TypeExpression_NamedType { args = Stack [], name = "C" }
-                                , TypeExpression_NamedType { args = Stack [], name = "D" }
-                                ]
+                    { error =
+                        Error_TooManyTupleArgs (UserDefinedType { args = [], name = "Int", qualifiedness = PossiblyQualified Nothing })
+                            (UserDefinedType { args = [], name = "A", qualifiedness = PossiblyQualified Nothing })
+                            (UserDefinedType { args = [], name = "B", qualifiedness = PossiblyQualified Nothing })
+                            (UserDefinedType { args = [], name = "C", qualifiedness = PossiblyQualified Nothing })
+                            [ UserDefinedType { args = [], name = "D", qualifiedness = PossiblyQualified Nothing }
+                            ]
+                    , item = Just (Newlines [] 0)
+                    , state =
+                        State_BlockTypeAlias
+                            (BlockTypeAlias_Complete (TypeOrConstructor "Hi")
+                                (TypeExpression_Tuple (TypeExpression_NamedType { args = Stack [], name = "Int" })
+                                    (TypeExpression_NamedType { args = Stack [], name = "A" })
+                                    [ TypeExpression_NamedType { args = Stack [], name = "B" }
+                                    , TypeExpression_NamedType { args = Stack [], name = "C" }
+                                    , TypeExpression_NamedType { args = Stack [], name = "D" }
+                                    ]
+                                )
                             )
-                        )
-                    , Error_TooManyTupleArgs (UserDefinedType { args = [], name = "Int", qualifiedness = PossiblyQualified Nothing })
-                        (UserDefinedType { args = [], name = "A", qualifiedness = PossiblyQualified Nothing })
-                        (UserDefinedType { args = [], name = "B", qualifiedness = PossiblyQualified Nothing })
-                        (UserDefinedType { args = [], name = "C", qualifiedness = PossiblyQualified Nothing })
-                        [ UserDefinedType { args = [], name = "D", qualifiedness = PossiblyQualified Nothing }
-                        ]
-                    )
+                    }
                 , Err
-                    ( State_BlockTypeAlias
-                        (BlockTypeAlias_Complete (TypeOrConstructor "Hi")
-                            (TypeExpression_Tuple
-                                (TypeExpression_NamedType
-                                    { args =
-                                        Stack
-                                            [ TypeExpression_NamedType { args = Stack [], name = "Int" }
-                                            ]
-                                    , name = "A"
-                                    }
-                                )
-                                (TypeExpression_NamedType
-                                    { args =
-                                        Stack
-                                            [ TypeExpression_NamedType { args = Stack [], name = "F" }
-                                            , TypeExpression_NamedType { args = Stack [], name = "E" }
-                                            , TypeExpression_NamedType { args = Stack [], name = "D" }
-                                            ]
-                                    , name = "C"
-                                    }
-                                )
-                                [ TypeExpression_NamedType
-                                    { args =
-                                        Stack
-                                            [ TypeExpression_Bracketed
-                                                (TypeExpression_NamedType
-                                                    { args =
-                                                        Stack
-                                                            [ TypeExpression_NamedType { args = Stack [], name = "K" }
-                                                            ]
-                                                    , name = "J"
-                                                    }
-                                                )
-                                            , TypeExpression_NamedType { args = Stack [], name = "I" }
-                                            ]
-                                    , name = "H"
-                                    }
-                                , TypeExpression_NamedType
-                                    { args =
-                                        Stack
-                                            [ TypeExpression_NamedType { args = Stack [], name = "P" }
-                                            , TypeExpression_NamedType { args = Stack [], name = "O" }
-                                            , TypeExpression_Unit
-                                            , TypeExpression_NamedType { args = Stack [], name = "M" }
-                                            ]
-                                    , name = "L"
-                                    }
-                                ]
+                    { error =
+                        Error_TooManyTupleArgs
+                            (UserDefinedType
+                                { args =
+                                    [ UserDefinedType { args = [], name = "Int", qualifiedness = PossiblyQualified Nothing }
+                                    ]
+                                , name = "A"
+                                , qualifiedness = PossiblyQualified Nothing
+                                }
                             )
-                        )
-                    , Error_TooManyTupleArgs
-                        (UserDefinedType
-                            { args =
-                                [ UserDefinedType { args = [], name = "Int", qualifiedness = PossiblyQualified Nothing }
-                                ]
-                            , name = "A"
-                            , qualifiedness = PossiblyQualified Nothing
-                            }
-                        )
-                        (UserDefinedType
-                            { args =
-                                [ UserDefinedType { args = [], name = "D", qualifiedness = PossiblyQualified Nothing }
-                                , UserDefinedType { args = [], name = "E", qualifiedness = PossiblyQualified Nothing }
-                                , UserDefinedType { args = [], name = "F", qualifiedness = PossiblyQualified Nothing }
-                                ]
-                            , name = "C"
-                            , qualifiedness = PossiblyQualified Nothing
-                            }
-                        )
-                        (UserDefinedType
-                            { args =
-                                [ UserDefinedType { args = [], name = "I", qualifiedness = PossiblyQualified Nothing }
-                                , UserDefinedType
-                                    { args =
-                                        [ UserDefinedType { args = [], name = "K", qualifiedness = PossiblyQualified Nothing }
-                                        ]
-                                    , name = "J"
-                                    , qualifiedness = PossiblyQualified Nothing
-                                    }
-                                ]
-                            , name = "H"
-                            , qualifiedness = PossiblyQualified Nothing
-                            }
-                        )
-                        (UserDefinedType
-                            { args =
-                                [ UserDefinedType { args = [], name = "M", qualifiedness = PossiblyQualified Nothing }
-                                , Unit
-                                , UserDefinedType { args = [], name = "O", qualifiedness = PossiblyQualified Nothing }
-                                , UserDefinedType { args = [], name = "P", qualifiedness = PossiblyQualified Nothing }
-                                ]
-                            , name = "L"
-                            , qualifiedness = PossiblyQualified Nothing
-                            }
-                        )
-                        []
-                    )
+                            (UserDefinedType
+                                { args =
+                                    [ UserDefinedType { args = [], name = "D", qualifiedness = PossiblyQualified Nothing }
+                                    , UserDefinedType { args = [], name = "E", qualifiedness = PossiblyQualified Nothing }
+                                    , UserDefinedType { args = [], name = "F", qualifiedness = PossiblyQualified Nothing }
+                                    ]
+                                , name = "C"
+                                , qualifiedness = PossiblyQualified Nothing
+                                }
+                            )
+                            (UserDefinedType
+                                { args =
+                                    [ UserDefinedType { args = [], name = "I", qualifiedness = PossiblyQualified Nothing }
+                                    , UserDefinedType
+                                        { args =
+                                            [ UserDefinedType { args = [], name = "K", qualifiedness = PossiblyQualified Nothing }
+                                            ]
+                                        , name = "J"
+                                        , qualifiedness = PossiblyQualified Nothing
+                                        }
+                                    ]
+                                , name = "H"
+                                , qualifiedness = PossiblyQualified Nothing
+                                }
+                            )
+                            (UserDefinedType
+                                { args =
+                                    [ UserDefinedType { args = [], name = "M", qualifiedness = PossiblyQualified Nothing }
+                                    , Unit
+                                    , UserDefinedType { args = [], name = "O", qualifiedness = PossiblyQualified Nothing }
+                                    , UserDefinedType { args = [], name = "P", qualifiedness = PossiblyQualified Nothing }
+                                    ]
+                                , name = "L"
+                                , qualifiedness = PossiblyQualified Nothing
+                                }
+                            )
+                            []
+                    , item = Just (Newlines [] 0)
+                    , state =
+                        State_BlockTypeAlias
+                            (BlockTypeAlias_Complete (TypeOrConstructor "Hi")
+                                (TypeExpression_Tuple
+                                    (TypeExpression_NamedType
+                                        { args =
+                                            Stack
+                                                [ TypeExpression_NamedType { args = Stack [], name = "Int" }
+                                                ]
+                                        , name = "A"
+                                        }
+                                    )
+                                    (TypeExpression_NamedType
+                                        { args =
+                                            Stack
+                                                [ TypeExpression_NamedType { args = Stack [], name = "F" }
+                                                , TypeExpression_NamedType { args = Stack [], name = "E" }
+                                                , TypeExpression_NamedType { args = Stack [], name = "D" }
+                                                ]
+                                        , name = "C"
+                                        }
+                                    )
+                                    [ TypeExpression_NamedType
+                                        { args =
+                                            Stack
+                                                [ TypeExpression_Bracketed
+                                                    (TypeExpression_NamedType
+                                                        { args =
+                                                            Stack
+                                                                [ TypeExpression_NamedType { args = Stack [], name = "K" }
+                                                                ]
+                                                        , name = "J"
+                                                        }
+                                                    )
+                                                , TypeExpression_NamedType { args = Stack [], name = "I" }
+                                                ]
+                                        , name = "H"
+                                        }
+                                    , TypeExpression_NamedType
+                                        { args =
+                                            Stack
+                                                [ TypeExpression_NamedType { args = Stack [], name = "P" }
+                                                , TypeExpression_NamedType { args = Stack [], name = "O" }
+                                                , TypeExpression_Unit
+                                                , TypeExpression_NamedType { args = Stack [], name = "M" }
+                                                ]
+                                        , name = "L"
+                                        }
+                                    ]
+                                )
+                            )
+                    }
                 ]
       }
     , { name = "type-alias-with-tuple-double-comma"
@@ -1485,20 +1459,22 @@ type alias Hi = (A Int, C D E F, H I (J K), L M () O P)
       , contextualized =
             Just
                 [ Err
-                    ( State_BlockTypeAlias
-                        (BlockTypeAlias_Completish (TypeOrConstructor "Hi")
-                            { nesting =
-                                NestingLeafType_Bracket
-                                    (Stack
-                                        [ TypeExpression_NamedType { args = Stack [], name = "Int" }
-                                        ]
-                                    )
-                                    Nothing
-                            , parents = []
-                            }
-                        )
-                    , Error_InvalidToken (Sigil Comma) Expecting_Unknown
-                    )
+                    { error = Error_InvalidToken (Sigil Comma) Expecting_Unknown
+                    , item = Just (Sigil Comma)
+                    , state =
+                        State_BlockTypeAlias
+                            (BlockTypeAlias_Completish (TypeOrConstructor "Hi")
+                                { nesting =
+                                    NestingLeafType_Bracket
+                                        (Stack
+                                            [ TypeExpression_NamedType { args = Stack [], name = "Int" }
+                                            ]
+                                        )
+                                        Nothing
+                                , parents = []
+                                }
+                            )
+                    }
                 ]
       }
     , { name = "type-alias-with-tuple-not-closed"
@@ -1532,20 +1508,30 @@ type alias Hi = (A Int, C D E F, H I (J K), L M () O P)
       , contextualized =
             Just
                 [ Err
-                    ( State_BlockTypeAlias
-                        (BlockTypeAlias_Completish (TypeOrConstructor "Hi")
-                            { nesting =
-                                NestingLeafType_Bracket
-                                    (Stack
-                                        [ TypeExpression_NamedType { args = Stack [], name = "Int" }
-                                        ]
-                                    )
-                                    Nothing
-                            , parents = []
-                            }
-                        )
-                    , Error_PartwayThroughTypeAlias
-                    )
+                    { error = Error_PartwayThroughTypeAlias
+                    , item =
+                        Just
+                            (Newlines
+                                [ 0
+                                , 0
+                                , 0
+                                ]
+                                0
+                            )
+                    , state =
+                        State_BlockTypeAlias
+                            (BlockTypeAlias_Completish (TypeOrConstructor "Hi")
+                                { nesting =
+                                    NestingLeafType_Bracket
+                                        (Stack
+                                            [ TypeExpression_NamedType { args = Stack [], name = "Int" }
+                                            ]
+                                        )
+                                        Nothing
+                                , parents = []
+                                }
+                            )
+                    }
                 ]
       }
     , { name = "type-partial"
@@ -1558,10 +1544,7 @@ type alias Hi = (A Int, C D E F, H I (J K), L M () O P)
                 ]
       , contextualized =
             Just
-                [ Err
-                    ( State_BlockFirstItem BlockFirstItem_Type
-                    , Error_PartwayThroughTypeAlias
-                    )
+                [ Err { error = Error_PartwayThroughTypeAlias, item = Just (Newlines [] 0), state = State_BlockFirstItem BlockFirstItem_Type }
                 ]
       }
     ]

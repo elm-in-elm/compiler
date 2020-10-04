@@ -19,7 +19,7 @@ const warningCommentLines = `
 
 const TYPE_OF_RESULT_CASES = `
     List
-        { contextualized : Maybe (List (Result (State, Error) Block))
+        { contextualized : Maybe (List Contextualize.RunResult)
         , lexed : Result Never (List (Located LexItem))
         , name : String
         , source : String
