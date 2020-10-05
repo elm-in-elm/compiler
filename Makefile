@@ -6,7 +6,8 @@ FORMAT_DIRS = \
 	cli \
 	example-library-usages \
 	src \
-	tests
+	tests \
+	parser-tests \
 
 .PHONY: run
 run: build

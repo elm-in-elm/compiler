@@ -41,7 +41,6 @@ tests =
                                     case ( lexed, contextualized ) of
                                         ( Ok lexed_, Just contextualized_ ) ->
                                             lexed_
-                                                |> List.map Located.unwrap
                                                 |> Contextualize.run
                                                 |> Expect.equal contextualized_
 
@@ -63,7 +62,6 @@ tests =
                                             ()
                                                 |> Expect.all
                                                     (lexed_
-                                                        |> List.map Located.unwrap
                                                         |> Contextualize.run
                                                         |> List.map
                                                             (\rBlock () ->
@@ -94,7 +92,6 @@ tests =
                                             ()
                                                 |> Expect.all
                                                     (lexed_
-                                                        |> List.map Located.unwrap
                                                         |> Contextualize.run
                                                         |> List.map
                                                             (\rBlock () ->

@@ -1,10 +1,10 @@
 port module Update exposing (main)
 
 import Elm.Data.Located as Located exposing (Located)
+import Parser.Advanced as P
 import Platform
 import Stage.Parse.Contextualize as Contextualize
 import Stage.Parse.Lexer as Lexer
-import Parser.Advanced as P
 
 
 port output : String -> Cmd never
@@ -51,12 +51,7 @@ init snippets =
         mrcontextualized =
             rlexed
                 |> List.map
-                    (Result.toMaybe
-                        >> Maybe.map
-                            (List.map Located.unwrap
-                                >> Contextualize.run
-                            )
-                    )
+                    (Result.toMaybe >> Maybe.map Contextualize.run)
     in
     ( ()
     , output
@@ -71,12 +66,12 @@ init snippets =
                             ++ """\"\"\"
       , lexed = """
                             ++ (Debug.toString lexed
-                                |> preFormatElmCode
+                                    |> preFormatElmCode
                                )
                             ++ """
       , contextualized ="""
                             ++ (Debug.toString contextualized
-                                |> preFormatElmCode
+                                    |> preFormatElmCode
                                )
                             ++ """
       }"""
@@ -101,15 +96,17 @@ update () model =
 
 preFormatElmCode : String -> String
 preFormatElmCode =
-    {-String.replace "}" """
-    }"""
-    >>-} String.replace "]" """
+    {- String.replace "}" """
+       }"""
+       >>
+    -}
+    String.replace "]" """
     ]"""
-    >> String.replace """[
+        >> String.replace """[
     ]""" "[]"
-    >> String.replace """Err (""" """Err (
+        >> String.replace """Err (""" """Err (
     """
-    >> String.replace """Err {""" """Err {
+        >> String.replace """Err {""" """Err {
     """
-    >> String.replace """UserDefinedType {""" """UserDefinedType {
+        >> String.replace """UserDefinedType {""" """UserDefinedType {
     """

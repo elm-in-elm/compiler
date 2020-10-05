@@ -237,13 +237,13 @@ type Expecting
 type alias RunResult =
     Result
         { state : State
-        , item : Maybe LexItem
+        , item : Maybe (Located LexItem)
         , error : Error
         }
         Block
 
 
-run : List LexItem -> List RunResult
+run : List (Located LexItem) -> List RunResult
 run items =
     runHelp
         items
@@ -252,7 +252,7 @@ run items =
         }
 
 
-runHelp : List LexItem -> State_ -> List RunResult
+runHelp : List (Located LexItem) -> State_ -> List RunResult
 runHelp items state =
     case items of
         item :: rest ->
@@ -282,7 +282,7 @@ runHelp items state =
                                 }
                                 :: state.previousBlocks
                         , state =
-                            case item of
+                            case Located.unwrap item of
                                 Lexer.Newlines _ 0 ->
                                     State_BlockStart
 
@@ -333,7 +333,7 @@ runHelp items state =
 -- parsers
 
 
-parseAnything : State -> LexItem -> ParseResult
+parseAnything : State -> Located LexItem -> ParseResult
 parseAnything state =
     let
         newTypeAliasState aliasName typeArgs res =
@@ -359,7 +359,7 @@ parseAnything state =
     case state of
         State_Error_Recovery ->
             \item ->
-                case item of
+                case Located.unwrap item of
                     Lexer.Newlines _ 0 ->
                         State_BlockStart
                             |> ParseResult_Ok
@@ -436,9 +436,9 @@ parseAnything state =
 If the LexItem is a `Newlines` with indentation or is `Whitespace`.
 
 -}
-parseBlockStart : LexItem -> ParseResult
+parseBlockStart : Located LexItem -> ParseResult
 parseBlockStart item =
-    case item of
+    case Located.unwrap item of
         Lexer.Token str ->
             case Token.classifyToken str of
                 Token.TokenKeyword Token.Type ->
@@ -469,9 +469,9 @@ parseBlockStart item =
             ParseResult_Err (Error_InvalidToken Expecting_Block)
 
 
-parseTypeBlock : LexItem -> ParseResult
+parseTypeBlock : Located LexItem -> ParseResult
 parseTypeBlock item =
-    case item of
+    case Located.unwrap item of
         Lexer.Token str ->
             case Token.classifyToken str of
                 Token.TokenKeyword Token.Alias ->
@@ -509,9 +509,9 @@ parseTypeBlock item =
                 |> ParseResult_Err
 
 
-parseTypeAliasName : LexItem -> ParseResult
+parseTypeAliasName : Located LexItem -> ParseResult
 parseTypeAliasName item =
-    case item of
+    case Located.unwrap item of
         Lexer.Token str ->
             case Token.classifyToken str of
                 Token.TokenKeyword other ->
@@ -541,9 +541,9 @@ parseTypeAliasName item =
                 |> ParseResult_Err
 
 
-parseTypeArgsOrAssignment : (Token.ValueOrFunctionOrGenericType -> State) -> State -> LexItem -> ParseResult
+parseTypeArgsOrAssignment : (Token.ValueOrFunctionOrGenericType -> State) -> State -> Located LexItem -> ParseResult
 parseTypeArgsOrAssignment onTypeArg onAssignment item =
-    case item of
+    case Located.unwrap item of
         Lexer.Token str ->
             case Token.classifyToken str of
                 Token.TokenKeyword kw ->
@@ -581,10 +581,10 @@ parseTypeArgsOrAssignment onTypeArg onAssignment item =
 
 parserTypeExprFromEmpty :
     (TypeExpressionResult -> ParseResult)
-    -> LexItem
+    -> Located LexItem
     -> ParseResult
 parserTypeExprFromEmpty newState item =
-    case item of
+    case Located.unwrap item of
         Lexer.Token str ->
             { parents = []
             , nesting =
@@ -648,10 +648,10 @@ parserTypeExprFromEmpty newState item =
 parserTypeExpr :
     (TypeExpressionResult -> ParseResult)
     -> PartialTypeExpressionLeaf
-    -> LexItem
+    -> Located LexItem
     -> ParseResult
 parserTypeExpr newState prevExpr item =
-    case item of
+    case Located.unwrap item of
         Lexer.Token str ->
             exprAppend prevExpr str
                 |> partialTypeExpressionToParseResult newState

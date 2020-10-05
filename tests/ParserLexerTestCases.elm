@@ -1720,7 +1720,7 @@ type alias Function3 = (Int, () ->, ())
             Just
                 [ Err
                     { error = Error_MissingFunctionReturnType
-                    , item = Just (Sigil (Bracket Round Close))
+                    , item = Just (Located { end = { col = 31, row = 1 }, start = { col = 30, row = 1 } } (Sigil (Bracket Round Close)))
                     , state =
                         State_BlockTypeAlias
                             (BlockTypeAlias_Completish (TypeOrConstructor "Function")
@@ -1734,7 +1734,7 @@ type alias Function3 = (Int, () ->, ())
                     }
                 , Err
                     { error = Error_MissingFunctionReturnType
-                    , item = Just (Sigil (Bracket Curly Close))
+                    , item = Just (Located { end = { col = 37, row = 3 }, start = { col = 36, row = 3 } } (Sigil (Bracket Curly Close)))
                     , state =
                         State_BlockTypeAlias
                             (BlockTypeAlias_Completish (TypeOrConstructor "Function2")
@@ -1748,7 +1748,7 @@ type alias Function3 = (Int, () ->, ())
                     }
                 , Err
                     { error = Error_InvalidToken Expecting_Unknown
-                    , item = Just (Sigil Comma)
+                    , item = Just (Located { end = { col = 32, row = 5 }, start = { col = 31, row = 5 } } (Sigil Comma))
                     , state =
                         State_BlockTypeAlias
                             (BlockTypeAlias_Completish (TypeOrConstructor "Function3")
@@ -1762,7 +1762,7 @@ type alias Function3 = (Int, () ->, ())
                     }
                 , Err
                     { error = Error_InvalidToken Expecting_Unknown
-                    , item = Just (Sigil Comma)
+                    , item = Just (Located { end = { col = 36, row = 7 }, start = { col = 35, row = 7 } } (Sigil Comma))
                     , state =
                         State_BlockTypeAlias
                             (BlockTypeAlias_Completish (TypeOrConstructor "Function3")
@@ -1805,7 +1805,7 @@ type alias Function3 = (Int, () ->, ())
             Just
                 [ Err
                     { error = Error_TypeDoesNotTakeArgs2 (TypeExpression_Bracketed (TypeExpression_NamedType { args = Stack [], name = "Int" }))
-                    , item = Just (Sigil (Bracket Round Open))
+                    , item = Just (Located { end = { col = 24, row = 1 }, start = { col = 23, row = 1 } } (Sigil (Bracket Round Open)))
                     , state = State_BlockTypeAlias (BlockTypeAlias_Completish (TypeOrConstructor "Hi") [] { nesting = NestingLeafType_Expr (TypeExpression_Bracketed (TypeExpression_NamedType { args = Stack [], name = "Int" })), parents = [] })
                     }
                 ]
@@ -1834,7 +1834,7 @@ type alias Function3 = (Int, () ->, ())
             Just
                 [ Err
                     { error = Error_TypeDoesNotTakeArgs2 TypeExpression_Unit
-                    , item = Just (Sigil (Bracket Round Open))
+                    , item = Just (Located { end = { col = 21, row = 1 }, start = { col = 20, row = 1 } } (Sigil (Bracket Round Open)))
                     , state = State_BlockTypeAlias (BlockTypeAlias_Completish (TypeOrConstructor "Hi") [] { nesting = NestingLeafType_Expr TypeExpression_Unit, parents = [] })
                     }
                 ]
@@ -1864,7 +1864,7 @@ type alias Function3 = (Int, () ->, ())
             Just
                 [ Err
                     { error = Error_TypeDoesNotTakeArgs2 TypeExpression_Unit
-                    , item = Just (Sigil (Bracket Round Open))
+                    , item = Just (Located { end = { col = 21, row = 1 }, start = { col = 20, row = 1 } } (Sigil (Bracket Round Open)))
                     , state = State_BlockTypeAlias (BlockTypeAlias_Completish (TypeOrConstructor "Hi") [] { nesting = NestingLeafType_Expr TypeExpression_Unit, parents = [] })
                     }
                 ]
@@ -1892,12 +1892,12 @@ List Int
             Just
                 [ Err
                     { error = Error_PartwayThroughTypeAlias
-                    , item = Just (Newlines [] 0)
+                    , item = Just (Located { end = { col = 1, row = 2 }, start = { col = 19, row = 1 } } (Newlines [] 0))
                     , state = State_BlockTypeAlias (BlockTypeAlias_NamedAssigns (TypeOrConstructor "Model") [])
                     }
                 , Err
                     { error = Error_BlockStartsWithTypeOrConstructor (TypeOrConstructor "List")
-                    , item = Just (Token "List")
+                    , item = Just (Located { end = { col = 5, row = 2 }, start = { col = 1, row = 2 } } (Token "List"))
                     , state = State_BlockStart
                     }
                 ]
@@ -1916,7 +1916,7 @@ List Int
             Just
                 [ Err
                     { error = Error_PartwayThroughTypeAlias
-                    , item = Just (Newlines [] 0)
+                    , item = Just (Located { end = { col = 1, row = 2 }, start = { col = 11, row = 1 } } (Newlines [] 0))
                     , state = State_BlockTypeAlias BlockTypeAlias_Keywords
                     }
                 ]
@@ -1937,7 +1937,7 @@ List Int
             Just
                 [ Err
                     { error = Error_PartwayThroughTypeAlias
-                    , item = Just (Newlines [] 0)
+                    , item = Just (Located { end = { col = 1, row = 2 }, start = { col = 14, row = 1 } } (Newlines [] 0))
                     , state = State_BlockTypeAlias (BlockTypeAlias_Named (TypeOrConstructor "Hi") (Stack []))
                     }
                 ]
@@ -1960,7 +1960,7 @@ List Int
             Just
                 [ Err
                     { error = Error_PartwayThroughTypeAlias
-                    , item = Just (Newlines [] 0)
+                    , item = Just (Located { end = { col = 1, row = 2 }, start = { col = 16, row = 1 } } (Newlines [] 0))
                     , state = State_BlockTypeAlias (BlockTypeAlias_NamedAssigns (TypeOrConstructor "Hi") [])
                     }
                 ]
@@ -1985,7 +1985,7 @@ List Int
             Just
                 [ Err
                     { error = Error_PartwayThroughTypeAlias
-                    , item = Just (Newlines [] 0)
+                    , item = Just (Located { end = { col = 1, row = 2 }, start = { col = 18, row = 1 } } (Newlines [] 0))
                     , state = State_BlockTypeAlias (BlockTypeAlias_Completish (TypeOrConstructor "Hi") [] { nesting = NestingLeafType_Bracket (Stack []) Nothing, parents = [] })
                     }
                 ]
@@ -2013,7 +2013,7 @@ List Int
             Just
                 [ Err
                     { error = Error_PartwayThroughTypeAlias
-                    , item = Just (Newlines [] 0)
+                    , item = Just (Located { end = { col = 1, row = 3 }, start = { col = 12, row = 2 } } (Newlines [] 0))
                     , state =
                         State_BlockTypeAlias
                             (BlockTypeAlias_Completish (TypeOrConstructor "Hi")
@@ -2047,7 +2047,7 @@ List Int
             Just
                 [ Err
                     { error = Error_PartwayThroughTypeAlias
-                    , item = Just (Newlines [] 0)
+                    , item = Just (Located { end = { col = 1, row = 2 }, start = { col = 18, row = 1 } } (Newlines [] 0))
                     , state = State_BlockTypeAlias (BlockTypeAlias_Completish (TypeOrConstructor "Ty") [] { nesting = NestingLeafType_PartialRecord { firstEntries = Stack [], lastEntry = LastEntryOfRecord_Empty }, parents = [] })
                     }
                 ]
@@ -2078,7 +2078,7 @@ List Int
             Just
                 [ Err
                     { error = Error_ExpectedColonWhilstParsingRecord
-                    , item = Just (Token "j7")
+                    , item = Just (Located { end = { col = 24, row = 1 }, start = { col = 22, row = 1 } } (Token "j7"))
                     , state = State_BlockTypeAlias (BlockTypeAlias_Completish (TypeOrConstructor "Ty") [] { nesting = NestingLeafType_PartialRecord { firstEntries = Stack [], lastEntry = LastEntryOfRecord_Key "hi" }, parents = [] })
                     }
                 ]
@@ -2195,7 +2195,7 @@ type alias Hi = (A Int, C D E F, H I (J K), L M () O P)
                                 , qualifiedness = PossiblyQualified Nothing
                                 }
                             ]
-                    , item = Just (Newlines [] 0)
+                    , item = Just (Located { end = { col = 1, row = 2 }, start = { col = 34, row = 1 } } (Newlines [] 0))
                     , state =
                         State_BlockTypeAlias
                             (BlockTypeAlias_Completish (TypeOrConstructor "Hi")
@@ -2297,7 +2297,7 @@ type alias Hi = (A Int, C D E F, H I (J K), L M () O P)
                                 }
                             )
                             []
-                    , item = Just (Newlines [] 0)
+                    , item = Just (Located { end = { col = 1, row = 3 }, start = { col = 56, row = 2 } } (Newlines [] 0))
                     , state =
                         State_BlockTypeAlias
                             (BlockTypeAlias_Completish (TypeOrConstructor "Hi")
@@ -2384,7 +2384,7 @@ type alias Hi = (A Int, C D E F, H I (J K), L M () O P)
             Just
                 [ Err
                     { error = Error_InvalidToken Expecting_Unknown
-                    , item = Just (Sigil Comma)
+                    , item = Just (Located { end = { col = 24, row = 1 }, start = { col = 23, row = 1 } } (Sigil Comma))
                     , state =
                         State_BlockTypeAlias
                             (BlockTypeAlias_Completish (TypeOrConstructor "Hi")
@@ -2436,12 +2436,14 @@ type alias Hi = (A Int, C D E F, H I (J K), L M () O P)
                     { error = Error_PartwayThroughTypeAlias
                     , item =
                         Just
-                            (Newlines
-                                [ 0
-                                , 0
-                                , 0
-                                ]
-                                0
+                            (Located { end = { col = 1, row = 5 }, start = { col = 22, row = 1 } }
+                                (Newlines
+                                    [ 0
+                                    , 0
+                                    , 0
+                                    ]
+                                    0
+                                )
                             )
                     , state =
                         State_BlockTypeAlias
@@ -2472,7 +2474,7 @@ type alias Hi = (A Int, C D E F, H I (J K), L M () O P)
             Just
                 [ Err
                     { error = Error_PartwayThroughTypeAlias
-                    , item = Just (Newlines [] 0)
+                    , item = Just (Located { end = { col = 1, row = 2 }, start = { col = 5, row = 1 } } (Newlines [] 0))
                     , state = State_BlockFirstItem BlockFirstItem_Type
                     }
                 ]

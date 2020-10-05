@@ -30,11 +30,11 @@ const TEST_FILE_PATH = path.join(__dirname, '..', 'tests', 'ParserLexerTestCases
 const BASE_SNIPPETS_DIR_PATH = path.join(__dirname, 'snippets');
 const SNIPPETS_DIR_PATH = Object.freeze({
 	shouldParse: path.join(BASE_SNIPPETS_DIR_PATH, 'should-parse'),
-	shouldNotParse: path.join(BASE_SNIPPETS_DIR_PATH, 'should-not-parse'),
+	shouldNotParse: path.join(BASE_SNIPPETS_DIR_PATH, 'should-not-parse')
 });
 
 function getTestCase(snippets) {
-	return new Promise((resolve) => {
+	return new Promise(resolve => {
 		const app = Elm.Update.init({flags: snippets});
 		app.ports.output.subscribe(resolve);
 	});
@@ -66,12 +66,12 @@ async function main() {
 				await Promise.all(
 					files
 						.sort()
-						.filter((name) => !name.startsWith('_'))
-						.map(async (name) => ({
+						.filter(name => !name.startsWith('_'))
+						.map(async name => ({
 							name,
-							source: await fs.readFile(path.join(dirPath, name), 'utf-8'),
+							source: await fs.readFile(path.join(dirPath, name), 'utf-8')
 						}))
-				),
+				)
 			];
 		})
 	);
@@ -96,9 +96,9 @@ async function main() {
 				TYPE_OF_RESULT_CASES,
 				`${category}TestCases =`,
 				testCases,
-				'\n',
+				'\n'
 			])
-			.join('\n'),
+			.join('\n')
 	].join('\n');
 
 	await fs.writeFile(TEST_FILE_PATH, newTestFile);
