@@ -133,6 +133,7 @@ type PartialTypeExpression
     | TypeExpression_Record (List ( String, PartialTypeExpression ))
     | TypeExpression_Function
         { firstInput : PartialTypeExpression
+        , otherInputs : List PartialTypeExpression
         , output : PartialTypeExpression
         }
 
@@ -160,7 +161,10 @@ type NestingParentType
         { name : String
         , args : Stack PartialTypeExpression
         }
-    | NestingParentType_Function { firstInput : PartialTypeExpression }
+    | NestingParentType_Function
+        { firstInput : PartialTypeExpression
+        , otherInputs : Stack PartialTypeExpression
+        }
 
 
 type NestingLeafType
@@ -172,6 +176,7 @@ type NestingLeafType
         }
     | NestingLeafType_Function
         { firstInput : PartialTypeExpression
+        , otherInputs : Stack PartialTypeExpression
         , output : Maybe PartialTypeExpression
         }
     | NestingLeafType_Expr PartialTypeExpression
@@ -655,7 +660,7 @@ parserTypeExpr newState prevExpr item =
         Lexer.Sigil (Lexer.Bracket Lexer.Round Lexer.Close) ->
             let
                 collapsedLeaf =
-                    autoCollapseNesting prevExpr
+                    autoCollapseNesting CollapseLevel_Function prevExpr
             in
             case collapsedLeaf.nesting of
                 NestingLeafType_Expr expr ->
@@ -722,6 +727,7 @@ parserTypeExpr newState prevExpr item =
                                             NestingParentType_Function { firstInput } ->
                                                 NestingLeafType_Function
                                                     { firstInput = firstInput
+                                                    , otherInputs = empty
                                                     , output = Just expr
                                                     }
                                     , parents = grandparents
@@ -816,7 +822,7 @@ parserTypeExpr newState prevExpr item =
                                 |> ParseResult_Err
 
                 collapsedLeaf =
-                    autoCollapseNesting prevExpr
+                    autoCollapseNesting CollapseLevel_Function prevExpr
             in
             case collapsedLeaf.nesting of
                 NestingLeafType_PartialRecord existingPartialRecord ->
@@ -837,7 +843,7 @@ parserTypeExpr newState prevExpr item =
         Lexer.Sigil (Lexer.Bracket Lexer.Curly Lexer.Close) ->
             let
                 collapsedLeaf =
-                    autoCollapseNesting prevExpr
+                    autoCollapseNesting CollapseLevel_Function prevExpr
             in
             case collapsedLeaf.nesting of
                 NestingLeafType_Expr expr ->
@@ -897,10 +903,11 @@ parserTypeExpr newState prevExpr item =
                                             , parents = grandparents
                                             }
 
-                                        NestingParentType_Function { firstInput } ->
+                                        NestingParentType_Function { firstInput, otherInputs } ->
                                             { nesting =
                                                 NestingLeafType_Function
                                                     { firstInput = firstInput
+                                                    , otherInputs = otherInputs
                                                     , output = Just record
                                                     }
                                             , parents = grandparents
@@ -957,11 +964,12 @@ parserTypeExpr newState prevExpr item =
                             Error_InvalidToken item Expecting_Unknown
                                 |> ParseResult_Err
             in
-            case (autoCollapseNesting prevExpr).nesting of
+            case (autoCollapseNesting CollapseLevel_TypeWithArgs prevExpr).nesting of
                 NestingLeafType_Expr expr ->
                     { nesting =
                         NestingLeafType_Function
                             { firstInput = expr
+                            , otherInputs = empty
                             , output = Nothing
                             }
                     , parents = []
@@ -969,12 +977,30 @@ parserTypeExpr newState prevExpr item =
                         |> TypeExpressionResult_Progress
                         |> newState
 
+                NestingLeafType_Function { firstInput, otherInputs, output } ->
+                    case output of
+                        Nothing ->
+                            Error_InvalidToken item Expecting_Unknown
+                                |> ParseResult_Err
+
+                        Just output_ ->
+                            { nesting =
+                                NestingLeafType_Function
+                                    { firstInput = firstInput
+                                    , otherInputs = output_ |> pushOnto otherInputs
+                                    , output = Nothing
+                                    }
+                            , parents = []
+                            }
+                                |> TypeExpressionResult_Progress
+                                |> newState
+
                 _ ->
                     Error_InvalidToken item Expecting_Unknown
                         |> ParseResult_Err
 
         Lexer.Newlines _ 0 ->
-            case (autoCollapseNesting prevExpr).nesting of
+            case (autoCollapseNesting CollapseLevel_Function prevExpr).nesting of
                 NestingLeafType_Expr expr ->
                     TypeExpressionResult_Done expr
                         |> newState
@@ -1033,10 +1059,13 @@ leafToParents { parents, nesting } =
             NestingParentType_TypeWithArgs details
                 |> Ok
 
-        NestingLeafType_Function { firstInput, output } ->
+        NestingLeafType_Function { firstInput, otherInputs, output } ->
             case output of
                 Nothing ->
-                    NestingParentType_Function { firstInput = firstInput }
+                    NestingParentType_Function
+                        { firstInput = firstInput
+                        , otherInputs = otherInputs
+                        }
                         |> Ok
 
                 Just te ->
@@ -1175,7 +1204,7 @@ blockFromState state =
                 |> Just
 
         State_BlockTypeAlias (BlockTypeAlias_Completish aliasName partialExpr) ->
-            case (autoCollapseNesting partialExpr).nesting of
+            case (autoCollapseNesting CollapseLevel_Function partialExpr).nesting of
                 NestingLeafType_Expr expr ->
                     partialTypeExpressionToConcreteType expr
                         |> Result.map
@@ -1256,8 +1285,13 @@ addToPartialRecord token { firstEntries, lastEntry } =
                 |> Err
 
 
-autoCollapseNesting : PartialTypeExpressionLeaf -> PartialTypeExpressionLeaf
-autoCollapseNesting pte =
+type CollapseLevel
+    = CollapseLevel_TypeWithArgs
+    | CollapseLevel_Function
+
+
+autoCollapseNesting : CollapseLevel -> PartialTypeExpressionLeaf -> PartialTypeExpressionLeaf
+autoCollapseNesting collapseLevel pte =
     case pte.nesting of
         NestingLeafType_TypeWithArgs { name, args } ->
             let
@@ -1272,9 +1306,10 @@ autoCollapseNesting pte =
                             NestingParentType_TypeWithArgs _ ->
                                 Debug.todo "Make this state impossible"
 
-                            NestingParentType_Function { firstInput } ->
+                            NestingParentType_Function { firstInput, otherInputs } ->
                                 NestingLeafType_Function
                                     { firstInput = firstInput
+                                    , otherInputs = otherInputs
                                     , output = Just newTypeExpr
                                     }
 
@@ -1287,7 +1322,7 @@ autoCollapseNesting pte =
                                     , lastEntry = LastEntryOfRecord_KeyValue lastEntryName newTypeExpr
                                     }
                     }
-                        |> autoCollapseNesting
+                        |> autoCollapseNesting collapseLevel
 
                 [] ->
                     { nesting = NestingLeafType_Expr newTypeExpr
@@ -1303,16 +1338,20 @@ autoCollapseNesting pte =
         NestingLeafType_PartialRecord _ ->
             pte
 
-        NestingLeafType_Function { firstInput, output } ->
-            case output of
-                Nothing ->
+        NestingLeafType_Function { firstInput, otherInputs, output } ->
+            case ( collapseLevel, output ) of
+                ( CollapseLevel_TypeWithArgs, _ ) ->
                     pte
 
-                Just outputExpr ->
+                ( CollapseLevel_Function, Nothing ) ->
+                    pte
+
+                ( CollapseLevel_Function, Just outputExpr ) ->
                     let
                         newTypeExpr =
                             TypeExpression_Function
                                 { firstInput = firstInput
+                                , otherInputs = otherInputs |> toList (\x -> x)
                                 , output = outputExpr
                                 }
                     in
@@ -1336,7 +1375,7 @@ autoCollapseNesting pte =
                                             , lastEntry = LastEntryOfRecord_KeyValue lastEntryName newTypeExpr
                                             }
                             }
-                                |> autoCollapseNesting
+                                |> autoCollapseNesting collapseLevel
 
                         [] ->
                             { nesting = NestingLeafType_Expr newTypeExpr
@@ -1448,14 +1487,27 @@ partialTypeExpressionToConcreteType pte =
                             }
                         )
             in
-            Result.map2
-                (\concreteFirstInput concreteOutput ->
+            Result.map3
+                (\concreteFirstInput concreteOtherInputs concreteOutput ->
                     ConcreteType.Function
                         { from = concreteFirstInput
-                        , to = concreteOutput
+                        , to =
+                            List.foldl
+                                (\arg te ->
+                                    ConcreteType.Function
+                                        { from = arg
+                                        , to = te
+                                        }
+                                )
+                                concreteOutput
+                                concreteOtherInputs
                         }
                 )
                 (partialTypeExpressionToConcreteType functionTypeExpr.firstInput)
+                (functionTypeExpr.otherInputs
+                    |> List.reverse
+                    |> collectList partialTypeExpressionToConcreteType
+                )
                 (partialTypeExpressionToConcreteType functionTypeExpr.output)
 
 
@@ -1541,3 +1593,8 @@ toList mapper (Stack ls) =
         (\curr prev -> mapper curr :: prev)
         []
         ls
+
+
+reverseToList : Stack a -> List a
+reverseToList (Stack ls) =
+    ls

@@ -234,25 +234,25 @@ type alias Function = A -> B -> C -> D
                         { expr =
                             Function
                                 { from =
+                                    UserDefinedType
+                                        { args = []
+                                        , name = "A"
+                                        , qualifiedness = PossiblyQualified Nothing
+                                        }
+                                , to =
                                     Function
                                         { from =
-                                            UserDefinedType
-                                                { args = []
-                                                , name = "A"
-                                                , qualifiedness = PossiblyQualified Nothing
-                                                }
-                                        , to =
                                             UserDefinedType
                                                 { args = []
                                                 , name = "B"
                                                 , qualifiedness = PossiblyQualified Nothing
                                                 }
-                                        }
-                                , to =
-                                    UserDefinedType
-                                        { args = []
-                                        , name = "C"
-                                        , qualifiedness = PossiblyQualified Nothing
+                                        , to =
+                                            UserDefinedType
+                                                { args = []
+                                                , name = "C"
+                                                , qualifiedness = PossiblyQualified Nothing
+                                                }
                                         }
                                 }
                         , ty = TypeOrConstructor "Function"
@@ -263,34 +263,34 @@ type alias Function = A -> B -> C -> D
                         { expr =
                             Function
                                 { from =
+                                    UserDefinedType
+                                        { args = []
+                                        , name = "A"
+                                        , qualifiedness = PossiblyQualified Nothing
+                                        }
+                                , to =
                                     Function
                                         { from =
+                                            UserDefinedType
+                                                { args = []
+                                                , name = "B"
+                                                , qualifiedness = PossiblyQualified Nothing
+                                                }
+                                        , to =
                                             Function
                                                 { from =
                                                     UserDefinedType
                                                         { args = []
-                                                        , name = "A"
+                                                        , name = "C"
                                                         , qualifiedness = PossiblyQualified Nothing
                                                         }
                                                 , to =
                                                     UserDefinedType
                                                         { args = []
-                                                        , name = "B"
+                                                        , name = "D"
                                                         , qualifiedness = PossiblyQualified Nothing
                                                         }
                                                 }
-                                        , to =
-                                            UserDefinedType
-                                                { args = []
-                                                , name = "C"
-                                                , qualifiedness = PossiblyQualified Nothing
-                                                }
-                                        }
-                                , to =
-                                    UserDefinedType
-                                        { args = []
-                                        , name = "D"
-                                        , qualifiedness = PossiblyQualified Nothing
                                         }
                                 }
                         , ty = TypeOrConstructor "Function"
