@@ -66,6 +66,7 @@ type Block
         }
     | TypeAlias
         { ty : Token.TypeOrConstructor
+        , genericArgs : List Token.ValueOrFunctionOrGenericType
         , expr : ConcreteType PossiblyQualified
         }
     | CustomType
@@ -99,15 +100,15 @@ type alias State_ =
 type BlockFirstItem
     = BlockFirstItem_Type
     | BlockFirstItem_Module
-    | BlockFirstItem_Name Token.ValueOrFunction
+    | BlockFirstItem_Name Token.ValueOrFunctionOrGenericType
 
 
 type BlockTypeAlias
     = BlockTypeAlias_Keywords
-    | BlockTypeAlias_Named Token.TypeOrConstructor
-    | BlockTypeAlias_NamedAssigns Token.TypeOrConstructor
-    | BlockTypeAlias_Completish Token.TypeOrConstructor PartialTypeExpressionLeaf
-    | BlockTypeAlias_Complete Token.TypeOrConstructor PartialTypeExpression
+    | BlockTypeAlias_Named Token.TypeOrConstructor (List Token.ValueOrFunctionOrGenericType)
+    | BlockTypeAlias_NamedAssigns Token.TypeOrConstructor (List Token.ValueOrFunctionOrGenericType)
+    | BlockTypeAlias_Completish Token.TypeOrConstructor (List Token.ValueOrFunctionOrGenericType) PartialTypeExpressionLeaf
+    | BlockTypeAlias_Complete Token.TypeOrConstructor (List Token.ValueOrFunctionOrGenericType) PartialTypeExpression
 
 
 type BlockCustomType
@@ -197,7 +198,7 @@ type Error
     = Error_InvalidToken Expecting
     | Error_MisplacedKeyword Keyword
     | Error_BlockStartsWithTypeOrConstructor Token.TypeOrConstructor
-    | Error_TypeNameStartsWithLowerCase Token.ValueOrFunction
+    | Error_TypeNameStartsWithLowerCase Token.ValueOrFunctionOrGenericType
     | Error_UnmatchedBracket Lexer.BracketType Lexer.BracketRole
     | Error_WrongClosingBracket
         { expecting : Lexer.BracketType
@@ -336,16 +337,17 @@ runHelp items state =
 parseAnything : State -> LexItem -> ParseResult
 parseAnything state =
     let
-        newTypeAliasState aliasName res =
+        newTypeAliasState aliasName typeArgs res =
             case res of
                 TypeExpressionResult_Progress expr ->
-                    State_BlockTypeAlias (BlockTypeAlias_Completish aliasName expr)
+                    State_BlockTypeAlias (BlockTypeAlias_Completish aliasName typeArgs expr)
                         |> ParseResult_Ok
 
                 TypeExpressionResult_Done expr ->
                     case partialTypeExpressionToConcreteType expr of
                         Ok concreteType ->
                             { ty = aliasName
+                            , genericArgs = typeArgs
                             , expr = concreteType
                             }
                                 |> TypeAlias
@@ -382,25 +384,26 @@ parseAnything state =
         State_BlockTypeAlias BlockTypeAlias_Keywords ->
             parseTypeAliasName
 
-        State_BlockTypeAlias (BlockTypeAlias_Named name) ->
+        State_BlockTypeAlias (BlockTypeAlias_Named name typeArgs) ->
             parseAssignment
-                (State_BlockTypeAlias (BlockTypeAlias_NamedAssigns name))
+                (State_BlockTypeAlias (BlockTypeAlias_NamedAssigns name typeArgs))
 
-        State_BlockTypeAlias (BlockTypeAlias_NamedAssigns name) ->
+        State_BlockTypeAlias (BlockTypeAlias_NamedAssigns name typeArgs) ->
             parserTypeExprFromEmpty
-                (newTypeAliasState name)
+                (newTypeAliasState name typeArgs)
 
-        State_BlockTypeAlias (BlockTypeAlias_Completish name exprSoFar) ->
+        State_BlockTypeAlias (BlockTypeAlias_Completish name typeArgs exprSoFar) ->
             parserTypeExpr
-                (newTypeAliasState name)
+                (newTypeAliasState name typeArgs)
                 exprSoFar
 
-        State_BlockTypeAlias (BlockTypeAlias_Complete aliasName expr) ->
+        State_BlockTypeAlias (BlockTypeAlias_Complete aliasName typeArgs expr) ->
             let
                 rBlock =
                     case partialTypeExpressionToConcreteType expr of
                         Ok concreteType ->
                             { ty = aliasName
+                            , genericArgs = typeArgs
                             , expr = concreteType
                             }
                                 |> TypeAlias
@@ -530,7 +533,7 @@ parseTypeAliasName item =
                         |> ParseResult_Err
 
                 Token.TokenTypeOrConstructor typeOrConstructor ->
-                    State_BlockTypeAlias (BlockTypeAlias_Named typeOrConstructor)
+                    State_BlockTypeAlias (BlockTypeAlias_Named typeOrConstructor [])
                         |> ParseResult_Ok
 
                 Token.TokenValueOrFunction valOrFunc ->
@@ -1226,23 +1229,24 @@ blockFromState state =
                 |> Err
                 |> Just
 
-        State_BlockTypeAlias (BlockTypeAlias_Named _) ->
+        State_BlockTypeAlias (BlockTypeAlias_Named _ _) ->
             Error_PartwayThroughTypeAlias
                 |> Err
                 |> Just
 
-        State_BlockTypeAlias (BlockTypeAlias_NamedAssigns _) ->
+        State_BlockTypeAlias (BlockTypeAlias_NamedAssigns _ _) ->
             Error_PartwayThroughTypeAlias
                 |> Err
                 |> Just
 
-        State_BlockTypeAlias (BlockTypeAlias_Completish aliasName partialExpr) ->
+        State_BlockTypeAlias (BlockTypeAlias_Completish aliasName typeArgs partialExpr) ->
             case (autoCollapseNesting CollapseLevel_Function partialExpr).nesting of
                 NestingLeafType_Expr expr ->
                     partialTypeExpressionToConcreteType expr
                         |> Result.map
                             (\conceteType ->
                                 { ty = aliasName
+                                , genericArgs = typeArgs
                                 , expr = conceteType
                                 }
                                     |> TypeAlias
@@ -1255,10 +1259,11 @@ blockFromState state =
                         |> Err
                         |> Just
 
-        State_BlockTypeAlias (BlockTypeAlias_Complete aliasName expr) ->
+        State_BlockTypeAlias (BlockTypeAlias_Complete aliasName typeArgs expr) ->
             case partialTypeExpressionToConcreteType expr of
                 Ok concreteType ->
                     { ty = aliasName
+                    , genericArgs = typeArgs
                     , expr = concreteType
                     }
                         |> TypeAlias

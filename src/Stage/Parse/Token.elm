@@ -17,13 +17,13 @@ type TypeOrConstructor
     = TypeOrConstructor String
 
 
-type ValueOrFunction
-    = ValueOrFunction String
+type ValueOrFunctionOrGenericType
+    = ValueOrFunctionOrGenericType String
 
 
 type Token
     = TokenTypeOrConstructor TypeOrConstructor
-    | TokenValueOrFunction ValueOrFunction
+    | TokenValueOrFunction ValueOrFunctionOrGenericType
     | TokenKeyword Keyword
 
 
@@ -97,7 +97,7 @@ classifyToken token =
                         TokenTypeOrConstructor (TypeOrConstructor token)
 
                     else
-                        TokenValueOrFunction (ValueOrFunction token)
+                        TokenValueOrFunction (ValueOrFunctionOrGenericType token)
 
                 Nothing ->
-                    TokenValueOrFunction (ValueOrFunction token)
+                    TokenValueOrFunction (ValueOrFunctionOrGenericType token)

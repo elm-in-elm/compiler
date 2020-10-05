@@ -59,6 +59,7 @@ shouldParseTestCases =
                                 , name = "List"
                                 , qualifiedness = PossiblyQualified Nothing
                                 }
+                        , genericArgs = []
                         , ty = TypeOrConstructor "Model"
                         }
                     )
@@ -105,6 +106,7 @@ shouldParseTestCases =
                                       )
                                     ]
                                 )
+                        , genericArgs = []
                         , ty = TypeOrConstructor "Ty"
                         }
                     )
@@ -175,6 +177,7 @@ shouldParseTestCases =
                                         , qualifiedness = PossiblyQualified Nothing
                                         }
                                 }
+                        , genericArgs = []
                         , ty = TypeOrConstructor "Function"
                         }
                     )
@@ -255,6 +258,7 @@ type alias Function = A -> B -> C -> D
                                                 }
                                         }
                                 }
+                        , genericArgs = []
                         , ty = TypeOrConstructor "Function"
                         }
                     )
@@ -293,6 +297,7 @@ type alias Function = A -> B -> C -> D
                                                 }
                                         }
                                 }
+                        , genericArgs = []
                         , ty = TypeOrConstructor "Function"
                         }
                     )
@@ -333,7 +338,7 @@ type alias Function = A -> B -> C -> D
                 [ Err
                     { error = Error_InvalidToken (Expecting_Sigil Assign)
                     , item = Just (Token "a")
-                    , state = State_BlockTypeAlias (BlockTypeAlias_Named (TypeOrConstructor "Function"))
+                    , state = State_BlockTypeAlias (BlockTypeAlias_Named (TypeOrConstructor "Function") [])
                     }
                 ]
       }
@@ -490,6 +495,7 @@ type alias Function3 = (Int, () -> (Int, String), ())
                                             }
                                         )
                                 }
+                        , genericArgs = []
                         , ty = TypeOrConstructor "Function"
                         }
                     )
@@ -519,6 +525,7 @@ type alias Function3 = (Int, () -> (Int, String), ())
                                       )
                                     ]
                                 )
+                        , genericArgs = []
                         , ty = TypeOrConstructor "Function2"
                         }
                     )
@@ -545,6 +552,7 @@ type alias Function3 = (Int, () -> (Int, String), ())
                                     }
                                 )
                                 Unit
+                        , genericArgs = []
                         , ty = TypeOrConstructor "Function3"
                         }
                     )
@@ -577,6 +585,7 @@ type alias Function3 = (Int, () -> (Int, String), ())
                                     }
                                 )
                                 Unit
+                        , genericArgs = []
                         , ty = TypeOrConstructor "Function3"
                         }
                     )
@@ -655,6 +664,7 @@ type alias Function3 = (Int, () -> (Int, String), ())
                                         )
                                 , to = Record (Dict.fromList [])
                                 }
+                        , genericArgs = []
                         , ty = TypeOrConstructor "Function"
                         }
                     )
@@ -708,6 +718,7 @@ type alias Function3 = (Int, () -> (Int, String), ())
                                             }
                                         )
                                 }
+                        , genericArgs = []
                         , ty = TypeOrConstructor "Function"
                         }
                     )
@@ -748,6 +759,7 @@ type alias Function3 = (Int, () -> (Int, String), ())
                                 , name = "List"
                                 , qualifiedness = PossiblyQualified Nothing
                                 }
+                        , genericArgs = []
                         , ty = TypeOrConstructor "Model"
                         }
                     )
@@ -789,6 +801,7 @@ type alias Function3 = (Int, () -> (Int, String), ())
                                 , name = "List"
                                 , qualifiedness = PossiblyQualified Nothing
                                 }
+                        , genericArgs = []
                         , ty = TypeOrConstructor "Model"
                         }
                     )
@@ -859,6 +872,7 @@ type alias Function3 = (Int, () -> (Int, String), ())
                                       )
                                     ]
                                 )
+                        , genericArgs = []
                         , ty = TypeOrConstructor "Ty"
                         }
                     )
@@ -883,7 +897,7 @@ type alias Function3 = (Int, () -> (Int, String), ())
                 ]
       , contextualized =
             Just
-                [ Ok (TypeAlias { expr = Record (Dict.fromList []), ty = TypeOrConstructor "Ty" })
+                [ Ok (TypeAlias { expr = Record (Dict.fromList []), genericArgs = [], ty = TypeOrConstructor "Ty" })
                 ]
       }
     , { name = "type-alias-record-empty-multiline"
@@ -915,7 +929,7 @@ type alias Function3 = (Int, () -> (Int, String), ())
                 ]
       , contextualized =
             Just
-                [ Ok (TypeAlias { expr = Record (Dict.fromList []), ty = TypeOrConstructor "Ty" })
+                [ Ok (TypeAlias { expr = Record (Dict.fromList []), genericArgs = [], ty = TypeOrConstructor "Ty" })
                 ]
       }
     , { name = "type-alias-record-in-bracket"
@@ -959,6 +973,7 @@ type alias Function3 = (Int, () -> (Int, String), ())
                                       )
                                     ]
                                 )
+                        , genericArgs = []
                         , ty = TypeOrConstructor "Ty"
                         }
                     )
@@ -1093,6 +1108,7 @@ type alias Function3 = (Int, () -> (Int, String), ())
                                       )
                                     ]
                                 )
+                        , genericArgs = []
                         , ty = TypeOrConstructor "Ty"
                         }
                     )
@@ -1137,6 +1153,7 @@ type alias Function3 = (Int, () -> (Int, String), ())
                                       )
                                     ]
                                 )
+                        , genericArgs = []
                         , ty = TypeOrConstructor "Ty"
                         }
                     )
@@ -1194,6 +1211,7 @@ type alias Function3 = (Int, () -> (Int, String), ())
                                       )
                                     ]
                                 )
+                        , genericArgs = []
                         , ty = TypeOrConstructor "Ty"
                         }
                     )
@@ -1218,7 +1236,7 @@ type alias Function3 = (Int, () -> (Int, String), ())
                 ]
       , contextualized =
             Just
-                [ Ok (TypeAlias { expr = Unit, ty = TypeOrConstructor "Hi" })
+                [ Ok (TypeAlias { expr = Unit, genericArgs = [], ty = TypeOrConstructor "Hi" })
                 ]
       }
     , { name = "type-alias-with-bracket"
@@ -1249,6 +1267,7 @@ type alias Function3 = (Int, () -> (Int, String), ())
                                 , name = "Int"
                                 , qualifiedness = PossiblyQualified Nothing
                                 }
+                        , genericArgs = []
                         , ty = TypeOrConstructor "Hi"
                         }
                     )
@@ -1290,6 +1309,7 @@ type alias Function3 = (Int, () -> (Int, String), ())
                                 , name = "List"
                                 , qualifiedness = PossiblyQualified Nothing
                                 }
+                        , genericArgs = []
                         , ty = TypeOrConstructor "Hi"
                         }
                     )
@@ -1355,6 +1375,7 @@ type alias Hi = (Int)
                                     , qualifiedness = PossiblyQualified Nothing
                                     }
                                 )
+                        , genericArgs = []
                         , ty = TypeOrConstructor "Hi"
                         }
                     )
@@ -1366,6 +1387,7 @@ type alias Hi = (Int)
                                 , name = "Int"
                                 , qualifiedness = PossiblyQualified Nothing
                                 }
+                        , genericArgs = []
                         , ty = TypeOrConstructor "Hi"
                         }
                     )
@@ -1441,10 +1463,11 @@ type alias Hi = ((), (), ())
                                     , qualifiedness = PossiblyQualified Nothing
                                     }
                                 )
+                        , genericArgs = []
                         , ty = TypeOrConstructor "Hi"
                         }
                     )
-                , Ok (TypeAlias { expr = Tuple3 Unit Unit Unit, ty = TypeOrConstructor "Hi" })
+                , Ok (TypeAlias { expr = Tuple3 Unit Unit Unit, genericArgs = [], ty = TypeOrConstructor "Hi" })
                 ]
       }
     , { name = "type-alias-with-tripple-in-record"
@@ -1535,6 +1558,7 @@ type alias Hi = ((), (), ())
                                       )
                                     ]
                                 )
+                        , genericArgs = []
                         , ty = TypeOrConstructor "Hi"
                         }
                     )
@@ -1664,6 +1688,7 @@ type alias Function3 = (Int, () ->, ())
                     , state =
                         State_BlockTypeAlias
                             (BlockTypeAlias_Completish (TypeOrConstructor "Function")
+                                []
                                 { nesting = NestingLeafType_Function { firstInput = TypeExpression_Unit, otherInputs = Stack [], output = Nothing }
                                 , parents =
                                     [ NestingParentType_Bracket (Stack [])
@@ -1677,6 +1702,7 @@ type alias Function3 = (Int, () ->, ())
                     , state =
                         State_BlockTypeAlias
                             (BlockTypeAlias_Completish (TypeOrConstructor "Function2")
+                                []
                                 { nesting = NestingLeafType_Function { firstInput = TypeExpression_Unit, otherInputs = Stack [], output = Nothing }
                                 , parents =
                                     [ NestingParentType_PartialRecord { firstEntries = Stack [], lastEntryName = "a" }
@@ -1690,6 +1716,7 @@ type alias Function3 = (Int, () ->, ())
                     , state =
                         State_BlockTypeAlias
                             (BlockTypeAlias_Completish (TypeOrConstructor "Function3")
+                                []
                                 { nesting = NestingLeafType_Function { firstInput = TypeExpression_Unit, otherInputs = Stack [], output = Nothing }
                                 , parents =
                                     [ NestingParentType_Bracket (Stack [])
@@ -1703,6 +1730,7 @@ type alias Function3 = (Int, () ->, ())
                     , state =
                         State_BlockTypeAlias
                             (BlockTypeAlias_Completish (TypeOrConstructor "Function3")
+                                []
                                 { nesting = NestingLeafType_Function { firstInput = TypeExpression_Unit, otherInputs = Stack [], output = Nothing }
                                 , parents =
                                     [ NestingParentType_Bracket
@@ -1742,7 +1770,7 @@ type alias Function3 = (Int, () ->, ())
                 [ Err
                     { error = Error_TypeDoesNotTakeArgs2 (TypeExpression_Bracketed (TypeExpression_NamedType { args = Stack [], name = "Int" }))
                     , item = Just (Sigil (Bracket Round Open))
-                    , state = State_BlockTypeAlias (BlockTypeAlias_Completish (TypeOrConstructor "Hi") { nesting = NestingLeafType_Expr (TypeExpression_Bracketed (TypeExpression_NamedType { args = Stack [], name = "Int" })), parents = [] })
+                    , state = State_BlockTypeAlias (BlockTypeAlias_Completish (TypeOrConstructor "Hi") [] { nesting = NestingLeafType_Expr (TypeExpression_Bracketed (TypeExpression_NamedType { args = Stack [], name = "Int" })), parents = [] })
                     }
                 ]
       }
@@ -1771,7 +1799,7 @@ type alias Function3 = (Int, () ->, ())
                 [ Err
                     { error = Error_TypeDoesNotTakeArgs2 TypeExpression_Unit
                     , item = Just (Sigil (Bracket Round Open))
-                    , state = State_BlockTypeAlias (BlockTypeAlias_Completish (TypeOrConstructor "Hi") { nesting = NestingLeafType_Expr TypeExpression_Unit, parents = [] })
+                    , state = State_BlockTypeAlias (BlockTypeAlias_Completish (TypeOrConstructor "Hi") [] { nesting = NestingLeafType_Expr TypeExpression_Unit, parents = [] })
                     }
                 ]
       }
@@ -1801,7 +1829,7 @@ type alias Function3 = (Int, () ->, ())
                 [ Err
                     { error = Error_TypeDoesNotTakeArgs2 TypeExpression_Unit
                     , item = Just (Sigil (Bracket Round Open))
-                    , state = State_BlockTypeAlias (BlockTypeAlias_Completish (TypeOrConstructor "Hi") { nesting = NestingLeafType_Expr TypeExpression_Unit, parents = [] })
+                    , state = State_BlockTypeAlias (BlockTypeAlias_Completish (TypeOrConstructor "Hi") [] { nesting = NestingLeafType_Expr TypeExpression_Unit, parents = [] })
                     }
                 ]
       }
@@ -1829,7 +1857,7 @@ List Int
                 [ Err
                     { error = Error_PartwayThroughTypeAlias
                     , item = Just (Newlines [] 0)
-                    , state = State_BlockTypeAlias (BlockTypeAlias_NamedAssigns (TypeOrConstructor "Model"))
+                    , state = State_BlockTypeAlias (BlockTypeAlias_NamedAssigns (TypeOrConstructor "Model") [])
                     }
                 , Err
                     { error = Error_BlockStartsWithTypeOrConstructor (TypeOrConstructor "List")
@@ -1874,7 +1902,7 @@ List Int
                 [ Err
                     { error = Error_PartwayThroughTypeAlias
                     , item = Just (Newlines [] 0)
-                    , state = State_BlockTypeAlias (BlockTypeAlias_Named (TypeOrConstructor "Hi"))
+                    , state = State_BlockTypeAlias (BlockTypeAlias_Named (TypeOrConstructor "Hi") [])
                     }
                 ]
       }
@@ -1897,7 +1925,7 @@ List Int
                 [ Err
                     { error = Error_PartwayThroughTypeAlias
                     , item = Just (Newlines [] 0)
-                    , state = State_BlockTypeAlias (BlockTypeAlias_NamedAssigns (TypeOrConstructor "Hi"))
+                    , state = State_BlockTypeAlias (BlockTypeAlias_NamedAssigns (TypeOrConstructor "Hi") [])
                     }
                 ]
       }
@@ -1922,7 +1950,7 @@ List Int
                 [ Err
                     { error = Error_PartwayThroughTypeAlias
                     , item = Just (Newlines [] 0)
-                    , state = State_BlockTypeAlias (BlockTypeAlias_Completish (TypeOrConstructor "Hi") { nesting = NestingLeafType_Bracket (Stack []) Nothing, parents = [] })
+                    , state = State_BlockTypeAlias (BlockTypeAlias_Completish (TypeOrConstructor "Hi") [] { nesting = NestingLeafType_Bracket (Stack []) Nothing, parents = [] })
                     }
                 ]
       }
@@ -1953,6 +1981,7 @@ List Int
                     , state =
                         State_BlockTypeAlias
                             (BlockTypeAlias_Completish (TypeOrConstructor "Hi")
+                                []
                                 { nesting = NestingLeafType_TypeWithArgs { args = Stack [], name = "Int" }
                                 , parents =
                                     [ NestingParentType_Bracket (Stack [])
@@ -1983,7 +2012,7 @@ List Int
                 [ Err
                     { error = Error_PartwayThroughTypeAlias
                     , item = Just (Newlines [] 0)
-                    , state = State_BlockTypeAlias (BlockTypeAlias_Completish (TypeOrConstructor "Ty") { nesting = NestingLeafType_PartialRecord { firstEntries = Stack [], lastEntry = LastEntryOfRecord_Empty }, parents = [] })
+                    , state = State_BlockTypeAlias (BlockTypeAlias_Completish (TypeOrConstructor "Ty") [] { nesting = NestingLeafType_PartialRecord { firstEntries = Stack [], lastEntry = LastEntryOfRecord_Empty }, parents = [] })
                     }
                 ]
       }
@@ -2014,7 +2043,7 @@ List Int
                 [ Err
                     { error = Error_ExpectedColonWhilstParsingRecord
                     , item = Just (Token "j7")
-                    , state = State_BlockTypeAlias (BlockTypeAlias_Completish (TypeOrConstructor "Ty") { nesting = NestingLeafType_PartialRecord { firstEntries = Stack [], lastEntry = LastEntryOfRecord_Key "hi" }, parents = [] })
+                    , state = State_BlockTypeAlias (BlockTypeAlias_Completish (TypeOrConstructor "Ty") [] { nesting = NestingLeafType_PartialRecord { firstEntries = Stack [], lastEntry = LastEntryOfRecord_Key "hi" }, parents = [] })
                     }
                 ]
       }
@@ -2134,6 +2163,7 @@ type alias Hi = (A Int, C D E F, H I (J K), L M () O P)
                     , state =
                         State_BlockTypeAlias
                             (BlockTypeAlias_Completish (TypeOrConstructor "Hi")
+                                []
                                 { nesting =
                                     NestingLeafType_Expr
                                         (TypeExpression_Tuple (TypeExpression_NamedType { args = Stack [], name = "Int" })
@@ -2235,6 +2265,7 @@ type alias Hi = (A Int, C D E F, H I (J K), L M () O P)
                     , state =
                         State_BlockTypeAlias
                             (BlockTypeAlias_Completish (TypeOrConstructor "Hi")
+                                []
                                 { nesting =
                                     NestingLeafType_Expr
                                         (TypeExpression_Tuple
@@ -2321,6 +2352,7 @@ type alias Hi = (A Int, C D E F, H I (J K), L M () O P)
                     , state =
                         State_BlockTypeAlias
                             (BlockTypeAlias_Completish (TypeOrConstructor "Hi")
+                                []
                                 { nesting =
                                     NestingLeafType_Bracket
                                         (Stack
@@ -2378,6 +2410,7 @@ type alias Hi = (A Int, C D E F, H I (J K), L M () O P)
                     , state =
                         State_BlockTypeAlias
                             (BlockTypeAlias_Completish (TypeOrConstructor "Hi")
+                                []
                                 { nesting =
                                     NestingLeafType_Bracket
                                         (Stack
