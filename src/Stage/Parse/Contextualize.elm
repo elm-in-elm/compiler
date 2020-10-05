@@ -199,6 +199,11 @@ type Error
     | Error_BlockStartsWithTypeOrConstructor Token.TypeOrConstructor
     | Error_TypeNameStartsWithLowerCase Token.ValueOrFunction
     | Error_UnmatchedBracket Lexer.BracketType Lexer.BracketRole
+    | Error_WrongClosingBracket
+        { expecting : Lexer.BracketType
+        , found : Lexer.BracketType
+        }
+    | Error_MissingFunctionReturnType
     | Error_ExpectedColonWhilstParsingRecord
     | Error_ExpectedKeyWhilstParsingRecord
     | Error_TypeDoesNotTakeArgs PartialTypeExpression PartialTypeExpression
@@ -675,13 +680,16 @@ parserTypeExpr newState prevExpr item =
                         |> partialTypeExpressionToParseResult newState
 
                 NestingLeafType_PartialRecord _ ->
-                    Error_InvalidToken Expecting_Unknown
+                    Error_WrongClosingBracket
+                        { expecting = Lexer.Curly
+                        , found = Lexer.Round
+                        }
                         |> ParseResult_Err
 
                 NestingLeafType_Function { output } ->
                     case output of
                         Nothing ->
-                            Error_InvalidToken Expecting_Unknown
+                            Error_MissingFunctionReturnType
                                 |> ParseResult_Err
 
                         Just _ ->
@@ -723,7 +731,10 @@ parserTypeExpr newState prevExpr item =
                     Debug.todo "Make this state impossible"
 
                 NestingLeafType_Bracket argStack mLastExpression ->
-                    Error_InvalidToken Expecting_Unknown
+                    Error_WrongClosingBracket
+                        { expecting = Lexer.Round
+                        , found = Lexer.Curly
+                        }
                         |> ParseResult_Err
 
                 NestingLeafType_PartialRecord pr ->
@@ -733,7 +744,7 @@ parserTypeExpr newState prevExpr item =
                 NestingLeafType_Function { output } ->
                     case output of
                         Nothing ->
-                            Error_InvalidToken Expecting_Unknown
+                            Error_MissingFunctionReturnType
                                 |> ParseResult_Err
 
                         Just _ ->
