@@ -50,7 +50,11 @@ shouldParseTestCases =
                         { expr =
                             UserDefinedType
                                 { args =
-                                    [ UserDefinedType { args = [], name = "Int", qualifiedness = PossiblyQualified Nothing }
+                                    [ UserDefinedType
+                                        { args = []
+                                        , name = "Int"
+                                        , qualifiedness = PossiblyQualified Nothing
+                                        }
                                     ]
                                 , name = "List"
                                 , qualifiedness = PossiblyQualified Nothing
@@ -92,7 +96,13 @@ shouldParseTestCases =
                         { expr =
                             Record
                                 (Dict.fromList
-                                    [ ( "hi", UserDefinedType { args = [], name = "Int", qualifiedness = PossiblyQualified Nothing } )
+                                    [ ( "hi"
+                                      , UserDefinedType
+                                            { args = []
+                                            , name = "Int"
+                                            , qualifiedness = PossiblyQualified Nothing
+                                            }
+                                      )
                                     ]
                                 )
                         , ty = TypeOrConstructor "Ty"
@@ -137,7 +147,11 @@ shouldParseTestCases =
                                 { from =
                                     UserDefinedType
                                         { args =
-                                            [ UserDefinedType { args = [], name = "Int", qualifiedness = PossiblyQualified Nothing }
+                                            [ UserDefinedType
+                                                { args = []
+                                                , name = "Int"
+                                                , qualifiedness = PossiblyQualified Nothing
+                                                }
                                             ]
                                         , name = "List"
                                         , qualifiedness = PossiblyQualified Nothing
@@ -147,13 +161,135 @@ shouldParseTestCases =
                                         { args =
                                             [ UserDefinedType
                                                 { args =
-                                                    [ UserDefinedType { args = [], name = "Int", qualifiedness = PossiblyQualified Nothing }
+                                                    [ UserDefinedType
+                                                        { args = []
+                                                        , name = "Int"
+                                                        , qualifiedness = PossiblyQualified Nothing
+                                                        }
                                                     ]
                                                 , name = "List"
                                                 , qualifiedness = PossiblyQualified Nothing
                                                 }
                                             ]
                                         , name = "List"
+                                        , qualifiedness = PossiblyQualified Nothing
+                                        }
+                                }
+                        , ty = TypeOrConstructor "Function"
+                        }
+                    )
+                ]
+      }
+    , { name = "type-alias-function-binding-order"
+      , source = """type alias Function = A -> B -> C
+type alias Function = A -> B -> C -> D
+"""
+      , lexed =
+            Ok
+                [ Located { end = { col = 5, row = 1 }, start = { col = 1, row = 1 } } (Token "type")
+                , Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Whitespace 1)
+                , Located { end = { col = 11, row = 1 }, start = { col = 6, row = 1 } } (Token "alias")
+                , Located { end = { col = 12, row = 1 }, start = { col = 11, row = 1 } } (Whitespace 1)
+                , Located { end = { col = 20, row = 1 }, start = { col = 12, row = 1 } } (Token "Function")
+                , Located { end = { col = 21, row = 1 }, start = { col = 20, row = 1 } } (Whitespace 1)
+                , Located { end = { col = 22, row = 1 }, start = { col = 21, row = 1 } } (Sigil Assign)
+                , Located { end = { col = 23, row = 1 }, start = { col = 22, row = 1 } } (Whitespace 1)
+                , Located { end = { col = 24, row = 1 }, start = { col = 23, row = 1 } } (Token "A")
+                , Located { end = { col = 25, row = 1 }, start = { col = 24, row = 1 } } (Whitespace 1)
+                , Located { end = { col = 27, row = 1 }, start = { col = 25, row = 1 } } (Sigil ThinArrow)
+                , Located { end = { col = 28, row = 1 }, start = { col = 27, row = 1 } } (Whitespace 1)
+                , Located { end = { col = 29, row = 1 }, start = { col = 28, row = 1 } } (Token "B")
+                , Located { end = { col = 30, row = 1 }, start = { col = 29, row = 1 } } (Whitespace 1)
+                , Located { end = { col = 32, row = 1 }, start = { col = 30, row = 1 } } (Sigil ThinArrow)
+                , Located { end = { col = 33, row = 1 }, start = { col = 32, row = 1 } } (Whitespace 1)
+                , Located { end = { col = 34, row = 1 }, start = { col = 33, row = 1 } } (Token "C")
+                , Located { end = { col = 1, row = 2 }, start = { col = 34, row = 1 } } (Newlines [] 0)
+                , Located { end = { col = 5, row = 2 }, start = { col = 1, row = 2 } } (Token "type")
+                , Located { end = { col = 6, row = 2 }, start = { col = 5, row = 2 } } (Whitespace 1)
+                , Located { end = { col = 11, row = 2 }, start = { col = 6, row = 2 } } (Token "alias")
+                , Located { end = { col = 12, row = 2 }, start = { col = 11, row = 2 } } (Whitespace 1)
+                , Located { end = { col = 20, row = 2 }, start = { col = 12, row = 2 } } (Token "Function")
+                , Located { end = { col = 21, row = 2 }, start = { col = 20, row = 2 } } (Whitespace 1)
+                , Located { end = { col = 22, row = 2 }, start = { col = 21, row = 2 } } (Sigil Assign)
+                , Located { end = { col = 23, row = 2 }, start = { col = 22, row = 2 } } (Whitespace 1)
+                , Located { end = { col = 24, row = 2 }, start = { col = 23, row = 2 } } (Token "A")
+                , Located { end = { col = 25, row = 2 }, start = { col = 24, row = 2 } } (Whitespace 1)
+                , Located { end = { col = 27, row = 2 }, start = { col = 25, row = 2 } } (Sigil ThinArrow)
+                , Located { end = { col = 28, row = 2 }, start = { col = 27, row = 2 } } (Whitespace 1)
+                , Located { end = { col = 29, row = 2 }, start = { col = 28, row = 2 } } (Token "B")
+                , Located { end = { col = 30, row = 2 }, start = { col = 29, row = 2 } } (Whitespace 1)
+                , Located { end = { col = 32, row = 2 }, start = { col = 30, row = 2 } } (Sigil ThinArrow)
+                , Located { end = { col = 33, row = 2 }, start = { col = 32, row = 2 } } (Whitespace 1)
+                , Located { end = { col = 34, row = 2 }, start = { col = 33, row = 2 } } (Token "C")
+                , Located { end = { col = 35, row = 2 }, start = { col = 34, row = 2 } } (Whitespace 1)
+                , Located { end = { col = 37, row = 2 }, start = { col = 35, row = 2 } } (Sigil ThinArrow)
+                , Located { end = { col = 38, row = 2 }, start = { col = 37, row = 2 } } (Whitespace 1)
+                , Located { end = { col = 39, row = 2 }, start = { col = 38, row = 2 } } (Token "D")
+                , Located { end = { col = 1, row = 3 }, start = { col = 39, row = 2 } } (Newlines [] 0)
+                ]
+      , contextualized =
+            Just
+                [ Ok
+                    (TypeAlias
+                        { expr =
+                            Function
+                                { from =
+                                    Function
+                                        { from =
+                                            UserDefinedType
+                                                { args = []
+                                                , name = "A"
+                                                , qualifiedness = PossiblyQualified Nothing
+                                                }
+                                        , to =
+                                            UserDefinedType
+                                                { args = []
+                                                , name = "B"
+                                                , qualifiedness = PossiblyQualified Nothing
+                                                }
+                                        }
+                                , to =
+                                    UserDefinedType
+                                        { args = []
+                                        , name = "C"
+                                        , qualifiedness = PossiblyQualified Nothing
+                                        }
+                                }
+                        , ty = TypeOrConstructor "Function"
+                        }
+                    )
+                , Ok
+                    (TypeAlias
+                        { expr =
+                            Function
+                                { from =
+                                    Function
+                                        { from =
+                                            Function
+                                                { from =
+                                                    UserDefinedType
+                                                        { args = []
+                                                        , name = "A"
+                                                        , qualifiedness = PossiblyQualified Nothing
+                                                        }
+                                                , to =
+                                                    UserDefinedType
+                                                        { args = []
+                                                        , name = "B"
+                                                        , qualifiedness = PossiblyQualified Nothing
+                                                        }
+                                                }
+                                        , to =
+                                            UserDefinedType
+                                                { args = []
+                                                , name = "C"
+                                                , qualifiedness = PossiblyQualified Nothing
+                                                }
+                                        }
+                                , to =
+                                    UserDefinedType
+                                        { args = []
+                                        , name = "D"
                                         , qualifiedness = PossiblyQualified Nothing
                                         }
                                 }
@@ -253,11 +389,23 @@ shouldParseTestCases =
                                             [ ( "a"
                                               , Record
                                                     (Dict.fromList
-                                                        [ ( "b", UserDefinedType { args = [], name = "C", qualifiedness = PossiblyQualified Nothing } )
+                                                        [ ( "b"
+                                                          , UserDefinedType
+                                                                { args = []
+                                                                , name = "C"
+                                                                , qualifiedness = PossiblyQualified Nothing
+                                                                }
+                                                          )
                                                         ]
                                                     )
                                               )
-                                            , ( "d", UserDefinedType { args = [], name = "E", qualifiedness = PossiblyQualified Nothing } )
+                                            , ( "d"
+                                              , UserDefinedType
+                                                    { args = []
+                                                    , name = "E"
+                                                    , qualifiedness = PossiblyQualified Nothing
+                                                    }
+                                              )
                                             ]
                                         )
                                 , to = Record (Dict.fromList [])
@@ -295,7 +443,29 @@ shouldParseTestCases =
                 ]
       , contextualized =
             Just
-                [ Ok (TypeAlias { expr = Function { from = Unit, to = Tuple (UserDefinedType { args = [], name = "Int", qualifiedness = PossiblyQualified Nothing }) (UserDefinedType { args = [], name = "String", qualifiedness = PossiblyQualified Nothing }) }, ty = TypeOrConstructor "Function" })
+                [ Ok
+                    (TypeAlias
+                        { expr =
+                            Function
+                                { from = Unit
+                                , to =
+                                    Tuple
+                                        (UserDefinedType
+                                            { args = []
+                                            , name = "Int"
+                                            , qualifiedness = PossiblyQualified Nothing
+                                            }
+                                        )
+                                        (UserDefinedType
+                                            { args = []
+                                            , name = "String"
+                                            , qualifiedness = PossiblyQualified Nothing
+                                            }
+                                        )
+                                }
+                        , ty = TypeOrConstructor "Function"
+                        }
+                    )
                 ]
       }
     , { name = "type-alias-funky-indentation"
@@ -324,7 +494,11 @@ shouldParseTestCases =
                         { expr =
                             UserDefinedType
                                 { args =
-                                    [ UserDefinedType { args = [], name = "Int", qualifiedness = PossiblyQualified Nothing }
+                                    [ UserDefinedType
+                                        { args = []
+                                        , name = "Int"
+                                        , qualifiedness = PossiblyQualified Nothing
+                                        }
                                     ]
                                 , name = "List"
                                 , qualifiedness = PossiblyQualified Nothing
@@ -361,7 +535,11 @@ shouldParseTestCases =
                         { expr =
                             UserDefinedType
                                 { args =
-                                    [ UserDefinedType { args = [], name = "Int", qualifiedness = PossiblyQualified Nothing }
+                                    [ UserDefinedType
+                                        { args = []
+                                        , name = "Int"
+                                        , qualifiedness = PossiblyQualified Nothing
+                                        }
                                     ]
                                 , name = "List"
                                 , qualifiedness = PossiblyQualified Nothing
@@ -413,9 +591,27 @@ shouldParseTestCases =
                         { expr =
                             Record
                                 (Dict.fromList
-                                    [ ( "a", UserDefinedType { args = [], name = "A", qualifiedness = PossiblyQualified Nothing } )
-                                    , ( "b", UserDefinedType { args = [], name = "B", qualifiedness = PossiblyQualified Nothing } )
-                                    , ( "c", UserDefinedType { args = [], name = "C", qualifiedness = PossiblyQualified Nothing } )
+                                    [ ( "a"
+                                      , UserDefinedType
+                                            { args = []
+                                            , name = "A"
+                                            , qualifiedness = PossiblyQualified Nothing
+                                            }
+                                      )
+                                    , ( "b"
+                                      , UserDefinedType
+                                            { args = []
+                                            , name = "B"
+                                            , qualifiedness = PossiblyQualified Nothing
+                                            }
+                                      )
+                                    , ( "c"
+                                      , UserDefinedType
+                                            { args = []
+                                            , name = "C"
+                                            , qualifiedness = PossiblyQualified Nothing
+                                            }
+                                      )
                                     ]
                                 )
                         , ty = TypeOrConstructor "Ty"
@@ -509,7 +705,13 @@ shouldParseTestCases =
                         { expr =
                             Record
                                 (Dict.fromList
-                                    [ ( "hi", UserDefinedType { args = [], name = "6", qualifiedness = PossiblyQualified Nothing } )
+                                    [ ( "hi"
+                                      , UserDefinedType
+                                            { args = []
+                                            , name = "6"
+                                            , qualifiedness = PossiblyQualified Nothing
+                                            }
+                                      )
                                     ]
                                 )
                         , ty = TypeOrConstructor "Ty"
@@ -587,11 +789,21 @@ shouldParseTestCases =
                                     [ ( "hi"
                                       , Record
                                             (Dict.fromList
-                                                [ ( "a", UserDefinedType { args = [], name = "7", qualifiedness = PossiblyQualified Nothing } )
+                                                [ ( "a"
+                                                  , UserDefinedType
+                                                        { args = []
+                                                        , name = "7"
+                                                        , qualifiedness = PossiblyQualified Nothing
+                                                        }
+                                                  )
                                                 , ( "b"
                                                   , UserDefinedType
                                                         { args =
-                                                            [ UserDefinedType { args = [], name = "String", qualifiedness = PossiblyQualified Nothing }
+                                                            [ UserDefinedType
+                                                                { args = []
+                                                                , name = "String"
+                                                                , qualifiedness = PossiblyQualified Nothing
+                                                                }
                                                             ]
                                                         , name = "List"
                                                         , qualifiedness = PossiblyQualified Nothing
@@ -603,12 +815,28 @@ shouldParseTestCases =
                                     , ( "ih"
                                       , UserDefinedType
                                             { args =
-                                                [ UserDefinedType { args = [], name = "A", qualifiedness = PossiblyQualified Nothing }
-                                                , UserDefinedType { args = [], name = "B", qualifiedness = PossiblyQualified Nothing }
-                                                , UserDefinedType { args = [], name = "C", qualifiedness = PossiblyQualified Nothing }
+                                                [ UserDefinedType
+                                                    { args = []
+                                                    , name = "A"
+                                                    , qualifiedness = PossiblyQualified Nothing
+                                                    }
+                                                , UserDefinedType
+                                                    { args = []
+                                                    , name = "B"
+                                                    , qualifiedness = PossiblyQualified Nothing
+                                                    }
+                                                , UserDefinedType
+                                                    { args = []
+                                                    , name = "C"
+                                                    , qualifiedness = PossiblyQualified Nothing
+                                                    }
                                                 , UserDefinedType
                                                     { args =
-                                                        [ UserDefinedType { args = [], name = "E", qualifiedness = PossiblyQualified Nothing }
+                                                        [ UserDefinedType
+                                                            { args = []
+                                                            , name = "E"
+                                                            , qualifiedness = PossiblyQualified Nothing
+                                                            }
                                                         ]
                                                     , name = "D"
                                                     , qualifiedness = PossiblyQualified Nothing
@@ -655,7 +883,13 @@ shouldParseTestCases =
                         { expr =
                             Record
                                 (Dict.fromList
-                                    [ ( "hi", UserDefinedType { args = [], name = "6", qualifiedness = PossiblyQualified Nothing } )
+                                    [ ( "hi"
+                                      , UserDefinedType
+                                            { args = []
+                                            , name = "6"
+                                            , qualifiedness = PossiblyQualified Nothing
+                                            }
+                                      )
                                     ]
                                 )
                         , ty = TypeOrConstructor "Ty"
@@ -699,8 +933,20 @@ shouldParseTestCases =
                         { expr =
                             Record
                                 (Dict.fromList
-                                    [ ( "buy", UserDefinedType { args = [], name = "8", qualifiedness = PossiblyQualified Nothing } )
-                                    , ( "hi", UserDefinedType { args = [], name = "6", qualifiedness = PossiblyQualified Nothing } )
+                                    [ ( "buy"
+                                      , UserDefinedType
+                                            { args = []
+                                            , name = "8"
+                                            , qualifiedness = PossiblyQualified Nothing
+                                            }
+                                      )
+                                    , ( "hi"
+                                      , UserDefinedType
+                                            { args = []
+                                            , name = "6"
+                                            , qualifiedness = PossiblyQualified Nothing
+                                            }
+                                      )
                                     ]
                                 )
                         , ty = TypeOrConstructor "Ty"
@@ -750,7 +996,17 @@ shouldParseTestCases =
                 ]
       , contextualized =
             Just
-                [ Ok (TypeAlias { expr = UserDefinedType { args = [], name = "Int", qualifiedness = PossiblyQualified Nothing }, ty = TypeOrConstructor "Hi" })
+                [ Ok
+                    (TypeAlias
+                        { expr =
+                            UserDefinedType
+                                { args = []
+                                , name = "Int"
+                                , qualifiedness = PossiblyQualified Nothing
+                                }
+                        , ty = TypeOrConstructor "Hi"
+                        }
+                    )
                 ]
       }
     , { name = "type-alias-with-bracket-2"
@@ -780,7 +1036,11 @@ shouldParseTestCases =
                         { expr =
                             UserDefinedType
                                 { args =
-                                    [ UserDefinedType { args = [], name = "Int", qualifiedness = PossiblyQualified Nothing }
+                                    [ UserDefinedType
+                                        { args = []
+                                        , name = "Int"
+                                        , qualifiedness = PossiblyQualified Nothing
+                                        }
                                     ]
                                 , name = "List"
                                 , qualifiedness = PossiblyQualified Nothing
@@ -831,10 +1091,20 @@ type alias Hi = (Int)
                 [ Ok
                     (TypeAlias
                         { expr =
-                            Tuple (UserDefinedType { args = [], name = "Int", qualifiedness = PossiblyQualified Nothing })
+                            Tuple
+                                (UserDefinedType
+                                    { args = []
+                                    , name = "Int"
+                                    , qualifiedness = PossiblyQualified Nothing
+                                    }
+                                )
                                 (UserDefinedType
                                     { args =
-                                        [ UserDefinedType { args = [], name = "String", qualifiedness = PossiblyQualified Nothing }
+                                        [ UserDefinedType
+                                            { args = []
+                                            , name = "String"
+                                            , qualifiedness = PossiblyQualified Nothing
+                                            }
                                         ]
                                     , name = "List"
                                     , qualifiedness = PossiblyQualified Nothing
@@ -843,7 +1113,17 @@ type alias Hi = (Int)
                         , ty = TypeOrConstructor "Hi"
                         }
                     )
-                , Ok (TypeAlias { expr = UserDefinedType { args = [], name = "Int", qualifiedness = PossiblyQualified Nothing }, ty = TypeOrConstructor "Hi" })
+                , Ok
+                    (TypeAlias
+                        { expr =
+                            UserDefinedType
+                                { args = []
+                                , name = "Int"
+                                , qualifiedness = PossiblyQualified Nothing
+                                }
+                        , ty = TypeOrConstructor "Hi"
+                        }
+                    )
                 ]
       }
     , { name = "type-alias-with-tripple"
@@ -894,7 +1174,31 @@ type alias Hi = ((), (), ())
                 ]
       , contextualized =
             Just
-                [ Ok (TypeAlias { expr = Tuple3 (UserDefinedType { args = [], name = "Int", qualifiedness = PossiblyQualified Nothing }) (UserDefinedType { args = [], name = "Two", qualifiedness = PossiblyQualified Nothing }) (UserDefinedType { args = [], name = "Three", qualifiedness = PossiblyQualified Nothing }), ty = TypeOrConstructor "Hi" })
+                [ Ok
+                    (TypeAlias
+                        { expr =
+                            Tuple3
+                                (UserDefinedType
+                                    { args = []
+                                    , name = "Int"
+                                    , qualifiedness = PossiblyQualified Nothing
+                                    }
+                                )
+                                (UserDefinedType
+                                    { args = []
+                                    , name = "Two"
+                                    , qualifiedness = PossiblyQualified Nothing
+                                    }
+                                )
+                                (UserDefinedType
+                                    { args = []
+                                    , name = "Three"
+                                    , qualifiedness = PossiblyQualified Nothing
+                                    }
+                                )
+                        , ty = TypeOrConstructor "Hi"
+                        }
+                    )
                 , Ok (TypeAlias { expr = Tuple3 Unit Unit Unit, ty = TypeOrConstructor "Hi" })
                 ]
       }
@@ -956,7 +1260,27 @@ type alias Hi = ((), (), ())
                         { expr =
                             Record
                                 (Dict.fromList
-                                    [ ( "a", Tuple3 (UserDefinedType { args = [], name = "Int", qualifiedness = PossiblyQualified Nothing }) (UserDefinedType { args = [], name = "Int", qualifiedness = PossiblyQualified Nothing }) (UserDefinedType { args = [], name = "Int", qualifiedness = PossiblyQualified Nothing }) )
+                                    [ ( "a"
+                                      , Tuple3
+                                            (UserDefinedType
+                                                { args = []
+                                                , name = "Int"
+                                                , qualifiedness = PossiblyQualified Nothing
+                                                }
+                                            )
+                                            (UserDefinedType
+                                                { args = []
+                                                , name = "Int"
+                                                , qualifiedness = PossiblyQualified Nothing
+                                                }
+                                            )
+                                            (UserDefinedType
+                                                { args = []
+                                                , name = "Int"
+                                                , qualifiedness = PossiblyQualified Nothing
+                                                }
+                                            )
+                                      )
                                     , ( "b"
                                       , Record
                                             (Dict.fromList
@@ -1365,11 +1689,36 @@ type alias Hi = (A Int, C D E F, H I (J K), L M () O P)
             Just
                 [ Err
                     { error =
-                        Error_TooManyTupleArgs (UserDefinedType { args = [], name = "Int", qualifiedness = PossiblyQualified Nothing })
-                            (UserDefinedType { args = [], name = "A", qualifiedness = PossiblyQualified Nothing })
-                            (UserDefinedType { args = [], name = "B", qualifiedness = PossiblyQualified Nothing })
-                            (UserDefinedType { args = [], name = "C", qualifiedness = PossiblyQualified Nothing })
-                            [ UserDefinedType { args = [], name = "D", qualifiedness = PossiblyQualified Nothing }
+                        Error_TooManyTupleArgs
+                            (UserDefinedType
+                                { args = []
+                                , name = "Int"
+                                , qualifiedness = PossiblyQualified Nothing
+                                }
+                            )
+                            (UserDefinedType
+                                { args = []
+                                , name = "A"
+                                , qualifiedness = PossiblyQualified Nothing
+                                }
+                            )
+                            (UserDefinedType
+                                { args = []
+                                , name = "B"
+                                , qualifiedness = PossiblyQualified Nothing
+                                }
+                            )
+                            (UserDefinedType
+                                { args = []
+                                , name = "C"
+                                , qualifiedness = PossiblyQualified Nothing
+                                }
+                            )
+                            [ UserDefinedType
+                                { args = []
+                                , name = "D"
+                                , qualifiedness = PossiblyQualified Nothing
+                                }
                             ]
                     , item = Just (Newlines [] 0)
                     , state =
@@ -1393,7 +1742,11 @@ type alias Hi = (A Int, C D E F, H I (J K), L M () O P)
                         Error_TooManyTupleArgs
                             (UserDefinedType
                                 { args =
-                                    [ UserDefinedType { args = [], name = "Int", qualifiedness = PossiblyQualified Nothing }
+                                    [ UserDefinedType
+                                        { args = []
+                                        , name = "Int"
+                                        , qualifiedness = PossiblyQualified Nothing
+                                        }
                                     ]
                                 , name = "A"
                                 , qualifiedness = PossiblyQualified Nothing
@@ -1401,9 +1754,21 @@ type alias Hi = (A Int, C D E F, H I (J K), L M () O P)
                             )
                             (UserDefinedType
                                 { args =
-                                    [ UserDefinedType { args = [], name = "D", qualifiedness = PossiblyQualified Nothing }
-                                    , UserDefinedType { args = [], name = "E", qualifiedness = PossiblyQualified Nothing }
-                                    , UserDefinedType { args = [], name = "F", qualifiedness = PossiblyQualified Nothing }
+                                    [ UserDefinedType
+                                        { args = []
+                                        , name = "D"
+                                        , qualifiedness = PossiblyQualified Nothing
+                                        }
+                                    , UserDefinedType
+                                        { args = []
+                                        , name = "E"
+                                        , qualifiedness = PossiblyQualified Nothing
+                                        }
+                                    , UserDefinedType
+                                        { args = []
+                                        , name = "F"
+                                        , qualifiedness = PossiblyQualified Nothing
+                                        }
                                     ]
                                 , name = "C"
                                 , qualifiedness = PossiblyQualified Nothing
@@ -1411,10 +1776,18 @@ type alias Hi = (A Int, C D E F, H I (J K), L M () O P)
                             )
                             (UserDefinedType
                                 { args =
-                                    [ UserDefinedType { args = [], name = "I", qualifiedness = PossiblyQualified Nothing }
+                                    [ UserDefinedType
+                                        { args = []
+                                        , name = "I"
+                                        , qualifiedness = PossiblyQualified Nothing
+                                        }
                                     , UserDefinedType
                                         { args =
-                                            [ UserDefinedType { args = [], name = "K", qualifiedness = PossiblyQualified Nothing }
+                                            [ UserDefinedType
+                                                { args = []
+                                                , name = "K"
+                                                , qualifiedness = PossiblyQualified Nothing
+                                                }
                                             ]
                                         , name = "J"
                                         , qualifiedness = PossiblyQualified Nothing
@@ -1426,10 +1799,22 @@ type alias Hi = (A Int, C D E F, H I (J K), L M () O P)
                             )
                             (UserDefinedType
                                 { args =
-                                    [ UserDefinedType { args = [], name = "M", qualifiedness = PossiblyQualified Nothing }
+                                    [ UserDefinedType
+                                        { args = []
+                                        , name = "M"
+                                        , qualifiedness = PossiblyQualified Nothing
+                                        }
                                     , Unit
-                                    , UserDefinedType { args = [], name = "O", qualifiedness = PossiblyQualified Nothing }
-                                    , UserDefinedType { args = [], name = "P", qualifiedness = PossiblyQualified Nothing }
+                                    , UserDefinedType
+                                        { args = []
+                                        , name = "O"
+                                        , qualifiedness = PossiblyQualified Nothing
+                                        }
+                                    , UserDefinedType
+                                        { args = []
+                                        , name = "P"
+                                        , qualifiedness = PossiblyQualified Nothing
+                                        }
                                     ]
                                 , name = "L"
                                 , qualifiedness = PossiblyQualified Nothing

@@ -111,3 +111,5 @@ preFormatElmCode =
     """
     >> String.replace """Err {""" """Err {
     """
+    >> String.replace """UserDefinedType {""" """UserDefinedType {
+    """
