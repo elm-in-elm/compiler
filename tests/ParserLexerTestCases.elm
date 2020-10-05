@@ -331,7 +331,7 @@ type alias Function = A -> B -> C -> D
       , contextualized =
             Just
                 [ Err
-                    { error = Error_InvalidToken (Token "a") (Expecting_Sigil Assign)
+                    { error = Error_InvalidToken (Expecting_Sigil Assign)
                     , item = Just (Token "a")
                     , state = State_BlockTypeAlias (BlockTypeAlias_Named (TypeOrConstructor "Function"))
                     }
@@ -1906,7 +1906,7 @@ type alias Hi = (A Int, C D E F, H I (J K), L M () O P)
       , contextualized =
             Just
                 [ Err
-                    { error = Error_InvalidToken (Sigil Comma) Expecting_Unknown
+                    { error = Error_InvalidToken Expecting_Unknown
                     , item = Just (Sigil Comma)
                     , state =
                         State_BlockTypeAlias

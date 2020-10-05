@@ -194,7 +194,7 @@ type TypeExpressionResult
 
 
 type Error
-    = Error_InvalidToken LexItem Expecting
+    = Error_InvalidToken Expecting
     | Error_MisplacedKeyword Keyword
     | Error_BlockStartsWithTypeOrConstructor Token.TypeOrConstructor
     | Error_TypeNameStartsWithLowerCase Token.ValueOrFunction
@@ -471,7 +471,7 @@ parseBlockStart item =
             ParseResult_Panic "parseBlockStart expects a block but found some whitespace"
 
         _ ->
-            ParseResult_Err (Error_InvalidToken item Expecting_Block)
+            ParseResult_Err (Error_InvalidToken Expecting_Block)
 
 
 parseTypeBlock : LexItem -> ParseResult
@@ -510,7 +510,7 @@ parseTypeBlock item =
         _ ->
             -- TODO(harry) indicate that we could also be expecting the `alias`
             -- keyword.
-            Error_InvalidToken item Expecting_TypeName
+            Error_InvalidToken Expecting_TypeName
                 |> ParseResult_Err
 
 
@@ -542,7 +542,7 @@ parseTypeAliasName item =
             ParseResult_Skip
 
         _ ->
-            Error_InvalidToken item Expecting_TypeName
+            Error_InvalidToken Expecting_TypeName
                 |> ParseResult_Err
 
 
@@ -566,7 +566,7 @@ parseAssignment newState item =
             ParseResult_Skip
 
         _ ->
-            Error_InvalidToken item (Expecting_Sigil Lexer.Assign)
+            Error_InvalidToken (Expecting_Sigil Lexer.Assign)
                 |> ParseResult_Err
 
 
@@ -610,15 +610,15 @@ parserTypeExprFromEmpty newState item =
                 |> newState
 
         Lexer.Sigil Lexer.Colon ->
-            Error_InvalidToken item Expecting_Unknown
+            Error_InvalidToken Expecting_Unknown
                 |> ParseResult_Err
 
         Lexer.Sigil Lexer.Comma ->
-            Error_InvalidToken item Expecting_Unknown
+            Error_InvalidToken Expecting_Unknown
                 |> ParseResult_Err
 
         Lexer.Sigil Lexer.ThinArrow ->
-            Error_InvalidToken item Expecting_Unknown
+            Error_InvalidToken Expecting_Unknown
                 |> ParseResult_Err
 
         Lexer.Newlines _ 0 ->
@@ -632,7 +632,7 @@ parserTypeExprFromEmpty newState item =
             ParseResult_Skip
 
         _ ->
-            Error_InvalidToken item Expecting_Unknown
+            Error_InvalidToken Expecting_Unknown
                 |> ParseResult_Err
 
 
@@ -746,13 +746,13 @@ parserTypeExpr newState prevExpr item =
                             ParseResult_Err e
 
                 NestingLeafType_PartialRecord _ ->
-                    Error_InvalidToken item Expecting_Unknown
+                    Error_InvalidToken Expecting_Unknown
                         |> ParseResult_Err
 
                 NestingLeafType_Function { output } ->
                     case output of
                         Nothing ->
-                            Error_InvalidToken item Expecting_Unknown
+                            Error_InvalidToken Expecting_Unknown
                                 |> ParseResult_Err
 
                         Just _ ->
@@ -776,69 +776,12 @@ parserTypeExpr newState prevExpr item =
                         |> ParseResult_Err
 
         Lexer.Sigil Lexer.Colon ->
-            let
-                getNewPartialRecord parents { firstEntries, lastEntry } =
-                    case lastEntry of
-                        LastEntryOfRecord_Key key ->
-                            { parents = parents
-                            , nesting =
-                                NestingLeafType_PartialRecord
-                                    { firstEntries = firstEntries
-                                    , lastEntry = LastEntryOfRecord_KeyColon key
-                                    }
-                            }
-                                |> TypeExpressionResult_Progress
-                                |> newState
-
-                        _ ->
-                            Error_InvalidToken item Expecting_Unknown
-                                |> ParseResult_Err
-            in
-            case prevExpr.nesting of
-                NestingLeafType_PartialRecord existingPartialRecord ->
-                    getNewPartialRecord prevExpr.parents existingPartialRecord
-
-                _ ->
-                    Error_InvalidToken item Expecting_Unknown
-                        |> ParseResult_Err
+            appendColonTo prevExpr
+                |> partialTypeExpressionToParseResult newState
 
         Lexer.Sigil Lexer.Comma ->
-            let
-                getNewPartialRecord parents { firstEntries, lastEntry } =
-                    case lastEntry of
-                        LastEntryOfRecord_KeyValue key value ->
-                            { parents = parents
-                            , nesting =
-                                NestingLeafType_PartialRecord
-                                    { firstEntries = ( key, value ) |> pushOnto firstEntries
-                                    , lastEntry = LastEntryOfRecord_Empty
-                                    }
-                            }
-                                |> TypeExpressionResult_Progress
-                                |> newState
-
-                        _ ->
-                            Error_InvalidToken item Expecting_Unknown
-                                |> ParseResult_Err
-
-                collapsedLeaf =
-                    autoCollapseNesting CollapseLevel_Function prevExpr
-            in
-            case collapsedLeaf.nesting of
-                NestingLeafType_PartialRecord existingPartialRecord ->
-                    getNewPartialRecord collapsedLeaf.parents existingPartialRecord
-
-                NestingLeafType_Bracket argStack (Just expr) ->
-                    { nesting =
-                        NestingLeafType_Bracket (expr |> pushOnto argStack) Nothing
-                    , parents = collapsedLeaf.parents
-                    }
-                        |> TypeExpressionResult_Progress
-                        |> newState
-
-                _ ->
-                    Error_InvalidToken item Expecting_Unknown
-                        |> ParseResult_Err
+            appendCommaTo prevExpr
+                |> partialTypeExpressionToParseResult newState
 
         Lexer.Sigil (Lexer.Bracket Lexer.Curly Lexer.Close) ->
             let
@@ -854,7 +797,7 @@ parserTypeExpr newState prevExpr item =
                     Debug.todo "Make this state impossible"
 
                 NestingLeafType_Bracket argStack mLastExpression ->
-                    Error_InvalidToken item Expecting_Unknown
+                    Error_InvalidToken Expecting_Unknown
                         |> ParseResult_Err
 
                 NestingLeafType_PartialRecord { firstEntries, lastEntry } ->
@@ -929,17 +872,17 @@ parserTypeExpr newState prevExpr item =
                                     |> fromRecord
 
                             else
-                                Error_InvalidToken item Expecting_Unknown
+                                Error_InvalidToken Expecting_Unknown
                                     |> ParseResult_Err
 
                         _ ->
-                            Error_InvalidToken item Expecting_Unknown
+                            Error_InvalidToken Expecting_Unknown
                                 |> ParseResult_Err
 
                 NestingLeafType_Function { output } ->
                     case output of
                         Nothing ->
-                            Error_InvalidToken item Expecting_Unknown
+                            Error_InvalidToken Expecting_Unknown
                                 |> ParseResult_Err
 
                         Just _ ->
@@ -961,7 +904,7 @@ parserTypeExpr newState prevExpr item =
                                 |> newState
 
                         _ ->
-                            Error_InvalidToken item Expecting_Unknown
+                            Error_InvalidToken Expecting_Unknown
                                 |> ParseResult_Err
             in
             case (autoCollapseNesting CollapseLevel_TypeWithArgs prevExpr).nesting of
@@ -980,7 +923,7 @@ parserTypeExpr newState prevExpr item =
                 NestingLeafType_Function { firstInput, otherInputs, output } ->
                     case output of
                         Nothing ->
-                            Error_InvalidToken item Expecting_Unknown
+                            Error_InvalidToken Expecting_Unknown
                                 |> ParseResult_Err
 
                         Just output_ ->
@@ -996,7 +939,7 @@ parserTypeExpr newState prevExpr item =
                                 |> newState
 
                 _ ->
-                    Error_InvalidToken item Expecting_Unknown
+                    Error_InvalidToken Expecting_Unknown
                         |> ParseResult_Err
 
         Lexer.Newlines _ 0 ->
@@ -1016,7 +959,7 @@ parserTypeExpr newState prevExpr item =
             ParseResult_Skip
 
         _ ->
-            Error_InvalidToken item Expecting_Unknown
+            Error_InvalidToken Expecting_Unknown
                 |> ParseResult_Err
 
 
@@ -1174,6 +1117,65 @@ exprAppend ({ parents, nesting } as currentLeaf) token =
                             |> Ok
                 )
                 (leafToParents currentLeaf)
+
+
+appendCommaTo : PartialTypeExpressionLeaf -> Result Error PartialTypeExpressionLeaf
+appendCommaTo prevExpr =
+    let
+        collapsedLeaf =
+            autoCollapseNesting CollapseLevel_Function prevExpr
+    in
+    case collapsedLeaf.nesting of
+        NestingLeafType_PartialRecord { firstEntries, lastEntry } ->
+            case lastEntry of
+                LastEntryOfRecord_KeyValue key value ->
+                    { parents = collapsedLeaf.parents
+                    , nesting =
+                        NestingLeafType_PartialRecord
+                            { firstEntries = ( key, value ) |> pushOnto firstEntries
+                            , lastEntry = LastEntryOfRecord_Empty
+                            }
+                    }
+                        |> Ok
+
+                _ ->
+                    Error_InvalidToken Expecting_Unknown
+                        |> Err
+
+        NestingLeafType_Bracket argStack (Just expr) ->
+            { nesting =
+                NestingLeafType_Bracket (expr |> pushOnto argStack) Nothing
+            , parents = collapsedLeaf.parents
+            }
+                |> Ok
+
+        _ ->
+            Error_InvalidToken Expecting_Unknown
+                |> Err
+
+
+appendColonTo : PartialTypeExpressionLeaf -> Result Error PartialTypeExpressionLeaf
+appendColonTo prevExpr =
+    case prevExpr.nesting of
+        NestingLeafType_PartialRecord { firstEntries, lastEntry } ->
+            case lastEntry of
+                LastEntryOfRecord_Key key ->
+                    { parents = prevExpr.parents
+                    , nesting =
+                        NestingLeafType_PartialRecord
+                            { firstEntries = firstEntries
+                            , lastEntry = LastEntryOfRecord_KeyColon key
+                            }
+                    }
+                        |> Ok
+
+                _ ->
+                    Error_InvalidToken Expecting_Unknown
+                        |> Err
+
+        _ ->
+            Error_InvalidToken Expecting_Unknown
+                |> Err
 
 
 blockFromState : State -> Maybe (Result Error Block)
