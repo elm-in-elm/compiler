@@ -237,7 +237,7 @@ parser =
                     ([ -- commentParser must come before sigil parser as the sigil
                        -- parser will try to interpret "--" as a sigil
                        P.variable
-                        { start = Char.isAlphaNum
+                        { start = Char.isAlpha
                         , inner = \c -> Char.isAlphaNum c || c == '_'
                         , reserved = Set.empty
                         , expecting = ExpectingToken

@@ -64,6 +64,13 @@ type Block
         , name : Elm.Data.ModuleName.ModuleName
         , exposingList : Elm.Data.Exposing.Exposing
         }
+    | ValueDeclaration
+        { name : Located Token.ValueOrFunctionOrGenericType
+
+        -- TODO(harry): these could be patterns!
+        , args : List (Located Token.ValueOrFunctionOrGenericType)
+        , expr : Frontend.LocatedExpr
+        }
     | TypeAlias
         { ty : Token.TypeOrConstructor
         , genericArgs : List Token.ValueOrFunctionOrGenericType
@@ -81,6 +88,7 @@ type State
     | State_BlockFirstItem BlockFirstItem
     | State_BlockTypeAlias BlockTypeAlias
     | State_BlockCustomType BlockCustomType
+    | State_BlockValueDeclaration BlockValueDeclaration
 
 
 type ParseResult
@@ -100,7 +108,6 @@ type alias State_ =
 type BlockFirstItem
     = BlockFirstItem_Type
     | BlockFirstItem_Module
-    | BlockFirstItem_Name Token.ValueOrFunctionOrGenericType
 
 
 type BlockTypeAlias
@@ -113,6 +120,26 @@ type BlockTypeAlias
 type BlockCustomType
     = BlockCustomType_Named Token.TypeOrConstructor (Stack Token.ValueOrFunctionOrGenericType)
     | BlockCustomType_NamedAssigns Token.TypeOrConstructor (List Token.ValueOrFunctionOrGenericType)
+
+
+type BlockValueDeclaration
+    = BlockValueDeclaration_Named
+        { name : Located Token.ValueOrFunctionOrGenericType
+        , args : Stack (Located Token.ValueOrFunctionOrGenericType)
+        }
+    | BlockValueDeclaration_NamedAssigns
+        { name : Located Token.ValueOrFunctionOrGenericType
+        , args : List (Located Token.ValueOrFunctionOrGenericType)
+        }
+    | BlockValueDeclaration_Completish
+        { name : Located Token.ValueOrFunctionOrGenericType
+        , args : List (Located Token.ValueOrFunctionOrGenericType)
+        , partialExpr : ExpressionNestingLeaf
+        }
+
+
+
+-- TYPE EXPRESSIONS --
 
 
 {-| Notes:
@@ -193,10 +220,37 @@ type TypeExpressionResult
     | TypeExpressionResult_Done PartialTypeExpression
 
 
+
+-- EXPRESSIONS --
+
+
+type ExpressionNestingParent
+    = ExpressionNestingParent_Operator
+        { op : Lexer.LexOperator
+        , lhs : Frontend.LocatedExpr
+        , parent : Maybe ExpressionNestingParent
+        }
+
+
+type ExpressionNestingLeaf
+    = ExpressionNestingLeaf_Operator
+        { op : Lexer.LexOperator
+        , lhs : Frontend.LocatedExpr
+        , parent : Maybe ExpressionNestingParent
+        }
+    | ExpressionNestingLeafType_Expr Frontend.LocatedExpr
+
+
+type ExpressionResult
+    = ExpressionResult_Progress ExpressionNestingLeaf
+    | ExpressionResult_Done Frontend.LocatedExpr
+
+
 type Error
     = Error_InvalidToken Expecting
     | Error_MisplacedKeyword Keyword
     | Error_BlockStartsWithTypeOrConstructor Token.TypeOrConstructor
+      -- Type Expressions --
     | Error_TypeNameStartsWithLowerCase Token.ValueOrFunctionOrGenericType
     | Error_UnmatchedBracket Lexer.BracketType Lexer.BracketRole
     | Error_WrongClosingBracket
@@ -216,7 +270,12 @@ type Error
         (ConcreteType PossiblyQualified)
         (ConcreteType PossiblyQualified)
         (List (ConcreteType PossiblyQualified))
+      -- Expressions --
+    | Error_InvalidNumericLiteral String
+      -- Incomplete parsing --
     | Error_PartwayThroughTypeAlias
+    | Error_PartwayThroughValueDeclaration
+      -- Bugs in the parser --
     | Error_Panic String
 
 
@@ -355,6 +414,26 @@ parseAnything state =
                         Err (ToConcreteTypeError_TooManyTupleArgs a b c d e) ->
                             Error_TooManyTupleArgs a b c d e
                                 |> ParseResult_Err
+
+        newExpressionState name args res =
+            case res of
+                ExpressionResult_Progress expr ->
+                    State_BlockValueDeclaration
+                        (BlockValueDeclaration_Completish
+                            { name = name
+                            , args = args
+                            , partialExpr = expr
+                            }
+                        )
+                        |> ParseResult_Ok
+
+                ExpressionResult_Done expr ->
+                    { name = name
+                    , args = args
+                    , expr = expr
+                    }
+                        |> ValueDeclaration
+                        |> ParseResult_Complete
     in
     case state of
         State_Error_Recovery ->
@@ -377,19 +456,43 @@ parseAnything state =
         State_BlockFirstItem BlockFirstItem_Module ->
             Debug.todo "BlockFirstItem_Module"
 
-        State_BlockFirstItem (BlockFirstItem_Name name) ->
-            Debug.todo "BlockFirstItem_Name"
+        State_BlockValueDeclaration (BlockValueDeclaration_Named { name, args }) ->
+            parseLowercaseArgsOrAssignment
+                (\newArg ->
+                    State_BlockValueDeclaration
+                        (BlockValueDeclaration_Named
+                            { name = name
+                            , args = newArg |> pushOnto args
+                            }
+                        )
+                )
+                (State_BlockValueDeclaration
+                    (BlockValueDeclaration_NamedAssigns
+                        { name = name
+                        , args = args |> toList (\x -> x)
+                        }
+                    )
+                )
+
+        State_BlockValueDeclaration (BlockValueDeclaration_NamedAssigns { name, args }) ->
+            parserExpressionFromEmpty
+                (newExpressionState name args)
+
+        State_BlockValueDeclaration (BlockValueDeclaration_Completish { name, args, partialExpr }) ->
+            parserExpression
+                (newExpressionState name args)
+                partialExpr
 
         State_BlockTypeAlias BlockTypeAlias_Keywords ->
             parseTypeAliasName
 
         State_BlockTypeAlias (BlockTypeAlias_Named name typeArgs) ->
-            parseTypeArgsOrAssignment
+            parseLowercaseArgsOrAssignment
                 (\newTypeArg ->
                     State_BlockTypeAlias
                         (BlockTypeAlias_Named
                             name
-                            (newTypeArg |> pushOnto typeArgs)
+                            (Located.unwrap newTypeArg |> pushOnto typeArgs)
                         )
                 )
                 (State_BlockTypeAlias
@@ -409,12 +512,12 @@ parseAnything state =
                 exprSoFar
 
         State_BlockCustomType (BlockCustomType_Named name typeArgs) ->
-            parseTypeArgsOrAssignment
+            parseLowercaseArgsOrAssignment
                 (\newTypeArg ->
                     State_BlockCustomType
                         (BlockCustomType_Named
                             name
-                            (newTypeArg |> pushOnto typeArgs)
+                            (Located.unwrap newTypeArg |> pushOnto typeArgs)
                         )
                 )
                 (State_BlockCustomType
@@ -438,6 +541,10 @@ If the LexItem is a `Newlines` with indentation or is `Whitespace`.
 -}
 parseBlockStart : Located LexItem -> ParseResult
 parseBlockStart item =
+    let
+        withCorrectLocation x =
+            Located.map (\_ -> x) item
+    in
     case Located.unwrap item of
         Lexer.Token str ->
             case Token.classifyToken str of
@@ -451,7 +558,14 @@ parseBlockStart item =
                     ParseResult_Err (Error_MisplacedKeyword other)
 
                 Token.TokenValueOrFunction valOrFunc ->
-                    ParseResult_Ok (State_BlockFirstItem (BlockFirstItem_Name valOrFunc))
+                    ParseResult_Ok
+                        (State_BlockValueDeclaration
+                            (BlockValueDeclaration_Named
+                                { name = withCorrectLocation valOrFunc
+                                , args = empty
+                                }
+                            )
+                        )
 
                 Token.TokenTypeOrConstructor typeOrConstructor ->
                     ParseResult_Err (Error_BlockStartsWithTypeOrConstructor typeOrConstructor)
@@ -541,8 +655,12 @@ parseTypeAliasName item =
                 |> ParseResult_Err
 
 
-parseTypeArgsOrAssignment : (Token.ValueOrFunctionOrGenericType -> State) -> State -> Located LexItem -> ParseResult
-parseTypeArgsOrAssignment onTypeArg onAssignment item =
+parseLowercaseArgsOrAssignment : (Located Token.ValueOrFunctionOrGenericType -> State) -> State -> Located LexItem -> ParseResult
+parseLowercaseArgsOrAssignment onTypeArg onAssignment item =
+    let
+        withCorrectLocation x =
+            Located.map (\_ -> x) item
+    in
     case Located.unwrap item of
         Lexer.Token str ->
             case Token.classifyToken str of
@@ -555,7 +673,7 @@ parseTypeArgsOrAssignment onTypeArg onAssignment item =
                         |> ParseResult_Err
 
                 Token.TokenValueOrFunction argName ->
-                    onTypeArg argName
+                    onTypeArg (withCorrectLocation argName)
                         |> ParseResult_Ok
 
         Lexer.Sigil Lexer.Assign ->
@@ -876,6 +994,77 @@ parserTypeExpr newState prevExpr item =
         _ ->
             Error_InvalidToken Expecting_Unknown
                 |> ParseResult_Err
+
+
+parserExpressionFromEmpty :
+    (ExpressionResult -> ParseResult)
+    -> Located LexItem
+    -> ParseResult
+parserExpressionFromEmpty newState item =
+    let
+        withCorrectLocation x =
+            Located.map (\_ -> x) item
+    in
+    case Located.unwrap item of
+        Lexer.NumericLiteral str ->
+            case String.toInt str of
+                Just i ->
+                    Frontend.Int i
+                        |> withCorrectLocation
+                        |> ExpressionNestingLeafType_Expr
+                        |> ExpressionResult_Progress
+                        |> newState
+
+                Nothing ->
+                    Error_InvalidNumericLiteral str
+                        |> ParseResult_Err
+
+        Lexer.Newlines _ 0 ->
+            Error_PartwayThroughTypeAlias
+                |> ParseResult_Err
+
+        Lexer.Newlines _ _ ->
+            ParseResult_Skip
+
+        Lexer.Whitespace _ ->
+            ParseResult_Skip
+
+        _ ->
+            Error_InvalidToken Expecting_Unknown
+                |> ParseResult_Err
+
+
+parserExpression :
+    (ExpressionResult -> ParseResult)
+    -> ExpressionNestingLeaf
+    -> Located LexItem
+    -> ParseResult
+parserExpression newState prevExpr item =
+    case Located.unwrap item of
+        Lexer.Newlines _ 0 ->
+            case prevExpr of
+                ExpressionNestingLeaf_Operator {} ->
+                    Error_PartwayThroughValueDeclaration
+                        |> ParseResult_Err
+
+                ExpressionNestingLeafType_Expr expr ->
+                    expr
+                        |> ExpressionResult_Done
+                        |> newState
+
+        Lexer.Newlines _ _ ->
+            ParseResult_Skip
+
+        Lexer.Whitespace _ ->
+            ParseResult_Skip
+
+        _ ->
+            Error_InvalidToken Expecting_Unknown
+                |> ParseResult_Err
+
+
+
+-- HELPERS
 
 
 leafToParents : PartialTypeExpressionLeaf -> Result Error (List NestingParentType)
@@ -1261,6 +1450,32 @@ blockFromState state =
 
         State_BlockCustomType firstItem ->
             Debug.todo "handle incomplete block"
+
+        State_BlockValueDeclaration (BlockValueDeclaration_Named {}) ->
+            Error_PartwayThroughValueDeclaration
+                |> Err
+                |> Just
+
+        State_BlockValueDeclaration (BlockValueDeclaration_NamedAssigns {}) ->
+            Error_PartwayThroughValueDeclaration
+                |> Err
+                |> Just
+
+        State_BlockValueDeclaration (BlockValueDeclaration_Completish { name, args, partialExpr }) ->
+            case partialExpr of
+                ExpressionNestingLeaf_Operator {} ->
+                    Error_PartwayThroughValueDeclaration
+                        |> Err
+                        |> Just
+
+                ExpressionNestingLeafType_Expr expr ->
+                    { name = name
+                    , args = args
+                    , expr = expr
+                    }
+                        |> ValueDeclaration
+                        |> Ok
+                        |> Just
 
 
 

@@ -1,6 +1,7 @@
 module ParserLexerTestCases exposing (shouldNotParseTestCases, shouldParseTestCases)
 
 import Dict
+import Elm.AST.Frontend exposing (Expr(..))
 import Elm.Data.Located as Located exposing (Located(..))
 import Elm.Data.Qualifiedness exposing (PossiblyQualified(..))
 import Elm.Data.Type.Concrete exposing (ConcreteType(..))
@@ -25,7 +26,38 @@ shouldParseTestCases :
         , source : String
         }
 shouldParseTestCases =
-    [ { name = "type-alias"
+    [ { name = "expression-int"
+      , source = """a = 5
+
+b = 78
+"""
+      , lexed =
+            Ok
+                [ Located { end = { col = 2, row = 1 }, start = { col = 1, row = 1 } } (Token "a")
+                , Located { end = { col = 3, row = 1 }, start = { col = 2, row = 1 } } (Whitespace 1)
+                , Located { end = { col = 4, row = 1 }, start = { col = 3, row = 1 } } (Sigil Assign)
+                , Located { end = { col = 5, row = 1 }, start = { col = 4, row = 1 } } (Whitespace 1)
+                , Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (NumericLiteral "5")
+                , Located { end = { col = 1, row = 3 }, start = { col = 6, row = 1 } }
+                    (Newlines
+                        [ 0
+                        ]
+                        0
+                    )
+                , Located { end = { col = 2, row = 3 }, start = { col = 1, row = 3 } } (Token "b")
+                , Located { end = { col = 3, row = 3 }, start = { col = 2, row = 3 } } (Whitespace 1)
+                , Located { end = { col = 4, row = 3 }, start = { col = 3, row = 3 } } (Sigil Assign)
+                , Located { end = { col = 5, row = 3 }, start = { col = 4, row = 3 } } (Whitespace 1)
+                , Located { end = { col = 7, row = 3 }, start = { col = 5, row = 3 } } (NumericLiteral "78")
+                , Located { end = { col = 1, row = 4 }, start = { col = 7, row = 3 } } (Newlines [] 0)
+                ]
+      , contextualized =
+            Just
+                [ Ok (ValueDeclaration { args = [], expr = Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Int 5), name = Located { end = { col = 2, row = 1 }, start = { col = 1, row = 1 } } (ValueOrFunctionOrGenericType "a") })
+                , Ok (ValueDeclaration { args = [], expr = Located { end = { col = 7, row = 3 }, start = { col = 5, row = 3 } } (Int 78), name = Located { end = { col = 2, row = 3 }, start = { col = 1, row = 3 } } (ValueOrFunctionOrGenericType "b") })
+                ]
+      }
+    , { name = "type-alias"
       , source = """type alias Model = List Int
 """
       , lexed =
@@ -987,7 +1019,7 @@ type alias Function3 = (Int, () -> (Int, String), ())
                 , Located { end = { col = 22, row = 1 }, start = { col = 20, row = 1 } } (Token "hi")
                 , Located { end = { col = 23, row = 1 }, start = { col = 22, row = 1 } } (Sigil Colon)
                 , Located { end = { col = 24, row = 1 }, start = { col = 23, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 25, row = 1 }, start = { col = 24, row = 1 } } (Token "6")
+                , Located { end = { col = 25, row = 1 }, start = { col = 24, row = 1 } } (NumericLiteral "6")
                 , Located { end = { col = 26, row = 1 }, start = { col = 25, row = 1 } } (Whitespace 1)
                 , Located { end = { col = 27, row = 1 }, start = { col = 26, row = 1 } } (Sigil (Bracket Curly Close))
                 , Located { end = { col = 28, row = 1 }, start = { col = 27, row = 1 } } (Sigil (Bracket Round Close))
@@ -995,24 +1027,20 @@ type alias Function3 = (Int, () -> (Int, String), ())
                 ]
       , contextualized =
             Just
-                [ Ok
-                    (TypeAlias
-                        { expr =
-                            Record
-                                (Dict.fromList
-                                    [ ( "hi"
-                                      , UserDefinedType
-                                            { args = []
-                                            , name = "6"
-                                            , qualifiedness = PossiblyQualified Nothing
-                                            }
-                                      )
+                [ Err
+                    { error = Error_InvalidToken Expecting_Unknown
+                    , item = Just (Located { end = { col = 25, row = 1 }, start = { col = 24, row = 1 } } (NumericLiteral "6"))
+                    , state =
+                        State_BlockTypeAlias
+                            (BlockTypeAlias_Completish (TypeOrConstructor "Ty")
+                                []
+                                { nesting = NestingLeafType_PartialRecord { firstEntries = Stack [], lastEntry = LastEntryOfRecord_KeyColon "hi" }
+                                , parents =
+                                    [ NestingParentType_Bracket (Stack [])
                                     ]
-                                )
-                        , genericArgs = []
-                        , ty = TypeOrConstructor "Ty"
-                        }
-                    )
+                                }
+                            )
+                    }
                 ]
       }
     , { name = "type-alias-record-nested"
@@ -1041,7 +1069,7 @@ type alias Function3 = (Int, () -> (Int, String), ())
                 , Located { end = { col = 15, row = 2 }, start = { col = 14, row = 2 } } (Token "a")
                 , Located { end = { col = 16, row = 2 }, start = { col = 15, row = 2 } } (Sigil Colon)
                 , Located { end = { col = 17, row = 2 }, start = { col = 16, row = 2 } } (Whitespace 1)
-                , Located { end = { col = 18, row = 2 }, start = { col = 17, row = 2 } } (Token "7")
+                , Located { end = { col = 18, row = 2 }, start = { col = 17, row = 2 } } (NumericLiteral "7")
                 , Located { end = { col = 19, row = 2 }, start = { col = 18, row = 2 } } (Sigil Comma)
                 , Located { end = { col = 20, row = 2 }, start = { col = 19, row = 2 } } (Whitespace 1)
                 , Located { end = { col = 21, row = 2 }, start = { col = 20, row = 2 } } (Token "b")
@@ -1077,77 +1105,20 @@ type alias Function3 = (Int, () -> (Int, String), ())
                 ]
       , contextualized =
             Just
-                [ Ok
-                    (TypeAlias
-                        { expr =
-                            Record
-                                (Dict.fromList
-                                    [ ( "hi"
-                                      , Record
-                                            (Dict.fromList
-                                                [ ( "a"
-                                                  , UserDefinedType
-                                                        { args = []
-                                                        , name = "7"
-                                                        , qualifiedness = PossiblyQualified Nothing
-                                                        }
-                                                  )
-                                                , ( "b"
-                                                  , UserDefinedType
-                                                        { args =
-                                                            [ UserDefinedType
-                                                                { args = []
-                                                                , name = "String"
-                                                                , qualifiedness = PossiblyQualified Nothing
-                                                                }
-                                                            ]
-                                                        , name = "List"
-                                                        , qualifiedness = PossiblyQualified Nothing
-                                                        }
-                                                  )
-                                                ]
-                                            )
-                                      )
-                                    , ( "ih"
-                                      , UserDefinedType
-                                            { args =
-                                                [ UserDefinedType
-                                                    { args = []
-                                                    , name = "A"
-                                                    , qualifiedness = PossiblyQualified Nothing
-                                                    }
-                                                , UserDefinedType
-                                                    { args = []
-                                                    , name = "B"
-                                                    , qualifiedness = PossiblyQualified Nothing
-                                                    }
-                                                , UserDefinedType
-                                                    { args = []
-                                                    , name = "C"
-                                                    , qualifiedness = PossiblyQualified Nothing
-                                                    }
-                                                , UserDefinedType
-                                                    { args =
-                                                        [ UserDefinedType
-                                                            { args = []
-                                                            , name = "E"
-                                                            , qualifiedness = PossiblyQualified Nothing
-                                                            }
-                                                        ]
-                                                    , name = "D"
-                                                    , qualifiedness = PossiblyQualified Nothing
-                                                    }
-                                                ]
-                                            , name = "CustomType"
-                                            , qualifiedness = PossiblyQualified Nothing
-                                            }
-                                      )
+                [ Err
+                    { error = Error_InvalidToken Expecting_Unknown
+                    , item = Just (Located { end = { col = 18, row = 2 }, start = { col = 17, row = 2 } } (NumericLiteral "7"))
+                    , state =
+                        State_BlockTypeAlias
+                            (BlockTypeAlias_Completish (TypeOrConstructor "Ty")
+                                []
+                                { nesting = NestingLeafType_PartialRecord { firstEntries = Stack [], lastEntry = LastEntryOfRecord_KeyColon "a" }
+                                , parents =
+                                    [ NestingParentType_PartialRecord { firstEntries = Stack [], lastEntryName = "hi" }
                                     ]
-                                )
-                        , genericArgs = []
-                        , ty = TypeOrConstructor "Ty"
-                        }
-                    )
+                                }
+                            )
+                    }
                 ]
       }
     , { name = "type-alias-record-simple"
@@ -1168,31 +1139,18 @@ type alias Function3 = (Int, () -> (Int, String), ())
                 , Located { end = { col = 21, row = 1 }, start = { col = 19, row = 1 } } (Token "hi")
                 , Located { end = { col = 22, row = 1 }, start = { col = 21, row = 1 } } (Sigil Colon)
                 , Located { end = { col = 23, row = 1 }, start = { col = 22, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 24, row = 1 }, start = { col = 23, row = 1 } } (Token "6")
+                , Located { end = { col = 24, row = 1 }, start = { col = 23, row = 1 } } (NumericLiteral "6")
                 , Located { end = { col = 25, row = 1 }, start = { col = 24, row = 1 } } (Whitespace 1)
                 , Located { end = { col = 26, row = 1 }, start = { col = 25, row = 1 } } (Sigil (Bracket Curly Close))
                 , Located { end = { col = 1, row = 2 }, start = { col = 26, row = 1 } } (Newlines [] 0)
                 ]
       , contextualized =
             Just
-                [ Ok
-                    (TypeAlias
-                        { expr =
-                            Record
-                                (Dict.fromList
-                                    [ ( "hi"
-                                      , UserDefinedType
-                                            { args = []
-                                            , name = "6"
-                                            , qualifiedness = PossiblyQualified Nothing
-                                            }
-                                      )
-                                    ]
-                                )
-                        , genericArgs = []
-                        , ty = TypeOrConstructor "Ty"
-                        }
-                    )
+                [ Err
+                    { error = Error_InvalidToken Expecting_Unknown
+                    , item = Just (Located { end = { col = 24, row = 1 }, start = { col = 23, row = 1 } } (NumericLiteral "6"))
+                    , state = State_BlockTypeAlias (BlockTypeAlias_Completish (TypeOrConstructor "Ty") [] { nesting = NestingLeafType_PartialRecord { firstEntries = Stack [], lastEntry = LastEntryOfRecord_KeyColon "hi" }, parents = [] })
+                    }
                 ]
       }
     , { name = "type-alias-record-two-entries"
@@ -1213,44 +1171,24 @@ type alias Function3 = (Int, () -> (Int, String), ())
                 , Located { end = { col = 21, row = 1 }, start = { col = 19, row = 1 } } (Token "hi")
                 , Located { end = { col = 22, row = 1 }, start = { col = 21, row = 1 } } (Sigil Colon)
                 , Located { end = { col = 23, row = 1 }, start = { col = 22, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 24, row = 1 }, start = { col = 23, row = 1 } } (Token "6")
+                , Located { end = { col = 24, row = 1 }, start = { col = 23, row = 1 } } (NumericLiteral "6")
                 , Located { end = { col = 25, row = 1 }, start = { col = 24, row = 1 } } (Sigil Comma)
                 , Located { end = { col = 26, row = 1 }, start = { col = 25, row = 1 } } (Whitespace 1)
                 , Located { end = { col = 29, row = 1 }, start = { col = 26, row = 1 } } (Token "buy")
                 , Located { end = { col = 30, row = 1 }, start = { col = 29, row = 1 } } (Sigil Colon)
                 , Located { end = { col = 31, row = 1 }, start = { col = 30, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 32, row = 1 }, start = { col = 31, row = 1 } } (Token "8")
+                , Located { end = { col = 32, row = 1 }, start = { col = 31, row = 1 } } (NumericLiteral "8")
                 , Located { end = { col = 33, row = 1 }, start = { col = 32, row = 1 } } (Whitespace 1)
                 , Located { end = { col = 34, row = 1 }, start = { col = 33, row = 1 } } (Sigil (Bracket Curly Close))
                 , Located { end = { col = 1, row = 2 }, start = { col = 34, row = 1 } } (Newlines [] 0)
                 ]
       , contextualized =
             Just
-                [ Ok
-                    (TypeAlias
-                        { expr =
-                            Record
-                                (Dict.fromList
-                                    [ ( "buy"
-                                      , UserDefinedType
-                                            { args = []
-                                            , name = "8"
-                                            , qualifiedness = PossiblyQualified Nothing
-                                            }
-                                      )
-                                    , ( "hi"
-                                      , UserDefinedType
-                                            { args = []
-                                            , name = "6"
-                                            , qualifiedness = PossiblyQualified Nothing
-                                            }
-                                      )
-                                    ]
-                                )
-                        , genericArgs = []
-                        , ty = TypeOrConstructor "Ty"
-                        }
-                    )
+                [ Err
+                    { error = Error_InvalidToken Expecting_Unknown
+                    , item = Just (Located { end = { col = 24, row = 1 }, start = { col = 23, row = 1 } } (NumericLiteral "6"))
+                    , state = State_BlockTypeAlias (BlockTypeAlias_Completish (TypeOrConstructor "Ty") [] { nesting = NestingLeafType_PartialRecord { firstEntries = Stack [], lastEntry = LastEntryOfRecord_KeyColon "hi" }, parents = [] })
+                    }
                 ]
       }
     , { name = "type-alias-unit"
