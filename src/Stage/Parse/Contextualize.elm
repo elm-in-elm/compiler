@@ -945,6 +945,42 @@ leafToParents { parents, nesting } =
             (\n -> n :: parents)
 
 
+parentsToLeafWith : PartialTypeExpression -> List NestingParentType -> PartialTypeExpressionLeaf
+parentsToLeafWith expr parents =
+    case parents of
+        nesting :: grandparents ->
+            { nesting =
+                case nesting of
+                    NestingParentType_PartialRecord { firstEntries, lastEntryName } ->
+                        NestingLeafType_PartialRecord
+                            { firstEntries = firstEntries
+                            , lastEntry = LastEntryOfRecord_KeyValue lastEntryName expr
+                            }
+
+                    NestingParentType_Bracket els ->
+                        NestingLeafType_Bracket els (Just expr)
+
+                    NestingParentType_TypeWithArgs { name, args } ->
+                        NestingLeafType_TypeWithArgs
+                            { name = name
+                            , args = expr |> pushOnto args
+                            }
+
+                    NestingParentType_Function { firstInput, otherInputs } ->
+                        NestingLeafType_Function
+                            { firstInput = firstInput
+                            , otherInputs = otherInputs
+                            , output = Just expr
+                            }
+            , parents = grandparents
+            }
+
+        [] ->
+            { nesting = NestingLeafType_Expr expr
+            , parents = []
+            }
+
+
 exprAppend :
     PartialTypeExpressionLeaf
     -> String
@@ -1144,40 +1180,8 @@ closeBracket argStack mLastExpression parents =
     in
     case rexpr of
         Ok expr ->
-            case parents of
-                nesting :: grandparents ->
-                    { nesting =
-                        case nesting of
-                            NestingParentType_PartialRecord { firstEntries, lastEntryName } ->
-                                NestingLeafType_PartialRecord
-                                    { firstEntries = firstEntries
-                                    , lastEntry = LastEntryOfRecord_KeyValue lastEntryName expr
-                                    }
-
-                            NestingParentType_Bracket els ->
-                                NestingLeafType_Bracket els (Just expr)
-
-                            NestingParentType_TypeWithArgs { name, args } ->
-                                NestingLeafType_TypeWithArgs
-                                    { name = name
-                                    , args = expr |> pushOnto args
-                                    }
-
-                            NestingParentType_Function { firstInput } ->
-                                NestingLeafType_Function
-                                    { firstInput = firstInput
-                                    , otherInputs = empty
-                                    , output = Just expr
-                                    }
-                    , parents = grandparents
-                    }
-                        |> Ok
-
-                [] ->
-                    { nesting = NestingLeafType_Expr expr
-                    , parents = []
-                    }
-                        |> Ok
+            parentsToLeafWith expr parents
+                |> Ok
 
         Err e ->
             Err e
@@ -1305,36 +1309,8 @@ autoCollapseNesting collapseLevel pte =
                 newTypeExpr =
                     TypeExpression_NamedType { name = name, args = args }
             in
-            case pte.parents of
-                nesting :: grandparents ->
-                    { parents = grandparents
-                    , nesting =
-                        case nesting of
-                            NestingParentType_TypeWithArgs _ ->
-                                Debug.todo "Make this state impossible"
-
-                            NestingParentType_Function { firstInput, otherInputs } ->
-                                NestingLeafType_Function
-                                    { firstInput = firstInput
-                                    , otherInputs = otherInputs
-                                    , output = Just newTypeExpr
-                                    }
-
-                            NestingParentType_Bracket els ->
-                                NestingLeafType_Bracket els (Just newTypeExpr)
-
-                            NestingParentType_PartialRecord { firstEntries, lastEntryName } ->
-                                NestingLeafType_PartialRecord
-                                    { firstEntries = firstEntries
-                                    , lastEntry = LastEntryOfRecord_KeyValue lastEntryName newTypeExpr
-                                    }
-                    }
-                        |> autoCollapseNesting collapseLevel
-
-                [] ->
-                    { nesting = NestingLeafType_Expr newTypeExpr
-                    , parents = []
-                    }
+            parentsToLeafWith newTypeExpr pte.parents
+                |> autoCollapseNesting collapseLevel
 
         NestingLeafType_Expr _ ->
             pte
@@ -1362,32 +1338,8 @@ autoCollapseNesting collapseLevel pte =
                                 , output = outputExpr
                                 }
                     in
-                    case pte.parents of
-                        nesting :: grandparents ->
-                            { parents = grandparents
-                            , nesting =
-                                case nesting of
-                                    NestingParentType_TypeWithArgs _ ->
-                                        Debug.todo "Make this state impossible"
-
-                                    NestingParentType_Function _ ->
-                                        Debug.todo "Make this state impossible"
-
-                                    NestingParentType_Bracket els ->
-                                        NestingLeafType_Bracket els (Just newTypeExpr)
-
-                                    NestingParentType_PartialRecord { firstEntries, lastEntryName } ->
-                                        NestingLeafType_PartialRecord
-                                            { firstEntries = firstEntries
-                                            , lastEntry = LastEntryOfRecord_KeyValue lastEntryName newTypeExpr
-                                            }
-                            }
-                                |> autoCollapseNesting collapseLevel
-
-                        [] ->
-                            { nesting = NestingLeafType_Expr newTypeExpr
-                            , parents = []
-                            }
+                    parentsToLeafWith newTypeExpr pte.parents
+                        |> autoCollapseNesting collapseLevel
 
 
 {-| TODO(harry): We can add things to a tuple too! Rename this function
