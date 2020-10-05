@@ -224,6 +224,7 @@ type Expecting
     = Expecting_Sigil Lexer.LexSigil
     | Expecting_Block
     | Expecting_TypeName
+    | Expecting_Identifier
       -- TODO(harry): reduce number of cases where we do not know what sigil we
       -- are expecting.
     | Expecting_Unknown
@@ -768,8 +769,11 @@ parserTypeExpr newState prevExpr item =
                         _ ->
                             Error_InvalidToken Expecting_Unknown
                                 |> ParseResult_Err
+
+                collapsedLeaf =
+                    autoCollapseNesting CollapseLevel_TypeWithArgs prevExpr
             in
-            case (autoCollapseNesting CollapseLevel_TypeWithArgs prevExpr).nesting of
+            case collapsedLeaf.nesting of
                 NestingLeafType_Expr expr ->
                     { nesting =
                         NestingLeafType_Function
@@ -781,6 +785,9 @@ parserTypeExpr newState prevExpr item =
                     }
                         |> TypeExpressionResult_Progress
                         |> newState
+
+                NestingLeafType_TypeWithArgs {} ->
+                    Debug.todo "make state impossible"
 
                 NestingLeafType_Function { firstInput, otherInputs, output } ->
                     case output of
@@ -795,14 +802,57 @@ parserTypeExpr newState prevExpr item =
                                     , otherInputs = output_ |> pushOnto otherInputs
                                     , output = Nothing
                                     }
-                            , parents = []
+                            , parents = collapsedLeaf.parents
                             }
                                 |> TypeExpressionResult_Progress
                                 |> newState
 
-                _ ->
+                NestingLeafType_Bracket argStack (Just expr) ->
+                    { nesting =
+                        NestingLeafType_Function
+                            { firstInput = expr
+                            , otherInputs = empty
+                            , output = Nothing
+                            }
+                    , parents = NestingParentType_Bracket argStack :: collapsedLeaf.parents
+                    }
+                        |> TypeExpressionResult_Progress
+                        |> newState
+
+                NestingLeafType_Bracket argStack Nothing ->
                     Error_InvalidToken Expecting_Unknown
                         |> ParseResult_Err
+
+                NestingLeafType_PartialRecord { firstEntries, lastEntry } ->
+                    case lastEntry of
+                        LastEntryOfRecord_Empty ->
+                            Error_InvalidToken Expecting_Identifier
+                                |> ParseResult_Err
+
+                        LastEntryOfRecord_Key _ ->
+                            Error_InvalidToken (Expecting_Sigil Lexer.Colon)
+                                |> ParseResult_Err
+
+                        LastEntryOfRecord_KeyColon _ ->
+                            Error_InvalidToken Expecting_Unknown
+                                |> ParseResult_Err
+
+                        LastEntryOfRecord_KeyValue key value ->
+                            { nesting =
+                                NestingLeafType_Function
+                                    { firstInput = value
+                                    , otherInputs = empty
+                                    , output = Nothing
+                                    }
+                            , parents =
+                                NestingParentType_PartialRecord
+                                    { firstEntries = firstEntries
+                                    , lastEntryName = key
+                                    }
+                                    :: collapsedLeaf.parents
+                            }
+                                |> TypeExpressionResult_Progress
+                                |> newState
 
         Lexer.Newlines _ 0 ->
             case (autoCollapseNesting CollapseLevel_Function prevExpr).nesting of

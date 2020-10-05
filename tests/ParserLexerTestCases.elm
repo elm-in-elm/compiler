@@ -337,6 +337,251 @@ type alias Function = A -> B -> C -> D
                     }
                 ]
       }
+    , { name = "type-alias-function-nested"
+      , source = """type alias Function = (() -> (Int, String))
+
+type alias Function2 = { a: () -> (Int, String) }
+
+type alias Function3 = (() -> (Int, String), ())
+
+type alias Function3 = (Int, () -> (Int, String), ())
+"""
+      , lexed =
+            Ok
+                [ Located { end = { col = 5, row = 1 }, start = { col = 1, row = 1 } } (Token "type")
+                , Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Whitespace 1)
+                , Located { end = { col = 11, row = 1 }, start = { col = 6, row = 1 } } (Token "alias")
+                , Located { end = { col = 12, row = 1 }, start = { col = 11, row = 1 } } (Whitespace 1)
+                , Located { end = { col = 20, row = 1 }, start = { col = 12, row = 1 } } (Token "Function")
+                , Located { end = { col = 21, row = 1 }, start = { col = 20, row = 1 } } (Whitespace 1)
+                , Located { end = { col = 22, row = 1 }, start = { col = 21, row = 1 } } (Sigil Assign)
+                , Located { end = { col = 23, row = 1 }, start = { col = 22, row = 1 } } (Whitespace 1)
+                , Located { end = { col = 24, row = 1 }, start = { col = 23, row = 1 } } (Sigil (Bracket Round Open))
+                , Located { end = { col = 25, row = 1 }, start = { col = 24, row = 1 } } (Sigil (Bracket Round Open))
+                , Located { end = { col = 26, row = 1 }, start = { col = 25, row = 1 } } (Sigil (Bracket Round Close))
+                , Located { end = { col = 27, row = 1 }, start = { col = 26, row = 1 } } (Whitespace 1)
+                , Located { end = { col = 29, row = 1 }, start = { col = 27, row = 1 } } (Sigil ThinArrow)
+                , Located { end = { col = 30, row = 1 }, start = { col = 29, row = 1 } } (Whitespace 1)
+                , Located { end = { col = 31, row = 1 }, start = { col = 30, row = 1 } } (Sigil (Bracket Round Open))
+                , Located { end = { col = 34, row = 1 }, start = { col = 31, row = 1 } } (Token "Int")
+                , Located { end = { col = 35, row = 1 }, start = { col = 34, row = 1 } } (Sigil Comma)
+                , Located { end = { col = 36, row = 1 }, start = { col = 35, row = 1 } } (Whitespace 1)
+                , Located { end = { col = 42, row = 1 }, start = { col = 36, row = 1 } } (Token "String")
+                , Located { end = { col = 43, row = 1 }, start = { col = 42, row = 1 } } (Sigil (Bracket Round Close))
+                , Located { end = { col = 44, row = 1 }, start = { col = 43, row = 1 } } (Sigil (Bracket Round Close))
+                , Located { end = { col = 1, row = 3 }, start = { col = 44, row = 1 } }
+                    (Newlines
+                        [ 0
+                        ]
+                        0
+                    )
+                , Located { end = { col = 5, row = 3 }, start = { col = 1, row = 3 } } (Token "type")
+                , Located { end = { col = 6, row = 3 }, start = { col = 5, row = 3 } } (Whitespace 1)
+                , Located { end = { col = 11, row = 3 }, start = { col = 6, row = 3 } } (Token "alias")
+                , Located { end = { col = 12, row = 3 }, start = { col = 11, row = 3 } } (Whitespace 1)
+                , Located { end = { col = 21, row = 3 }, start = { col = 12, row = 3 } } (Token "Function2")
+                , Located { end = { col = 22, row = 3 }, start = { col = 21, row = 3 } } (Whitespace 1)
+                , Located { end = { col = 23, row = 3 }, start = { col = 22, row = 3 } } (Sigil Assign)
+                , Located { end = { col = 24, row = 3 }, start = { col = 23, row = 3 } } (Whitespace 1)
+                , Located { end = { col = 25, row = 3 }, start = { col = 24, row = 3 } } (Sigil (Bracket Curly Open))
+                , Located { end = { col = 26, row = 3 }, start = { col = 25, row = 3 } } (Whitespace 1)
+                , Located { end = { col = 27, row = 3 }, start = { col = 26, row = 3 } } (Token "a")
+                , Located { end = { col = 28, row = 3 }, start = { col = 27, row = 3 } } (Sigil Colon)
+                , Located { end = { col = 29, row = 3 }, start = { col = 28, row = 3 } } (Whitespace 1)
+                , Located { end = { col = 30, row = 3 }, start = { col = 29, row = 3 } } (Sigil (Bracket Round Open))
+                , Located { end = { col = 31, row = 3 }, start = { col = 30, row = 3 } } (Sigil (Bracket Round Close))
+                , Located { end = { col = 32, row = 3 }, start = { col = 31, row = 3 } } (Whitespace 1)
+                , Located { end = { col = 34, row = 3 }, start = { col = 32, row = 3 } } (Sigil ThinArrow)
+                , Located { end = { col = 35, row = 3 }, start = { col = 34, row = 3 } } (Whitespace 1)
+                , Located { end = { col = 36, row = 3 }, start = { col = 35, row = 3 } } (Sigil (Bracket Round Open))
+                , Located { end = { col = 39, row = 3 }, start = { col = 36, row = 3 } } (Token "Int")
+                , Located { end = { col = 40, row = 3 }, start = { col = 39, row = 3 } } (Sigil Comma)
+                , Located { end = { col = 41, row = 3 }, start = { col = 40, row = 3 } } (Whitespace 1)
+                , Located { end = { col = 47, row = 3 }, start = { col = 41, row = 3 } } (Token "String")
+                , Located { end = { col = 48, row = 3 }, start = { col = 47, row = 3 } } (Sigil (Bracket Round Close))
+                , Located { end = { col = 49, row = 3 }, start = { col = 48, row = 3 } } (Whitespace 1)
+                , Located { end = { col = 50, row = 3 }, start = { col = 49, row = 3 } } (Sigil (Bracket Curly Close))
+                , Located { end = { col = 1, row = 5 }, start = { col = 50, row = 3 } }
+                    (Newlines
+                        [ 0
+                        ]
+                        0
+                    )
+                , Located { end = { col = 5, row = 5 }, start = { col = 1, row = 5 } } (Token "type")
+                , Located { end = { col = 6, row = 5 }, start = { col = 5, row = 5 } } (Whitespace 1)
+                , Located { end = { col = 11, row = 5 }, start = { col = 6, row = 5 } } (Token "alias")
+                , Located { end = { col = 12, row = 5 }, start = { col = 11, row = 5 } } (Whitespace 1)
+                , Located { end = { col = 21, row = 5 }, start = { col = 12, row = 5 } } (Token "Function3")
+                , Located { end = { col = 22, row = 5 }, start = { col = 21, row = 5 } } (Whitespace 1)
+                , Located { end = { col = 23, row = 5 }, start = { col = 22, row = 5 } } (Sigil Assign)
+                , Located { end = { col = 24, row = 5 }, start = { col = 23, row = 5 } } (Whitespace 1)
+                , Located { end = { col = 25, row = 5 }, start = { col = 24, row = 5 } } (Sigil (Bracket Round Open))
+                , Located { end = { col = 26, row = 5 }, start = { col = 25, row = 5 } } (Sigil (Bracket Round Open))
+                , Located { end = { col = 27, row = 5 }, start = { col = 26, row = 5 } } (Sigil (Bracket Round Close))
+                , Located { end = { col = 28, row = 5 }, start = { col = 27, row = 5 } } (Whitespace 1)
+                , Located { end = { col = 30, row = 5 }, start = { col = 28, row = 5 } } (Sigil ThinArrow)
+                , Located { end = { col = 31, row = 5 }, start = { col = 30, row = 5 } } (Whitespace 1)
+                , Located { end = { col = 32, row = 5 }, start = { col = 31, row = 5 } } (Sigil (Bracket Round Open))
+                , Located { end = { col = 35, row = 5 }, start = { col = 32, row = 5 } } (Token "Int")
+                , Located { end = { col = 36, row = 5 }, start = { col = 35, row = 5 } } (Sigil Comma)
+                , Located { end = { col = 37, row = 5 }, start = { col = 36, row = 5 } } (Whitespace 1)
+                , Located { end = { col = 43, row = 5 }, start = { col = 37, row = 5 } } (Token "String")
+                , Located { end = { col = 44, row = 5 }, start = { col = 43, row = 5 } } (Sigil (Bracket Round Close))
+                , Located { end = { col = 45, row = 5 }, start = { col = 44, row = 5 } } (Sigil Comma)
+                , Located { end = { col = 46, row = 5 }, start = { col = 45, row = 5 } } (Whitespace 1)
+                , Located { end = { col = 47, row = 5 }, start = { col = 46, row = 5 } } (Sigil (Bracket Round Open))
+                , Located { end = { col = 48, row = 5 }, start = { col = 47, row = 5 } } (Sigil (Bracket Round Close))
+                , Located { end = { col = 49, row = 5 }, start = { col = 48, row = 5 } } (Sigil (Bracket Round Close))
+                , Located { end = { col = 1, row = 7 }, start = { col = 49, row = 5 } }
+                    (Newlines
+                        [ 0
+                        ]
+                        0
+                    )
+                , Located { end = { col = 5, row = 7 }, start = { col = 1, row = 7 } } (Token "type")
+                , Located { end = { col = 6, row = 7 }, start = { col = 5, row = 7 } } (Whitespace 1)
+                , Located { end = { col = 11, row = 7 }, start = { col = 6, row = 7 } } (Token "alias")
+                , Located { end = { col = 12, row = 7 }, start = { col = 11, row = 7 } } (Whitespace 1)
+                , Located { end = { col = 21, row = 7 }, start = { col = 12, row = 7 } } (Token "Function3")
+                , Located { end = { col = 22, row = 7 }, start = { col = 21, row = 7 } } (Whitespace 1)
+                , Located { end = { col = 23, row = 7 }, start = { col = 22, row = 7 } } (Sigil Assign)
+                , Located { end = { col = 24, row = 7 }, start = { col = 23, row = 7 } } (Whitespace 1)
+                , Located { end = { col = 25, row = 7 }, start = { col = 24, row = 7 } } (Sigil (Bracket Round Open))
+                , Located { end = { col = 28, row = 7 }, start = { col = 25, row = 7 } } (Token "Int")
+                , Located { end = { col = 29, row = 7 }, start = { col = 28, row = 7 } } (Sigil Comma)
+                , Located { end = { col = 30, row = 7 }, start = { col = 29, row = 7 } } (Whitespace 1)
+                , Located { end = { col = 31, row = 7 }, start = { col = 30, row = 7 } } (Sigil (Bracket Round Open))
+                , Located { end = { col = 32, row = 7 }, start = { col = 31, row = 7 } } (Sigil (Bracket Round Close))
+                , Located { end = { col = 33, row = 7 }, start = { col = 32, row = 7 } } (Whitespace 1)
+                , Located { end = { col = 35, row = 7 }, start = { col = 33, row = 7 } } (Sigil ThinArrow)
+                , Located { end = { col = 36, row = 7 }, start = { col = 35, row = 7 } } (Whitespace 1)
+                , Located { end = { col = 37, row = 7 }, start = { col = 36, row = 7 } } (Sigil (Bracket Round Open))
+                , Located { end = { col = 40, row = 7 }, start = { col = 37, row = 7 } } (Token "Int")
+                , Located { end = { col = 41, row = 7 }, start = { col = 40, row = 7 } } (Sigil Comma)
+                , Located { end = { col = 42, row = 7 }, start = { col = 41, row = 7 } } (Whitespace 1)
+                , Located { end = { col = 48, row = 7 }, start = { col = 42, row = 7 } } (Token "String")
+                , Located { end = { col = 49, row = 7 }, start = { col = 48, row = 7 } } (Sigil (Bracket Round Close))
+                , Located { end = { col = 50, row = 7 }, start = { col = 49, row = 7 } } (Sigil Comma)
+                , Located { end = { col = 51, row = 7 }, start = { col = 50, row = 7 } } (Whitespace 1)
+                , Located { end = { col = 52, row = 7 }, start = { col = 51, row = 7 } } (Sigil (Bracket Round Open))
+                , Located { end = { col = 53, row = 7 }, start = { col = 52, row = 7 } } (Sigil (Bracket Round Close))
+                , Located { end = { col = 54, row = 7 }, start = { col = 53, row = 7 } } (Sigil (Bracket Round Close))
+                , Located { end = { col = 1, row = 8 }, start = { col = 54, row = 7 } } (Newlines [] 0)
+                ]
+      , contextualized =
+            Just
+                [ Ok
+                    (TypeAlias
+                        { expr =
+                            Function
+                                { from = Unit
+                                , to =
+                                    Tuple
+                                        (UserDefinedType
+                                            { args = []
+                                            , name = "Int"
+                                            , qualifiedness = PossiblyQualified Nothing
+                                            }
+                                        )
+                                        (UserDefinedType
+                                            { args = []
+                                            , name = "String"
+                                            , qualifiedness = PossiblyQualified Nothing
+                                            }
+                                        )
+                                }
+                        , ty = TypeOrConstructor "Function"
+                        }
+                    )
+                , Ok
+                    (TypeAlias
+                        { expr =
+                            Record
+                                (Dict.fromList
+                                    [ ( "a"
+                                      , Function
+                                            { from = Unit
+                                            , to =
+                                                Tuple
+                                                    (UserDefinedType
+                                                        { args = []
+                                                        , name = "Int"
+                                                        , qualifiedness = PossiblyQualified Nothing
+                                                        }
+                                                    )
+                                                    (UserDefinedType
+                                                        { args = []
+                                                        , name = "String"
+                                                        , qualifiedness = PossiblyQualified Nothing
+                                                        }
+                                                    )
+                                            }
+                                      )
+                                    ]
+                                )
+                        , ty = TypeOrConstructor "Function2"
+                        }
+                    )
+                , Ok
+                    (TypeAlias
+                        { expr =
+                            Tuple
+                                (Function
+                                    { from = Unit
+                                    , to =
+                                        Tuple
+                                            (UserDefinedType
+                                                { args = []
+                                                , name = "Int"
+                                                , qualifiedness = PossiblyQualified Nothing
+                                                }
+                                            )
+                                            (UserDefinedType
+                                                { args = []
+                                                , name = "String"
+                                                , qualifiedness = PossiblyQualified Nothing
+                                                }
+                                            )
+                                    }
+                                )
+                                Unit
+                        , ty = TypeOrConstructor "Function3"
+                        }
+                    )
+                , Ok
+                    (TypeAlias
+                        { expr =
+                            Tuple3
+                                (UserDefinedType
+                                    { args = []
+                                    , name = "Int"
+                                    , qualifiedness = PossiblyQualified Nothing
+                                    }
+                                )
+                                (Function
+                                    { from = Unit
+                                    , to =
+                                        Tuple
+                                            (UserDefinedType
+                                                { args = []
+                                                , name = "Int"
+                                                , qualifiedness = PossiblyQualified Nothing
+                                                }
+                                            )
+                                            (UserDefinedType
+                                                { args = []
+                                                , name = "String"
+                                                , qualifiedness = PossiblyQualified Nothing
+                                                }
+                                            )
+                                    }
+                                )
+                                Unit
+                        , ty = TypeOrConstructor "Function3"
+                        }
+                    )
+                ]
+      }
     , { name = "type-alias-function-record"
       , source = """type alias Function = { a: { b: C}, d: E } -> {}
 """
@@ -1306,7 +1551,172 @@ shouldNotParseTestCases :
         , source : String
         }
 shouldNotParseTestCases =
-    [ { name = "type-alias-invalid-multiple-brackets"
+    [ { name = "type-alias-function-nested-missing-return"
+      , source = """type alias Function = (() -> )
+
+type alias Function2 = { a: () ->  }
+
+type alias Function3 = (() -> , ())
+
+type alias Function3 = (Int, () ->, ())
+"""
+      , lexed =
+            Ok
+                [ Located { end = { col = 5, row = 1 }, start = { col = 1, row = 1 } } (Token "type")
+                , Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Whitespace 1)
+                , Located { end = { col = 11, row = 1 }, start = { col = 6, row = 1 } } (Token "alias")
+                , Located { end = { col = 12, row = 1 }, start = { col = 11, row = 1 } } (Whitespace 1)
+                , Located { end = { col = 20, row = 1 }, start = { col = 12, row = 1 } } (Token "Function")
+                , Located { end = { col = 21, row = 1 }, start = { col = 20, row = 1 } } (Whitespace 1)
+                , Located { end = { col = 22, row = 1 }, start = { col = 21, row = 1 } } (Sigil Assign)
+                , Located { end = { col = 23, row = 1 }, start = { col = 22, row = 1 } } (Whitespace 1)
+                , Located { end = { col = 24, row = 1 }, start = { col = 23, row = 1 } } (Sigil (Bracket Round Open))
+                , Located { end = { col = 25, row = 1 }, start = { col = 24, row = 1 } } (Sigil (Bracket Round Open))
+                , Located { end = { col = 26, row = 1 }, start = { col = 25, row = 1 } } (Sigil (Bracket Round Close))
+                , Located { end = { col = 27, row = 1 }, start = { col = 26, row = 1 } } (Whitespace 1)
+                , Located { end = { col = 29, row = 1 }, start = { col = 27, row = 1 } } (Sigil ThinArrow)
+                , Located { end = { col = 30, row = 1 }, start = { col = 29, row = 1 } } (Whitespace 1)
+                , Located { end = { col = 31, row = 1 }, start = { col = 30, row = 1 } } (Sigil (Bracket Round Close))
+                , Located { end = { col = 1, row = 3 }, start = { col = 31, row = 1 } }
+                    (Newlines
+                        [ 0
+                        ]
+                        0
+                    )
+                , Located { end = { col = 5, row = 3 }, start = { col = 1, row = 3 } } (Token "type")
+                , Located { end = { col = 6, row = 3 }, start = { col = 5, row = 3 } } (Whitespace 1)
+                , Located { end = { col = 11, row = 3 }, start = { col = 6, row = 3 } } (Token "alias")
+                , Located { end = { col = 12, row = 3 }, start = { col = 11, row = 3 } } (Whitespace 1)
+                , Located { end = { col = 21, row = 3 }, start = { col = 12, row = 3 } } (Token "Function2")
+                , Located { end = { col = 22, row = 3 }, start = { col = 21, row = 3 } } (Whitespace 1)
+                , Located { end = { col = 23, row = 3 }, start = { col = 22, row = 3 } } (Sigil Assign)
+                , Located { end = { col = 24, row = 3 }, start = { col = 23, row = 3 } } (Whitespace 1)
+                , Located { end = { col = 25, row = 3 }, start = { col = 24, row = 3 } } (Sigil (Bracket Curly Open))
+                , Located { end = { col = 26, row = 3 }, start = { col = 25, row = 3 } } (Whitespace 1)
+                , Located { end = { col = 27, row = 3 }, start = { col = 26, row = 3 } } (Token "a")
+                , Located { end = { col = 28, row = 3 }, start = { col = 27, row = 3 } } (Sigil Colon)
+                , Located { end = { col = 29, row = 3 }, start = { col = 28, row = 3 } } (Whitespace 1)
+                , Located { end = { col = 30, row = 3 }, start = { col = 29, row = 3 } } (Sigil (Bracket Round Open))
+                , Located { end = { col = 31, row = 3 }, start = { col = 30, row = 3 } } (Sigil (Bracket Round Close))
+                , Located { end = { col = 32, row = 3 }, start = { col = 31, row = 3 } } (Whitespace 1)
+                , Located { end = { col = 34, row = 3 }, start = { col = 32, row = 3 } } (Sigil ThinArrow)
+                , Located { end = { col = 36, row = 3 }, start = { col = 34, row = 3 } } (Whitespace 2)
+                , Located { end = { col = 37, row = 3 }, start = { col = 36, row = 3 } } (Sigil (Bracket Curly Close))
+                , Located { end = { col = 1, row = 5 }, start = { col = 37, row = 3 } }
+                    (Newlines
+                        [ 0
+                        ]
+                        0
+                    )
+                , Located { end = { col = 5, row = 5 }, start = { col = 1, row = 5 } } (Token "type")
+                , Located { end = { col = 6, row = 5 }, start = { col = 5, row = 5 } } (Whitespace 1)
+                , Located { end = { col = 11, row = 5 }, start = { col = 6, row = 5 } } (Token "alias")
+                , Located { end = { col = 12, row = 5 }, start = { col = 11, row = 5 } } (Whitespace 1)
+                , Located { end = { col = 21, row = 5 }, start = { col = 12, row = 5 } } (Token "Function3")
+                , Located { end = { col = 22, row = 5 }, start = { col = 21, row = 5 } } (Whitespace 1)
+                , Located { end = { col = 23, row = 5 }, start = { col = 22, row = 5 } } (Sigil Assign)
+                , Located { end = { col = 24, row = 5 }, start = { col = 23, row = 5 } } (Whitespace 1)
+                , Located { end = { col = 25, row = 5 }, start = { col = 24, row = 5 } } (Sigil (Bracket Round Open))
+                , Located { end = { col = 26, row = 5 }, start = { col = 25, row = 5 } } (Sigil (Bracket Round Open))
+                , Located { end = { col = 27, row = 5 }, start = { col = 26, row = 5 } } (Sigil (Bracket Round Close))
+                , Located { end = { col = 28, row = 5 }, start = { col = 27, row = 5 } } (Whitespace 1)
+                , Located { end = { col = 30, row = 5 }, start = { col = 28, row = 5 } } (Sigil ThinArrow)
+                , Located { end = { col = 31, row = 5 }, start = { col = 30, row = 5 } } (Whitespace 1)
+                , Located { end = { col = 32, row = 5 }, start = { col = 31, row = 5 } } (Sigil Comma)
+                , Located { end = { col = 33, row = 5 }, start = { col = 32, row = 5 } } (Whitespace 1)
+                , Located { end = { col = 34, row = 5 }, start = { col = 33, row = 5 } } (Sigil (Bracket Round Open))
+                , Located { end = { col = 35, row = 5 }, start = { col = 34, row = 5 } } (Sigil (Bracket Round Close))
+                , Located { end = { col = 36, row = 5 }, start = { col = 35, row = 5 } } (Sigil (Bracket Round Close))
+                , Located { end = { col = 1, row = 7 }, start = { col = 36, row = 5 } }
+                    (Newlines
+                        [ 0
+                        ]
+                        0
+                    )
+                , Located { end = { col = 5, row = 7 }, start = { col = 1, row = 7 } } (Token "type")
+                , Located { end = { col = 6, row = 7 }, start = { col = 5, row = 7 } } (Whitespace 1)
+                , Located { end = { col = 11, row = 7 }, start = { col = 6, row = 7 } } (Token "alias")
+                , Located { end = { col = 12, row = 7 }, start = { col = 11, row = 7 } } (Whitespace 1)
+                , Located { end = { col = 21, row = 7 }, start = { col = 12, row = 7 } } (Token "Function3")
+                , Located { end = { col = 22, row = 7 }, start = { col = 21, row = 7 } } (Whitespace 1)
+                , Located { end = { col = 23, row = 7 }, start = { col = 22, row = 7 } } (Sigil Assign)
+                , Located { end = { col = 24, row = 7 }, start = { col = 23, row = 7 } } (Whitespace 1)
+                , Located { end = { col = 25, row = 7 }, start = { col = 24, row = 7 } } (Sigil (Bracket Round Open))
+                , Located { end = { col = 28, row = 7 }, start = { col = 25, row = 7 } } (Token "Int")
+                , Located { end = { col = 29, row = 7 }, start = { col = 28, row = 7 } } (Sigil Comma)
+                , Located { end = { col = 30, row = 7 }, start = { col = 29, row = 7 } } (Whitespace 1)
+                , Located { end = { col = 31, row = 7 }, start = { col = 30, row = 7 } } (Sigil (Bracket Round Open))
+                , Located { end = { col = 32, row = 7 }, start = { col = 31, row = 7 } } (Sigil (Bracket Round Close))
+                , Located { end = { col = 33, row = 7 }, start = { col = 32, row = 7 } } (Whitespace 1)
+                , Located { end = { col = 35, row = 7 }, start = { col = 33, row = 7 } } (Sigil ThinArrow)
+                , Located { end = { col = 36, row = 7 }, start = { col = 35, row = 7 } } (Sigil Comma)
+                , Located { end = { col = 37, row = 7 }, start = { col = 36, row = 7 } } (Whitespace 1)
+                , Located { end = { col = 38, row = 7 }, start = { col = 37, row = 7 } } (Sigil (Bracket Round Open))
+                , Located { end = { col = 39, row = 7 }, start = { col = 38, row = 7 } } (Sigil (Bracket Round Close))
+                , Located { end = { col = 40, row = 7 }, start = { col = 39, row = 7 } } (Sigil (Bracket Round Close))
+                , Located { end = { col = 1, row = 8 }, start = { col = 40, row = 7 } } (Newlines [] 0)
+                ]
+      , contextualized =
+            Just
+                [ Err
+                    { error = Error_MissingFunctionReturnType
+                    , item = Just (Sigil (Bracket Round Close))
+                    , state =
+                        State_BlockTypeAlias
+                            (BlockTypeAlias_Completish (TypeOrConstructor "Function")
+                                { nesting = NestingLeafType_Function { firstInput = TypeExpression_Unit, otherInputs = Stack [], output = Nothing }
+                                , parents =
+                                    [ NestingParentType_Bracket (Stack [])
+                                    ]
+                                }
+                            )
+                    }
+                , Err
+                    { error = Error_MissingFunctionReturnType
+                    , item = Just (Sigil (Bracket Curly Close))
+                    , state =
+                        State_BlockTypeAlias
+                            (BlockTypeAlias_Completish (TypeOrConstructor "Function2")
+                                { nesting = NestingLeafType_Function { firstInput = TypeExpression_Unit, otherInputs = Stack [], output = Nothing }
+                                , parents =
+                                    [ NestingParentType_PartialRecord { firstEntries = Stack [], lastEntryName = "a" }
+                                    ]
+                                }
+                            )
+                    }
+                , Err
+                    { error = Error_InvalidToken Expecting_Unknown
+                    , item = Just (Sigil Comma)
+                    , state =
+                        State_BlockTypeAlias
+                            (BlockTypeAlias_Completish (TypeOrConstructor "Function3")
+                                { nesting = NestingLeafType_Function { firstInput = TypeExpression_Unit, otherInputs = Stack [], output = Nothing }
+                                , parents =
+                                    [ NestingParentType_Bracket (Stack [])
+                                    ]
+                                }
+                            )
+                    }
+                , Err
+                    { error = Error_InvalidToken Expecting_Unknown
+                    , item = Just (Sigil Comma)
+                    , state =
+                        State_BlockTypeAlias
+                            (BlockTypeAlias_Completish (TypeOrConstructor "Function3")
+                                { nesting = NestingLeafType_Function { firstInput = TypeExpression_Unit, otherInputs = Stack [], output = Nothing }
+                                , parents =
+                                    [ NestingParentType_Bracket
+                                        (Stack
+                                            [ TypeExpression_NamedType { args = Stack [], name = "Int" }
+                                            ]
+                                        )
+                                    ]
+                                }
+                            )
+                    }
+                ]
+      }
+    , { name = "type-alias-invalid-multiple-brackets"
       , source = """type alias Hi = (Int) ()
 """
       , lexed =
