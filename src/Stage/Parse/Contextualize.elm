@@ -108,7 +108,6 @@ type BlockTypeAlias
     | BlockTypeAlias_Named Token.TypeOrConstructor (Stack Token.ValueOrFunctionOrGenericType)
     | BlockTypeAlias_NamedAssigns Token.TypeOrConstructor (List Token.ValueOrFunctionOrGenericType)
     | BlockTypeAlias_Completish Token.TypeOrConstructor (List Token.ValueOrFunctionOrGenericType) PartialTypeExpressionLeaf
-    | BlockTypeAlias_Complete Token.TypeOrConstructor (List Token.ValueOrFunctionOrGenericType) PartialTypeExpression
 
 
 type BlockCustomType
@@ -408,43 +407,6 @@ parseAnything state =
             parserTypeExpr
                 (newTypeAliasState name typeArgs)
                 exprSoFar
-
-        State_BlockTypeAlias (BlockTypeAlias_Complete aliasName typeArgs expr) ->
-            let
-                rBlock =
-                    case partialTypeExpressionToConcreteType expr of
-                        Ok concreteType ->
-                            { ty = aliasName
-                            , genericArgs = typeArgs
-                            , expr = concreteType
-                            }
-                                |> TypeAlias
-                                |> Ok
-
-                        Err (ToConcreteTypeError_TooManyTupleArgs a b c d e) ->
-                            Error_TooManyTupleArgs a b c d e
-                                |> Err
-            in
-            \item ->
-                case item of
-                    Lexer.Newlines _ 0 ->
-                        case rBlock of
-                            Ok block ->
-                                block
-                                    |> ParseResult_Complete
-
-                            Err e ->
-                                ParseResult_Err e
-
-                    Lexer.Newlines _ _ ->
-                        ParseResult_Skip
-
-                    Whitespace _ ->
-                        ParseResult_Skip
-
-                    _ ->
-                        Error_ExtraItemAfterBlock expr item
-                            |> ParseResult_Err
 
         State_BlockCustomType (BlockCustomType_Named name typeArgs) ->
             parseTypeArgsOrAssignment
@@ -1294,22 +1256,6 @@ blockFromState state =
 
                 _ ->
                     Error_PartwayThroughTypeAlias
-                        |> Err
-                        |> Just
-
-        State_BlockTypeAlias (BlockTypeAlias_Complete aliasName typeArgs expr) ->
-            case partialTypeExpressionToConcreteType expr of
-                Ok concreteType ->
-                    { ty = aliasName
-                    , genericArgs = typeArgs
-                    , expr = concreteType
-                    }
-                        |> TypeAlias
-                        |> Ok
-                        |> Just
-
-                Err (ToConcreteTypeError_TooManyTupleArgs a b c d e) ->
-                    Error_TooManyTupleArgs a b c d e
                         |> Err
                         |> Just
 
