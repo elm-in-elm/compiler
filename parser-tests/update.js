@@ -80,7 +80,7 @@ async function main() {
 		snippets.map(async ([category, snippets2]) => [category, await getTestCase(snippets2)])
 	);
 
-	if (testCases.some((tests) => tests.includes('Panic'))) {
+	if (testCases.some(([_, tests]) => tests.includes('Panic'))) {
 		console.error('ERROR: One or more test cases panicked!');
 		process.exitCode = 1;
 	}

@@ -131,6 +131,10 @@ type PartialTypeExpression
     | TypeExpression_Bracketed PartialTypeExpression
     | TypeExpression_Tuple PartialTypeExpression PartialTypeExpression (List PartialTypeExpression)
     | TypeExpression_Record (List ( String, PartialTypeExpression ))
+    | TypeExpression_Function
+        { firstInput : PartialTypeExpression
+        , output : PartialTypeExpression
+        }
 
 
 type LastEntryOfRecord
@@ -156,6 +160,7 @@ type NestingParentType
         { name : String
         , args : Stack PartialTypeExpression
         }
+    | NestingParentType_Function { firstInput : PartialTypeExpression }
 
 
 type NestingLeafType
@@ -165,6 +170,11 @@ type NestingLeafType
         { name : String
         , args : Stack PartialTypeExpression
         }
+    | NestingLeafType_Function
+        { firstInput : PartialTypeExpression
+        , output : Maybe PartialTypeExpression
+        }
+    | NestingLeafType_Expr PartialTypeExpression
 
 
 type alias PartialTypeExpressionLeaf =
@@ -187,6 +197,7 @@ type Error
     | Error_ExpectedColonWhilstParsingRecord
     | Error_ExpectedKeyWhilstParsingRecord
     | Error_TypeDoesNotTakeArgs PartialTypeExpression PartialTypeExpression
+    | Error_TypeDoesNotTakeArgs2 PartialTypeExpression
     | Error_ExtraItemAfterBlock PartialTypeExpression Lexer.LexItem
     | Error_TooManyTupleArgs
         --
@@ -215,7 +226,7 @@ type Expecting
 type alias RunResult =
     Result
         { state : State
-        , item : Maybe =LexItem
+        , item : Maybe LexItem
         , error : Error
         }
         Block
@@ -314,17 +325,24 @@ runHelp items state =
 parseAnything : State -> LexItem -> ParseResult
 parseAnything state =
     let
-        newTypeAliasState name res =
+        newTypeAliasState aliasName res =
             case res of
                 TypeExpressionResult_Progress expr ->
-                    State_BlockTypeAlias (BlockTypeAlias_Completish name expr)
+                    State_BlockTypeAlias (BlockTypeAlias_Completish aliasName expr)
                         |> ParseResult_Ok
 
                 TypeExpressionResult_Done expr ->
-                    expr
-                        |> BlockTypeAlias_Complete name
-                        |> State_BlockTypeAlias
-                        |> ParseResult_Ok
+                    case partialTypeExpressionToConcreteType expr of
+                        Ok concreteType ->
+                            { ty = aliasName
+                            , expr = concreteType
+                            }
+                                |> TypeAlias
+                                |> ParseResult_Complete
+
+                        Err (ToConcreteTypeError_TooManyTupleArgs a b c d e) ->
+                            Error_TooManyTupleArgs a b c d e
+                                |> ParseResult_Err
     in
     case state of
         State_Error_Recovery ->
@@ -585,85 +603,104 @@ parserTypeExpr newState mPrevExpr item =
         Lexer.Sigil (Lexer.Bracket Lexer.Round Lexer.Close) ->
             case mPrevExpr of
                 Just prevExpr ->
-                    case autoCollapseNesting prevExpr of
-                        TypeExpressionResult_Done expr ->
+                    let
+                        collapsedLeaf =
+                            autoCollapseNesting prevExpr
+                    in
+                    case collapsedLeaf.nesting of
+                        NestingLeafType_Expr expr ->
                             Error_UnmatchedBracket Lexer.Round Lexer.Close
                                 |> ParseResult_Err
 
-                        TypeExpressionResult_Progress collapsedLeaf ->
-                            case collapsedLeaf.nesting of
-                                NestingLeafType_TypeWithArgs { name, args } ->
-                                    Debug.todo "Make this state impossible"
+                        NestingLeafType_TypeWithArgs { name, args } ->
+                            Debug.todo "Make this state impossible"
 
-                                NestingLeafType_Bracket argStack mLastExpression ->
-                                    let
-                                        rexpr =
-                                            if argStack /= empty && mLastExpression == Nothing then
-                                                -- We have a trailing comma!
-                                                Error_UnmatchedBracket Lexer.Round Lexer.Close
-                                                    |> Err
+                        NestingLeafType_Bracket argStack mLastExpression ->
+                            let
+                                rexpr =
+                                    if argStack /= empty && mLastExpression == Nothing then
+                                        -- We have a trailing comma!
+                                        Error_UnmatchedBracket Lexer.Round Lexer.Close
+                                            |> Err
 
-                                            else
-                                                let
-                                                    fullArgsList =
-                                                        (case mLastExpression of
-                                                            Just expr ->
-                                                                expr |> pushOnto argStack
+                                    else
+                                        let
+                                            fullArgsList =
+                                                (case mLastExpression of
+                                                    Just expr ->
+                                                        expr |> pushOnto argStack
 
-                                                            Nothing ->
-                                                                argStack
-                                                        )
-                                                            |> toList (\x -> x)
-                                                in
-                                                case fullArgsList of
-                                                    [] ->
-                                                        TypeExpression_Unit
-                                                            |> Ok
+                                                    Nothing ->
+                                                        argStack
+                                                )
+                                                    |> toList (\x -> x)
+                                        in
+                                        case fullArgsList of
+                                            [] ->
+                                                TypeExpression_Unit
+                                                    |> Ok
 
-                                                    first :: [] ->
-                                                        TypeExpression_Bracketed first
-                                                            |> Ok
+                                            first :: [] ->
+                                                TypeExpression_Bracketed first
+                                                    |> Ok
 
-                                                    first :: second :: rest ->
-                                                        TypeExpression_Tuple first second rest
-                                                            |> Ok
-                                    in
-                                    case rexpr of
-                                        Ok expr ->
-                                            case collapsedLeaf.parents of
-                                                nesting :: grandparents ->
-                                                    { nesting =
-                                                        case nesting of
-                                                            NestingParentType_PartialRecord { firstEntries, lastEntryName } ->
-                                                                NestingLeafType_PartialRecord
-                                                                    { firstEntries = firstEntries
-                                                                    , lastEntry = LastEntryOfRecord_KeyValue lastEntryName expr
-                                                                    }
+                                            first :: second :: rest ->
+                                                TypeExpression_Tuple first second rest
+                                                    |> Ok
+                            in
+                            case rexpr of
+                                Ok expr ->
+                                    case collapsedLeaf.parents of
+                                        nesting :: grandparents ->
+                                            { nesting =
+                                                case nesting of
+                                                    NestingParentType_PartialRecord { firstEntries, lastEntryName } ->
+                                                        NestingLeafType_PartialRecord
+                                                            { firstEntries = firstEntries
+                                                            , lastEntry = LastEntryOfRecord_KeyValue lastEntryName expr
+                                                            }
 
-                                                            NestingParentType_Bracket els ->
-                                                                NestingLeafType_Bracket els (Just expr)
+                                                    NestingParentType_Bracket els ->
+                                                        NestingLeafType_Bracket els (Just expr)
 
-                                                            NestingParentType_TypeWithArgs { name, args } ->
-                                                                NestingLeafType_TypeWithArgs
-                                                                    { name = name
-                                                                    , args = expr |> pushOnto args
-                                                                    }
-                                                    , parents = grandparents
-                                                    }
-                                                        |> TypeExpressionResult_Progress
-                                                        |> newState
+                                                    NestingParentType_TypeWithArgs { name, args } ->
+                                                        NestingLeafType_TypeWithArgs
+                                                            { name = name
+                                                            , args = expr |> pushOnto args
+                                                            }
 
-                                                [] ->
-                                                    expr
-                                                        |> TypeExpressionResult_Done
-                                                        |> newState
+                                                    NestingParentType_Function { firstInput } ->
+                                                        NestingLeafType_Function
+                                                            { firstInput = firstInput
+                                                            , output = Just expr
+                                                            }
+                                            , parents = grandparents
+                                            }
+                                                |> TypeExpressionResult_Progress
+                                                |> newState
 
-                                        Err e ->
-                                            ParseResult_Err e
+                                        [] ->
+                                            { nesting = NestingLeafType_Expr expr
+                                            , parents = []
+                                            }
+                                                |> TypeExpressionResult_Progress
+                                                |> newState
 
-                                NestingLeafType_PartialRecord _ ->
+                                Err e ->
+                                    ParseResult_Err e
+
+                        NestingLeafType_PartialRecord _ ->
+                            Error_InvalidToken item Expecting_Unknown
+                                |> ParseResult_Err
+
+                        NestingLeafType_Function { output } ->
+                            case output of
+                                Nothing ->
                                     Error_InvalidToken item Expecting_Unknown
                                         |> ParseResult_Err
+
+                                Just _ ->
+                                    Debug.todo "Make this state impossible"
 
                 Nothing ->
                     Error_UnmatchedBracket Lexer.Round Lexer.Close
@@ -739,11 +776,7 @@ parserTypeExpr newState mPrevExpr item =
                                 |> ParseResult_Err
             in
             case mPrevExpr |> Maybe.map autoCollapseNesting of
-                Just (TypeExpressionResult_Done expr) ->
-                    Error_UnmatchedBracket Lexer.Curly Lexer.Close
-                        |> ParseResult_Err
-
-                Just (TypeExpressionResult_Progress collapsedLeaf) ->
+                Just collapsedLeaf ->
                     case collapsedLeaf.nesting of
                         NestingLeafType_PartialRecord existingPartialRecord ->
                             getNewPartialRecord collapsedLeaf.parents existingPartialRecord
@@ -767,89 +800,150 @@ parserTypeExpr newState mPrevExpr item =
         Lexer.Sigil (Lexer.Bracket Lexer.Curly Lexer.Close) ->
             case mPrevExpr of
                 Just prevExpr ->
-                    case autoCollapseNesting prevExpr of
-                        TypeExpressionResult_Done expr ->
+                    let
+                        collapsedLeaf =
+                            autoCollapseNesting prevExpr
+                    in
+                    case collapsedLeaf.nesting of
+                        NestingLeafType_Expr expr ->
                             Error_UnmatchedBracket Lexer.Curly Lexer.Close
                                 |> ParseResult_Err
 
-                        TypeExpressionResult_Progress collapsedLeaf ->
-                            case collapsedLeaf.nesting of
-                                NestingLeafType_TypeWithArgs { name, args } ->
-                                    Debug.todo "Make this state impossible"
+                        NestingLeafType_TypeWithArgs { name, args } ->
+                            Debug.todo "Make this state impossible"
 
-                                NestingLeafType_Bracket argStack mLastExpression ->
+                        NestingLeafType_Bracket argStack mLastExpression ->
+                            Error_InvalidToken item Expecting_Unknown
+                                |> ParseResult_Err
+
+                        NestingLeafType_PartialRecord { firstEntries, lastEntry } ->
+                            let
+                                fromRecord recordEntries =
+                                    let
+                                        record =
+                                            TypeExpression_Record recordEntries
+                                    in
+                                    case collapsedLeaf.parents of
+                                        [] ->
+                                            { nesting = NestingLeafType_Expr record
+                                            , parents = []
+                                            }
+                                                |> TypeExpressionResult_Progress
+                                                |> newState
+
+                                        nesting :: grandparents ->
+                                            (case nesting of
+                                                -- We are within a nested bracket.
+                                                NestingParentType_Bracket argStack ->
+                                                    { parents = grandparents
+                                                    , nesting = NestingLeafType_Bracket argStack (Just record)
+                                                    }
+
+                                                NestingParentType_PartialRecord existingPartialRecord ->
+                                                    { parents = grandparents
+                                                    , nesting =
+                                                        NestingLeafType_PartialRecord
+                                                            { firstEntries = existingPartialRecord.firstEntries
+                                                            , lastEntry =
+                                                                LastEntryOfRecord_KeyValue
+                                                                    existingPartialRecord.lastEntryName
+                                                                    record
+                                                            }
+                                                    }
+
+                                                NestingParentType_TypeWithArgs { name, args } ->
+                                                    { nesting =
+                                                        NestingLeafType_TypeWithArgs
+                                                            { name = name
+                                                            , args =
+                                                                record
+                                                                    |> pushOnto args
+                                                            }
+                                                    , parents = grandparents
+                                                    }
+
+                                                NestingParentType_Function { firstInput } ->
+                                                    { nesting =
+                                                        NestingLeafType_Function
+                                                            { firstInput = firstInput
+                                                            , output = Just record
+                                                            }
+                                                    , parents = grandparents
+                                                    }
+                                            )
+                                                |> TypeExpressionResult_Progress
+                                                |> newState
+                            in
+                            case lastEntry of
+                                LastEntryOfRecord_KeyValue key value ->
+                                    ( key, value )
+                                        |> pushOnto firstEntries
+                                        |> toList (\x -> x)
+                                        |> fromRecord
+
+                                LastEntryOfRecord_Empty ->
+                                    if firstEntries == empty then
+                                        []
+                                            |> fromRecord
+
+                                    else
+                                        Error_InvalidToken item Expecting_Unknown
+                                            |> ParseResult_Err
+
+                                _ ->
                                     Error_InvalidToken item Expecting_Unknown
                                         |> ParseResult_Err
 
-                                NestingLeafType_PartialRecord { firstEntries, lastEntry } ->
-                                    let
-                                        fromRecord recordEntries =
-                                            let
-                                                record =
-                                                    TypeExpression_Record recordEntries
-                                            in
-                                            case collapsedLeaf.parents of
-                                                [] ->
-                                                    record
-                                                        |> TypeExpressionResult_Done
-                                                        |> newState
+                        NestingLeafType_Function { output } ->
+                            case output of
+                                Nothing ->
+                                    Error_InvalidToken item Expecting_Unknown
+                                        |> ParseResult_Err
 
-                                                nesting :: grandparents ->
-                                                    (case nesting of
-                                                        -- We are within a nested bracket.
-                                                        NestingParentType_Bracket argStack ->
-                                                            { parents = grandparents
-                                                            , nesting = NestingLeafType_Bracket argStack (Just record)
-                                                            }
-
-                                                        NestingParentType_PartialRecord existingPartialRecord ->
-                                                            { parents = grandparents
-                                                            , nesting =
-                                                                NestingLeafType_PartialRecord
-                                                                    { firstEntries = existingPartialRecord.firstEntries
-                                                                    , lastEntry =
-                                                                        LastEntryOfRecord_KeyValue
-                                                                            existingPartialRecord.lastEntryName
-                                                                            record
-                                                                    }
-                                                            }
-
-                                                        NestingParentType_TypeWithArgs { name, args } ->
-                                                            { nesting =
-                                                                NestingLeafType_TypeWithArgs
-                                                                    { name = name
-                                                                    , args =
-                                                                        record
-                                                                            |> pushOnto args
-                                                                    }
-                                                            , parents = grandparents
-                                                            }
-                                                    )
-                                                        |> TypeExpressionResult_Progress
-                                                        |> newState
-                                    in
-                                    case lastEntry of
-                                        LastEntryOfRecord_KeyValue key value ->
-                                            ( key, value )
-                                                |> pushOnto firstEntries
-                                                |> toList (\x -> x)
-                                                |> fromRecord
-
-                                        LastEntryOfRecord_Empty ->
-                                            if firstEntries == empty then
-                                                []
-                                                    |> fromRecord
-
-                                            else
-                                                Error_InvalidToken item Expecting_Unknown
-                                                    |> ParseResult_Err
-
-                                        _ ->
-                                            Error_InvalidToken item Expecting_Unknown
-                                                |> ParseResult_Err
+                                Just _ ->
+                                    Debug.todo "Make this state impossible"
 
                 Nothing ->
                     Error_UnmatchedBracket Lexer.Curly Lexer.Close
+                        |> ParseResult_Err
+
+        Lexer.Sigil Lexer.ThinArrow ->
+            let
+                getNewPartialRecord parents { firstEntries, lastEntry } =
+                    case lastEntry of
+                        LastEntryOfRecord_KeyValue key value ->
+                            { parents = parents
+                            , nesting =
+                                NestingLeafType_PartialRecord
+                                    { firstEntries = ( key, value ) |> pushOnto firstEntries
+                                    , lastEntry = LastEntryOfRecord_Empty
+                                    }
+                            }
+                                |> TypeExpressionResult_Progress
+                                |> newState
+
+                        _ ->
+                            Error_InvalidToken item Expecting_Unknown
+                                |> ParseResult_Err
+            in
+            case mPrevExpr |> Maybe.map (autoCollapseNesting >> .nesting) of
+                Just (NestingLeafType_Expr expr) ->
+                    { nesting =
+                        NestingLeafType_Function
+                            { firstInput = expr
+                            , output = Nothing
+                            }
+                    , parents = []
+                    }
+                        |> TypeExpressionResult_Progress
+                        |> newState
+
+                Just _ ->
+                    Error_InvalidToken item Expecting_Unknown
+                        |> ParseResult_Err
+
+                Nothing ->
+                    Error_InvalidToken item Expecting_Unknown
                         |> ParseResult_Err
 
         Lexer.Newlines _ 0 ->
@@ -859,12 +953,12 @@ parserTypeExpr newState mPrevExpr item =
                         |> ParseResult_Err
 
                 Just prevExpr ->
-                    case autoCollapseNesting prevExpr of
-                        TypeExpressionResult_Done expr ->
+                    case (autoCollapseNesting prevExpr).nesting of
+                        NestingLeafType_Expr expr ->
                             TypeExpressionResult_Done expr
                                 |> newState
 
-                        TypeExpressionResult_Progress collapsedLeaf ->
+                        _ ->
                             Error_PartwayThroughTypeAlias
                                 |> ParseResult_Err
 
@@ -887,9 +981,14 @@ leafToParents leaf =
 
         Just { parents, nesting } ->
             (case nesting of
+                NestingLeafType_Expr expr ->
+                    -- Cannot nest unless there is a trailing comma!
+                    Error_TypeDoesNotTakeArgs2 expr
+                        |> Err
+
                 NestingLeafType_Bracket _ (Just lastType) ->
                     -- Cannot nest unless there is a trailing comma!
-                    Error_TypeDoesNotTakeArgs lastType (Debug.todo "")
+                    Error_TypeDoesNotTakeArgs2 lastType
                         |> Err
 
                 NestingLeafType_Bracket els Nothing ->
@@ -911,12 +1010,22 @@ leafToParents leaf =
                                 |> Ok
 
                         LastEntryOfRecord_KeyValue _ lastValueType ->
-                            Error_TypeDoesNotTakeArgs lastValueType (Debug.todo "")
+                            Error_TypeDoesNotTakeArgs2 lastValueType
                                 |> Err
 
                 NestingLeafType_TypeWithArgs details ->
                     NestingParentType_TypeWithArgs details
                         |> Ok
+
+                NestingLeafType_Function { firstInput, output } ->
+                    case output of
+                        Nothing ->
+                            NestingParentType_Function { firstInput = firstInput }
+                                |> Ok
+
+                        Just te ->
+                            Error_TypeDoesNotTakeArgs2 te
+                                |> Err
             )
                 |> Result.map
                     (\n -> n :: parents)
@@ -955,6 +1064,10 @@ exprAppend ({ parents, nesting } as currentLeaf) token =
                     Error_TypeDoesNotTakeArgs TypeExpression_Unit newType
                         |> Err
 
+        NestingLeafType_Expr expr ->
+            Error_TypeDoesNotTakeArgs expr newType
+                |> Err
+
         NestingLeafType_PartialRecord pr ->
             case pr.lastEntry of
                 LastEntryOfRecord_Empty ->
@@ -992,6 +1105,31 @@ exprAppend ({ parents, nesting } as currentLeaf) token =
             }
                 |> Ok
 
+        (NestingLeafType_Function { firstInput, output }) as lt ->
+            Result.map2
+                (\newOutput newParents ->
+                    { parents = newParents
+                    , nesting =
+                        NestingLeafType_TypeWithArgs
+                            { name = token
+                            , args = empty
+                            }
+                    }
+                )
+                (case output of
+                    Just outputExpr ->
+                        Error_TypeDoesNotTakeArgs outputExpr newType
+                            |> Err
+
+                    Nothing ->
+                        NestingLeafType_TypeWithArgs
+                            { name = token
+                            , args = empty
+                            }
+                            |> Ok
+                )
+                (leafToParents (Just currentLeaf))
+
 
 blockFromState : State -> Maybe (Result Error Block)
 blockFromState state =
@@ -1021,8 +1159,8 @@ blockFromState state =
                 |> Just
 
         State_BlockTypeAlias (BlockTypeAlias_Completish aliasName partialExpr) ->
-            case autoCollapseNesting partialExpr of
-                TypeExpressionResult_Done expr ->
+            case (autoCollapseNesting partialExpr).nesting of
+                NestingLeafType_Expr expr ->
                     partialTypeExpressionToConcreteType expr
                         |> Result.map
                             (\conceteType ->
@@ -1034,7 +1172,7 @@ blockFromState state =
                         |> Result.mapError (\(ToConcreteTypeError_TooManyTupleArgs a b c d e) -> Error_TooManyTupleArgs a b c d e)
                         |> Just
 
-                TypeExpressionResult_Progress collapsedLeaf ->
+                _ ->
                     Error_PartwayThroughTypeAlias
                         |> Err
                         |> Just
@@ -1102,7 +1240,7 @@ addToPartialRecord token { firstEntries, lastEntry } =
                 |> Err
 
 
-autoCollapseNesting : PartialTypeExpressionLeaf -> TypeExpressionResult
+autoCollapseNesting : PartialTypeExpressionLeaf -> PartialTypeExpressionLeaf
 autoCollapseNesting pte =
     case pte.nesting of
         NestingLeafType_TypeWithArgs { name, args } ->
@@ -1118,6 +1256,12 @@ autoCollapseNesting pte =
                             NestingParentType_TypeWithArgs _ ->
                                 Debug.todo "Make this state impossible"
 
+                            NestingParentType_Function { firstInput } ->
+                                NestingLeafType_Function
+                                    { firstInput = firstInput
+                                    , output = Just newTypeExpr
+                                    }
+
                             NestingParentType_Bracket els ->
                                 NestingLeafType_Bracket els (Just newTypeExpr)
 
@@ -1130,13 +1274,58 @@ autoCollapseNesting pte =
                         |> autoCollapseNesting
 
                 [] ->
-                    TypeExpressionResult_Done newTypeExpr
+                    { nesting = NestingLeafType_Expr newTypeExpr
+                    , parents = []
+                    }
+
+        NestingLeafType_Expr _ ->
+            pte
 
         NestingLeafType_Bracket _ _ ->
-            TypeExpressionResult_Progress pte
+            pte
 
         NestingLeafType_PartialRecord _ ->
-            TypeExpressionResult_Progress pte
+            pte
+
+        NestingLeafType_Function { firstInput, output } ->
+            case output of
+                Nothing ->
+                    pte
+
+                Just outputExpr ->
+                    let
+                        newTypeExpr =
+                            TypeExpression_Function
+                                { firstInput = firstInput
+                                , output = outputExpr
+                                }
+                    in
+                    case pte.parents of
+                        nesting :: grandparents ->
+                            { parents = grandparents
+                            , nesting =
+                                case nesting of
+                                    NestingParentType_TypeWithArgs _ ->
+                                        Debug.todo "Make this state impossible"
+
+                                    NestingParentType_Function _ ->
+                                        Debug.todo "Make this state impossible"
+
+                                    NestingParentType_Bracket els ->
+                                        NestingLeafType_Bracket els (Just newTypeExpr)
+
+                                    NestingParentType_PartialRecord { firstEntries, lastEntryName } ->
+                                        NestingLeafType_PartialRecord
+                                            { firstEntries = firstEntries
+                                            , lastEntry = LastEntryOfRecord_KeyValue lastEntryName newTypeExpr
+                                            }
+                            }
+                                |> autoCollapseNesting
+
+                        [] ->
+                            { nesting = NestingLeafType_Expr newTypeExpr
+                            , parents = []
+                            }
 
 
 {-| TODO(harry): We can add things to a tuple too! Rename this function
@@ -1228,6 +1417,30 @@ partialTypeExpressionToConcreteType pte =
                         Dict.fromList goodKeyValues
                             |> ConcreteType.Record
                     )
+
+        TypeExpression_Function functionTypeExpr ->
+            let
+                folder :
+                    ConcreteType a
+                    -> (ConcreteType a -> ConcreteType a)
+                    -> (ConcreteType a -> ConcreteType a)
+                folder nextArg createConcreteFunction someOutput =
+                    createConcreteFunction
+                        (ConcreteType.Function
+                            { from = nextArg
+                            , to = someOutput
+                            }
+                        )
+            in
+            Result.map2
+                (\concreteFirstInput concreteOutput ->
+                    ConcreteType.Function
+                        { from = concreteFirstInput
+                        , to = concreteOutput
+                        }
+                )
+                (partialTypeExpressionToConcreteType functionTypeExpr.firstInput)
+                (partialTypeExpressionToConcreteType functionTypeExpr.output)
 
 
 recoverErrors : ParseResult -> ParseResult
