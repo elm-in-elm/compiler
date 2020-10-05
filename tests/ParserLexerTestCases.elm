@@ -6,7 +6,7 @@ import Elm.Data.Qualifiedness exposing (PossiblyQualified(..))
 import Elm.Data.Type.Concrete exposing (ConcreteType(..))
 import Stage.Parse.Contextualize as Contextualize exposing (..)
 import Stage.Parse.Lexer as Lexer exposing (..)
-import Stage.Parse.Token exposing (TypeOrConstructor(..))
+import Stage.Parse.Token exposing (TypeOrConstructor(..), ValueOrFunctionOrGenericType(..))
 import Test exposing (Test, describe, test)
 
 
@@ -335,11 +335,47 @@ type alias Function = A -> B -> C -> D
                 ]
       , contextualized =
             Just
-                [ Err
-                    { error = Error_InvalidToken (Expecting_Sigil Assign)
-                    , item = Just (Token "a")
-                    , state = State_BlockTypeAlias (BlockTypeAlias_Named (TypeOrConstructor "Function") [])
-                    }
+                [ Ok
+                    (TypeAlias
+                        { expr =
+                            Function
+                                { from =
+                                    UserDefinedType
+                                        { args =
+                                            [ UserDefinedType
+                                                { args = []
+                                                , name = "Int"
+                                                , qualifiedness = PossiblyQualified Nothing
+                                                }
+                                            ]
+                                        , name = "List"
+                                        , qualifiedness = PossiblyQualified Nothing
+                                        }
+                                , to =
+                                    UserDefinedType
+                                        { args =
+                                            [ UserDefinedType
+                                                { args =
+                                                    [ UserDefinedType
+                                                        { args = []
+                                                        , name = "a"
+                                                        , qualifiedness = PossiblyQualified Nothing
+                                                        }
+                                                    ]
+                                                , name = "List"
+                                                , qualifiedness = PossiblyQualified Nothing
+                                                }
+                                            ]
+                                        , name = "List"
+                                        , qualifiedness = PossiblyQualified Nothing
+                                        }
+                                }
+                        , genericArgs =
+                            [ ValueOrFunctionOrGenericType "a"
+                            ]
+                        , ty = TypeOrConstructor "Function"
+                        }
+                    )
                 ]
       }
     , { name = "type-alias-function-nested"
@@ -1902,7 +1938,7 @@ List Int
                 [ Err
                     { error = Error_PartwayThroughTypeAlias
                     , item = Just (Newlines [] 0)
-                    , state = State_BlockTypeAlias (BlockTypeAlias_Named (TypeOrConstructor "Hi") [])
+                    , state = State_BlockTypeAlias (BlockTypeAlias_Named (TypeOrConstructor "Hi") (Stack []))
                     }
                 ]
       }

@@ -105,15 +105,15 @@ type BlockFirstItem
 
 type BlockTypeAlias
     = BlockTypeAlias_Keywords
-    | BlockTypeAlias_Named Token.TypeOrConstructor (List Token.ValueOrFunctionOrGenericType)
+    | BlockTypeAlias_Named Token.TypeOrConstructor (Stack Token.ValueOrFunctionOrGenericType)
     | BlockTypeAlias_NamedAssigns Token.TypeOrConstructor (List Token.ValueOrFunctionOrGenericType)
     | BlockTypeAlias_Completish Token.TypeOrConstructor (List Token.ValueOrFunctionOrGenericType) PartialTypeExpressionLeaf
     | BlockTypeAlias_Complete Token.TypeOrConstructor (List Token.ValueOrFunctionOrGenericType) PartialTypeExpression
 
 
 type BlockCustomType
-    = BlockCustomType_Named Token.TypeOrConstructor
-    | BlockCustomType_NamedAssigns Token.TypeOrConstructor
+    = BlockCustomType_Named Token.TypeOrConstructor (Stack Token.ValueOrFunctionOrGenericType)
+    | BlockCustomType_NamedAssigns Token.TypeOrConstructor (List Token.ValueOrFunctionOrGenericType)
 
 
 {-| Notes:
@@ -385,8 +385,20 @@ parseAnything state =
             parseTypeAliasName
 
         State_BlockTypeAlias (BlockTypeAlias_Named name typeArgs) ->
-            parseAssignment
-                (State_BlockTypeAlias (BlockTypeAlias_NamedAssigns name typeArgs))
+            parseTypeArgsOrAssignment
+                (\newTypeArg ->
+                    State_BlockTypeAlias
+                        (BlockTypeAlias_Named
+                            name
+                            (newTypeArg |> pushOnto typeArgs)
+                        )
+                )
+                (State_BlockTypeAlias
+                    (BlockTypeAlias_NamedAssigns
+                        name
+                        (typeArgs |> toList (\x -> x))
+                    )
+                )
 
         State_BlockTypeAlias (BlockTypeAlias_NamedAssigns name typeArgs) ->
             parserTypeExprFromEmpty
@@ -434,11 +446,23 @@ parseAnything state =
                         Error_ExtraItemAfterBlock expr item
                             |> ParseResult_Err
 
-        State_BlockCustomType (BlockCustomType_Named name) ->
-            parseAssignment
-                (State_BlockCustomType (BlockCustomType_NamedAssigns name))
+        State_BlockCustomType (BlockCustomType_Named name typeArgs) ->
+            parseTypeArgsOrAssignment
+                (\newTypeArg ->
+                    State_BlockCustomType
+                        (BlockCustomType_Named
+                            name
+                            (newTypeArg |> pushOnto typeArgs)
+                        )
+                )
+                (State_BlockCustomType
+                    (BlockCustomType_NamedAssigns
+                        name
+                        (typeArgs |> toList (\x -> x))
+                    )
+                )
 
-        State_BlockCustomType (BlockCustomType_NamedAssigns name) ->
+        State_BlockCustomType (BlockCustomType_NamedAssigns name typeArgs) ->
             Debug.todo "BlockCustomType_NamedAssigns"
 
 
@@ -497,7 +521,7 @@ parseTypeBlock item =
                         |> ParseResult_Err
 
                 Token.TokenTypeOrConstructor typeOrConstructor ->
-                    State_BlockCustomType (BlockCustomType_Named typeOrConstructor)
+                    State_BlockCustomType (BlockCustomType_Named typeOrConstructor empty)
                         |> ParseResult_Ok
 
                 Token.TokenValueOrFunction valOrFunc ->
@@ -533,7 +557,7 @@ parseTypeAliasName item =
                         |> ParseResult_Err
 
                 Token.TokenTypeOrConstructor typeOrConstructor ->
-                    State_BlockTypeAlias (BlockTypeAlias_Named typeOrConstructor [])
+                    State_BlockTypeAlias (BlockTypeAlias_Named typeOrConstructor empty)
                         |> ParseResult_Ok
 
                 Token.TokenValueOrFunction valOrFunc ->
@@ -555,11 +579,25 @@ parseTypeAliasName item =
                 |> ParseResult_Err
 
 
-parseAssignment : State -> LexItem -> ParseResult
-parseAssignment newState item =
+parseTypeArgsOrAssignment : (Token.ValueOrFunctionOrGenericType -> State) -> State -> LexItem -> ParseResult
+parseTypeArgsOrAssignment onTypeArg onAssignment item =
     case item of
+        Lexer.Token str ->
+            case Token.classifyToken str of
+                Token.TokenKeyword kw ->
+                    Error_MisplacedKeyword kw
+                        |> ParseResult_Err
+
+                Token.TokenTypeOrConstructor _ ->
+                    Error_InvalidToken (Expecting_Sigil Lexer.Assign)
+                        |> ParseResult_Err
+
+                Token.TokenValueOrFunction argName ->
+                    onTypeArg argName
+                        |> ParseResult_Ok
+
         Lexer.Sigil Lexer.Assign ->
-            newState
+            onAssignment
                 |> ParseResult_Ok
 
         Lexer.Newlines _ 0 ->
