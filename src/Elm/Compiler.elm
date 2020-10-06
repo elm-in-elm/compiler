@@ -87,7 +87,7 @@ Eg. the `plus` optimization is (conceptually):
     optimizePlus : Expr -> Maybe Expr
     optimizePlus expr =
         case expr of
-            Plus (Int a) (Int b) ->
+            Operator Operator.Add (Int a) (Int b) ->
                 Just (Int (a + b))
 
             _ ->

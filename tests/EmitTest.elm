@@ -3,6 +3,7 @@ module EmitTest exposing (javascript)
 import Dict
 import Elm.AST.Typed as Typed exposing (Expr_(..))
 import Elm.Data.Declaration exposing (Declaration, DeclarationBody(..))
+import Elm.Data.Operator as Operator
 import Elm.Data.Qualifiedness exposing (Qualified)
 import Expect
 import Stage.Emit.JavaScript as JS
@@ -85,20 +86,21 @@ javascript =
             , describe "Plus"
                 (List.map runTest
                     -- We need to give the child `Expr`s a type too
-                    [ ( "simple", Plus (typedInt 1) (typedInt 2), "(1 + 2)" )
-                    , ( "nested", Plus (typedInt 1) (typed (Plus (typedInt 2) (typedInt 3))), "(1 + (2 + 3))" )
+                    [ ( "simple", Operator Operator.Add (typedInt 1) (typedInt 2), "(1 + 2)" )
+                    , ( "nested", Operator Operator.Add (typedInt 1) (typed (Operator Operator.Add (typedInt 2) (typedInt 3))), "(1 + (2 + 3))" )
                     ]
                 )
             , describe "Cons"
                 (List.map runTest
                     [ ( "simple"
-                      , Cons (typedInt 1) (typedIntList [ 2, 3 ])
+                      , Operator Operator.Cons (typedInt 1) (typedIntList [ 2, 3 ])
                       , "[1].concat([2, 3])"
                       )
                     , ( "nested"
-                      , Cons
+                      , Operator
+                            Operator.Cons
                             (typedInt 1)
-                            (typed (Cons (typedInt 2) (typedIntList [ 3, 4 ])))
+                            (typed (Operator Operator.Cons (typedInt 2) (typedIntList [ 3, 4 ])))
                       , "[1].concat([2].concat([3, 4]))"
                       )
                     ]
@@ -238,7 +240,8 @@ javascript =
                                     }
                             , body =
                                 typed
-                                    (Plus
+                                    (Operator
+                                        Operator.Add
                                         (typedInt 1)
                                         (typed (Argument "x"))
                                     )
@@ -258,7 +261,8 @@ javascript =
                                       , { name = "y"
                                         , body =
                                             typed
-                                                (Plus
+                                                (Operator
+                                                 Operator.Add
                                                     (typedInt 1)
                                                     (typed (Argument "x"))
                                                 )
@@ -333,14 +337,14 @@ javascript =
             , describe "Mixed expressions"
                 (List.map runTest
                     [ ( "plus in tuple"
-                      , Tuple (typed (Plus (typedInt 1) (typedInt 41))) (typedString "Hello")
+                      , Tuple (typed (Operator Operator.Add (typedInt 1) (typedInt 41))) (typedString "Hello")
                       , """[(1 + 41),"Hello"]"""
                       )
                     , ( "tuple and cons in record"
                       , Record
                             (Dict.fromList
                                 [ ( "a", { name = "a", body = typed (Tuple (typedInt 2) (typedInt 3)) } )
-                                , ( "b", { name = "b", body = typed (Cons (typedInt 2) (typedIntList [ 3, 4 ])) } )
+                                , ( "b", { name = "b", body = typed (Operator Operator.Cons (typedInt 2) (typedIntList [ 3, 4 ])) } )
                                 ]
                             )
                       , """{a: [2,3], b: [2].concat([3, 4])}"""

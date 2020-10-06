@@ -16,6 +16,7 @@ Convert to it using the [`Elm.AST.Typed.unwrap`](Elm.AST.Typed#unwrap).
 import Dict exposing (Dict)
 import Elm.Data.Binding exposing (Binding)
 import Elm.Data.ModuleName exposing (ModuleName)
+import Elm.Data.Operator exposing (Operator)
 import Elm.Data.Qualifiedness exposing (Qualified)
 import Elm.Data.Type exposing (TypeOrId)
 import Elm.Data.VarName exposing (VarName)
@@ -37,8 +38,7 @@ type Expr_
     | Bool Bool
     | Var { module_ : ModuleName, name : VarName }
     | Argument VarName
-    | Plus Expr Expr
-    | Cons Expr Expr
+    | Operator Operator Expr Expr
     | Lambda { argument : VarName, body : Expr }
     | Call { fn : Expr, argument : Expr }
     | If { test : Expr, then_ : Expr, else_ : Expr }

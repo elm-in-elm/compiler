@@ -38,6 +38,7 @@ import Elm.Data.Import exposing (Import)
 import Elm.Data.Located as Located exposing (Located)
 import Elm.Data.Module exposing (Module, ModuleType(..))
 import Elm.Data.ModuleName exposing (ModuleName)
+import Elm.Data.Operator as Operator
 import Elm.Data.Qualifiedness exposing (PossiblyQualified(..))
 import Elm.Data.Type.Concrete as ConcreteType exposing (ConcreteType)
 import Elm.Data.TypeAnnotation exposing (TypeAnnotation)
@@ -562,17 +563,17 @@ expr =
                 (checkIndent (<) ExpectingIndentation
                     |> P.andThen (\() -> P.symbol (P.Token "++" ExpectingConcatOperator))
                 )
-                (Located.merge ListConcat)
+                (Located.merge (Operator Operator.Append))
             , PP.infixLeft 1
                 (checkIndent (<) ExpectingIndentation
                     |> P.andThen (\() -> P.symbol (P.Token "+" ExpectingPlusOperator))
                 )
-                (Located.merge Plus)
+                (Located.merge (Operator Operator.Add))
             , PP.infixRight 1
                 (checkIndent (<) ExpectingIndentation
                     |> P.andThen (\() -> P.symbol (P.Token "::" ExpectingConsOperator))
                 )
-                (Located.merge Cons)
+                (Located.merge (Operator Operator.Cons))
             ]
         , spaces = ignorables
         }

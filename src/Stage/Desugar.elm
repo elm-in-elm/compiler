@@ -116,35 +116,10 @@ desugarExpr modules thisModule locatedExpr =
         Frontend.Argument varName ->
             return <| Canonical.Argument varName
 
-        Frontend.Plus e1 e2 ->
-            map2 Canonical.Plus
+        Frontend.Operator op e1 e2 ->
+            map2 (Canonical.Operator op)
                 (f e1)
                 (f e2)
-
-        Frontend.Cons e1 e2 ->
-            map2 Canonical.Cons
-                (f e1)
-                (f e2)
-
-        Frontend.ListConcat e1 e2 ->
-            let
-                region =
-                    Located.getRegion locatedExpr
-
-                listConcatVar =
-                    Frontend.Var
-                        { qualifiedness = PossiblyQualified <| Just "List"
-                        , name = "append"
-                        }
-                        |> Located.located region
-
-                firstCall =
-                    Frontend.Call { fn = listConcatVar, argument = e1 } |> Located.located region
-
-                expr =
-                    Frontend.Call { fn = firstCall, argument = e2 } |> Located.located region
-            in
-            f expr
 
         Frontend.Lambda { arguments, body } ->
             f body

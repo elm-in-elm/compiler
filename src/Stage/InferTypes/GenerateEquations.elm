@@ -32,6 +32,7 @@ subexpression.
 import Dict
 import Elm.AST.Typed as Typed
 import Elm.Data.Located as Located
+import Elm.Data.Operator as Operator exposing (Operator)
 import Elm.Data.Qualifiedness exposing (Qualified)
 import Elm.Data.Type as Type exposing (Type(..), TypeOrId(..))
 import Elm.Data.VarName exposing (VarName)
@@ -92,7 +93,7 @@ generateEquations currentId located =
             -- we can't make any assumptions here
             ( [], currentId )
 
-        Typed.Plus left right ->
+        Typed.Operator op left right ->
             let
                 ( _, leftType ) =
                     Located.unwrap left
@@ -105,35 +106,25 @@ generateEquations currentId located =
 
                 ( rightEquations, id2 ) =
                     generateEquations id1 right
+
+                opEquations =
+                    case op of
+                        Operator.Add ->
+                            [ equals leftType (Type Int) -- type of `a` is Int
+                            , equals rightType (Type Int) -- type of `b` is Int
+                            , equals type_ (Type Int) -- type of `a + b` is Int
+                            ]
+
+                        Operator.Cons ->
+                            [ equals rightType (Type (List leftType)) -- type of b is a List a
+                            , equals type_ rightType -- a :: [ b ] is a List b
+                            ]
+
+                        _ ->
+                            Debug.todo "handle typing of other operators"
             in
-            ( -- for expression `a + b`:
-              [ equals leftType (Type Int) -- type of `a` is Int
-              , equals rightType (Type Int) -- type of `b` is Int
-              , equals type_ (Type Int) -- type of `a + b` is Int
-              ]
-                ++ leftEquations
-                ++ rightEquations
-            , id2
-            )
-
-        Typed.Cons left right ->
-            let
-                ( _, leftType ) =
-                    Located.unwrap left
-
-                ( _, rightType ) =
-                    Located.unwrap right
-
-                ( leftEquations, id1 ) =
-                    generateEquations currentId left
-
-                ( rightEquations, id2 ) =
-                    generateEquations id1 right
-            in
-            ( -- For expression a :: [ b ]:
-              [ equals rightType (Type (List leftType)) -- type of b is a List a
-              , equals type_ rightType -- a :: [ b ] is a List b
-              ]
+            ( opEquations
+                -- for expression `a OP b`:
                 ++ leftEquations
                 ++ rightEquations
             , id2

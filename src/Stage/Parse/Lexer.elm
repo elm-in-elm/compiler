@@ -161,6 +161,9 @@ toString item =
         Sigil (Operator Operator.LessThanEquals) ->
             "<="
 
+        Sigil (Operator Operator.Cons) ->
+            "::"
+
         Sigil (Operator Operator.Append) ->
             "++"
 
@@ -396,6 +399,8 @@ sigilParser =
             |> P.map (\() -> Operator Operator.And)
         , P.symbol (P.Token "++" ExpectingSigil)
             |> P.map (\() -> Operator Operator.Append)
+        , P.symbol (P.Token "::" ExpectingSigil)
+            |> P.map (\() -> Operator Operator.Cons)
         , P.symbol (P.Token "==" ExpectingSigil)
             |> P.map (\() -> Operator Operator.Equals)
         , P.symbol (P.Token "||" ExpectingSigil)

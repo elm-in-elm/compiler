@@ -25,6 +25,7 @@ import Elm.Compiler.Error exposing (Error(..))
 import Elm.Data.Declaration exposing (Declaration, DeclarationBody(..))
 import Elm.Data.FileContents exposing (FileContents)
 import Elm.Data.FilePath exposing (FilePath)
+import Elm.Data.Operator as Operator exposing (Operator)
 import Elm.Data.Project exposing (Project)
 import Elm.Data.Qualifiedness exposing (Qualified)
 import Json.Encode as Encode exposing (Value)
@@ -80,17 +81,21 @@ emitExpr located =
         Argument argument ->
             encode "arg" [ ( "name", Encode.string argument ) ]
 
-        Plus e1 e2 ->
+        -- TODO(harry): Change this to `{ 'op': '+', lhs: { ... }, rhs: { ... } }`
+        Operator Operator.Add e1 e2 ->
             encode "plus"
                 [ ( "e1", emitExpr e1 )
                 , ( "e2", emitExpr e2 )
                 ]
 
-        Cons e1 e2 ->
+        Operator Operator.Cons e1 e2 ->
             encode "cons"
                 [ ( "e1", emitExpr e1 )
                 , ( "e2", emitExpr e2 )
                 ]
+
+        Operator _ e1 e2 ->
+            Debug.todo "encode other operators into json"
 
         Lambda { argument, body } ->
             encode "lambda"

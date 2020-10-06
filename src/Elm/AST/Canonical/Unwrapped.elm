@@ -18,6 +18,7 @@ and from it using [`Elm.AST.Canonical.fromUnwrapped`](Elm.AST.Canonical#fromUnwr
 import Dict exposing (Dict)
 import Elm.Data.Binding exposing (Binding)
 import Elm.Data.ModuleName exposing (ModuleName)
+import Elm.Data.Operator exposing (Operator)
 import Elm.Data.VarName exposing (VarName)
 
 
@@ -30,8 +31,7 @@ type Expr
     | Bool Bool
     | Var { module_ : ModuleName, name : VarName }
     | Argument VarName
-    | Plus Expr Expr
-    | Cons Expr Expr
+    | Operator Operator Expr Expr
     | Lambda { argument : VarName, body : Expr }
     | Call { fn : Expr, argument : Expr }
     | If { test : Expr, then_ : Expr, else_ : Expr }

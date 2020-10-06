@@ -18,6 +18,7 @@ import Elm.Data.Binding as Binding exposing (Binding)
 import Elm.Data.Located as Located exposing (Located)
 import Elm.Data.Module exposing (Module)
 import Elm.Data.ModuleName exposing (ModuleName)
+import Elm.Data.Operator exposing (Operator)
 import Elm.Data.Qualifiedness exposing (Qualified)
 import Elm.Data.Type.Concrete exposing (ConcreteType)
 import Elm.Data.VarName exposing (VarName)
@@ -73,8 +74,7 @@ type Expr
     | Bool Bool
     | Var { module_ : ModuleName, name : VarName }
     | Argument VarName
-    | Plus LocatedExpr LocatedExpr
-    | Cons LocatedExpr LocatedExpr
+    | Operator Operator LocatedExpr LocatedExpr
     | Lambda { argument : VarName, body : LocatedExpr }
     | Call { fn : LocatedExpr, argument : LocatedExpr }
     | If { test : LocatedExpr, then_ : LocatedExpr, else_ : LocatedExpr }
@@ -140,13 +140,9 @@ unwrap expr =
         Argument name ->
             Unwrapped.Argument name
 
-        Plus e1 e2 ->
-            Unwrapped.Plus
-                (f e1)
-                (f e2)
-
-        Cons e1 e2 ->
-            Unwrapped.Cons
+        Operator op e1 e2 ->
+            Unwrapped.Operator
+                op
                 (f e1)
                 (f e2)
 
@@ -299,13 +295,9 @@ fromUnwrapped expr =
             Unwrapped.Argument name ->
                 Argument name
 
-            Unwrapped.Plus e1 e2 ->
-                Plus
-                    (f e1)
-                    (f e2)
-
-            Unwrapped.Cons e1 e2 ->
-                Cons
+            Unwrapped.Operator op e1 e2 ->
+                Operator
+                    op
                     (f e1)
                     (f e2)
 

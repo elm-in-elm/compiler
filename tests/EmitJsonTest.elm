@@ -1,5 +1,6 @@
 module EmitJsonTest exposing (json)
 
+import Elm.Data.Operator as Operator
 import Dict
 import Elm.AST.Typed as Typed exposing (Expr_(..))
 import Elm.Data.Declaration exposing (Declaration, DeclarationBody(..))
@@ -91,13 +92,13 @@ json =
                 )
             , describe "Plus"
                 (List.map runTest
-                    [ ( "simple", Plus (typedInt 1) (typedInt 2), "{\"type\":\"plus\",\"e1\":{\"type\":\"int\",\"value\":1},\"e2\":{\"type\":\"int\",\"value\":2}}" )
+                    [ ( "simple", Operator Operator.Add (typedInt 1) (typedInt 2), "{\"type\":\"plus\",\"e1\":{\"type\":\"int\",\"value\":1},\"e2\":{\"type\":\"int\",\"value\":2}}" )
                     ]
                 )
             , describe "Cons"
                 (List.map runTest
                     [ ( "simple"
-                      , Cons (typedInt 1) (typedIntList [ 2, 3 ])
+                      , Operator Operator.Cons (typedInt 1) (typedIntList [ 2, 3 ])
                       , "{\"type\":\"cons\",\"e1\":{\"type\":\"int\",\"value\":1},\"e2\":{\"type\":\"list\",\"items\":[{\"type\":\"int\",\"value\":2},{\"type\":\"int\",\"value\":3}]}}"
                       )
                     ]

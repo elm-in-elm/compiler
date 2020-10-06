@@ -14,6 +14,7 @@ Convert to it using the [`Elm.AST.Frontend.unwrap`](Elm.AST.Frontend#unwrap).
 -}
 
 import Elm.Data.Binding exposing (Binding)
+import Elm.Data.Operator exposing (Operator)
 import Elm.Data.Qualifiedness exposing (PossiblyQualified)
 import Elm.Data.VarName exposing (VarName)
 
@@ -28,9 +29,7 @@ type Expr
     | Bool Bool
     | Var { qualifiedness : PossiblyQualified, name : VarName }
     | Argument VarName
-    | Plus Expr Expr
-    | Cons Expr Expr
-    | ListConcat Expr Expr
+    | Operator Operator Expr Expr
     | Lambda { arguments : List VarName, body : Expr }
     | Call { fn : Expr, argument : Expr }
     | If { test : Expr, then_ : Expr, else_ : Expr }

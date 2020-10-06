@@ -15,6 +15,7 @@ type Operator
     | LessThan
     | LessThanEquals
     | Append
+    | Cons
 
 
 {-| Operator precedence.
@@ -82,6 +83,9 @@ getPrecedence op =
             Comparison
 
         Append ->
+            Concatenation
+
+        Cons ->
             Concatenation
 
 
