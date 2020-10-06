@@ -64,15 +64,15 @@ init snippets =
       , source = \"\"\""""
                             ++ source
                             ++ """\"\"\"
-      , lexed = """
-                            ++ (Debug.toString lexed
-                                    |> preFormatElmCode
-                               )
-                            ++ """
       , contextualized ="""
                             ++ (Debug.toString contextualized
                                     |> preFormatElmCode
                                     |> resolveCustomTypeConstructors
+                               )
+                            ++ """
+      , lexed = """
+                            ++ (Debug.toString lexed
+                                    |> preFormatElmCode
                                )
                             ++ """
       }"""
