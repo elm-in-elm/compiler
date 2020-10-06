@@ -127,6 +127,9 @@ resolveCustomTypeConstructors =
                     |> String.replace "Int" "Frontend.Int"
                     |> String.replace "Float" "Frontend.Float"
                     |> String.replace "Unit" "Frontend.Unit"
+                    |> String.replace "Operator" "Frontend.Operator"
+                    |> String.replace "ExpressionNestingLeaf_Frontend.Operator" "ExpressionNestingLeaf_Operator"
+                    |> String.replace "ExpressionNestingParent_Frontend.Operator" "ExpressionNestingParent_Operator"
                 else
                     line
 

@@ -2,14 +2,13 @@ module ParserLexerTestCases exposing (shouldNotParseTestCases, shouldParseTestCa
 
 import Dict
 import Elm.AST.Frontend as Frontend
-import Elm.Data.Located as Located exposing (Located(..))
-import Elm.Data.Operator as Operator exposing (Operator(..))
+import Elm.Data.Located exposing (Located(..))
+import Elm.Data.Operator exposing (Operator(..))
 import Elm.Data.Qualifiedness exposing (PossiblyQualified(..))
 import Elm.Data.Type.Concrete exposing (ConcreteType(..))
 import Stage.Parse.Contextualize as Contextualize exposing (..)
-import Stage.Parse.Lexer as Lexer exposing (..)
+import Stage.Parse.Lexer exposing (..)
 import Stage.Parse.Token exposing (TypeOrConstructor(..), ValueOrFunctionOrGenericType(..))
-import Test exposing (Test, describe, test)
 
 
 
@@ -65,30 +64,8 @@ b = 78 + 5 + 2+ 4
 """
       , contextualized =
             Just
-                [ Err
-                    { error = Error_InvalidToken Expecting_Unknown
-                    , item = Just (Located { end = { col = 10, row = 1 }, start = { col = 9, row = 1 } } (NumericLiteral "5"))
-                    , state =
-                        State_BlockValueDeclaration
-                            (BlockValueDeclaration_Completish
-                                { args = []
-                                , name = Located { end = { col = 2, row = 1 }, start = { col = 1, row = 1 } } (ValueOrFunctionOrGenericType "a")
-                                , partialExpr = ExpressionNestingLeaf_Operator { lhs = Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Frontend.Int 5), op = Add, parent = Nothing, rhs = Nothing }
-                                }
-                            )
-                    }
-                , Err
-                    { error = Error_InvalidToken Expecting_Unknown
-                    , item = Just (Located { end = { col = 11, row = 3 }, start = { col = 10, row = 3 } } (NumericLiteral "5"))
-                    , state =
-                        State_BlockValueDeclaration
-                            (BlockValueDeclaration_Completish
-                                { args = []
-                                , name = Located { end = { col = 2, row = 3 }, start = { col = 1, row = 3 } } (ValueOrFunctionOrGenericType "b")
-                                , partialExpr = ExpressionNestingLeaf_Operator { lhs = Located { end = { col = 7, row = 3 }, start = { col = 5, row = 3 } } (Frontend.Int 78), op = Add, parent = Nothing, rhs = Nothing }
-                                }
-                            )
-                    }
+                [ Ok (ValueDeclaration { args = [], name = Located { end = { col = 2, row = 1 }, start = { col = 1, row = 1 } } (ValueOrFunctionOrGenericType "a"), valueExpr__ = Located { end = { col = 10, row = 1 }, start = { col = 5, row = 1 } } (Frontend.Operator Add (Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Frontend.Int 5)) (Located { end = { col = 10, row = 1 }, start = { col = 9, row = 1 } } (Frontend.Int 5))) })
+                , Ok (ValueDeclaration { args = [], name = Located { end = { col = 2, row = 3 }, start = { col = 1, row = 3 } } (ValueOrFunctionOrGenericType "b"), valueExpr__ = Located { end = { col = 18, row = 3 }, start = { col = 5, row = 3 } } (Frontend.Operator Add (Located { end = { col = 15, row = 3 }, start = { col = 5, row = 3 } } (Frontend.Operator Add (Located { end = { col = 11, row = 3 }, start = { col = 5, row = 3 } } (Frontend.Operator Add (Located { end = { col = 7, row = 3 }, start = { col = 5, row = 3 } } (Frontend.Int 78)) (Located { end = { col = 11, row = 3 }, start = { col = 10, row = 3 } } (Frontend.Int 5)))) (Located { end = { col = 15, row = 3 }, start = { col = 14, row = 3 } } (Frontend.Int 2)))) (Located { end = { col = 18, row = 3 }, start = { col = 17, row = 3 } } (Frontend.Int 4))) })
                 ]
       , lexed =
             Ok
@@ -133,30 +110,8 @@ b = 78 + 5 + 2 - 4 + 5
 """
       , contextualized =
             Just
-                [ Err
-                    { error = Error_InvalidToken Expecting_Unknown
-                    , item = Just (Located { end = { col = 10, row = 1 }, start = { col = 9, row = 1 } } (NumericLiteral "5"))
-                    , state =
-                        State_BlockValueDeclaration
-                            (BlockValueDeclaration_Completish
-                                { args = []
-                                , name = Located { end = { col = 2, row = 1 }, start = { col = 1, row = 1 } } (ValueOrFunctionOrGenericType "a")
-                                , partialExpr = ExpressionNestingLeaf_Operator { lhs = Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Frontend.Int 5), op = Subtract, parent = Nothing, rhs = Nothing }
-                                }
-                            )
-                    }
-                , Err
-                    { error = Error_InvalidToken Expecting_Unknown
-                    , item = Just (Located { end = { col = 11, row = 3 }, start = { col = 10, row = 3 } } (NumericLiteral "5"))
-                    , state =
-                        State_BlockValueDeclaration
-                            (BlockValueDeclaration_Completish
-                                { args = []
-                                , name = Located { end = { col = 2, row = 3 }, start = { col = 1, row = 3 } } (ValueOrFunctionOrGenericType "b")
-                                , partialExpr = ExpressionNestingLeaf_Operator { lhs = Located { end = { col = 7, row = 3 }, start = { col = 5, row = 3 } } (Frontend.Int 78), op = Add, parent = Nothing, rhs = Nothing }
-                                }
-                            )
-                    }
+                [ Ok (ValueDeclaration { args = [], name = Located { end = { col = 2, row = 1 }, start = { col = 1, row = 1 } } (ValueOrFunctionOrGenericType "a"), valueExpr__ = Located { end = { col = 10, row = 1 }, start = { col = 5, row = 1 } } (Frontend.Operator Subtract (Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Frontend.Int 5)) (Located { end = { col = 10, row = 1 }, start = { col = 9, row = 1 } } (Frontend.Int 5))) })
+                , Ok (ValueDeclaration { args = [], name = Located { end = { col = 2, row = 3 }, start = { col = 1, row = 3 } } (ValueOrFunctionOrGenericType "b"), valueExpr__ = Located { end = { col = 23, row = 3 }, start = { col = 5, row = 3 } } (Frontend.Operator Add (Located { end = { col = 19, row = 3 }, start = { col = 5, row = 3 } } (Frontend.Operator Subtract (Located { end = { col = 15, row = 3 }, start = { col = 5, row = 3 } } (Frontend.Operator Add (Located { end = { col = 11, row = 3 }, start = { col = 5, row = 3 } } (Frontend.Operator Add (Located { end = { col = 7, row = 3 }, start = { col = 5, row = 3 } } (Frontend.Int 78)) (Located { end = { col = 11, row = 3 }, start = { col = 10, row = 3 } } (Frontend.Int 5)))) (Located { end = { col = 15, row = 3 }, start = { col = 14, row = 3 } } (Frontend.Int 2)))) (Located { end = { col = 19, row = 3 }, start = { col = 18, row = 3 } } (Frontend.Int 4)))) (Located { end = { col = 23, row = 3 }, start = { col = 22, row = 3 } } (Frontend.Int 5))) })
                 ]
       , lexed =
             Ok

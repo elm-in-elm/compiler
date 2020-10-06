@@ -1057,17 +1057,6 @@ parserExpression newState prevExpr item =
             appendOperatorTo prevExpr op
                 |> partialExpressionToParseResult newState
 
-        Lexer.Newlines _ 0 ->
-            case prevExpr of
-                ExpressionNestingLeaf_Operator {} ->
-                    Error_PartwayThroughValueDeclaration
-                        |> ParseResult_Err
-
-                ExpressionNestingLeafType_Expr expr ->
-                    expr
-                        |> PartialResult_Done
-                        |> newState
-
         Lexer.NumericLiteral str ->
             case String.toInt str of
                 Just i ->
@@ -1079,6 +1068,24 @@ parserExpression newState prevExpr item =
                 Nothing ->
                     Error_InvalidNumericLiteral str
                         |> ParseResult_Err
+
+        Lexer.Newlines _ 0 ->
+            case prevExpr of
+                ExpressionNestingLeaf_Operator partialExpr ->
+                    case partialExpr.rhs of
+                        Just rhs ->
+                            Located.merge (Frontend.Operator partialExpr.op) partialExpr.lhs rhs
+                                |> PartialResult_Done
+                                |> newState
+
+                        Nothing ->
+                            Error_PartwayThroughValueDeclaration
+                                |> ParseResult_Err
+
+                ExpressionNestingLeafType_Expr expr ->
+                    expr
+                        |> PartialResult_Done
+                        |> newState
 
         Lexer.Newlines _ _ ->
             ParseResult_Skip
@@ -1477,7 +1484,7 @@ appendOperatorTo leaf appendingOp =
                             Operator.LeftToRight ->
                                 ExpressionNestingLeaf_Operator
                                     { op = appendingOp
-                                    , lhs = Debug.todo "add to frontend"
+                                    , lhs = Located.merge (Frontend.Operator newParent.op) newParent.lhs parentRhs
                                     , rhs = Nothing
                                     , parent =
                                         Just
