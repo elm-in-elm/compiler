@@ -1,1 +1,1 @@
-type alias Ty = { hi: 6, buy: 8 }
+type alias Ty = { hi: (), buy: String }
