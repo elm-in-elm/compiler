@@ -1,7 +1,7 @@
 module ParserLexerTestCases exposing (shouldNotParseTestCases, shouldParseTestCases)
 
 import Dict
-import Elm.AST.Frontend exposing (Expr(..))
+import Elm.AST.Frontend as Frontend
 import Elm.Data.Located as Located exposing (Located(..))
 import Elm.Data.Qualifiedness exposing (PossiblyQualified(..))
 import Elm.Data.Type.Concrete exposing (ConcreteType(..))
@@ -53,8 +53,8 @@ b = 78
                 ]
       , contextualized =
             Just
-                [ Ok (ValueDeclaration { args = [], expr = Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Int 5), name = Located { end = { col = 2, row = 1 }, start = { col = 1, row = 1 } } (ValueOrFunctionOrGenericType "a") })
-                , Ok (ValueDeclaration { args = [], expr = Located { end = { col = 7, row = 3 }, start = { col = 5, row = 3 } } (Int 78), name = Located { end = { col = 2, row = 3 }, start = { col = 1, row = 3 } } (ValueOrFunctionOrGenericType "b") })
+                [ Ok (ValueDeclaration { args = [], name = Located { end = { col = 2, row = 1 }, start = { col = 1, row = 1 } } (ValueOrFunctionOrGenericType "a"), valueExpr__ = Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Frontend.Int 5) })
+                , Ok (ValueDeclaration { args = [], name = Located { end = { col = 2, row = 3 }, start = { col = 1, row = 3 } } (ValueOrFunctionOrGenericType "b"), valueExpr__ = Located { end = { col = 7, row = 3 }, start = { col = 5, row = 3 } } (Frontend.Int 78) })
                 ]
       }
     , { name = "type-alias"
@@ -93,6 +93,70 @@ b = 78
                                 }
                         , genericArgs = []
                         , ty = TypeOrConstructor "Model"
+                        }
+                    )
+                ]
+      }
+    , { name = "type-alias-and-expression"
+      , source = """type alias Model = List Int
+
+expr hi = 77
+"""
+      , lexed =
+            Ok
+                [ Located { end = { col = 5, row = 1 }, start = { col = 1, row = 1 } } (Token "type")
+                , Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Whitespace 1)
+                , Located { end = { col = 11, row = 1 }, start = { col = 6, row = 1 } } (Token "alias")
+                , Located { end = { col = 12, row = 1 }, start = { col = 11, row = 1 } } (Whitespace 1)
+                , Located { end = { col = 17, row = 1 }, start = { col = 12, row = 1 } } (Token "Model")
+                , Located { end = { col = 18, row = 1 }, start = { col = 17, row = 1 } } (Whitespace 1)
+                , Located { end = { col = 19, row = 1 }, start = { col = 18, row = 1 } } (Sigil Assign)
+                , Located { end = { col = 20, row = 1 }, start = { col = 19, row = 1 } } (Whitespace 1)
+                , Located { end = { col = 24, row = 1 }, start = { col = 20, row = 1 } } (Token "List")
+                , Located { end = { col = 25, row = 1 }, start = { col = 24, row = 1 } } (Whitespace 1)
+                , Located { end = { col = 28, row = 1 }, start = { col = 25, row = 1 } } (Token "Int")
+                , Located { end = { col = 1, row = 3 }, start = { col = 28, row = 1 } }
+                    (Newlines
+                        [ 0
+                        ]
+                        0
+                    )
+                , Located { end = { col = 5, row = 3 }, start = { col = 1, row = 3 } } (Token "expr")
+                , Located { end = { col = 6, row = 3 }, start = { col = 5, row = 3 } } (Whitespace 1)
+                , Located { end = { col = 8, row = 3 }, start = { col = 6, row = 3 } } (Token "hi")
+                , Located { end = { col = 9, row = 3 }, start = { col = 8, row = 3 } } (Whitespace 1)
+                , Located { end = { col = 10, row = 3 }, start = { col = 9, row = 3 } } (Sigil Assign)
+                , Located { end = { col = 11, row = 3 }, start = { col = 10, row = 3 } } (Whitespace 1)
+                , Located { end = { col = 13, row = 3 }, start = { col = 11, row = 3 } } (NumericLiteral "77")
+                , Located { end = { col = 1, row = 4 }, start = { col = 13, row = 3 } } (Newlines [] 0)
+                ]
+      , contextualized =
+            Just
+                [ Ok
+                    (TypeAlias
+                        { expr =
+                            UserDefinedType
+                                { args =
+                                    [ UserDefinedType
+                                        { args = []
+                                        , name = "Int"
+                                        , qualifiedness = PossiblyQualified Nothing
+                                        }
+                                    ]
+                                , name = "List"
+                                , qualifiedness = PossiblyQualified Nothing
+                                }
+                        , genericArgs = []
+                        , ty = TypeOrConstructor "Model"
+                        }
+                    )
+                , Ok
+                    (ValueDeclaration
+                        { args =
+                            [ Located { end = { col = 8, row = 3 }, start = { col = 6, row = 3 } } (ValueOrFunctionOrGenericType "hi")
+                            ]
+                        , name = Located { end = { col = 5, row = 3 }, start = { col = 1, row = 3 } } (ValueOrFunctionOrGenericType "expr")
+                        , valueExpr__ = Located { end = { col = 13, row = 3 }, start = { col = 11, row = 3 } } (Frontend.Int 77)
                         }
                     )
                 ]

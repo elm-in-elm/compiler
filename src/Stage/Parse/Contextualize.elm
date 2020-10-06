@@ -69,7 +69,9 @@ type Block
 
         -- TODO(harry): these could be patterns!
         , args : List (Located Token.ValueOrFunctionOrGenericType)
-        , expr : Frontend.LocatedExpr
+
+        -- This key's name is hard coded into parser-tests/Update.elm
+        , valueExpr__ : Frontend.LocatedExpr
         }
     | TypeAlias
         { ty : Token.TypeOrConstructor
@@ -430,7 +432,7 @@ parseAnything state =
                 ExpressionResult_Done expr ->
                     { name = name
                     , args = args
-                    , expr = expr
+                    , valueExpr__ = expr
                     }
                         |> ValueDeclaration
                         |> ParseResult_Complete
@@ -1471,7 +1473,7 @@ blockFromState state =
                 ExpressionNestingLeafType_Expr expr ->
                     { name = name
                     , args = args
-                    , expr = expr
+                    , valueExpr__ = expr
                     }
                         |> ValueDeclaration
                         |> Ok

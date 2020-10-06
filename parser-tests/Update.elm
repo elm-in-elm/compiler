@@ -72,6 +72,7 @@ init snippets =
       , contextualized ="""
                             ++ (Debug.toString contextualized
                                     |> preFormatElmCode
+                                    |> resolveCustomTypeConstructors
                                )
                             ++ """
       }"""
@@ -94,6 +95,7 @@ update () model =
     ( model, Cmd.none )
 
 
+
 preFormatElmCode : String -> String
 preFormatElmCode =
     {- String.replace "}" """
@@ -110,3 +112,20 @@ preFormatElmCode =
     """
         >> String.replace """UserDefinedType {""" """UserDefinedType {
     """
+{-| Always run after preformatting.
+-}
+resolveCustomTypeConstructors : String -> String
+resolveCustomTypeConstructors =
+    String.split "\n"
+        >> List.map (
+            \line ->
+                if String.contains "valueExpr__" line then
+                line
+                    |> String.replace "Int" "Frontend.Int"
+                    |> String.replace "Float" "Frontend.Float"
+                    |> String.replace "Unit" "Frontend.Unit"
+                else
+                    line
+
+        )
+        >> String.join "\n"
