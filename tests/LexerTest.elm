@@ -18,7 +18,6 @@ import String.Extra as String
 import Test exposing (Test, describe, test)
 
 
-runTest : ( String, String ) -> Test
 runTest ( description, input ) =
     test description <|
         \() ->

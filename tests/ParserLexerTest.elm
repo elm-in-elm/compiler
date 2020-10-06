@@ -10,7 +10,6 @@ import Stage.Parse.Lexer as Lexer
 import Test exposing (Test, describe, fuzz, test)
 
 
-tests : Test
 tests =
     describe "parser lexer test"
         [ describe "helpers"
