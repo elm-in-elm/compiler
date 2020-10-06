@@ -217,9 +217,13 @@ type alias PartialTypeExpressionLeaf =
     }
 
 
-type TypeExpressionResult
-    = TypeExpressionResult_Progress PartialTypeExpressionLeaf
-    | TypeExpressionResult_Done PartialTypeExpression
+type PartialResult progress done
+    = PartialResult_Progress progress
+    | PartialResult_Done done
+
+
+type alias TypeExpressionResult =
+    PartialResult PartialTypeExpressionLeaf PartialTypeExpression
 
 
 
@@ -243,9 +247,8 @@ type ExpressionNestingLeaf
     | ExpressionNestingLeafType_Expr Frontend.LocatedExpr
 
 
-type ExpressionResult
-    = ExpressionResult_Progress ExpressionNestingLeaf
-    | ExpressionResult_Done Frontend.LocatedExpr
+type alias ExpressionResult =
+    PartialResult ExpressionNestingLeaf Frontend.LocatedExpr
 
 
 type Error
@@ -399,11 +402,11 @@ parseAnything state =
     let
         newTypeAliasState aliasName typeArgs res =
             case res of
-                TypeExpressionResult_Progress expr ->
+                PartialResult_Progress expr ->
                     State_BlockTypeAlias (BlockTypeAlias_Completish aliasName typeArgs expr)
                         |> ParseResult_Ok
 
-                TypeExpressionResult_Done expr ->
+                PartialResult_Done expr ->
                     case partialTypeExpressionToConcreteType expr of
                         Ok concreteType ->
                             { ty = aliasName
@@ -419,7 +422,7 @@ parseAnything state =
 
         newExpressionState name args res =
             case res of
-                ExpressionResult_Progress expr ->
+                PartialResult_Progress expr ->
                     State_BlockValueDeclaration
                         (BlockValueDeclaration_Completish
                             { name = name
@@ -429,7 +432,7 @@ parseAnything state =
                         )
                         |> ParseResult_Ok
 
-                ExpressionResult_Done expr ->
+                PartialResult_Done expr ->
                     { name = name
                     , args = args
                     , valueExpr__ = expr
@@ -713,14 +716,14 @@ parserTypeExprFromEmpty newState item =
                     , args = empty
                     }
             }
-                |> TypeExpressionResult_Progress
+                |> PartialResult_Progress
                 |> newState
 
         Lexer.Sigil (Lexer.Bracket Lexer.Round Lexer.Open) ->
             { parents = []
             , nesting = NestingLeafType_Bracket empty Nothing
             }
-                |> TypeExpressionResult_Progress
+                |> PartialResult_Progress
                 |> newState
 
         Lexer.Sigil (Lexer.Bracket role Lexer.Close) ->
@@ -735,7 +738,7 @@ parserTypeExprFromEmpty newState item =
                     }
             , parents = []
             }
-                |> TypeExpressionResult_Progress
+                |> PartialResult_Progress
                 |> newState
 
         Lexer.Sigil Lexer.Colon ->
@@ -774,7 +777,7 @@ parserTypeExpr newState prevExpr item =
     case Located.unwrap item of
         Lexer.Token str ->
             exprAppend prevExpr str
-                |> partialTypeExpressionToParseResult newState
+                |> partialExpressionToParseResult newState
 
         Lexer.Sigil (Lexer.Bracket Lexer.Round Lexer.Open) ->
             leafToParents prevExpr
@@ -784,7 +787,7 @@ parserTypeExpr newState prevExpr item =
                         , nesting = NestingLeafType_Bracket empty Nothing
                         }
                     )
-                |> partialTypeExpressionToParseResult newState
+                |> partialExpressionToParseResult newState
 
         Lexer.Sigil (Lexer.Bracket Lexer.Round Lexer.Close) ->
             let
@@ -801,7 +804,7 @@ parserTypeExpr newState prevExpr item =
 
                 NestingLeafType_Bracket argStack mLastExpression ->
                     closeBracket argStack mLastExpression collapsedLeaf.parents
-                        |> partialTypeExpressionToParseResult newState
+                        |> partialExpressionToParseResult newState
 
                 NestingLeafType_PartialRecord _ ->
                     Error_WrongClosingBracket
@@ -831,15 +834,15 @@ parserTypeExpr newState prevExpr item =
                         , parents = newParents
                         }
                     )
-                |> partialTypeExpressionToParseResult newState
+                |> partialExpressionToParseResult newState
 
         Lexer.Sigil Lexer.Colon ->
             appendColonTo prevExpr
-                |> partialTypeExpressionToParseResult newState
+                |> partialExpressionToParseResult newState
 
         Lexer.Sigil Lexer.Comma ->
             appendCommaTo prevExpr
-                |> partialTypeExpressionToParseResult newState
+                |> partialExpressionToParseResult newState
 
         Lexer.Sigil (Lexer.Bracket Lexer.Curly Lexer.Close) ->
             let
@@ -863,7 +866,7 @@ parserTypeExpr newState prevExpr item =
 
                 NestingLeafType_PartialRecord pr ->
                     closeRecord pr collapsedLeaf.parents
-                        |> partialTypeExpressionToParseResult newState
+                        |> partialExpressionToParseResult newState
 
                 NestingLeafType_Function { output } ->
                     case output of
@@ -886,7 +889,7 @@ parserTypeExpr newState prevExpr item =
                                     , lastEntry = LastEntryOfRecord_Empty
                                     }
                             }
-                                |> TypeExpressionResult_Progress
+                                |> PartialResult_Progress
                                 |> newState
 
                         _ ->
@@ -906,7 +909,7 @@ parserTypeExpr newState prevExpr item =
                             }
                     , parents = []
                     }
-                        |> TypeExpressionResult_Progress
+                        |> PartialResult_Progress
                         |> newState
 
                 NestingLeafType_TypeWithArgs {} ->
@@ -927,7 +930,7 @@ parserTypeExpr newState prevExpr item =
                                     }
                             , parents = collapsedLeaf.parents
                             }
-                                |> TypeExpressionResult_Progress
+                                |> PartialResult_Progress
                                 |> newState
 
                 NestingLeafType_Bracket argStack (Just expr) ->
@@ -939,7 +942,7 @@ parserTypeExpr newState prevExpr item =
                             }
                     , parents = NestingParentType_Bracket argStack :: collapsedLeaf.parents
                     }
-                        |> TypeExpressionResult_Progress
+                        |> PartialResult_Progress
                         |> newState
 
                 NestingLeafType_Bracket argStack Nothing ->
@@ -974,13 +977,13 @@ parserTypeExpr newState prevExpr item =
                                     }
                                     :: collapsedLeaf.parents
                             }
-                                |> TypeExpressionResult_Progress
+                                |> PartialResult_Progress
                                 |> newState
 
         Lexer.Newlines _ 0 ->
             case (autoCollapseNesting CollapseLevel_Function prevExpr).nesting of
                 NestingLeafType_Expr expr ->
-                    TypeExpressionResult_Done expr
+                    PartialResult_Done expr
                         |> newState
 
                 _ ->
@@ -1014,7 +1017,7 @@ parserExpressionFromEmpty newState item =
                     Frontend.Int i
                         |> withCorrectLocation
                         |> ExpressionNestingLeafType_Expr
-                        |> ExpressionResult_Progress
+                        |> PartialResult_Progress
                         |> newState
 
                 Nothing ->
@@ -1043,6 +1046,10 @@ parserExpression :
     -> ParseResult
 parserExpression newState prevExpr item =
     case Located.unwrap item of
+        Lexer.Sigil (Lexer.Operator op) ->
+            appendOperatorTo prevExpr op
+                |> partialExpressionToParseResult newState
+
         Lexer.Newlines _ 0 ->
             case prevExpr of
                 ExpressionNestingLeaf_Operator {} ->
@@ -1051,7 +1058,7 @@ parserExpression newState prevExpr item =
 
                 ExpressionNestingLeafType_Expr expr ->
                     expr
-                        |> ExpressionResult_Done
+                        |> PartialResult_Done
                         |> newState
 
         Lexer.Newlines _ _ ->
@@ -1403,6 +1410,15 @@ closeRecord { firstEntries, lastEntry } parents =
                 |> Err
 
 
+
+-- Value expression helpers
+
+
+appendOperatorTo : ExpressionNestingLeaf -> Lexer.LexOperator -> Result Error ExpressionNestingLeaf
+appendOperatorTo leaf op =
+    Debug.todo ("implement operator" ++ Lexer.toString (op |> Lexer.Operator |> Lexer.Sigil))
+
+
 blockFromState : State -> Maybe (Result Error Block)
 blockFromState state =
     case state of
@@ -1536,11 +1552,14 @@ appropriately.
 TODO(harry): We can inline this function.
 
 -}
-partialTypeExpressionToParseResult : (TypeExpressionResult -> ParseResult) -> Result Error PartialTypeExpressionLeaf -> ParseResult
-partialTypeExpressionToParseResult newState rnewPartialType =
+partialExpressionToParseResult :
+    (PartialResult progress neverDone -> ParseResult)
+    -> Result Error progress
+    -> ParseResult
+partialExpressionToParseResult newState rnewPartialType =
     case rnewPartialType of
         Ok newPartialType ->
-            TypeExpressionResult_Progress newPartialType
+            PartialResult_Progress newPartialType
                 |> newState
 
         Err e ->
