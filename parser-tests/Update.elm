@@ -112,6 +112,8 @@ preFormatElmCode =
     """
         >> String.replace """UserDefinedType {""" """UserDefinedType {
     """
+        >> String.replace """BlockValueDeclaration_Completish {""" """BlockValueDeclaration_Completish {
+    """
 {-| Always run after preformatting.
 -}
 resolveCustomTypeConstructors : String -> String
@@ -119,7 +121,8 @@ resolveCustomTypeConstructors =
     String.split "\n"
         >> List.map (
             \line ->
-                if String.contains "valueExpr__" line then
+                if String.contains "valueExpr__" line || String.contains "ExpressionNestingParent_Operator" line
+                    || String.contains "ExpressionNestingLeaf_Operator" line then
                 line
                     |> String.replace "Int" "Frontend.Int"
                     |> String.replace "Float" "Frontend.Float"

@@ -42,8 +42,8 @@ type OperatorAssociativity
     | LeftToRight
 
 
-getOperatorPrecedence : Operator -> OperatorPrecedence
-getOperatorPrecedence op =
+getPrecedence : Operator -> OperatorPrecedence
+getPrecedence op =
     case op of
         Add ->
             Addition
@@ -85,8 +85,8 @@ getOperatorPrecedence op =
             Concatenation
 
 
-getOperatorAssociativity : OperatorPrecedence -> OperatorAssociativity
-getOperatorAssociativity prec =
+getAssociativity : OperatorPrecedence -> OperatorAssociativity
+getAssociativity prec =
     case prec of
         Composition ->
             ConflictsWithOthers

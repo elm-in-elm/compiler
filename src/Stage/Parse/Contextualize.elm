@@ -243,6 +243,7 @@ type ExpressionNestingLeaf
     = ExpressionNestingLeaf_Operator
         { op : Operator
         , lhs : Frontend.LocatedExpr
+        , rhs : Maybe Frontend.LocatedExpr
         , parent : Maybe ExpressionNestingParent
         }
     | ExpressionNestingLeafType_Expr Frontend.LocatedExpr
@@ -268,6 +269,7 @@ type Error
     | Error_ExpectedKeyWhilstParsingRecord
     | Error_TypeDoesNotTakeArgs PartialTypeExpression PartialTypeExpression
     | Error_TypeDoesNotTakeArgs2 PartialTypeExpression
+    | Error_ValueDoesNotTakeArgs Frontend.LocatedExpr
     | Error_ExtraItemAfterBlock PartialTypeExpression Lexer.LexItem
     | Error_TooManyTupleArgs
         --
@@ -1046,6 +1048,10 @@ parserExpression :
     -> Located LexItem
     -> ParseResult
 parserExpression newState prevExpr item =
+    let
+        withCorrectLocation x =
+            Located.map (\_ -> x) item
+    in
     case Located.unwrap item of
         Lexer.Sigil (Lexer.Operator op) ->
             appendOperatorTo prevExpr op
@@ -1061,6 +1067,18 @@ parserExpression newState prevExpr item =
                     expr
                         |> PartialResult_Done
                         |> newState
+
+        Lexer.NumericLiteral str ->
+            case String.toInt str of
+                Just i ->
+                    Frontend.Int i
+                        |> withCorrectLocation
+                        |> appendValueExprTo prevExpr
+                        |> partialExpressionToParseResult newState
+
+                Nothing ->
+                    Error_InvalidNumericLiteral str
+                        |> ParseResult_Err
 
         Lexer.Newlines _ _ ->
             ParseResult_Skip
@@ -1416,8 +1434,96 @@ closeRecord { firstEntries, lastEntry } parents =
 
 
 appendOperatorTo : ExpressionNestingLeaf -> Operator -> Result Error ExpressionNestingLeaf
-appendOperatorTo leaf op =
-    Debug.todo ("implement operator" ++ Lexer.toString (op |> Lexer.Operator |> Lexer.Sigil))
+appendOperatorTo leaf appendingOp =
+    case leaf of
+        ExpressionNestingLeaf_Operator newParent ->
+            case newParent.rhs of
+                Nothing ->
+                    Error_InvalidToken Expecting_Unknown
+                        |> Err
+
+                Just parentRhs ->
+                    let
+                        parentPrec =
+                            Operator.getPrecedence newParent.op
+
+                        appendingPrec =
+                            Operator.getPrecedence appendingOp
+                    in
+                    if parentPrec == appendingPrec then
+                        case Operator.getAssociativity parentPrec of
+                            Operator.ConflictsWithOthers ->
+                                Debug.todo ""
+
+                            Operator.ConflictsWithSelf ->
+                                Debug.todo ""
+
+                            Operator.RightToLeft ->
+                                ExpressionNestingLeaf_Operator
+                                    { op = appendingOp
+                                    , lhs = parentRhs
+                                    , rhs = Nothing
+                                    , parent =
+                                        Just
+                                            (ExpressionNestingParent_Operator
+                                                { op = newParent.op
+                                                , lhs = newParent.lhs
+                                                , parent = newParent.parent
+                                                }
+                                            )
+                                    }
+                                    |> Ok
+
+                            Operator.LeftToRight ->
+                                ExpressionNestingLeaf_Operator
+                                    { op = appendingOp
+                                    , lhs = Debug.todo "add to frontend"
+                                    , rhs = Nothing
+                                    , parent =
+                                        Just
+                                            (ExpressionNestingParent_Operator
+                                                { op = newParent.op
+                                                , lhs = newParent.lhs
+                                                , parent = newParent.parent
+                                                }
+                                            )
+                                    }
+                                    |> Ok
+
+                    else
+                        Debug.todo ""
+
+        ExpressionNestingLeafType_Expr locatedexpr ->
+            ExpressionNestingLeaf_Operator
+                { op = appendingOp
+                , lhs = locatedexpr
+                , parent = Nothing
+                , rhs = Nothing
+                }
+                |> Ok
+
+
+appendValueExprTo : ExpressionNestingLeaf -> Frontend.LocatedExpr -> Result Error ExpressionNestingLeaf
+appendValueExprTo leaf appendingExpr =
+    case leaf of
+        ExpressionNestingLeaf_Operator newParent ->
+            case newParent.rhs of
+                Nothing ->
+                    ExpressionNestingLeaf_Operator
+                        { op = newParent.op
+                        , lhs = newParent.lhs
+                        , rhs = Just appendingExpr
+                        , parent = newParent.parent
+                        }
+                        |> Ok
+
+                Just parentRhs ->
+                    Error_ValueDoesNotTakeArgs parentRhs
+                        |> Err
+
+        ExpressionNestingLeafType_Expr locatedExpr ->
+            Error_ValueDoesNotTakeArgs locatedExpr
+                |> Err
 
 
 blockFromState : State -> Maybe (Result Error Block)

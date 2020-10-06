@@ -3,6 +3,7 @@ module ParserLexerTestCases exposing (shouldNotParseTestCases, shouldParseTestCa
 import Dict
 import Elm.AST.Frontend as Frontend
 import Elm.Data.Located as Located exposing (Located(..))
+import Elm.Data.Operator as Operator exposing (Operator(..))
 import Elm.Data.Qualifiedness exposing (PossiblyQualified(..))
 import Elm.Data.Type.Concrete exposing (ConcreteType(..))
 import Stage.Parse.Contextualize as Contextualize exposing (..)
@@ -55,6 +56,147 @@ b = 78
                 , Located { end = { col = 5, row = 3 }, start = { col = 4, row = 3 } } (Whitespace 1)
                 , Located { end = { col = 7, row = 3 }, start = { col = 5, row = 3 } } (NumericLiteral "78")
                 , Located { end = { col = 1, row = 4 }, start = { col = 7, row = 3 } } (Newlines [] 0)
+                ]
+      }
+    , { name = "expression-int-add"
+      , source = """a = 5 + 5
+
+b = 78 + 5 + 2+ 4
+"""
+      , contextualized =
+            Just
+                [ Err
+                    { error = Error_InvalidToken Expecting_Unknown
+                    , item = Just (Located { end = { col = 10, row = 1 }, start = { col = 9, row = 1 } } (NumericLiteral "5"))
+                    , state =
+                        State_BlockValueDeclaration
+                            (BlockValueDeclaration_Completish
+                                { args = []
+                                , name = Located { end = { col = 2, row = 1 }, start = { col = 1, row = 1 } } (ValueOrFunctionOrGenericType "a")
+                                , partialExpr = ExpressionNestingLeaf_Operator { lhs = Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Frontend.Int 5), op = Add, parent = Nothing, rhs = Nothing }
+                                }
+                            )
+                    }
+                , Err
+                    { error = Error_InvalidToken Expecting_Unknown
+                    , item = Just (Located { end = { col = 11, row = 3 }, start = { col = 10, row = 3 } } (NumericLiteral "5"))
+                    , state =
+                        State_BlockValueDeclaration
+                            (BlockValueDeclaration_Completish
+                                { args = []
+                                , name = Located { end = { col = 2, row = 3 }, start = { col = 1, row = 3 } } (ValueOrFunctionOrGenericType "b")
+                                , partialExpr = ExpressionNestingLeaf_Operator { lhs = Located { end = { col = 7, row = 3 }, start = { col = 5, row = 3 } } (Frontend.Int 78), op = Add, parent = Nothing, rhs = Nothing }
+                                }
+                            )
+                    }
+                ]
+      , lexed =
+            Ok
+                [ Located { end = { col = 2, row = 1 }, start = { col = 1, row = 1 } } (Token "a")
+                , Located { end = { col = 3, row = 1 }, start = { col = 2, row = 1 } } (Whitespace 1)
+                , Located { end = { col = 4, row = 1 }, start = { col = 3, row = 1 } } (Sigil Assign)
+                , Located { end = { col = 5, row = 1 }, start = { col = 4, row = 1 } } (Whitespace 1)
+                , Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (NumericLiteral "5")
+                , Located { end = { col = 7, row = 1 }, start = { col = 6, row = 1 } } (Whitespace 1)
+                , Located { end = { col = 8, row = 1 }, start = { col = 7, row = 1 } } (Sigil (Operator Add))
+                , Located { end = { col = 9, row = 1 }, start = { col = 8, row = 1 } } (Whitespace 1)
+                , Located { end = { col = 10, row = 1 }, start = { col = 9, row = 1 } } (NumericLiteral "5")
+                , Located { end = { col = 1, row = 3 }, start = { col = 10, row = 1 } }
+                    (Newlines
+                        [ 0
+                        ]
+                        0
+                    )
+                , Located { end = { col = 2, row = 3 }, start = { col = 1, row = 3 } } (Token "b")
+                , Located { end = { col = 3, row = 3 }, start = { col = 2, row = 3 } } (Whitespace 1)
+                , Located { end = { col = 4, row = 3 }, start = { col = 3, row = 3 } } (Sigil Assign)
+                , Located { end = { col = 5, row = 3 }, start = { col = 4, row = 3 } } (Whitespace 1)
+                , Located { end = { col = 7, row = 3 }, start = { col = 5, row = 3 } } (NumericLiteral "78")
+                , Located { end = { col = 8, row = 3 }, start = { col = 7, row = 3 } } (Whitespace 1)
+                , Located { end = { col = 9, row = 3 }, start = { col = 8, row = 3 } } (Sigil (Operator Add))
+                , Located { end = { col = 10, row = 3 }, start = { col = 9, row = 3 } } (Whitespace 1)
+                , Located { end = { col = 11, row = 3 }, start = { col = 10, row = 3 } } (NumericLiteral "5")
+                , Located { end = { col = 12, row = 3 }, start = { col = 11, row = 3 } } (Whitespace 1)
+                , Located { end = { col = 13, row = 3 }, start = { col = 12, row = 3 } } (Sigil (Operator Add))
+                , Located { end = { col = 14, row = 3 }, start = { col = 13, row = 3 } } (Whitespace 1)
+                , Located { end = { col = 15, row = 3 }, start = { col = 14, row = 3 } } (NumericLiteral "2")
+                , Located { end = { col = 16, row = 3 }, start = { col = 15, row = 3 } } (Sigil (Operator Add))
+                , Located { end = { col = 17, row = 3 }, start = { col = 16, row = 3 } } (Whitespace 1)
+                , Located { end = { col = 18, row = 3 }, start = { col = 17, row = 3 } } (NumericLiteral "4")
+                , Located { end = { col = 1, row = 4 }, start = { col = 18, row = 3 } } (Newlines [] 0)
+                ]
+      }
+    , { name = "expression-int-subtract"
+      , source = """a = 5 - 5
+
+b = 78 + 5 + 2 - 4 + 5
+"""
+      , contextualized =
+            Just
+                [ Err
+                    { error = Error_InvalidToken Expecting_Unknown
+                    , item = Just (Located { end = { col = 10, row = 1 }, start = { col = 9, row = 1 } } (NumericLiteral "5"))
+                    , state =
+                        State_BlockValueDeclaration
+                            (BlockValueDeclaration_Completish
+                                { args = []
+                                , name = Located { end = { col = 2, row = 1 }, start = { col = 1, row = 1 } } (ValueOrFunctionOrGenericType "a")
+                                , partialExpr = ExpressionNestingLeaf_Operator { lhs = Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Frontend.Int 5), op = Subtract, parent = Nothing, rhs = Nothing }
+                                }
+                            )
+                    }
+                , Err
+                    { error = Error_InvalidToken Expecting_Unknown
+                    , item = Just (Located { end = { col = 11, row = 3 }, start = { col = 10, row = 3 } } (NumericLiteral "5"))
+                    , state =
+                        State_BlockValueDeclaration
+                            (BlockValueDeclaration_Completish
+                                { args = []
+                                , name = Located { end = { col = 2, row = 3 }, start = { col = 1, row = 3 } } (ValueOrFunctionOrGenericType "b")
+                                , partialExpr = ExpressionNestingLeaf_Operator { lhs = Located { end = { col = 7, row = 3 }, start = { col = 5, row = 3 } } (Frontend.Int 78), op = Add, parent = Nothing, rhs = Nothing }
+                                }
+                            )
+                    }
+                ]
+      , lexed =
+            Ok
+                [ Located { end = { col = 2, row = 1 }, start = { col = 1, row = 1 } } (Token "a")
+                , Located { end = { col = 3, row = 1 }, start = { col = 2, row = 1 } } (Whitespace 1)
+                , Located { end = { col = 4, row = 1 }, start = { col = 3, row = 1 } } (Sigil Assign)
+                , Located { end = { col = 5, row = 1 }, start = { col = 4, row = 1 } } (Whitespace 1)
+                , Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (NumericLiteral "5")
+                , Located { end = { col = 7, row = 1 }, start = { col = 6, row = 1 } } (Whitespace 1)
+                , Located { end = { col = 8, row = 1 }, start = { col = 7, row = 1 } } (Sigil (Operator Subtract))
+                , Located { end = { col = 9, row = 1 }, start = { col = 8, row = 1 } } (Whitespace 1)
+                , Located { end = { col = 10, row = 1 }, start = { col = 9, row = 1 } } (NumericLiteral "5")
+                , Located { end = { col = 1, row = 3 }, start = { col = 10, row = 1 } }
+                    (Newlines
+                        [ 0
+                        ]
+                        0
+                    )
+                , Located { end = { col = 2, row = 3 }, start = { col = 1, row = 3 } } (Token "b")
+                , Located { end = { col = 3, row = 3 }, start = { col = 2, row = 3 } } (Whitespace 1)
+                , Located { end = { col = 4, row = 3 }, start = { col = 3, row = 3 } } (Sigil Assign)
+                , Located { end = { col = 5, row = 3 }, start = { col = 4, row = 3 } } (Whitespace 1)
+                , Located { end = { col = 7, row = 3 }, start = { col = 5, row = 3 } } (NumericLiteral "78")
+                , Located { end = { col = 8, row = 3 }, start = { col = 7, row = 3 } } (Whitespace 1)
+                , Located { end = { col = 9, row = 3 }, start = { col = 8, row = 3 } } (Sigil (Operator Add))
+                , Located { end = { col = 10, row = 3 }, start = { col = 9, row = 3 } } (Whitespace 1)
+                , Located { end = { col = 11, row = 3 }, start = { col = 10, row = 3 } } (NumericLiteral "5")
+                , Located { end = { col = 12, row = 3 }, start = { col = 11, row = 3 } } (Whitespace 1)
+                , Located { end = { col = 13, row = 3 }, start = { col = 12, row = 3 } } (Sigil (Operator Add))
+                , Located { end = { col = 14, row = 3 }, start = { col = 13, row = 3 } } (Whitespace 1)
+                , Located { end = { col = 15, row = 3 }, start = { col = 14, row = 3 } } (NumericLiteral "2")
+                , Located { end = { col = 16, row = 3 }, start = { col = 15, row = 3 } } (Whitespace 1)
+                , Located { end = { col = 17, row = 3 }, start = { col = 16, row = 3 } } (Sigil (Operator Subtract))
+                , Located { end = { col = 18, row = 3 }, start = { col = 17, row = 3 } } (Whitespace 1)
+                , Located { end = { col = 19, row = 3 }, start = { col = 18, row = 3 } } (NumericLiteral "4")
+                , Located { end = { col = 20, row = 3 }, start = { col = 19, row = 3 } } (Whitespace 1)
+                , Located { end = { col = 21, row = 3 }, start = { col = 20, row = 3 } } (Sigil (Operator Add))
+                , Located { end = { col = 22, row = 3 }, start = { col = 21, row = 3 } } (Whitespace 1)
+                , Located { end = { col = 23, row = 3 }, start = { col = 22, row = 3 } } (NumericLiteral "5")
+                , Located { end = { col = 1, row = 4 }, start = { col = 23, row = 3 } } (Newlines [] 0)
                 ]
       }
     , { name = "type-alias"
