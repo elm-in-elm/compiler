@@ -420,6 +420,7 @@ The `LazyList a` type used by shrinkers is not exposed outside `elm-explorations
     shrinkPlus : CanonicalU.Expr -> CanonicalU.Expr -> LazyList CanonicalU.Expr
 
 -}
+shrinkPlus : CanonicalU.Expr -> CanonicalU.Expr -> LazyList CanonicalU.Expr
 shrinkPlus left right =
     ([ Shrink.map2 CanonicalU.Plus
         (shrinkExpr left)
@@ -446,6 +447,7 @@ The `LazyList a` type used by shrinkers is not exposed outside `elm-explorations
     shrinkCons : CanonicalU.Expr -> CanonicalU.Expr -> LazyList CanonicalU.Expr
 
 -}
+shrinkCons : CanonicalU.Expr -> CanonicalU.Expr -> LazyList CanonicalU.Expr
 shrinkCons x xs =
     ([ Shrink.map2 CanonicalU.Cons
         (shrinkExpr x)
@@ -472,6 +474,7 @@ The `LazyList a` type used by shrinkers is not exposed outside `elm-explorations
     shrinkCall : CanonicalU.Expr -> CanonicalU.Expr -> LazyList CanonicalU.Expr
 
 -}
+shrinkCall : CanonicalU.Expr -> CanonicalU.Expr -> LazyList CanonicalU.Expr
 shrinkCall fn arg =
     ([ Shrink.map2 call
         (shrinkExpr fn)
@@ -494,6 +497,7 @@ The `LazyList a` type used by shrinkers is not exposed outside `elm-explorations
     shrinkIf : CanonicalU.Expr -> CanonicalU.Expr -> CanonicalU.Expr -> LazyList CanonicalU.Expr
 
 -}
+shrinkIf : CanonicalU.Expr -> CanonicalU.Expr -> CanonicalU.Expr -> LazyList CanonicalU.Expr
 shrinkIf test then_ else_ =
     let
         withTest shrunkTest =
@@ -521,6 +525,7 @@ The `LazyList a` type used by shrinkers is not exposed outside `elm-explorations
     shrinkLambda : VarName -> CanonicalU.Expr -> LazyList CanonicalU.Expr
 
 -}
+shrinkLambda : VarName -> CanonicalU.Expr -> LazyList CanonicalU.Expr
 shrinkLambda argument body =
     body
         |> shrinkExpr
@@ -533,6 +538,7 @@ The `LazyList a` type used by shrinkers is not exposed outside `elm-explorations
     shrinkTuple : CanonicalU.Expr -> CanonicalU.Expr -> LazyList CanonicalU.Expr
 
 -}
+shrinkTuple : CanonicalU.Expr -> CanonicalU.Expr -> LazyList CanonicalU.Expr
 shrinkTuple first second =
     ([ Shrink.map2 CanonicalU.Tuple
         (shrinkExpr first)
@@ -555,6 +561,7 @@ The `LazyList a` type used by shrinkers is not exposed outside `elm-explorations
     shrinkTuple3 : CanonicalU.Expr -> CanonicalU.Expr -> CanonicalU.Expr -> LazyList CanonicalU.Expr
 
 -}
+shrinkTuple3 : CanonicalU.Expr -> CanonicalU.Expr -> CanonicalU.Expr -> LazyList CanonicalU.Expr
 shrinkTuple3 first second third =
     ([ Shrink.map3 CanonicalU.Tuple3
         (shrinkExpr first)

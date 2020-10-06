@@ -13,6 +13,7 @@ The `LazyList a` type used by shrinkers is not exposed outside `elm-explorations
     map2 : (a -> b -> c) -> LazyList a -> LazyList b -> LazyList c
 
 -}
+map2 : (a -> b -> c) -> LazyList a -> LazyList b -> LazyList c
 map2 f la lb =
     Shrink.map f la
         |> Shrink.andMap lb
@@ -28,6 +29,7 @@ The `LazyList a` type used by shrinkers is not exposed outside `elm-explorations
     map3 : (a -> b -> c -> d) -> LazyList a -> LazyList b -> LazyList c -> LazyList d
 
 -}
+map3 : (a -> b -> c -> d) -> LazyList a -> LazyList b -> LazyList c -> LazyList d
 map3 f la lb lc =
     Shrink.map f la
         |> Shrink.andMap lb
@@ -44,6 +46,7 @@ The `LazyList a` type used by shrinkers is not exposed outside `elm-explorations
     singleton : a -> LazyList a
 
 -}
+singleton : a -> LazyList a
 singleton x =
     x |> const x
 
