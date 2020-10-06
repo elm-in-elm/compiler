@@ -1484,46 +1484,6 @@ blockFromState state =
 -- helper functions
 
 
-type TokenOrType
-    = TokenOrType_Token String
-
-
-addToPartialRecord :
-    String
-    -> PartialRecord
-    -> Result Error PartialRecord
-addToPartialRecord token { firstEntries, lastEntry } =
-    let
-        newType =
-            TypeExpression_NamedType
-                { name = token
-                , args = empty
-                }
-    in
-    case lastEntry of
-        LastEntryOfRecord_Empty ->
-            { firstEntries = firstEntries
-            , lastEntry =
-                LastEntryOfRecord_Key token
-            }
-                |> Ok
-
-        LastEntryOfRecord_Key key ->
-            Error_ExpectedColonWhilstParsingRecord
-                |> Err
-
-        LastEntryOfRecord_KeyColon key ->
-            { firstEntries = firstEntries
-            , lastEntry =
-                LastEntryOfRecord_KeyValue key newType
-            }
-                |> Ok
-
-        LastEntryOfRecord_KeyValue key value ->
-            Error_TypeDoesNotTakeArgs value newType
-                |> Err
-
-
 type CollapseLevel
     = CollapseLevel_TypeWithArgs
     | CollapseLevel_Function
@@ -1698,16 +1658,6 @@ partialTypeExpressionToConcreteType pte =
                 (partialTypeExpressionToConcreteType functionTypeExpr.output)
 
 
-recoverErrors : ParseResult -> ParseResult
-recoverErrors res =
-    case res of
-        ParseResult_Err _ ->
-            ParseResult_Ok State_Error_Recovery
-
-        _ ->
-            res
-
-
 collectList : (a -> Result e o) -> List a -> Result e (List o)
 collectList =
     collectListHelp []
@@ -1726,19 +1676,6 @@ collectListHelp new func old =
 
         [] ->
             Ok (List.reverse new)
-
-
-parseResultFromMaybeResult : Maybe (Result Error State) -> ParseResult
-parseResultFromMaybeResult x =
-    case x of
-        Just (Ok s) ->
-            ParseResult_Ok s
-
-        Just (Err e) ->
-            ParseResult_Err e
-
-        Nothing ->
-            ParseResult_Skip
 
 
 
