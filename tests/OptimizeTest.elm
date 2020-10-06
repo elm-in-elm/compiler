@@ -33,7 +33,7 @@ optimize =
                     [ ( "works with two literal ints"
                       , located
                             ( Operator
-                            Operator.Add
+                                Operator.Add
                                 (typedInt 2)
                                 (typedInt 5)
                             , Type Type.Int

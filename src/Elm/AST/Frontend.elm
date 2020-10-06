@@ -237,7 +237,6 @@ unwrap expr =
                 (unwrap e1)
                 (unwrap e2)
 
-
         Lambda { arguments, body } ->
             Unwrapped.Lambda
                 { arguments = arguments

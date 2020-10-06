@@ -1,9 +1,9 @@
 module EmitJsonTest exposing (json)
 
-import Elm.Data.Operator as Operator
 import Dict
 import Elm.AST.Typed as Typed exposing (Expr_(..))
 import Elm.Data.Declaration exposing (Declaration, DeclarationBody(..))
+import Elm.Data.Operator as Operator
 import Elm.Data.Qualifiedness exposing (Qualified)
 import Expect
 import Fuzz exposing (bool, char, float, int, string)

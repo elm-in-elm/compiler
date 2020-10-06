@@ -262,7 +262,7 @@ javascript =
                                         , body =
                                             typed
                                                 (Operator
-                                                 Operator.Add
+                                                    Operator.Add
                                                     (typedInt 1)
                                                     (typed (Argument "x"))
                                                 )
