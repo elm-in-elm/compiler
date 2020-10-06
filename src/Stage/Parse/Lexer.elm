@@ -1,6 +1,7 @@
 module Stage.Parse.Lexer exposing (..)
 
 import Elm.Data.Located as Located exposing (Located)
+import Elm.Data.Operator as Operator exposing (Operator)
 import Parser.Advanced as P exposing ((|.), (|=), Parser)
 import Set
 
@@ -27,29 +28,13 @@ type LexSigil
     | Backslash
     | Underscore
     | Colon
-    | Operator LexOperator
+    | Operator Operator
 
 
 type LexCommentType
     = LineComment
     | MutlilineComment
     | DocComment
-
-
-type LexOperator
-    = Add
-    | Subtract
-    | Multiply
-    | Divide
-    | Exponentiate
-    | And
-    | Or
-    | Equals
-    | GreaterThan
-    | GreaterThanEquals
-    | LessThan
-    | LessThanEquals
-    | Append
 
 
 type BracketType
@@ -140,43 +125,43 @@ toString item =
         Sigil Underscore ->
             "_"
 
-        Sigil (Operator Add) ->
+        Sigil (Operator Operator.Add) ->
             "+"
 
-        Sigil (Operator Subtract) ->
+        Sigil (Operator Operator.Subtract) ->
             "-"
 
-        Sigil (Operator Multiply) ->
+        Sigil (Operator Operator.Multiply) ->
             "*"
 
-        Sigil (Operator Divide) ->
+        Sigil (Operator Operator.Divide) ->
             "/"
 
-        Sigil (Operator Exponentiate) ->
+        Sigil (Operator Operator.Exponentiate) ->
             "^"
 
-        Sigil (Operator And) ->
+        Sigil (Operator Operator.And) ->
             "&&"
 
-        Sigil (Operator Or) ->
+        Sigil (Operator Operator.Or) ->
             "||"
 
-        Sigil (Operator Equals) ->
+        Sigil (Operator Operator.Equals) ->
             "=="
 
-        Sigil (Operator GreaterThan) ->
+        Sigil (Operator Operator.GreaterThan) ->
             ">"
 
-        Sigil (Operator GreaterThanEquals) ->
+        Sigil (Operator Operator.GreaterThanEquals) ->
             ">="
 
-        Sigil (Operator LessThan) ->
+        Sigil (Operator Operator.LessThan) ->
             "<"
 
-        Sigil (Operator LessThanEquals) ->
+        Sigil (Operator Operator.LessThanEquals) ->
             "<="
 
-        Sigil (Operator Append) ->
+        Sigil (Operator Operator.Append) ->
             "++"
 
         Token s ->
@@ -408,25 +393,25 @@ sigilParser =
     P.oneOf
         [ -- Two character sigils (must come first)
           P.symbol (P.Token "&&" ExpectingSigil)
-            |> P.map (\() -> Operator And)
+            |> P.map (\() -> Operator Operator.And)
         , P.symbol (P.Token "++" ExpectingSigil)
-            |> P.map (\() -> Operator Append)
+            |> P.map (\() -> Operator Operator.Append)
         , P.symbol (P.Token "==" ExpectingSigil)
-            |> P.map (\() -> Operator Equals)
+            |> P.map (\() -> Operator Operator.Equals)
         , P.symbol (P.Token "||" ExpectingSigil)
-            |> P.map (\() -> Operator Or)
+            |> P.map (\() -> Operator Operator.Or)
         , P.symbol (P.Token ".." ExpectingSigil)
             |> P.map (\() -> DoubleDot)
         , P.symbol (P.Token "->" ExpectingSigil)
             |> P.map (\() -> ThinArrow)
         , P.symbol (P.Token ">=" ExpectingSigil)
-            |> P.map (\() -> Operator GreaterThanEquals)
+            |> P.map (\() -> Operator Operator.GreaterThanEquals)
         , P.symbol (P.Token "<=" ExpectingSigil)
-            |> P.map (\() -> Operator LessThanEquals)
+            |> P.map (\() -> Operator Operator.LessThanEquals)
 
         -- Single character sigils
         , P.symbol (P.Token "^" ExpectingSigil)
-            |> P.map (\() -> Operator Exponentiate)
+            |> P.map (\() -> Operator Operator.Exponentiate)
         , P.symbol (P.Token "\\" ExpectingSigil)
             |> P.map (\() -> Backslash)
         , P.symbol (P.Token "_" ExpectingSigil)
@@ -436,19 +421,19 @@ sigilParser =
         , P.symbol (P.Token ")" ExpectingSigil)
             |> P.map (\() -> Bracket Round Close)
         , P.symbol (P.Token ">" ExpectingSigil)
-            |> P.map (\() -> Operator GreaterThan)
+            |> P.map (\() -> Operator Operator.GreaterThan)
         , P.symbol (P.Token "<" ExpectingSigil)
-            |> P.map (\() -> Operator LessThan)
+            |> P.map (\() -> Operator Operator.LessThan)
         , P.symbol (P.Token "-" ExpectingSigil)
-            |> P.map (\() -> Operator Subtract)
+            |> P.map (\() -> Operator Operator.Subtract)
         , P.symbol (P.Token "+" ExpectingSigil)
-            |> P.map (\() -> Operator Add)
+            |> P.map (\() -> Operator Operator.Add)
         , P.symbol (P.Token "=" ExpectingSigil)
             |> P.map (\() -> Assign)
         , P.symbol (P.Token "/" ExpectingSigil)
-            |> P.map (\() -> Operator Divide)
+            |> P.map (\() -> Operator Operator.Divide)
         , P.symbol (P.Token "*" ExpectingSigil)
-            |> P.map (\() -> Operator Multiply)
+            |> P.map (\() -> Operator Operator.Multiply)
         , P.symbol (P.Token "{" ExpectingSigil)
             |> P.map (\() -> Bracket Curly Open)
         , P.symbol (P.Token "[" ExpectingSigil)

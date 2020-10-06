@@ -17,6 +17,7 @@ import Elm.Data.Exposing
 import Elm.Data.Located as Located exposing (Located)
 import Elm.Data.Module exposing (Module, ModuleType(..))
 import Elm.Data.ModuleName exposing (ModuleName)
+import Elm.Data.Operator as Operator exposing (Operator)
 import Elm.Data.Qualifiedness as Qualifiedness exposing (PossiblyQualified(..))
 import Elm.Data.Type exposing (Type)
 import Elm.Data.Type.Concrete as ConcreteType exposing (ConcreteType)
@@ -232,7 +233,7 @@ type alias TypeExpressionResult =
 
 type ExpressionNestingParent
     = ExpressionNestingParent_Operator
-        { op : Lexer.LexOperator
+        { op : Operator
         , lhs : Frontend.LocatedExpr
         , parent : Maybe ExpressionNestingParent
         }
@@ -240,7 +241,7 @@ type ExpressionNestingParent
 
 type ExpressionNestingLeaf
     = ExpressionNestingLeaf_Operator
-        { op : Lexer.LexOperator
+        { op : Operator
         , lhs : Frontend.LocatedExpr
         , parent : Maybe ExpressionNestingParent
         }
@@ -1414,7 +1415,7 @@ closeRecord { firstEntries, lastEntry } parents =
 -- Value expression helpers
 
 
-appendOperatorTo : ExpressionNestingLeaf -> Lexer.LexOperator -> Result Error ExpressionNestingLeaf
+appendOperatorTo : ExpressionNestingLeaf -> Operator -> Result Error ExpressionNestingLeaf
 appendOperatorTo leaf op =
     Debug.todo ("implement operator" ++ Lexer.toString (op |> Lexer.Operator |> Lexer.Sigil))
 
