@@ -20,6 +20,7 @@ const warningCommentLines = `
 const TYPE_OF_RESULT_CASES = `
     List
         { contextualized : Maybe (List Contextualize.RunResult)
+        , pretty : String
         , lexed : Result Never (List (Located LexItem))
         , name : String
         , source : String

@@ -5,6 +5,7 @@ import Parser.Advanced as P
 import Platform
 import Stage.Parse.Contextualize as Contextualize
 import Stage.Parse.Lexer as Lexer
+import Stage.Parse.Pretty as Pretty
 
 
 port output : String -> Cmd never
@@ -64,18 +65,46 @@ init snippets =
       , source = \"\"\""""
                             ++ source
                             ++ """\"\"\"
+      , pretty = \"\"\"
+        """
+                            ++ (case contextualized of
+                                    Nothing ->
+                                        "Could not lex (a bug)."
+
+                                    Just c ->
+                                        Pretty.printWithIndentationOf 4
+                                            (Pretty.listWith
+                                                (\rBlock ->
+                                                    case rBlock of
+                                                        Ok block ->
+                                                            Pretty.Many
+                                                                [ Pretty.Atom "Ok"
+                                                                , Pretty.block block
+                                                                ]
+
+                                                        Err e ->
+                                                            Pretty.Many
+                                                                [ Pretty.Atom "Err"
+                                                                , Pretty.Atom "todo"
+                                                                ]
+                                                )
+                                                c
+                                            )
+                                            ++ """
+\"\"\"
       , contextualized ="""
-                            ++ (Debug.toString contextualized
-                                    |> preFormatElmCode
-                                    |> resolveCustomTypeConstructors
-                               )
-                            ++ """
+                                            ++ (Debug.toString contextualized
+                                                    |> preFormatElmCode
+                                                    |> resolveCustomTypeConstructors
+                                               )
+                                            ++ """
       , lexed = """
-                            ++ (Debug.toString lexed
-                                    |> preFormatElmCode
-                               )
-                            ++ """
+                                            ++ (Debug.toString lexed
+                                                    |> preFormatElmCode
+                                               )
+                                            ++ """
       }"""
+                               )
                     )
                     snippets
                     rlexed
@@ -93,7 +122,6 @@ init snippets =
 update : Msg -> Model -> ( Model, Cmd Msg )
 update () model =
     ( model, Cmd.none )
-
 
 
 preFormatElmCode : String -> String
@@ -114,24 +142,29 @@ preFormatElmCode =
     """
         >> String.replace """BlockValueDeclaration_Completish {""" """BlockValueDeclaration_Completish {
     """
+
+
 {-| Always run after preformatting.
 -}
 resolveCustomTypeConstructors : String -> String
 resolveCustomTypeConstructors =
     String.split "\n"
-        >> List.map (
-            \line ->
-                if String.contains "valueExpr__" line || String.contains "ExpressionNestingParent_Operator" line
-                    || String.contains "ExpressionNestingLeaf_Operator" line then
-                line
-                    |> String.replace "Int" "Frontend.Int"
-                    |> String.replace "Float" "Frontend.Float"
-                    |> String.replace "Unit" "Frontend.Unit"
-                    |> String.replace "Operator" "Frontend.Operator"
-                    |> String.replace "ExpressionNestingLeaf_Frontend.Operator" "ExpressionNestingLeaf_Operator"
-                    |> String.replace "ExpressionNestingParent_Frontend.Operator" "ExpressionNestingParent_Operator"
+        >> List.map
+            (\line ->
+                if
+                    String.contains "valueExpr__" line
+                        || String.contains "ExpressionNestingParent_Operator" line
+                        || String.contains "ExpressionNestingLeaf_Operator" line
+                then
+                    line
+                        |> String.replace "Int" "Frontend.Int"
+                        |> String.replace "Float" "Frontend.Float"
+                        |> String.replace "Unit" "Frontend.Unit"
+                        |> String.replace "Operator" "Frontend.Operator"
+                        |> String.replace "ExpressionNestingLeaf_Frontend.Operator" "ExpressionNestingLeaf_Operator"
+                        |> String.replace "ExpressionNestingParent_Frontend.Operator" "ExpressionNestingParent_Operator"
+
                 else
                     line
-
-        )
+            )
         >> String.join "\n"

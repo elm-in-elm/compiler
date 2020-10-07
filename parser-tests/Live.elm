@@ -108,7 +108,7 @@ view model =
                     [ Html.div
                         [ Attributes.style "white-space" "pre-wrap" ]
                         [ Html.text
-                            (Debug.toString (Contextualize.run (lexItems |> List.map Located.unwrap)))
+                            (Debug.toString (Contextualize.run lexItems))
                         ]
                     ]
 

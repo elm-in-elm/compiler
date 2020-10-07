@@ -21,6 +21,7 @@ import Stage.Parse.Token exposing (TypeOrConstructor(..), ValueOrFunctionOrGener
 shouldParseTestCases :
     List
         { contextualized : Maybe (List Contextualize.RunResult)
+        , pretty : String
         , lexed : Result Never (List (Located LexItem))
         , name : String
         , source : String
@@ -30,6 +31,27 @@ shouldParseTestCases =
       , source = """a = 5
 
 b = 78
+"""
+      , pretty = """
+        ( ( Ok
+          , ( ValueDeclaration
+            , ( name, a )
+            , ( args, () )
+            , ( valueExpr__
+              , ( Int, 5 )
+              )
+            )
+          )
+        , ( Ok
+          , ( ValueDeclaration
+            , ( name, b )
+            , ( args, () )
+            , ( valueExpr__
+              , ( Int, 78 )
+              )
+            )
+          )
+        )
 """
       , contextualized =
             Just
@@ -61,6 +83,63 @@ b = 78
       , source = """a = 5 + 5
 
 b = 78 + 5 + 2+ 4
+"""
+      , pretty = """
+        ( ( Ok
+          , ( ValueDeclaration
+            , ( name, a )
+            , ( args, () )
+            , ( valueExpr__
+              , ( Operator
+                , ( ( op, + )
+                  , ( lhs
+                    , ( Int, 5 )
+                    )
+                  , ( rhs
+                    , ( Int, 5 )
+                    )
+                  )
+                )
+              )
+            )
+          )
+        , ( Ok
+          , ( ValueDeclaration
+            , ( name, b )
+            , ( args, () )
+            , ( valueExpr__
+              , ( Operator
+                , ( ( op, + )
+                  , ( lhs
+                    , ( Operator
+                      , ( ( op, + )
+                        , ( lhs
+                          , ( Operator
+                            , ( ( op, + )
+                              , ( lhs
+                                , ( Int, 78 )
+                                )
+                              , ( rhs
+                                , ( Int, 5 )
+                                )
+                              )
+                            )
+                          )
+                        , ( rhs
+                          , ( Int, 2 )
+                          )
+                        )
+                      )
+                    )
+                  , ( rhs
+                    , ( Int, 4 )
+                    )
+                  )
+                )
+              )
+            )
+          )
+        )
 """
       , contextualized =
             Just
@@ -107,6 +186,72 @@ b = 78 + 5 + 2+ 4
       , source = """a = 5 * 5
 
 b = 78 * 5 * 2 / 4 * 5
+"""
+      , pretty = """
+        ( ( Ok
+          , ( ValueDeclaration
+            , ( name, a )
+            , ( args, () )
+            , ( valueExpr__
+              , ( Operator
+                , ( ( op, * )
+                  , ( lhs
+                    , ( Int, 5 )
+                    )
+                  , ( rhs
+                    , ( Int, 5 )
+                    )
+                  )
+                )
+              )
+            )
+          )
+        , ( Ok
+          , ( ValueDeclaration
+            , ( name, b )
+            , ( args, () )
+            , ( valueExpr__
+              , ( Operator
+                , ( ( op, * )
+                  , ( lhs
+                    , ( Operator
+                      , ( ( op, / )
+                        , ( lhs
+                          , ( Operator
+                            , ( ( op, * )
+                              , ( lhs
+                                , ( Operator
+                                  , ( ( op, * )
+                                    , ( lhs
+                                      , ( Int, 78 )
+                                      )
+                                    , ( rhs
+                                      , ( Int, 5 )
+                                      )
+                                    )
+                                  )
+                                )
+                              , ( rhs
+                                , ( Int, 2 )
+                                )
+                              )
+                            )
+                          )
+                        , ( rhs
+                          , ( Int, 4 )
+                          )
+                        )
+                      )
+                    )
+                  , ( rhs
+                    , ( Int, 5 )
+                    )
+                  )
+                )
+              )
+            )
+          )
+        )
 """
       , contextualized =
             Just
@@ -159,6 +304,72 @@ b = 78 * 5 * 2 / 4 * 5
 
 b = 78 + 5 + 2 - 4 + 5
 """
+      , pretty = """
+        ( ( Ok
+          , ( ValueDeclaration
+            , ( name, a )
+            , ( args, () )
+            , ( valueExpr__
+              , ( Operator
+                , ( ( op, - )
+                  , ( lhs
+                    , ( Int, 5 )
+                    )
+                  , ( rhs
+                    , ( Int, 5 )
+                    )
+                  )
+                )
+              )
+            )
+          )
+        , ( Ok
+          , ( ValueDeclaration
+            , ( name, b )
+            , ( args, () )
+            , ( valueExpr__
+              , ( Operator
+                , ( ( op, + )
+                  , ( lhs
+                    , ( Operator
+                      , ( ( op, - )
+                        , ( lhs
+                          , ( Operator
+                            , ( ( op, + )
+                              , ( lhs
+                                , ( Operator
+                                  , ( ( op, + )
+                                    , ( lhs
+                                      , ( Int, 78 )
+                                      )
+                                    , ( rhs
+                                      , ( Int, 5 )
+                                      )
+                                    )
+                                  )
+                                )
+                              , ( rhs
+                                , ( Int, 2 )
+                                )
+                              )
+                            )
+                          )
+                        , ( rhs
+                          , ( Int, 4 )
+                          )
+                        )
+                      )
+                    )
+                  , ( rhs
+                    , ( Int, 5 )
+                    )
+                  )
+                )
+              )
+            )
+          )
+        )
+"""
       , contextualized =
             Just
                 [ Ok (ValueDeclaration { args = [], name = Located { end = { col = 2, row = 1 }, start = { col = 1, row = 1 } } (ValueOrFunctionOrGenericType "a"), valueExpr__ = Located { end = { col = 10, row = 1 }, start = { col = 5, row = 1 } } (Frontend.Operator Subtract (Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Frontend.Int 5)) (Located { end = { col = 10, row = 1 }, start = { col = 9, row = 1 } } (Frontend.Int 5))) })
@@ -208,6 +419,33 @@ b = 78 + 5 + 2 - 4 + 5
     , { name = "type-alias"
       , source = """type alias Model = List Int
 """
+      , pretty = """
+        ( ( Ok
+          , ( ValueDeclaration
+            , ( ty, Model )
+            , ( genericArgs, () )
+            , ( expr
+              , ( UserDefinedType
+                , ( ( qualifiedness
+                    , ( PossiblyQualified, Nothing )
+                    )
+                  , ( name, List )
+                  , ( args
+                    , ( ( UserDefinedType
+                        , ( ( qualifiedness
+                            , ( PossiblyQualified, Nothing )
+                            )
+                          , ( name, Int )
+                          , ( args, () )
+                          )
+                        ) )
+                    )
+                  )
+                )
+              )
+            )
+          ) )
+"""
       , contextualized =
             Just
                 [ Ok
@@ -249,6 +487,45 @@ b = 78 + 5 + 2 - 4 + 5
       , source = """type alias Model = List Int
 
 expr hi = 77
+"""
+      , pretty = """
+        ( ( Ok
+          , ( ValueDeclaration
+            , ( ty, Model )
+            , ( genericArgs, () )
+            , ( expr
+              , ( UserDefinedType
+                , ( ( qualifiedness
+                    , ( PossiblyQualified, Nothing )
+                    )
+                  , ( name, List )
+                  , ( args
+                    , ( ( UserDefinedType
+                        , ( ( qualifiedness
+                            , ( PossiblyQualified, Nothing )
+                            )
+                          , ( name, Int )
+                          , ( args, () )
+                          )
+                        ) )
+                    )
+                  )
+                )
+              )
+            )
+          )
+        , ( Ok
+          , ( ValueDeclaration
+            , ( name, expr )
+            , ( args
+              , ( hi )
+              )
+            , ( valueExpr__
+              , ( Int, 77 )
+              )
+            )
+          )
+        )
 """
       , contextualized =
             Just
@@ -312,6 +589,28 @@ expr hi = 77
     , { name = "type-alias-bracket-in-record"
       , source = """type alias Ty = { hi: (Int) }
 """
+      , pretty = """
+        ( ( Ok
+          , ( ValueDeclaration
+            , ( ty, Ty )
+            , ( genericArgs, () )
+            , ( expr
+              , ( Record
+                , ( ( hi
+                    , ( UserDefinedType
+                      , ( ( qualifiedness
+                          , ( PossiblyQualified, Nothing )
+                          )
+                        , ( name, Int )
+                        , ( args, () )
+                        )
+                      )
+                    ) )
+                )
+              )
+            )
+          ) )
+"""
       , contextualized =
             Just
                 [ Ok
@@ -358,6 +657,66 @@ expr hi = 77
       }
     , { name = "type-alias-function"
       , source = """type alias Function = List Int -> List (List Int)
+"""
+      , pretty = """
+        ( ( Ok
+          , ( ValueDeclaration
+            , ( ty, Function )
+            , ( genericArgs, () )
+            , ( expr
+              , ( Function
+                , ( ( from
+                    , ( UserDefinedType
+                      , ( ( qualifiedness
+                          , ( PossiblyQualified, Nothing )
+                          )
+                        , ( name, List )
+                        , ( args
+                          , ( ( UserDefinedType
+                              , ( ( qualifiedness
+                                  , ( PossiblyQualified, Nothing )
+                                  )
+                                , ( name, Int )
+                                , ( args, () )
+                                )
+                              ) )
+                          )
+                        )
+                      )
+                    )
+                  , ( to
+                    , ( UserDefinedType
+                      , ( ( qualifiedness
+                          , ( PossiblyQualified, Nothing )
+                          )
+                        , ( name, List )
+                        , ( args
+                          , ( ( UserDefinedType
+                              , ( ( qualifiedness
+                                  , ( PossiblyQualified, Nothing )
+                                  )
+                                , ( name, List )
+                                , ( args
+                                  , ( ( UserDefinedType
+                                      , ( ( qualifiedness
+                                          , ( PossiblyQualified, Nothing )
+                                          )
+                                        , ( name, Int )
+                                        , ( args, () )
+                                        )
+                                      ) )
+                                  )
+                                )
+                              ) )
+                          )
+                        )
+                      )
+                    )
+                  )
+                )
+              )
+            )
+          ) )
 """
       , contextualized =
             Just
@@ -430,6 +789,116 @@ expr hi = 77
     , { name = "type-alias-function-binding-order"
       , source = """type alias Function = A -> B -> C
 type alias Function = A -> B -> C -> D
+"""
+      , pretty = """
+        ( ( Ok
+          , ( ValueDeclaration
+            , ( ty, Function )
+            , ( genericArgs, () )
+            , ( expr
+              , ( Function
+                , ( ( from
+                    , ( UserDefinedType
+                      , ( ( qualifiedness
+                          , ( PossiblyQualified, Nothing )
+                          )
+                        , ( name, A )
+                        , ( args, () )
+                        )
+                      )
+                    )
+                  , ( to
+                    , ( Function
+                      , ( ( from
+                          , ( UserDefinedType
+                            , ( ( qualifiedness
+                                , ( PossiblyQualified, Nothing )
+                                )
+                              , ( name, B )
+                              , ( args, () )
+                              )
+                            )
+                          )
+                        , ( to
+                          , ( UserDefinedType
+                            , ( ( qualifiedness
+                                , ( PossiblyQualified, Nothing )
+                                )
+                              , ( name, C )
+                              , ( args, () )
+                              )
+                            )
+                          )
+                        )
+                      )
+                    )
+                  )
+                )
+              )
+            )
+          )
+        , ( Ok
+          , ( ValueDeclaration
+            , ( ty, Function )
+            , ( genericArgs, () )
+            , ( expr
+              , ( Function
+                , ( ( from
+                    , ( UserDefinedType
+                      , ( ( qualifiedness
+                          , ( PossiblyQualified, Nothing )
+                          )
+                        , ( name, A )
+                        , ( args, () )
+                        )
+                      )
+                    )
+                  , ( to
+                    , ( Function
+                      , ( ( from
+                          , ( UserDefinedType
+                            , ( ( qualifiedness
+                                , ( PossiblyQualified, Nothing )
+                                )
+                              , ( name, B )
+                              , ( args, () )
+                              )
+                            )
+                          )
+                        , ( to
+                          , ( Function
+                            , ( ( from
+                                , ( UserDefinedType
+                                  , ( ( qualifiedness
+                                      , ( PossiblyQualified, Nothing )
+                                      )
+                                    , ( name, C )
+                                    , ( args, () )
+                                    )
+                                  )
+                                )
+                              , ( to
+                                , ( UserDefinedType
+                                  , ( ( qualifiedness
+                                      , ( PossiblyQualified, Nothing )
+                                      )
+                                    , ( name, D )
+                                    , ( args, () )
+                                    )
+                                  )
+                                )
+                              )
+                            )
+                          )
+                        )
+                      )
+                    )
+                  )
+                )
+              )
+            )
+          )
+        )
 """
       , contextualized =
             Just
@@ -550,6 +1019,68 @@ type alias Function = A -> B -> C -> D
     , { name = "type-alias-function-generic"
       , source = """type alias Function a = List Int -> List (List a)
 """
+      , pretty = """
+        ( ( Ok
+          , ( ValueDeclaration
+            , ( ty, Function )
+            , ( genericArgs
+              , ( a )
+              )
+            , ( expr
+              , ( Function
+                , ( ( from
+                    , ( UserDefinedType
+                      , ( ( qualifiedness
+                          , ( PossiblyQualified, Nothing )
+                          )
+                        , ( name, List )
+                        , ( args
+                          , ( ( UserDefinedType
+                              , ( ( qualifiedness
+                                  , ( PossiblyQualified, Nothing )
+                                  )
+                                , ( name, Int )
+                                , ( args, () )
+                                )
+                              ) )
+                          )
+                        )
+                      )
+                    )
+                  , ( to
+                    , ( UserDefinedType
+                      , ( ( qualifiedness
+                          , ( PossiblyQualified, Nothing )
+                          )
+                        , ( name, List )
+                        , ( args
+                          , ( ( UserDefinedType
+                              , ( ( qualifiedness
+                                  , ( PossiblyQualified, Nothing )
+                                  )
+                                , ( name, List )
+                                , ( args
+                                  , ( ( UserDefinedType
+                                      , ( ( qualifiedness
+                                          , ( PossiblyQualified, Nothing )
+                                          )
+                                        , ( name, a )
+                                        , ( args, () )
+                                        )
+                                      ) )
+                                  )
+                                )
+                              ) )
+                          )
+                        )
+                      )
+                    )
+                  )
+                )
+              )
+            )
+          ) )
+"""
       , contextualized =
             Just
                 [ Ok
@@ -630,6 +1161,161 @@ type alias Function2 = { a: () -> (Int, String) }
 type alias Function3 = (() -> (Int, String), ())
 
 type alias Function3 = (Int, () -> (Int, String), ())
+"""
+      , pretty = """
+        ( ( Ok
+          , ( ValueDeclaration
+            , ( ty, Function )
+            , ( genericArgs, () )
+            , ( expr
+              , ( Function
+                , ( ( from, Unit )
+                  , ( to
+                    , ( Tuple
+                      , ( ( UserDefinedType
+                          , ( ( qualifiedness
+                              , ( PossiblyQualified, Nothing )
+                              )
+                            , ( name, Int )
+                            , ( args, () )
+                            )
+                          )
+                        , ( UserDefinedType
+                          , ( ( qualifiedness
+                              , ( PossiblyQualified, Nothing )
+                              )
+                            , ( name, String )
+                            , ( args, () )
+                            )
+                          )
+                        )
+                      )
+                    )
+                  )
+                )
+              )
+            )
+          )
+        , ( Ok
+          , ( ValueDeclaration
+            , ( ty, Function2 )
+            , ( genericArgs, () )
+            , ( expr
+              , ( Record
+                , ( ( a
+                    , ( Function
+                      , ( ( from, Unit )
+                        , ( to
+                          , ( Tuple
+                            , ( ( UserDefinedType
+                                , ( ( qualifiedness
+                                    , ( PossiblyQualified, Nothing )
+                                    )
+                                  , ( name, Int )
+                                  , ( args, () )
+                                  )
+                                )
+                              , ( UserDefinedType
+                                , ( ( qualifiedness
+                                    , ( PossiblyQualified, Nothing )
+                                    )
+                                  , ( name, String )
+                                  , ( args, () )
+                                  )
+                                )
+                              )
+                            )
+                          )
+                        )
+                      )
+                    ) )
+                )
+              )
+            )
+          )
+        , ( Ok
+          , ( ValueDeclaration
+            , ( ty, Function3 )
+            , ( genericArgs, () )
+            , ( expr
+              , ( Tuple
+                , ( ( Function
+                    , ( ( from, Unit )
+                      , ( to
+                        , ( Tuple
+                          , ( ( UserDefinedType
+                              , ( ( qualifiedness
+                                  , ( PossiblyQualified, Nothing )
+                                  )
+                                , ( name, Int )
+                                , ( args, () )
+                                )
+                              )
+                            , ( UserDefinedType
+                              , ( ( qualifiedness
+                                  , ( PossiblyQualified, Nothing )
+                                  )
+                                , ( name, String )
+                                , ( args, () )
+                                )
+                              )
+                            )
+                          )
+                        )
+                      )
+                    )
+                  , Unit
+                  )
+                )
+              )
+            )
+          )
+        , ( Ok
+          , ( ValueDeclaration
+            , ( ty, Function3 )
+            , ( genericArgs, () )
+            , ( expr
+              , ( Tuple
+                , ( ( UserDefinedType
+                    , ( ( qualifiedness
+                        , ( PossiblyQualified, Nothing )
+                        )
+                      , ( name, Int )
+                      , ( args, () )
+                      )
+                    )
+                  , ( Function
+                    , ( ( from, Unit )
+                      , ( to
+                        , ( Tuple
+                          , ( ( UserDefinedType
+                              , ( ( qualifiedness
+                                  , ( PossiblyQualified, Nothing )
+                                  )
+                                , ( name, Int )
+                                , ( args, () )
+                                )
+                              )
+                            , ( UserDefinedType
+                              , ( ( qualifiedness
+                                  , ( PossiblyQualified, Nothing )
+                                  )
+                                , ( name, String )
+                                , ( args, () )
+                                )
+                              )
+                            )
+                          )
+                        )
+                      )
+                    )
+                  , Unit
+                  )
+                )
+              )
+            )
+          )
+        )
 """
       , contextualized =
             Just
@@ -874,6 +1560,51 @@ type alias Function3 = (Int, () -> (Int, String), ())
     , { name = "type-alias-function-record"
       , source = """type alias Function = { a: { b: C}, d: E } -> {}
 """
+      , pretty = """
+        ( ( Ok
+          , ( ValueDeclaration
+            , ( ty, Function )
+            , ( genericArgs, () )
+            , ( expr
+              , ( Function
+                , ( ( from
+                    , ( Record
+                      , ( ( a
+                          , ( Record
+                            , ( ( b
+                                , ( UserDefinedType
+                                  , ( ( qualifiedness
+                                      , ( PossiblyQualified, Nothing )
+                                      )
+                                    , ( name, C )
+                                    , ( args, () )
+                                    )
+                                  )
+                                ) )
+                            )
+                          )
+                        , ( d
+                          , ( UserDefinedType
+                            , ( ( qualifiedness
+                                , ( PossiblyQualified, Nothing )
+                                )
+                              , ( name, E )
+                              , ( args, () )
+                              )
+                            )
+                          )
+                        )
+                      )
+                    )
+                  , ( to
+                    , ( Record, () )
+                    )
+                  )
+                )
+              )
+            )
+          ) )
+"""
       , contextualized =
             Just
                 [ Ok
@@ -953,6 +1684,41 @@ type alias Function3 = (Int, () -> (Int, String), ())
     , { name = "type-alias-function-tuple"
       , source = """type alias Function = () -> (Int, String)
 """
+      , pretty = """
+        ( ( Ok
+          , ( ValueDeclaration
+            , ( ty, Function )
+            , ( genericArgs, () )
+            , ( expr
+              , ( Function
+                , ( ( from, Unit )
+                  , ( to
+                    , ( Tuple
+                      , ( ( UserDefinedType
+                          , ( ( qualifiedness
+                              , ( PossiblyQualified, Nothing )
+                              )
+                            , ( name, Int )
+                            , ( args, () )
+                            )
+                          )
+                        , ( UserDefinedType
+                          , ( ( qualifiedness
+                              , ( PossiblyQualified, Nothing )
+                              )
+                            , ( name, String )
+                            , ( args, () )
+                            )
+                          )
+                        )
+                      )
+                    )
+                  )
+                )
+              )
+            )
+          ) )
+"""
       , contextualized =
             Just
                 [ Ok
@@ -1008,6 +1774,33 @@ type alias Function3 = (Int, () -> (Int, String), ())
       , source = """type alias
     Model = List Int
 """
+      , pretty = """
+        ( ( Ok
+          , ( ValueDeclaration
+            , ( ty, Model )
+            , ( genericArgs, () )
+            , ( expr
+              , ( UserDefinedType
+                , ( ( qualifiedness
+                    , ( PossiblyQualified, Nothing )
+                    )
+                  , ( name, List )
+                  , ( args
+                    , ( ( UserDefinedType
+                        , ( ( qualifiedness
+                            , ( PossiblyQualified, Nothing )
+                            )
+                          , ( name, Int )
+                          , ( args, () )
+                          )
+                        ) )
+                    )
+                  )
+                )
+              )
+            )
+          ) )
+"""
       , contextualized =
             Just
                 [ Ok
@@ -1050,6 +1843,33 @@ type alias Function3 = (Int, () -> (Int, String), ())
     Model =
  List Int
 """
+      , pretty = """
+        ( ( Ok
+          , ( ValueDeclaration
+            , ( ty, Model )
+            , ( genericArgs, () )
+            , ( expr
+              , ( UserDefinedType
+                , ( ( qualifiedness
+                    , ( PossiblyQualified, Nothing )
+                    )
+                  , ( name, List )
+                  , ( args
+                    , ( ( UserDefinedType
+                        , ( ( qualifiedness
+                            , ( PossiblyQualified, Nothing )
+                            )
+                          , ( name, Int )
+                          , ( args, () )
+                          )
+                        ) )
+                    )
+                  )
+                )
+              )
+            )
+          ) )
+"""
       , contextualized =
             Just
                 [ Ok
@@ -1089,6 +1909,49 @@ type alias Function3 = (Int, () -> (Int, String), ())
       }
     , { name = "type-alias-record-3-entries"
       , source = """type alias Ty = { a: A, b: B, c: C }
+"""
+      , pretty = """
+        ( ( Ok
+          , ( ValueDeclaration
+            , ( ty, Ty )
+            , ( genericArgs, () )
+            , ( expr
+              , ( Record
+                , ( ( a
+                    , ( UserDefinedType
+                      , ( ( qualifiedness
+                          , ( PossiblyQualified, Nothing )
+                          )
+                        , ( name, A )
+                        , ( args, () )
+                        )
+                      )
+                    )
+                  , ( b
+                    , ( UserDefinedType
+                      , ( ( qualifiedness
+                          , ( PossiblyQualified, Nothing )
+                          )
+                        , ( name, B )
+                        , ( args, () )
+                        )
+                      )
+                    )
+                  , ( c
+                    , ( UserDefinedType
+                      , ( ( qualifiedness
+                          , ( PossiblyQualified, Nothing )
+                          )
+                        , ( name, C )
+                        , ( args, () )
+                        )
+                      )
+                    )
+                  )
+                )
+              )
+            )
+          ) )
 """
       , contextualized =
             Just
@@ -1161,6 +2024,17 @@ type alias Function3 = (Int, () -> (Int, String), ())
     , { name = "type-alias-record-empty"
       , source = """type alias Ty = {}
 """
+      , pretty = """
+        ( ( Ok
+          , ( ValueDeclaration
+            , ( ty, Ty )
+            , ( genericArgs, () )
+            , ( expr
+              , ( Record, () )
+              )
+            )
+          ) )
+"""
       , contextualized =
             Just
                 [ Ok (TypeAlias { expr = Record (Dict.fromList []), genericArgs = [], ty = TypeOrConstructor "Ty" })
@@ -1185,6 +2059,17 @@ type alias Function3 = (Int, () -> (Int, String), ())
 
 
     }
+"""
+      , pretty = """
+        ( ( Ok
+          , ( ValueDeclaration
+            , ( ty, Ty )
+            , ( genericArgs, () )
+            , ( expr
+              , ( Record, () )
+              )
+            )
+          ) )
 """
       , contextualized =
             Just
@@ -1214,6 +2099,28 @@ type alias Function3 = (Int, () -> (Int, String), ())
       }
     , { name = "type-alias-record-in-bracket"
       , source = """type alias Ty = ({ hi: Int })
+"""
+      , pretty = """
+        ( ( Ok
+          , ( ValueDeclaration
+            , ( ty, Ty )
+            , ( genericArgs, () )
+            , ( expr
+              , ( Record
+                , ( ( hi
+                    , ( UserDefinedType
+                      , ( ( qualifiedness
+                          , ( PossiblyQualified, Nothing )
+                          )
+                        , ( name, Int )
+                        , ( args, () )
+                        )
+                      )
+                    ) )
+                )
+              )
+            )
+          ) )
 """
       , contextualized =
             Just
@@ -1264,6 +2171,106 @@ type alias Function3 = (Int, () -> (Int, String), ())
     { hi:  { a: Int, b: List String }
     , ih: CustomType A B C (D E)
     }
+"""
+      , pretty = """
+        ( ( Ok
+          , ( ValueDeclaration
+            , ( ty, Ty )
+            , ( genericArgs, () )
+            , ( expr
+              , ( Record
+                , ( ( hi
+                    , ( Record
+                      , ( ( a
+                          , ( UserDefinedType
+                            , ( ( qualifiedness
+                                , ( PossiblyQualified, Nothing )
+                                )
+                              , ( name, Int )
+                              , ( args, () )
+                              )
+                            )
+                          )
+                        , ( b
+                          , ( UserDefinedType
+                            , ( ( qualifiedness
+                                , ( PossiblyQualified, Nothing )
+                                )
+                              , ( name, List )
+                              , ( args
+                                , ( ( UserDefinedType
+                                    , ( ( qualifiedness
+                                        , ( PossiblyQualified, Nothing )
+                                        )
+                                      , ( name, String )
+                                      , ( args, () )
+                                      )
+                                    ) )
+                                )
+                              )
+                            )
+                          )
+                        )
+                      )
+                    )
+                  , ( ih
+                    , ( UserDefinedType
+                      , ( ( qualifiedness
+                          , ( PossiblyQualified, Nothing )
+                          )
+                        , ( name, CustomType )
+                        , ( args
+                          , ( ( UserDefinedType
+                              , ( ( qualifiedness
+                                  , ( PossiblyQualified, Nothing )
+                                  )
+                                , ( name, A )
+                                , ( args, () )
+                                )
+                              )
+                            , ( UserDefinedType
+                              , ( ( qualifiedness
+                                  , ( PossiblyQualified, Nothing )
+                                  )
+                                , ( name, B )
+                                , ( args, () )
+                                )
+                              )
+                            , ( UserDefinedType
+                              , ( ( qualifiedness
+                                  , ( PossiblyQualified, Nothing )
+                                  )
+                                , ( name, C )
+                                , ( args, () )
+                                )
+                              )
+                            , ( UserDefinedType
+                              , ( ( qualifiedness
+                                  , ( PossiblyQualified, Nothing )
+                                  )
+                                , ( name, D )
+                                , ( args
+                                  , ( ( UserDefinedType
+                                      , ( ( qualifiedness
+                                          , ( PossiblyQualified, Nothing )
+                                          )
+                                        , ( name, E )
+                                        , ( args, () )
+                                        )
+                                      ) )
+                                  )
+                                )
+                              )
+                            )
+                          )
+                        )
+                      )
+                    )
+                  )
+                )
+              )
+            )
+          ) )
 """
       , contextualized =
             Just
@@ -1397,6 +2404,28 @@ type alias Function3 = (Int, () -> (Int, String), ())
     , { name = "type-alias-record-simple"
       , source = """type alias Ty = { hi: Int }
 """
+      , pretty = """
+        ( ( Ok
+          , ( ValueDeclaration
+            , ( ty, Ty )
+            , ( genericArgs, () )
+            , ( expr
+              , ( Record
+                , ( ( hi
+                    , ( UserDefinedType
+                      , ( ( qualifiedness
+                          , ( PossiblyQualified, Nothing )
+                          )
+                        , ( name, Int )
+                        , ( args, () )
+                        )
+                      )
+                    ) )
+                )
+              )
+            )
+          ) )
+"""
       , contextualized =
             Just
                 [ Ok
@@ -1441,6 +2470,30 @@ type alias Function3 = (Int, () -> (Int, String), ())
       }
     , { name = "type-alias-record-two-entries"
       , source = """type alias Ty = { hi: (), buy: String }
+"""
+      , pretty = """
+        ( ( Ok
+          , ( ValueDeclaration
+            , ( ty, Ty )
+            , ( genericArgs, () )
+            , ( expr
+              , ( Record
+                , ( ( buy
+                    , ( UserDefinedType
+                      , ( ( qualifiedness
+                          , ( PossiblyQualified, Nothing )
+                          )
+                        , ( name, String )
+                        , ( args, () )
+                        )
+                      )
+                    )
+                  , ( hi, Unit )
+                  )
+                )
+              )
+            )
+          ) )
 """
       , contextualized =
             Just
@@ -1495,6 +2548,15 @@ type alias Function3 = (Int, () -> (Int, String), ())
     , { name = "type-alias-unit"
       , source = """type alias Hi = ()
 """
+      , pretty = """
+        ( ( Ok
+          , ( ValueDeclaration
+            , ( ty, Hi )
+            , ( genericArgs, () )
+            , ( expr, Unit )
+            )
+          ) )
+"""
       , contextualized =
             Just
                 [ Ok (TypeAlias { expr = Unit, genericArgs = [], ty = TypeOrConstructor "Hi" })
@@ -1516,6 +2578,24 @@ type alias Function3 = (Int, () -> (Int, String), ())
       }
     , { name = "type-alias-with-bracket"
       , source = """type alias Hi = (Int)
+"""
+      , pretty = """
+        ( ( Ok
+          , ( ValueDeclaration
+            , ( ty, Hi )
+            , ( genericArgs, () )
+            , ( expr
+              , ( UserDefinedType
+                , ( ( qualifiedness
+                    , ( PossiblyQualified, Nothing )
+                    )
+                  , ( name, Int )
+                  , ( args, () )
+                  )
+                )
+              )
+            )
+          ) )
 """
       , contextualized =
             Just
@@ -1550,6 +2630,33 @@ type alias Function3 = (Int, () -> (Int, String), ())
       }
     , { name = "type-alias-with-bracket-2"
       , source = """type alias Hi = (List Int)
+"""
+      , pretty = """
+        ( ( Ok
+          , ( ValueDeclaration
+            , ( ty, Hi )
+            , ( genericArgs, () )
+            , ( expr
+              , ( UserDefinedType
+                , ( ( qualifiedness
+                    , ( PossiblyQualified, Nothing )
+                    )
+                  , ( name, List )
+                  , ( args
+                    , ( ( UserDefinedType
+                        , ( ( qualifiedness
+                            , ( PossiblyQualified, Nothing )
+                            )
+                          , ( name, Int )
+                          , ( args, () )
+                          )
+                        ) )
+                    )
+                  )
+                )
+              )
+            )
+          ) )
 """
       , contextualized =
             Just
@@ -1593,6 +2700,61 @@ type alias Function3 = (Int, () -> (Int, String), ())
     , { name = "type-alias-with-pair"
       , source = """type alias Hi = (Int, List String)
 type alias Hi = (Int)
+"""
+      , pretty = """
+        ( ( Ok
+          , ( ValueDeclaration
+            , ( ty, Hi )
+            , ( genericArgs, () )
+            , ( expr
+              , ( Tuple
+                , ( ( UserDefinedType
+                    , ( ( qualifiedness
+                        , ( PossiblyQualified, Nothing )
+                        )
+                      , ( name, Int )
+                      , ( args, () )
+                      )
+                    )
+                  , ( UserDefinedType
+                    , ( ( qualifiedness
+                        , ( PossiblyQualified, Nothing )
+                        )
+                      , ( name, List )
+                      , ( args
+                        , ( ( UserDefinedType
+                            , ( ( qualifiedness
+                                , ( PossiblyQualified, Nothing )
+                                )
+                              , ( name, String )
+                              , ( args, () )
+                              )
+                            ) )
+                        )
+                      )
+                    )
+                  )
+                )
+              )
+            )
+          )
+        , ( Ok
+          , ( ValueDeclaration
+            , ( ty, Hi )
+            , ( genericArgs, () )
+            , ( expr
+              , ( UserDefinedType
+                , ( ( qualifiedness
+                    , ( PossiblyQualified, Nothing )
+                    )
+                  , ( name, Int )
+                  , ( args, () )
+                  )
+                )
+              )
+            )
+          )
+        )
 """
       , contextualized =
             Just
@@ -1672,6 +2834,58 @@ type alias Hi = (Int)
       , source = """type alias Hi = (Int, Two, Three)
 type alias Hi = ((), (), ())
 """
+      , pretty = """
+        ( ( Ok
+          , ( ValueDeclaration
+            , ( ty, Hi )
+            , ( genericArgs, () )
+            , ( expr
+              , ( Tuple
+                , ( ( UserDefinedType
+                    , ( ( qualifiedness
+                        , ( PossiblyQualified, Nothing )
+                        )
+                      , ( name, Int )
+                      , ( args, () )
+                      )
+                    )
+                  , ( UserDefinedType
+                    , ( ( qualifiedness
+                        , ( PossiblyQualified, Nothing )
+                        )
+                      , ( name, Two )
+                      , ( args, () )
+                      )
+                    )
+                  , ( UserDefinedType
+                    , ( ( qualifiedness
+                        , ( PossiblyQualified, Nothing )
+                        )
+                      , ( name, Three )
+                      , ( args, () )
+                      )
+                    )
+                  )
+                )
+              )
+            )
+          )
+        , ( Ok
+          , ( ValueDeclaration
+            , ( ty, Hi )
+            , ( genericArgs, () )
+            , ( expr
+              , ( Tuple
+                , ( Unit
+                  , Unit
+                  , Unit
+                  )
+                )
+              )
+            )
+          )
+        )
+"""
       , contextualized =
             Just
                 [ Ok
@@ -1750,6 +2964,53 @@ type alias Hi = ((), (), ())
     { a: (Int, Int, Int)
     , b: ({ good_bye: () })
     }
+"""
+      , pretty = """
+        ( ( Ok
+          , ( ValueDeclaration
+            , ( ty, Hi )
+            , ( genericArgs, () )
+            , ( expr
+              , ( Record
+                , ( ( a
+                    , ( Tuple
+                      , ( ( UserDefinedType
+                          , ( ( qualifiedness
+                              , ( PossiblyQualified, Nothing )
+                              )
+                            , ( name, Int )
+                            , ( args, () )
+                            )
+                          )
+                        , ( UserDefinedType
+                          , ( ( qualifiedness
+                              , ( PossiblyQualified, Nothing )
+                              )
+                            , ( name, Int )
+                            , ( args, () )
+                            )
+                          )
+                        , ( UserDefinedType
+                          , ( ( qualifiedness
+                              , ( PossiblyQualified, Nothing )
+                              )
+                            , ( name, Int )
+                            , ( args, () )
+                            )
+                          )
+                        )
+                      )
+                    )
+                  , ( b
+                    , ( Record
+                      , ( ( good_bye, Unit ) )
+                      )
+                    )
+                  )
+                )
+              )
+            )
+          ) )
 """
       , contextualized =
             Just
@@ -1845,6 +3106,7 @@ type alias Hi = ((), (), ())
 shouldNotParseTestCases :
     List
         { contextualized : Maybe (List Contextualize.RunResult)
+        , pretty : String
         , lexed : Result Never (List (Located LexItem))
         , name : String
         , source : String
@@ -1858,6 +3120,13 @@ type alias Function2 = { a: () ->  }
 type alias Function3 = (() -> , ())
 
 type alias Function3 = (Int, () ->, ())
+"""
+      , pretty = """
+        ( ( Err, todo )
+        , ( Err, todo )
+        , ( Err, todo )
+        , ( Err, todo )
+        )
 """
       , contextualized =
             Just
@@ -2022,6 +3291,9 @@ type alias Function3 = (Int, () ->, ())
     , { name = "type-alias-invalid-multiple-brackets"
       , source = """type alias Hi = (Int) ()
 """
+      , pretty = """
+        ( ( Err, todo ) )
+"""
       , contextualized =
             Just
                 [ Err
@@ -2052,6 +3324,9 @@ type alias Function3 = (Int, () ->, ())
     , { name = "type-alias-invalid-multiple-brackets-2"
       , source = """type alias Hi = () ()
 """
+      , pretty = """
+        ( ( Err, todo ) )
+"""
       , contextualized =
             Just
                 [ Err
@@ -2080,6 +3355,9 @@ type alias Function3 = (Int, () ->, ())
       }
     , { name = "type-alias-invalid-multiple-brackets-3"
       , source = """type alias Hi = () (Int)
+"""
+      , pretty = """
+        ( ( Err, todo ) )
 """
       , contextualized =
             Just
@@ -2111,6 +3389,11 @@ type alias Function3 = (Int, () ->, ())
     , { name = "type-alias-multiline-missing-indentation"
       , source = """type alias Model =
 List Int
+"""
+      , pretty = """
+        ( ( Err, todo )
+        , ( Err, todo )
+        )
 """
       , contextualized =
             Just
@@ -2144,6 +3427,9 @@ List Int
     , { name = "type-alias-partial"
       , source = """type alias
 """
+      , pretty = """
+        ( ( Err, todo ) )
+"""
       , contextualized =
             Just
                 [ Err
@@ -2162,6 +3448,9 @@ List Int
       }
     , { name = "type-alias-partial-2"
       , source = """type alias Hi
+"""
+      , pretty = """
+        ( ( Err, todo ) )
 """
       , contextualized =
             Just
@@ -2183,6 +3472,9 @@ List Int
       }
     , { name = "type-alias-partial-3"
       , source = """type alias Hi =
+"""
+      , pretty = """
+        ( ( Err, todo ) )
 """
       , contextualized =
             Just
@@ -2206,6 +3498,9 @@ List Int
       }
     , { name = "type-alias-partial-with-bracket"
       , source = """type alias Hi = (
+"""
+      , pretty = """
+        ( ( Err, todo ) )
 """
       , contextualized =
             Just
@@ -2232,6 +3527,9 @@ List Int
     , { name = "type-alias-partial-with-bracket-2"
       , source = """type alias Hi = (
         Int
+"""
+      , pretty = """
+        ( ( Err, todo ) )
 """
       , contextualized =
             Just
@@ -2269,6 +3567,9 @@ List Int
     , { name = "type-alias-record-half-empty"
       , source = """type alias Ty = {
 """
+      , pretty = """
+        ( ( Err, todo ) )
+"""
       , contextualized =
             Just
                 [ Err
@@ -2293,6 +3594,9 @@ List Int
       }
     , { name = "type-alias-record-missing-colon"
       , source = """type alias Ty = { hi j7 }
+"""
+      , pretty = """
+        ( ( Err, todo ) )
 """
       , contextualized =
             Just
@@ -2325,6 +3629,11 @@ List Int
     , { name = "type-alias-with-quadruple"
       , source = """type alias Hi = (Int, A, B, C, D)
 type alias Hi = (A Int, C D E F, H I (J K), L M () O P)
+"""
+      , pretty = """
+        ( ( Err, todo )
+        , ( Err, todo )
+        )
 """
       , contextualized =
             Just
@@ -2599,6 +3908,9 @@ type alias Hi = (A Int, C D E F, H I (J K), L M () O P)
     , { name = "type-alias-with-tuple-double-comma"
       , source = """type alias Hi = (Int, , A)
 """
+      , pretty = """
+        ( ( Err, todo ) )
+"""
       , contextualized =
             Just
                 [ Err
@@ -2646,6 +3958,9 @@ type alias Hi = (A Int, C D E F, H I (J K), L M () O P)
 
 
 
+"""
+      , pretty = """
+        ( ( Err, todo ) )
 """
       , contextualized =
             Just
@@ -2703,6 +4018,9 @@ type alias Hi = (A Int, C D E F, H I (J K), L M () O P)
       }
     , { name = "type-partial"
       , source = """type
+"""
+      , pretty = """
+        ( ( Err, todo ) )
 """
       , contextualized =
             Just

@@ -118,3 +118,49 @@ getAssociativity prec =
 
         Pipe ->
             ConflictsWithOthers
+
+
+toString : Operator -> String
+toString op =
+    case op of
+        Add ->
+            "+"
+
+        Subtract ->
+            "-"
+
+        Multiply ->
+            "*"
+
+        Divide ->
+            "/"
+
+        Exponentiate ->
+            "^"
+
+        And ->
+            "&&"
+
+        Or ->
+            "||"
+
+        Equals ->
+            "=="
+
+        GreaterThan ->
+            ">"
+
+        GreaterThanEquals ->
+            ">="
+
+        LessThan ->
+            "<"
+
+        LessThanEquals ->
+            "<="
+
+        Cons ->
+            "::"
+
+        Append ->
+            "++"

@@ -125,47 +125,8 @@ toString item =
         Sigil Underscore ->
             "_"
 
-        Sigil (Operator Operator.Add) ->
-            "+"
-
-        Sigil (Operator Operator.Subtract) ->
-            "-"
-
-        Sigil (Operator Operator.Multiply) ->
-            "*"
-
-        Sigil (Operator Operator.Divide) ->
-            "/"
-
-        Sigil (Operator Operator.Exponentiate) ->
-            "^"
-
-        Sigil (Operator Operator.And) ->
-            "&&"
-
-        Sigil (Operator Operator.Or) ->
-            "||"
-
-        Sigil (Operator Operator.Equals) ->
-            "=="
-
-        Sigil (Operator Operator.GreaterThan) ->
-            ">"
-
-        Sigil (Operator Operator.GreaterThanEquals) ->
-            ">="
-
-        Sigil (Operator Operator.LessThan) ->
-            "<"
-
-        Sigil (Operator Operator.LessThanEquals) ->
-            "<="
-
-        Sigil (Operator Operator.Cons) ->
-            "::"
-
-        Sigil (Operator Operator.Append) ->
-            "++"
+        Sigil (Operator op) ->
+            Operator.toString op
 
         Token s ->
             s
