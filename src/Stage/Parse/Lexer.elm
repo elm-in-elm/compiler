@@ -212,6 +212,8 @@ parser =
                         |> P.map (\count -> Whitespace (count + 1))
                      , newlinesParser
                         |> P.map (\( emptyLines, indentation ) -> Newlines emptyLines indentation)
+                     , P.getChompedString (P.chompIf (\_ -> True) ExpectingAnything)
+                        |> P.map (\s -> Invalid s)
                      ]
                         |> List.map (located >> P.map (\t -> P.Loop (t :: reversed)))
                     )

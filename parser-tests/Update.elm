@@ -90,21 +90,21 @@ init snippets =
                                                 )
                                                 c
                                             )
-                                            ++ """
+                               )
+                            ++ """
 \"\"\"
       , contextualized ="""
-                                            ++ (Debug.toString contextualized
-                                                    |> preFormatElmCode
-                                                    |> resolveCustomTypeConstructors
-                                               )
-                                            ++ """
-      , lexed = """
-                                            ++ (Debug.toString lexed
-                                                    |> preFormatElmCode
-                                               )
-                                            ++ """
-      }"""
+                            ++ (Debug.toString contextualized
+                                    |> preFormatElmCode
+                                    |> resolveCustomTypeConstructors
                                )
+                            ++ """
+      , lexed = """
+                            ++ (Debug.toString lexed
+                                    |> preFormatElmCode
+                               )
+                            ++ """
+      }"""
                     )
                     snippets
                     rlexed

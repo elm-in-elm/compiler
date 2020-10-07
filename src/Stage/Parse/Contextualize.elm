@@ -1443,23 +1443,23 @@ closeRecord { firstEntries, lastEntry } parents =
 appendOperatorTo : ExpressionNestingLeaf -> Operator -> Result Error ExpressionNestingLeaf
 appendOperatorTo leaf appendingOp =
     case leaf of
-        ExpressionNestingLeaf_Operator newParent ->
-            case newParent.rhs of
+        ExpressionNestingLeaf_Operator oldLeaf ->
+            case oldLeaf.rhs of
                 Nothing ->
                     Error_InvalidToken Expecting_Unknown
                         |> Err
 
                 Just parentRhs ->
                     let
-                        parentPrec =
-                            Operator.getPrecedence newParent.op
+                        prevPrec =
+                            Operator.getPrecedence oldLeaf.op
 
                         appendingPrec =
                             Operator.getPrecedence appendingOp
                     in
-                    case Operator.comparePrec { lhs = parentPrec, rhs = appendingPrec } of
+                    case Operator.comparePrec { lhs = prevPrec, rhs = appendingPrec } of
                         EQ ->
-                            case Operator.getAssociativity parentPrec of
+                            case Operator.getAssociativity prevPrec of
                                 Operator.ConflictsWithOthers ->
                                     Debug.todo ""
 
@@ -1474,9 +1474,9 @@ appendOperatorTo leaf appendingOp =
                                         , parent =
                                             Just
                                                 (ExpressionNestingParent_Operator
-                                                    { op = newParent.op
-                                                    , lhs = newParent.lhs
-                                                    , parent = newParent.parent
+                                                    { op = oldLeaf.op
+                                                    , lhs = oldLeaf.lhs
+                                                    , parent = oldLeaf.parent
                                                     }
                                                 )
                                         }
@@ -1485,17 +1485,40 @@ appendOperatorTo leaf appendingOp =
                                 Operator.LeftToRight ->
                                     ExpressionNestingLeaf_Operator
                                         { op = appendingOp
-                                        , lhs = Located.merge (Frontend.Operator newParent.op) newParent.lhs parentRhs
+                                        , lhs = Located.merge (Frontend.Operator oldLeaf.op) oldLeaf.lhs parentRhs
                                         , rhs = Nothing
-                                        , parent = newParent.parent
+                                        , parent = oldLeaf.parent
                                         }
                                         |> Ok
 
                         GT ->
-                            Debug.todo ""
+                            -- Prev operator has higher precedence than the appending operator. We bundle the previous
+                            -- nesting context into the child's lhs.
+                            ExpressionNestingLeaf_Operator
+                                { op = appendingOp
+                                , lhs = Located.merge (Frontend.Operator oldLeaf.op) oldLeaf.lhs parentRhs
+                                , rhs = Nothing
+                                , parent = oldLeaf.parent
+                                }
+                                |> Ok
 
                         LT ->
-                            Debug.todo ""
+                            -- Prev operator has lower precedence than the appending operator. We steal the previous
+                            -- operators's rhs and start a new layer of nesting with the previous rhs as our new lhs.
+                            ExpressionNestingLeaf_Operator
+                                { op = appendingOp
+                                , lhs = parentRhs
+                                , rhs = Nothing
+                                , parent =
+                                    Just
+                                        (ExpressionNestingParent_Operator
+                                            { op = oldLeaf.op
+                                            , lhs = oldLeaf.lhs
+                                            , parent = oldLeaf.parent
+                                            }
+                                        )
+                                }
+                                |> Ok
 
         ExpressionNestingLeafType_Expr locatedexpr ->
             ExpressionNestingLeaf_Operator
@@ -1510,14 +1533,14 @@ appendOperatorTo leaf appendingOp =
 appendValueExprTo : ExpressionNestingLeaf -> Frontend.LocatedExpr -> Result Error ExpressionNestingLeaf
 appendValueExprTo leaf appendingExpr =
     case leaf of
-        ExpressionNestingLeaf_Operator newParent ->
-            case newParent.rhs of
+        ExpressionNestingLeaf_Operator oldLeaf ->
+            case oldLeaf.rhs of
                 Nothing ->
                     ExpressionNestingLeaf_Operator
-                        { op = newParent.op
-                        , lhs = newParent.lhs
+                        { op = oldLeaf.op
+                        , lhs = oldLeaf.lhs
                         , rhs = Just appendingExpr
-                        , parent = newParent.parent
+                        , parent = oldLeaf.parent
                         }
                         |> Ok
 

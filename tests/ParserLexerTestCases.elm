@@ -299,6 +299,618 @@ b = 78 * 5 * 2 / 4 * 5
                 , Located { end = { col = 1, row = 4 }, start = { col = 23, row = 3 } } (Newlines [] 0)
                 ]
       }
+    , { name = "expression-int-multiply-and-add"
+      , source = """a = 5 * 5 + 6
+a1 =  7 + 5 * 5
+a11 =  7 + 5 * 5 + 6
+a2 = 100  + 5 * 5
+a3 = 345 * 2234 + 2342 * 1010
+
+
+b = 78 + 5 * 2 / 4 * 5
+b1 = 78 * 5 * 2 / 4 - 5
+b2 = 78 * 5 - 2 / 4 * 5
+b3 = 78 - 5 + 2 / 4 * 5
+b4 = 78 / 5 / 2 / 4 + 5
+
+"""
+      , pretty = """
+        ( ( Ok
+          , ( ValueDeclaration
+            , ( name, a )
+            , ( args, () )
+            , ( valueExpr__
+              , ( Operator
+                , ( ( op, + )
+                  , ( lhs
+                    , ( Operator
+                      , ( ( op, * )
+                        , ( lhs
+                          , ( Int, 5 )
+                          )
+                        , ( rhs
+                          , ( Int, 5 )
+                          )
+                        )
+                      )
+                    )
+                  , ( rhs
+                    , ( Int, 6 )
+                    )
+                  )
+                )
+              )
+            )
+          )
+        , ( Ok
+          , ( ValueDeclaration
+            , ( name, a1 )
+            , ( args, () )
+            , ( valueExpr__
+              , ( Operator
+                , ( ( op, + )
+                  , ( lhs
+                    , ( Int, 7 )
+                    )
+                  , ( rhs
+                    , ( Operator
+                      , ( ( op, * )
+                        , ( lhs
+                          , ( Int, 5 )
+                          )
+                        , ( rhs
+                          , ( Int, 5 )
+                          )
+                        )
+                      )
+                    )
+                  )
+                )
+              )
+            )
+          )
+        , ( Ok
+          , ( ValueDeclaration
+            , ( name, a11 )
+            , ( args, () )
+            , ( valueExpr__
+              , ( Operator
+                , ( ( op, + )
+                  , ( lhs
+                    , ( Int, 7 )
+                    )
+                  , ( rhs
+                    , ( Operator
+                      , ( ( op, + )
+                        , ( lhs
+                          , ( Operator
+                            , ( ( op, * )
+                              , ( lhs
+                                , ( Int, 5 )
+                                )
+                              , ( rhs
+                                , ( Int, 5 )
+                                )
+                              )
+                            )
+                          )
+                        , ( rhs
+                          , ( Int, 6 )
+                          )
+                        )
+                      )
+                    )
+                  )
+                )
+              )
+            )
+          )
+        , ( Ok
+          , ( ValueDeclaration
+            , ( name, a2 )
+            , ( args, () )
+            , ( valueExpr__
+              , ( Operator
+                , ( ( op, + )
+                  , ( lhs
+                    , ( Int, 100 )
+                    )
+                  , ( rhs
+                    , ( Operator
+                      , ( ( op, * )
+                        , ( lhs
+                          , ( Int, 5 )
+                          )
+                        , ( rhs
+                          , ( Int, 5 )
+                          )
+                        )
+                      )
+                    )
+                  )
+                )
+              )
+            )
+          )
+        , ( Ok
+          , ( ValueDeclaration
+            , ( name, a3 )
+            , ( args, () )
+            , ( valueExpr__
+              , ( Operator
+                , ( ( op, + )
+                  , ( lhs
+                    , ( Operator
+                      , ( ( op, * )
+                        , ( lhs
+                          , ( Int, 345 )
+                          )
+                        , ( rhs
+                          , ( Int, 2234 )
+                          )
+                        )
+                      )
+                    )
+                  , ( rhs
+                    , ( Operator
+                      , ( ( op, * )
+                        , ( lhs
+                          , ( Int, 2342 )
+                          )
+                        , ( rhs
+                          , ( Int, 1010 )
+                          )
+                        )
+                      )
+                    )
+                  )
+                )
+              )
+            )
+          )
+        , ( Ok
+          , ( ValueDeclaration
+            , ( name, b )
+            , ( args, () )
+            , ( valueExpr__
+              , ( Operator
+                , ( ( op, + )
+                  , ( lhs
+                    , ( Int, 78 )
+                    )
+                  , ( rhs
+                    , ( Operator
+                      , ( ( op, * )
+                        , ( lhs
+                          , ( Operator
+                            , ( ( op, / )
+                              , ( lhs
+                                , ( Operator
+                                  , ( ( op, * )
+                                    , ( lhs
+                                      , ( Int, 5 )
+                                      )
+                                    , ( rhs
+                                      , ( Int, 2 )
+                                      )
+                                    )
+                                  )
+                                )
+                              , ( rhs
+                                , ( Int, 4 )
+                                )
+                              )
+                            )
+                          )
+                        , ( rhs
+                          , ( Int, 5 )
+                          )
+                        )
+                      )
+                    )
+                  )
+                )
+              )
+            )
+          )
+        , ( Ok
+          , ( ValueDeclaration
+            , ( name, b1 )
+            , ( args, () )
+            , ( valueExpr__
+              , ( Operator
+                , ( ( op, - )
+                  , ( lhs
+                    , ( Operator
+                      , ( ( op, / )
+                        , ( lhs
+                          , ( Operator
+                            , ( ( op, * )
+                              , ( lhs
+                                , ( Operator
+                                  , ( ( op, * )
+                                    , ( lhs
+                                      , ( Int, 78 )
+                                      )
+                                    , ( rhs
+                                      , ( Int, 5 )
+                                      )
+                                    )
+                                  )
+                                )
+                              , ( rhs
+                                , ( Int, 2 )
+                                )
+                              )
+                            )
+                          )
+                        , ( rhs
+                          , ( Int, 4 )
+                          )
+                        )
+                      )
+                    )
+                  , ( rhs
+                    , ( Int, 5 )
+                    )
+                  )
+                )
+              )
+            )
+          )
+        , ( Ok
+          , ( ValueDeclaration
+            , ( name, b2 )
+            , ( args, () )
+            , ( valueExpr__
+              , ( Operator
+                , ( ( op, - )
+                  , ( lhs
+                    , ( Operator
+                      , ( ( op, * )
+                        , ( lhs
+                          , ( Int, 78 )
+                          )
+                        , ( rhs
+                          , ( Int, 5 )
+                          )
+                        )
+                      )
+                    )
+                  , ( rhs
+                    , ( Operator
+                      , ( ( op, * )
+                        , ( lhs
+                          , ( Operator
+                            , ( ( op, / )
+                              , ( lhs
+                                , ( Int, 2 )
+                                )
+                              , ( rhs
+                                , ( Int, 4 )
+                                )
+                              )
+                            )
+                          )
+                        , ( rhs
+                          , ( Int, 5 )
+                          )
+                        )
+                      )
+                    )
+                  )
+                )
+              )
+            )
+          )
+        , ( Ok
+          , ( ValueDeclaration
+            , ( name, b3 )
+            , ( args, () )
+            , ( valueExpr__
+              , ( Operator
+                , ( ( op, + )
+                  , ( lhs
+                    , ( Operator
+                      , ( ( op, - )
+                        , ( lhs
+                          , ( Int, 78 )
+                          )
+                        , ( rhs
+                          , ( Int, 5 )
+                          )
+                        )
+                      )
+                    )
+                  , ( rhs
+                    , ( Operator
+                      , ( ( op, * )
+                        , ( lhs
+                          , ( Operator
+                            , ( ( op, / )
+                              , ( lhs
+                                , ( Int, 2 )
+                                )
+                              , ( rhs
+                                , ( Int, 4 )
+                                )
+                              )
+                            )
+                          )
+                        , ( rhs
+                          , ( Int, 5 )
+                          )
+                        )
+                      )
+                    )
+                  )
+                )
+              )
+            )
+          )
+        , ( Ok
+          , ( ValueDeclaration
+            , ( name, b4 )
+            , ( args, () )
+            , ( valueExpr__
+              , ( Operator
+                , ( ( op, + )
+                  , ( lhs
+                    , ( Operator
+                      , ( ( op, / )
+                        , ( lhs
+                          , ( Operator
+                            , ( ( op, / )
+                              , ( lhs
+                                , ( Operator
+                                  , ( ( op, / )
+                                    , ( lhs
+                                      , ( Int, 78 )
+                                      )
+                                    , ( rhs
+                                      , ( Int, 5 )
+                                      )
+                                    )
+                                  )
+                                )
+                              , ( rhs
+                                , ( Int, 2 )
+                                )
+                              )
+                            )
+                          )
+                        , ( rhs
+                          , ( Int, 4 )
+                          )
+                        )
+                      )
+                    )
+                  , ( rhs
+                    , ( Int, 5 )
+                    )
+                  )
+                )
+              )
+            )
+          )
+        )
+"""
+      , contextualized =
+            Just
+                [ Ok (ValueDeclaration { args = [], name = Located { end = { col = 2, row = 1 }, start = { col = 1, row = 1 } } (ValueOrFunctionOrGenericType "a"), valueExpr__ = Located { end = { col = 14, row = 1 }, start = { col = 5, row = 1 } } (Frontend.Operator Add (Located { end = { col = 10, row = 1 }, start = { col = 5, row = 1 } } (Frontend.Operator Multiply (Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Frontend.Int 5)) (Located { end = { col = 10, row = 1 }, start = { col = 9, row = 1 } } (Frontend.Int 5)))) (Located { end = { col = 14, row = 1 }, start = { col = 13, row = 1 } } (Frontend.Int 6))) })
+                , Ok (ValueDeclaration { args = [], name = Located { end = { col = 3, row = 2 }, start = { col = 1, row = 2 } } (ValueOrFunctionOrGenericType "a1"), valueExpr__ = Located { end = { col = 16, row = 2 }, start = { col = 7, row = 2 } } (Frontend.Operator Add (Located { end = { col = 8, row = 2 }, start = { col = 7, row = 2 } } (Frontend.Int 7)) (Located { end = { col = 16, row = 2 }, start = { col = 11, row = 2 } } (Frontend.Operator Multiply (Located { end = { col = 12, row = 2 }, start = { col = 11, row = 2 } } (Frontend.Int 5)) (Located { end = { col = 16, row = 2 }, start = { col = 15, row = 2 } } (Frontend.Int 5))))) })
+                , Ok (ValueDeclaration { args = [], name = Located { end = { col = 4, row = 3 }, start = { col = 1, row = 3 } } (ValueOrFunctionOrGenericType "a11"), valueExpr__ = Located { end = { col = 21, row = 3 }, start = { col = 8, row = 3 } } (Frontend.Operator Add (Located { end = { col = 9, row = 3 }, start = { col = 8, row = 3 } } (Frontend.Int 7)) (Located { end = { col = 21, row = 3 }, start = { col = 12, row = 3 } } (Frontend.Operator Add (Located { end = { col = 17, row = 3 }, start = { col = 12, row = 3 } } (Frontend.Operator Multiply (Located { end = { col = 13, row = 3 }, start = { col = 12, row = 3 } } (Frontend.Int 5)) (Located { end = { col = 17, row = 3 }, start = { col = 16, row = 3 } } (Frontend.Int 5)))) (Located { end = { col = 21, row = 3 }, start = { col = 20, row = 3 } } (Frontend.Int 6))))) })
+                , Ok (ValueDeclaration { args = [], name = Located { end = { col = 3, row = 4 }, start = { col = 1, row = 4 } } (ValueOrFunctionOrGenericType "a2"), valueExpr__ = Located { end = { col = 18, row = 4 }, start = { col = 6, row = 4 } } (Frontend.Operator Add (Located { end = { col = 9, row = 4 }, start = { col = 6, row = 4 } } (Frontend.Int 100)) (Located { end = { col = 18, row = 4 }, start = { col = 13, row = 4 } } (Frontend.Operator Multiply (Located { end = { col = 14, row = 4 }, start = { col = 13, row = 4 } } (Frontend.Int 5)) (Located { end = { col = 18, row = 4 }, start = { col = 17, row = 4 } } (Frontend.Int 5))))) })
+                , Ok (ValueDeclaration { args = [], name = Located { end = { col = 3, row = 5 }, start = { col = 1, row = 5 } } (ValueOrFunctionOrGenericType "a3"), valueExpr__ = Located { end = { col = 30, row = 5 }, start = { col = 6, row = 5 } } (Frontend.Operator Add (Located { end = { col = 16, row = 5 }, start = { col = 6, row = 5 } } (Frontend.Operator Multiply (Located { end = { col = 9, row = 5 }, start = { col = 6, row = 5 } } (Frontend.Int 345)) (Located { end = { col = 16, row = 5 }, start = { col = 12, row = 5 } } (Frontend.Int 2234)))) (Located { end = { col = 30, row = 5 }, start = { col = 19, row = 5 } } (Frontend.Operator Multiply (Located { end = { col = 23, row = 5 }, start = { col = 19, row = 5 } } (Frontend.Int 2342)) (Located { end = { col = 30, row = 5 }, start = { col = 26, row = 5 } } (Frontend.Int 1010))))) })
+                , Ok (ValueDeclaration { args = [], name = Located { end = { col = 2, row = 8 }, start = { col = 1, row = 8 } } (ValueOrFunctionOrGenericType "b"), valueExpr__ = Located { end = { col = 23, row = 8 }, start = { col = 5, row = 8 } } (Frontend.Operator Add (Located { end = { col = 7, row = 8 }, start = { col = 5, row = 8 } } (Frontend.Int 78)) (Located { end = { col = 23, row = 8 }, start = { col = 10, row = 8 } } (Frontend.Operator Multiply (Located { end = { col = 19, row = 8 }, start = { col = 10, row = 8 } } (Frontend.Operator Divide (Located { end = { col = 15, row = 8 }, start = { col = 10, row = 8 } } (Frontend.Operator Multiply (Located { end = { col = 11, row = 8 }, start = { col = 10, row = 8 } } (Frontend.Int 5)) (Located { end = { col = 15, row = 8 }, start = { col = 14, row = 8 } } (Frontend.Int 2)))) (Located { end = { col = 19, row = 8 }, start = { col = 18, row = 8 } } (Frontend.Int 4)))) (Located { end = { col = 23, row = 8 }, start = { col = 22, row = 8 } } (Frontend.Int 5))))) })
+                , Ok (ValueDeclaration { args = [], name = Located { end = { col = 3, row = 9 }, start = { col = 1, row = 9 } } (ValueOrFunctionOrGenericType "b1"), valueExpr__ = Located { end = { col = 24, row = 9 }, start = { col = 6, row = 9 } } (Frontend.Operator Subtract (Located { end = { col = 20, row = 9 }, start = { col = 6, row = 9 } } (Frontend.Operator Divide (Located { end = { col = 16, row = 9 }, start = { col = 6, row = 9 } } (Frontend.Operator Multiply (Located { end = { col = 12, row = 9 }, start = { col = 6, row = 9 } } (Frontend.Operator Multiply (Located { end = { col = 8, row = 9 }, start = { col = 6, row = 9 } } (Frontend.Int 78)) (Located { end = { col = 12, row = 9 }, start = { col = 11, row = 9 } } (Frontend.Int 5)))) (Located { end = { col = 16, row = 9 }, start = { col = 15, row = 9 } } (Frontend.Int 2)))) (Located { end = { col = 20, row = 9 }, start = { col = 19, row = 9 } } (Frontend.Int 4)))) (Located { end = { col = 24, row = 9 }, start = { col = 23, row = 9 } } (Frontend.Int 5))) })
+                , Ok (ValueDeclaration { args = [], name = Located { end = { col = 3, row = 10 }, start = { col = 1, row = 10 } } (ValueOrFunctionOrGenericType "b2"), valueExpr__ = Located { end = { col = 24, row = 10 }, start = { col = 6, row = 10 } } (Frontend.Operator Subtract (Located { end = { col = 12, row = 10 }, start = { col = 6, row = 10 } } (Frontend.Operator Multiply (Located { end = { col = 8, row = 10 }, start = { col = 6, row = 10 } } (Frontend.Int 78)) (Located { end = { col = 12, row = 10 }, start = { col = 11, row = 10 } } (Frontend.Int 5)))) (Located { end = { col = 24, row = 10 }, start = { col = 15, row = 10 } } (Frontend.Operator Multiply (Located { end = { col = 20, row = 10 }, start = { col = 15, row = 10 } } (Frontend.Operator Divide (Located { end = { col = 16, row = 10 }, start = { col = 15, row = 10 } } (Frontend.Int 2)) (Located { end = { col = 20, row = 10 }, start = { col = 19, row = 10 } } (Frontend.Int 4)))) (Located { end = { col = 24, row = 10 }, start = { col = 23, row = 10 } } (Frontend.Int 5))))) })
+                , Ok (ValueDeclaration { args = [], name = Located { end = { col = 3, row = 11 }, start = { col = 1, row = 11 } } (ValueOrFunctionOrGenericType "b3"), valueExpr__ = Located { end = { col = 24, row = 11 }, start = { col = 6, row = 11 } } (Frontend.Operator Add (Located { end = { col = 12, row = 11 }, start = { col = 6, row = 11 } } (Frontend.Operator Subtract (Located { end = { col = 8, row = 11 }, start = { col = 6, row = 11 } } (Frontend.Int 78)) (Located { end = { col = 12, row = 11 }, start = { col = 11, row = 11 } } (Frontend.Int 5)))) (Located { end = { col = 24, row = 11 }, start = { col = 15, row = 11 } } (Frontend.Operator Multiply (Located { end = { col = 20, row = 11 }, start = { col = 15, row = 11 } } (Frontend.Operator Divide (Located { end = { col = 16, row = 11 }, start = { col = 15, row = 11 } } (Frontend.Int 2)) (Located { end = { col = 20, row = 11 }, start = { col = 19, row = 11 } } (Frontend.Int 4)))) (Located { end = { col = 24, row = 11 }, start = { col = 23, row = 11 } } (Frontend.Int 5))))) })
+                , Ok (ValueDeclaration { args = [], name = Located { end = { col = 3, row = 12 }, start = { col = 1, row = 12 } } (ValueOrFunctionOrGenericType "b4"), valueExpr__ = Located { end = { col = 24, row = 12 }, start = { col = 6, row = 12 } } (Frontend.Operator Add (Located { end = { col = 20, row = 12 }, start = { col = 6, row = 12 } } (Frontend.Operator Divide (Located { end = { col = 16, row = 12 }, start = { col = 6, row = 12 } } (Frontend.Operator Divide (Located { end = { col = 12, row = 12 }, start = { col = 6, row = 12 } } (Frontend.Operator Divide (Located { end = { col = 8, row = 12 }, start = { col = 6, row = 12 } } (Frontend.Int 78)) (Located { end = { col = 12, row = 12 }, start = { col = 11, row = 12 } } (Frontend.Int 5)))) (Located { end = { col = 16, row = 12 }, start = { col = 15, row = 12 } } (Frontend.Int 2)))) (Located { end = { col = 20, row = 12 }, start = { col = 19, row = 12 } } (Frontend.Int 4)))) (Located { end = { col = 24, row = 12 }, start = { col = 23, row = 12 } } (Frontend.Int 5))) })
+                ]
+      , lexed =
+            Ok
+                [ Located { end = { col = 2, row = 1 }, start = { col = 1, row = 1 } } (Token "a")
+                , Located { end = { col = 3, row = 1 }, start = { col = 2, row = 1 } } (Whitespace 1)
+                , Located { end = { col = 4, row = 1 }, start = { col = 3, row = 1 } } (Sigil Assign)
+                , Located { end = { col = 5, row = 1 }, start = { col = 4, row = 1 } } (Whitespace 1)
+                , Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (NumericLiteral "5")
+                , Located { end = { col = 7, row = 1 }, start = { col = 6, row = 1 } } (Whitespace 1)
+                , Located { end = { col = 8, row = 1 }, start = { col = 7, row = 1 } } (Sigil (Operator Multiply))
+                , Located { end = { col = 9, row = 1 }, start = { col = 8, row = 1 } } (Whitespace 1)
+                , Located { end = { col = 10, row = 1 }, start = { col = 9, row = 1 } } (NumericLiteral "5")
+                , Located { end = { col = 11, row = 1 }, start = { col = 10, row = 1 } } (Whitespace 1)
+                , Located { end = { col = 12, row = 1 }, start = { col = 11, row = 1 } } (Sigil (Operator Add))
+                , Located { end = { col = 13, row = 1 }, start = { col = 12, row = 1 } } (Whitespace 1)
+                , Located { end = { col = 14, row = 1 }, start = { col = 13, row = 1 } } (NumericLiteral "6")
+                , Located { end = { col = 1, row = 2 }, start = { col = 14, row = 1 } } (Newlines [] 0)
+                , Located { end = { col = 3, row = 2 }, start = { col = 1, row = 2 } } (Token "a1")
+                , Located { end = { col = 4, row = 2 }, start = { col = 3, row = 2 } } (Whitespace 1)
+                , Located { end = { col = 5, row = 2 }, start = { col = 4, row = 2 } } (Sigil Assign)
+                , Located { end = { col = 7, row = 2 }, start = { col = 5, row = 2 } } (Whitespace 2)
+                , Located { end = { col = 8, row = 2 }, start = { col = 7, row = 2 } } (NumericLiteral "7")
+                , Located { end = { col = 9, row = 2 }, start = { col = 8, row = 2 } } (Whitespace 1)
+                , Located { end = { col = 10, row = 2 }, start = { col = 9, row = 2 } } (Sigil (Operator Add))
+                , Located { end = { col = 11, row = 2 }, start = { col = 10, row = 2 } } (Whitespace 1)
+                , Located { end = { col = 12, row = 2 }, start = { col = 11, row = 2 } } (NumericLiteral "5")
+                , Located { end = { col = 13, row = 2 }, start = { col = 12, row = 2 } } (Whitespace 1)
+                , Located { end = { col = 14, row = 2 }, start = { col = 13, row = 2 } } (Sigil (Operator Multiply))
+                , Located { end = { col = 15, row = 2 }, start = { col = 14, row = 2 } } (Whitespace 1)
+                , Located { end = { col = 16, row = 2 }, start = { col = 15, row = 2 } } (NumericLiteral "5")
+                , Located { end = { col = 1, row = 3 }, start = { col = 16, row = 2 } } (Newlines [] 0)
+                , Located { end = { col = 4, row = 3 }, start = { col = 1, row = 3 } } (Token "a11")
+                , Located { end = { col = 5, row = 3 }, start = { col = 4, row = 3 } } (Whitespace 1)
+                , Located { end = { col = 6, row = 3 }, start = { col = 5, row = 3 } } (Sigil Assign)
+                , Located { end = { col = 8, row = 3 }, start = { col = 6, row = 3 } } (Whitespace 2)
+                , Located { end = { col = 9, row = 3 }, start = { col = 8, row = 3 } } (NumericLiteral "7")
+                , Located { end = { col = 10, row = 3 }, start = { col = 9, row = 3 } } (Whitespace 1)
+                , Located { end = { col = 11, row = 3 }, start = { col = 10, row = 3 } } (Sigil (Operator Add))
+                , Located { end = { col = 12, row = 3 }, start = { col = 11, row = 3 } } (Whitespace 1)
+                , Located { end = { col = 13, row = 3 }, start = { col = 12, row = 3 } } (NumericLiteral "5")
+                , Located { end = { col = 14, row = 3 }, start = { col = 13, row = 3 } } (Whitespace 1)
+                , Located { end = { col = 15, row = 3 }, start = { col = 14, row = 3 } } (Sigil (Operator Multiply))
+                , Located { end = { col = 16, row = 3 }, start = { col = 15, row = 3 } } (Whitespace 1)
+                , Located { end = { col = 17, row = 3 }, start = { col = 16, row = 3 } } (NumericLiteral "5")
+                , Located { end = { col = 18, row = 3 }, start = { col = 17, row = 3 } } (Whitespace 1)
+                , Located { end = { col = 19, row = 3 }, start = { col = 18, row = 3 } } (Sigil (Operator Add))
+                , Located { end = { col = 20, row = 3 }, start = { col = 19, row = 3 } } (Whitespace 1)
+                , Located { end = { col = 21, row = 3 }, start = { col = 20, row = 3 } } (NumericLiteral "6")
+                , Located { end = { col = 1, row = 4 }, start = { col = 21, row = 3 } } (Newlines [] 0)
+                , Located { end = { col = 3, row = 4 }, start = { col = 1, row = 4 } } (Token "a2")
+                , Located { end = { col = 4, row = 4 }, start = { col = 3, row = 4 } } (Whitespace 1)
+                , Located { end = { col = 5, row = 4 }, start = { col = 4, row = 4 } } (Sigil Assign)
+                , Located { end = { col = 6, row = 4 }, start = { col = 5, row = 4 } } (Whitespace 1)
+                , Located { end = { col = 9, row = 4 }, start = { col = 6, row = 4 } } (NumericLiteral "100")
+                , Located { end = { col = 11, row = 4 }, start = { col = 9, row = 4 } } (Whitespace 2)
+                , Located { end = { col = 12, row = 4 }, start = { col = 11, row = 4 } } (Sigil (Operator Add))
+                , Located { end = { col = 13, row = 4 }, start = { col = 12, row = 4 } } (Whitespace 1)
+                , Located { end = { col = 14, row = 4 }, start = { col = 13, row = 4 } } (NumericLiteral "5")
+                , Located { end = { col = 15, row = 4 }, start = { col = 14, row = 4 } } (Whitespace 1)
+                , Located { end = { col = 16, row = 4 }, start = { col = 15, row = 4 } } (Sigil (Operator Multiply))
+                , Located { end = { col = 17, row = 4 }, start = { col = 16, row = 4 } } (Whitespace 1)
+                , Located { end = { col = 18, row = 4 }, start = { col = 17, row = 4 } } (NumericLiteral "5")
+                , Located { end = { col = 1, row = 5 }, start = { col = 18, row = 4 } } (Newlines [] 0)
+                , Located { end = { col = 3, row = 5 }, start = { col = 1, row = 5 } } (Token "a3")
+                , Located { end = { col = 4, row = 5 }, start = { col = 3, row = 5 } } (Whitespace 1)
+                , Located { end = { col = 5, row = 5 }, start = { col = 4, row = 5 } } (Sigil Assign)
+                , Located { end = { col = 6, row = 5 }, start = { col = 5, row = 5 } } (Whitespace 1)
+                , Located { end = { col = 9, row = 5 }, start = { col = 6, row = 5 } } (NumericLiteral "345")
+                , Located { end = { col = 10, row = 5 }, start = { col = 9, row = 5 } } (Whitespace 1)
+                , Located { end = { col = 11, row = 5 }, start = { col = 10, row = 5 } } (Sigil (Operator Multiply))
+                , Located { end = { col = 12, row = 5 }, start = { col = 11, row = 5 } } (Whitespace 1)
+                , Located { end = { col = 16, row = 5 }, start = { col = 12, row = 5 } } (NumericLiteral "2234")
+                , Located { end = { col = 17, row = 5 }, start = { col = 16, row = 5 } } (Whitespace 1)
+                , Located { end = { col = 18, row = 5 }, start = { col = 17, row = 5 } } (Sigil (Operator Add))
+                , Located { end = { col = 19, row = 5 }, start = { col = 18, row = 5 } } (Whitespace 1)
+                , Located { end = { col = 23, row = 5 }, start = { col = 19, row = 5 } } (NumericLiteral "2342")
+                , Located { end = { col = 24, row = 5 }, start = { col = 23, row = 5 } } (Whitespace 1)
+                , Located { end = { col = 25, row = 5 }, start = { col = 24, row = 5 } } (Sigil (Operator Multiply))
+                , Located { end = { col = 26, row = 5 }, start = { col = 25, row = 5 } } (Whitespace 1)
+                , Located { end = { col = 30, row = 5 }, start = { col = 26, row = 5 } } (NumericLiteral "1010")
+                , Located { end = { col = 1, row = 8 }, start = { col = 30, row = 5 } }
+                    (Newlines
+                        [ 0
+                        , 0
+                        ]
+                        0
+                    )
+                , Located { end = { col = 2, row = 8 }, start = { col = 1, row = 8 } } (Token "b")
+                , Located { end = { col = 3, row = 8 }, start = { col = 2, row = 8 } } (Whitespace 1)
+                , Located { end = { col = 4, row = 8 }, start = { col = 3, row = 8 } } (Sigil Assign)
+                , Located { end = { col = 5, row = 8 }, start = { col = 4, row = 8 } } (Whitespace 1)
+                , Located { end = { col = 7, row = 8 }, start = { col = 5, row = 8 } } (NumericLiteral "78")
+                , Located { end = { col = 8, row = 8 }, start = { col = 7, row = 8 } } (Whitespace 1)
+                , Located { end = { col = 9, row = 8 }, start = { col = 8, row = 8 } } (Sigil (Operator Add))
+                , Located { end = { col = 10, row = 8 }, start = { col = 9, row = 8 } } (Whitespace 1)
+                , Located { end = { col = 11, row = 8 }, start = { col = 10, row = 8 } } (NumericLiteral "5")
+                , Located { end = { col = 12, row = 8 }, start = { col = 11, row = 8 } } (Whitespace 1)
+                , Located { end = { col = 13, row = 8 }, start = { col = 12, row = 8 } } (Sigil (Operator Multiply))
+                , Located { end = { col = 14, row = 8 }, start = { col = 13, row = 8 } } (Whitespace 1)
+                , Located { end = { col = 15, row = 8 }, start = { col = 14, row = 8 } } (NumericLiteral "2")
+                , Located { end = { col = 16, row = 8 }, start = { col = 15, row = 8 } } (Whitespace 1)
+                , Located { end = { col = 17, row = 8 }, start = { col = 16, row = 8 } } (Sigil (Operator Divide))
+                , Located { end = { col = 18, row = 8 }, start = { col = 17, row = 8 } } (Whitespace 1)
+                , Located { end = { col = 19, row = 8 }, start = { col = 18, row = 8 } } (NumericLiteral "4")
+                , Located { end = { col = 20, row = 8 }, start = { col = 19, row = 8 } } (Whitespace 1)
+                , Located { end = { col = 21, row = 8 }, start = { col = 20, row = 8 } } (Sigil (Operator Multiply))
+                , Located { end = { col = 22, row = 8 }, start = { col = 21, row = 8 } } (Whitespace 1)
+                , Located { end = { col = 23, row = 8 }, start = { col = 22, row = 8 } } (NumericLiteral "5")
+                , Located { end = { col = 1, row = 9 }, start = { col = 23, row = 8 } } (Newlines [] 0)
+                , Located { end = { col = 3, row = 9 }, start = { col = 1, row = 9 } } (Token "b1")
+                , Located { end = { col = 4, row = 9 }, start = { col = 3, row = 9 } } (Whitespace 1)
+                , Located { end = { col = 5, row = 9 }, start = { col = 4, row = 9 } } (Sigil Assign)
+                , Located { end = { col = 6, row = 9 }, start = { col = 5, row = 9 } } (Whitespace 1)
+                , Located { end = { col = 8, row = 9 }, start = { col = 6, row = 9 } } (NumericLiteral "78")
+                , Located { end = { col = 9, row = 9 }, start = { col = 8, row = 9 } } (Whitespace 1)
+                , Located { end = { col = 10, row = 9 }, start = { col = 9, row = 9 } } (Sigil (Operator Multiply))
+                , Located { end = { col = 11, row = 9 }, start = { col = 10, row = 9 } } (Whitespace 1)
+                , Located { end = { col = 12, row = 9 }, start = { col = 11, row = 9 } } (NumericLiteral "5")
+                , Located { end = { col = 13, row = 9 }, start = { col = 12, row = 9 } } (Whitespace 1)
+                , Located { end = { col = 14, row = 9 }, start = { col = 13, row = 9 } } (Sigil (Operator Multiply))
+                , Located { end = { col = 15, row = 9 }, start = { col = 14, row = 9 } } (Whitespace 1)
+                , Located { end = { col = 16, row = 9 }, start = { col = 15, row = 9 } } (NumericLiteral "2")
+                , Located { end = { col = 17, row = 9 }, start = { col = 16, row = 9 } } (Whitespace 1)
+                , Located { end = { col = 18, row = 9 }, start = { col = 17, row = 9 } } (Sigil (Operator Divide))
+                , Located { end = { col = 19, row = 9 }, start = { col = 18, row = 9 } } (Whitespace 1)
+                , Located { end = { col = 20, row = 9 }, start = { col = 19, row = 9 } } (NumericLiteral "4")
+                , Located { end = { col = 21, row = 9 }, start = { col = 20, row = 9 } } (Whitespace 1)
+                , Located { end = { col = 22, row = 9 }, start = { col = 21, row = 9 } } (Sigil (Operator Subtract))
+                , Located { end = { col = 23, row = 9 }, start = { col = 22, row = 9 } } (Whitespace 1)
+                , Located { end = { col = 24, row = 9 }, start = { col = 23, row = 9 } } (NumericLiteral "5")
+                , Located { end = { col = 1, row = 10 }, start = { col = 24, row = 9 } } (Newlines [] 0)
+                , Located { end = { col = 3, row = 10 }, start = { col = 1, row = 10 } } (Token "b2")
+                , Located { end = { col = 4, row = 10 }, start = { col = 3, row = 10 } } (Whitespace 1)
+                , Located { end = { col = 5, row = 10 }, start = { col = 4, row = 10 } } (Sigil Assign)
+                , Located { end = { col = 6, row = 10 }, start = { col = 5, row = 10 } } (Whitespace 1)
+                , Located { end = { col = 8, row = 10 }, start = { col = 6, row = 10 } } (NumericLiteral "78")
+                , Located { end = { col = 9, row = 10 }, start = { col = 8, row = 10 } } (Whitespace 1)
+                , Located { end = { col = 10, row = 10 }, start = { col = 9, row = 10 } } (Sigil (Operator Multiply))
+                , Located { end = { col = 11, row = 10 }, start = { col = 10, row = 10 } } (Whitespace 1)
+                , Located { end = { col = 12, row = 10 }, start = { col = 11, row = 10 } } (NumericLiteral "5")
+                , Located { end = { col = 13, row = 10 }, start = { col = 12, row = 10 } } (Whitespace 1)
+                , Located { end = { col = 14, row = 10 }, start = { col = 13, row = 10 } } (Sigil (Operator Subtract))
+                , Located { end = { col = 15, row = 10 }, start = { col = 14, row = 10 } } (Whitespace 1)
+                , Located { end = { col = 16, row = 10 }, start = { col = 15, row = 10 } } (NumericLiteral "2")
+                , Located { end = { col = 17, row = 10 }, start = { col = 16, row = 10 } } (Whitespace 1)
+                , Located { end = { col = 18, row = 10 }, start = { col = 17, row = 10 } } (Sigil (Operator Divide))
+                , Located { end = { col = 19, row = 10 }, start = { col = 18, row = 10 } } (Whitespace 1)
+                , Located { end = { col = 20, row = 10 }, start = { col = 19, row = 10 } } (NumericLiteral "4")
+                , Located { end = { col = 21, row = 10 }, start = { col = 20, row = 10 } } (Whitespace 1)
+                , Located { end = { col = 22, row = 10 }, start = { col = 21, row = 10 } } (Sigil (Operator Multiply))
+                , Located { end = { col = 23, row = 10 }, start = { col = 22, row = 10 } } (Whitespace 1)
+                , Located { end = { col = 24, row = 10 }, start = { col = 23, row = 10 } } (NumericLiteral "5")
+                , Located { end = { col = 1, row = 11 }, start = { col = 24, row = 10 } } (Newlines [] 0)
+                , Located { end = { col = 3, row = 11 }, start = { col = 1, row = 11 } } (Token "b3")
+                , Located { end = { col = 4, row = 11 }, start = { col = 3, row = 11 } } (Whitespace 1)
+                , Located { end = { col = 5, row = 11 }, start = { col = 4, row = 11 } } (Sigil Assign)
+                , Located { end = { col = 6, row = 11 }, start = { col = 5, row = 11 } } (Whitespace 1)
+                , Located { end = { col = 8, row = 11 }, start = { col = 6, row = 11 } } (NumericLiteral "78")
+                , Located { end = { col = 9, row = 11 }, start = { col = 8, row = 11 } } (Whitespace 1)
+                , Located { end = { col = 10, row = 11 }, start = { col = 9, row = 11 } } (Sigil (Operator Subtract))
+                , Located { end = { col = 11, row = 11 }, start = { col = 10, row = 11 } } (Whitespace 1)
+                , Located { end = { col = 12, row = 11 }, start = { col = 11, row = 11 } } (NumericLiteral "5")
+                , Located { end = { col = 13, row = 11 }, start = { col = 12, row = 11 } } (Whitespace 1)
+                , Located { end = { col = 14, row = 11 }, start = { col = 13, row = 11 } } (Sigil (Operator Add))
+                , Located { end = { col = 15, row = 11 }, start = { col = 14, row = 11 } } (Whitespace 1)
+                , Located { end = { col = 16, row = 11 }, start = { col = 15, row = 11 } } (NumericLiteral "2")
+                , Located { end = { col = 17, row = 11 }, start = { col = 16, row = 11 } } (Whitespace 1)
+                , Located { end = { col = 18, row = 11 }, start = { col = 17, row = 11 } } (Sigil (Operator Divide))
+                , Located { end = { col = 19, row = 11 }, start = { col = 18, row = 11 } } (Whitespace 1)
+                , Located { end = { col = 20, row = 11 }, start = { col = 19, row = 11 } } (NumericLiteral "4")
+                , Located { end = { col = 21, row = 11 }, start = { col = 20, row = 11 } } (Whitespace 1)
+                , Located { end = { col = 22, row = 11 }, start = { col = 21, row = 11 } } (Sigil (Operator Multiply))
+                , Located { end = { col = 23, row = 11 }, start = { col = 22, row = 11 } } (Whitespace 1)
+                , Located { end = { col = 24, row = 11 }, start = { col = 23, row = 11 } } (NumericLiteral "5")
+                , Located { end = { col = 1, row = 12 }, start = { col = 24, row = 11 } } (Newlines [] 0)
+                , Located { end = { col = 3, row = 12 }, start = { col = 1, row = 12 } } (Token "b4")
+                , Located { end = { col = 4, row = 12 }, start = { col = 3, row = 12 } } (Whitespace 1)
+                , Located { end = { col = 5, row = 12 }, start = { col = 4, row = 12 } } (Sigil Assign)
+                , Located { end = { col = 6, row = 12 }, start = { col = 5, row = 12 } } (Whitespace 1)
+                , Located { end = { col = 8, row = 12 }, start = { col = 6, row = 12 } } (NumericLiteral "78")
+                , Located { end = { col = 9, row = 12 }, start = { col = 8, row = 12 } } (Whitespace 1)
+                , Located { end = { col = 10, row = 12 }, start = { col = 9, row = 12 } } (Sigil (Operator Divide))
+                , Located { end = { col = 11, row = 12 }, start = { col = 10, row = 12 } } (Whitespace 1)
+                , Located { end = { col = 12, row = 12 }, start = { col = 11, row = 12 } } (NumericLiteral "5")
+                , Located { end = { col = 13, row = 12 }, start = { col = 12, row = 12 } } (Whitespace 1)
+                , Located { end = { col = 14, row = 12 }, start = { col = 13, row = 12 } } (Sigil (Operator Divide))
+                , Located { end = { col = 15, row = 12 }, start = { col = 14, row = 12 } } (Whitespace 1)
+                , Located { end = { col = 16, row = 12 }, start = { col = 15, row = 12 } } (NumericLiteral "2")
+                , Located { end = { col = 17, row = 12 }, start = { col = 16, row = 12 } } (Whitespace 1)
+                , Located { end = { col = 18, row = 12 }, start = { col = 17, row = 12 } } (Sigil (Operator Divide))
+                , Located { end = { col = 19, row = 12 }, start = { col = 18, row = 12 } } (Whitespace 1)
+                , Located { end = { col = 20, row = 12 }, start = { col = 19, row = 12 } } (NumericLiteral "4")
+                , Located { end = { col = 21, row = 12 }, start = { col = 20, row = 12 } } (Whitespace 1)
+                , Located { end = { col = 22, row = 12 }, start = { col = 21, row = 12 } } (Sigil (Operator Add))
+                , Located { end = { col = 23, row = 12 }, start = { col = 22, row = 12 } } (Whitespace 1)
+                , Located { end = { col = 24, row = 12 }, start = { col = 23, row = 12 } } (NumericLiteral "5")
+                , Located { end = { col = 1, row = 14 }, start = { col = 24, row = 12 } }
+                    (Newlines
+                        [ 0
+                        ]
+                        0
+                    )
+                ]
+      }
     , { name = "expression-int-subtract"
       , source = """a = 5 - 5
 
