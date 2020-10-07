@@ -1457,48 +1457,52 @@ appendOperatorTo leaf appendingOp =
                         appendingPrec =
                             Operator.getPrecedence appendingOp
                     in
-                    if parentPrec == appendingPrec then
-                        case Operator.getAssociativity parentPrec of
-                            Operator.ConflictsWithOthers ->
-                                Debug.todo ""
+                    case Operator.comparePrec { lhs = parentPrec, rhs = appendingPrec } of
+                        EQ ->
+                            case Operator.getAssociativity parentPrec of
+                                Operator.ConflictsWithOthers ->
+                                    Debug.todo ""
 
-                            Operator.ConflictsWithSelf ->
-                                Debug.todo ""
+                                Operator.ConflictsWithSelf ->
+                                    Debug.todo ""
 
-                            Operator.RightToLeft ->
-                                ExpressionNestingLeaf_Operator
-                                    { op = appendingOp
-                                    , lhs = parentRhs
-                                    , rhs = Nothing
-                                    , parent =
-                                        Just
-                                            (ExpressionNestingParent_Operator
-                                                { op = newParent.op
-                                                , lhs = newParent.lhs
-                                                , parent = newParent.parent
-                                                }
-                                            )
-                                    }
-                                    |> Ok
+                                Operator.RightToLeft ->
+                                    ExpressionNestingLeaf_Operator
+                                        { op = appendingOp
+                                        , lhs = parentRhs
+                                        , rhs = Nothing
+                                        , parent =
+                                            Just
+                                                (ExpressionNestingParent_Operator
+                                                    { op = newParent.op
+                                                    , lhs = newParent.lhs
+                                                    , parent = newParent.parent
+                                                    }
+                                                )
+                                        }
+                                        |> Ok
 
-                            Operator.LeftToRight ->
-                                ExpressionNestingLeaf_Operator
-                                    { op = appendingOp
-                                    , lhs = Located.merge (Frontend.Operator newParent.op) newParent.lhs parentRhs
-                                    , rhs = Nothing
-                                    , parent =
-                                        Just
-                                            (ExpressionNestingParent_Operator
-                                                { op = newParent.op
-                                                , lhs = newParent.lhs
-                                                , parent = newParent.parent
-                                                }
-                                            )
-                                    }
-                                    |> Ok
+                                Operator.LeftToRight ->
+                                    ExpressionNestingLeaf_Operator
+                                        { op = appendingOp
+                                        , lhs = Located.merge (Frontend.Operator newParent.op) newParent.lhs parentRhs
+                                        , rhs = Nothing
+                                        , parent =
+                                            Just
+                                                (ExpressionNestingParent_Operator
+                                                    { op = newParent.op
+                                                    , lhs = newParent.lhs
+                                                    , parent = newParent.parent
+                                                    }
+                                                )
+                                        }
+                                        |> Ok
 
-                    else
-                        Debug.todo ""
+                        GT ->
+                            Debug.todo ""
+
+                        LT ->
+                            Debug.todo ""
 
         ExpressionNestingLeafType_Expr locatedexpr ->
             ExpressionNestingLeaf_Operator
@@ -1583,19 +1587,19 @@ blockFromState state =
         State_BlockCustomType firstItem ->
             Debug.todo "handle incomplete block"
 
-        State_BlockValueDeclaration (BlockValueDeclaration_Named {}) ->
+        State_BlockValueDeclaration (BlockValueDeclaration_Named _) ->
             Error_PartwayThroughValueDeclaration
                 |> Err
                 |> Just
 
-        State_BlockValueDeclaration (BlockValueDeclaration_NamedAssigns {}) ->
+        State_BlockValueDeclaration (BlockValueDeclaration_NamedAssigns _) ->
             Error_PartwayThroughValueDeclaration
                 |> Err
                 |> Just
 
         State_BlockValueDeclaration (BlockValueDeclaration_Completish { name, args, partialExpr }) ->
             case partialExpr of
-                ExpressionNestingLeaf_Operator {} ->
+                ExpressionNestingLeaf_Operator _ ->
                     Error_PartwayThroughValueDeclaration
                         |> Err
                         |> Just

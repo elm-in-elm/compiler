@@ -164,3 +164,82 @@ toString op =
 
         Append ->
             "++"
+
+
+comparePrec : { lhs : OperatorPrecedence, rhs : OperatorPrecedence } -> Order
+comparePrec { lhs, rhs } =
+    case ( lhs, rhs ) of
+        ( Composition, Composition ) ->
+            EQ
+
+        ( Composition, _ ) ->
+            GT
+
+        ( _, Composition ) ->
+            LT
+
+        ( Exponentiation, Exponentiation ) ->
+            EQ
+
+        ( Exponentiation, _ ) ->
+            GT
+
+        ( _, Exponentiation ) ->
+            LT
+
+        ( Multiplication, Multiplication ) ->
+            EQ
+
+        ( Multiplication, _ ) ->
+            GT
+
+        ( _, Multiplication ) ->
+            LT
+
+        ( Addition, Addition ) ->
+            EQ
+
+        ( Addition, _ ) ->
+            GT
+
+        ( _, Addition ) ->
+            LT
+
+        ( Concatenation, Concatenation ) ->
+            EQ
+
+        ( Concatenation, _ ) ->
+            GT
+
+        ( _, Concatenation ) ->
+            LT
+
+        ( Comparison, Comparison ) ->
+            EQ
+
+        ( Comparison, _ ) ->
+            GT
+
+        ( _, Comparison ) ->
+            LT
+
+        ( AndPrec, AndPrec ) ->
+            EQ
+
+        ( AndPrec, _ ) ->
+            GT
+
+        ( _, AndPrec ) ->
+            LT
+
+        ( OrPrec, OrPrec ) ->
+            EQ
+
+        ( OrPrec, _ ) ->
+            GT
+
+        ( _, OrPrec ) ->
+            LT
+
+        ( Pipe, Pipe ) ->
+            EQ
