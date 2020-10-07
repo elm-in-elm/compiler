@@ -915,7 +915,7 @@ parserTypeExpr newState prevExpr item =
                         |> PartialResult_Progress
                         |> newState
 
-                NestingLeafType_TypeWithArgs {} ->
+                NestingLeafType_TypeWithArgs _ ->
                     Debug.todo "make state impossible"
 
                 NestingLeafType_Function { firstInput, otherInputs, output } ->
@@ -1074,7 +1074,7 @@ parserExpression newState prevExpr item =
                 ExpressionNestingLeaf_Operator partialExpr ->
                     case partialExpr.rhs of
                         Just rhs ->
-                            Located.merge (Frontend.Operator partialExpr.op) partialExpr.lhs rhs
+                            collapseOperators { op = partialExpr.op, lhs = partialExpr.lhs, parent = partialExpr.parent } rhs
                                 |> PartialResult_Done
                                 |> newState
 
@@ -1487,14 +1487,7 @@ appendOperatorTo leaf appendingOp =
                                         { op = appendingOp
                                         , lhs = Located.merge (Frontend.Operator newParent.op) newParent.lhs parentRhs
                                         , rhs = Nothing
-                                        , parent =
-                                            Just
-                                                (ExpressionNestingParent_Operator
-                                                    { op = newParent.op
-                                                    , lhs = newParent.lhs
-                                                    , parent = newParent.parent
-                                                    }
-                                                )
+                                        , parent = newParent.parent
                                         }
                                         |> Ok
 
@@ -1535,6 +1528,26 @@ appendValueExprTo leaf appendingExpr =
         ExpressionNestingLeafType_Expr locatedExpr ->
             Error_ValueDoesNotTakeArgs locatedExpr
                 |> Err
+
+
+collapseOperators :
+    { op : Operator
+    , lhs : Frontend.LocatedExpr
+    , parent : Maybe ExpressionNestingParent
+    }
+    -> Frontend.LocatedExpr
+    -> Frontend.LocatedExpr
+collapseOperators opData rhs =
+    let
+        expr =
+            Located.merge (Frontend.Operator opData.op) opData.lhs rhs
+    in
+    case opData.parent of
+        Just (ExpressionNestingParent_Operator parentData) ->
+            collapseOperators parentData expr
+
+        Nothing ->
+            expr
 
 
 blockFromState : State -> Maybe (Result Error Block)
