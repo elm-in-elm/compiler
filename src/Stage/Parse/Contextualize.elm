@@ -233,7 +233,7 @@ type alias TypeExpressionResult =
 
 type ExpressionNestingParent
     = ExpressionNestingParent_Operator
-        { op : Operator
+        { op : Located Operator
         , lhs : Frontend.LocatedExpr
         , parent : Maybe ExpressionNestingParent
         }
@@ -241,7 +241,7 @@ type ExpressionNestingParent
 
 type ExpressionNestingLeaf
     = ExpressionNestingLeaf_Operator
-        { op : Operator
+        { op : Located Operator
         , lhs : Frontend.LocatedExpr
         , rhs : Maybe Frontend.LocatedExpr
         , parent : Maybe ExpressionNestingParent
@@ -280,6 +280,7 @@ type Error
         (List (ConcreteType PossiblyQualified))
       -- Expressions --
     | Error_InvalidNumericLiteral String
+    | Error_ConflictingOperators (Located Operator) (Located Operator)
       -- Incomplete parsing --
     | Error_PartwayThroughTypeAlias
     | Error_PartwayThroughValueDeclaration
@@ -1054,7 +1055,7 @@ parserExpression newState prevExpr item =
     in
     case Located.unwrap item of
         Lexer.Sigil (Lexer.Operator op) ->
-            appendOperatorTo prevExpr op
+            appendOperatorTo prevExpr (withCorrectLocation op)
                 |> partialExpressionToParseResult newState
 
         Lexer.NumericLiteral str ->
@@ -1440,7 +1441,7 @@ closeRecord { firstEntries, lastEntry } parents =
 -- Value expression helpers
 
 
-appendOperatorTo : ExpressionNestingLeaf -> Operator -> Result Error ExpressionNestingLeaf
+appendOperatorTo : ExpressionNestingLeaf -> Located Operator -> Result Error ExpressionNestingLeaf
 appendOperatorTo leaf appendingOp =
     case leaf of
         ExpressionNestingLeaf_Operator oldLeaf ->
@@ -1452,10 +1453,10 @@ appendOperatorTo leaf appendingOp =
                 Just parentRhs ->
                     let
                         prevPrec =
-                            Operator.getPrecedence oldLeaf.op
+                            Operator.getPrecedence (Located.unwrap oldLeaf.op)
 
                         appendingPrec =
-                            Operator.getPrecedence appendingOp
+                            Operator.getPrecedence (Located.unwrap appendingOp)
                     in
                     case Operator.comparePrec { lhs = prevPrec, rhs = appendingPrec } of
                         EQ ->
@@ -1464,7 +1465,8 @@ appendOperatorTo leaf appendingOp =
                                     Debug.todo ""
 
                                 Operator.ConflictsWithSelf ->
-                                    Debug.todo ""
+                                    Error_ConflictingOperators oldLeaf.op appendingOp
+                                        |> Err
 
                                 Operator.RightToLeft ->
                                     ExpressionNestingLeaf_Operator
@@ -1496,7 +1498,17 @@ appendOperatorTo leaf appendingOp =
                             -- nesting context into the child's lhs.
                             ExpressionNestingLeaf_Operator
                                 { op = appendingOp
-                                , lhs = Located.merge (Frontend.Operator oldLeaf.op) oldLeaf.lhs parentRhs
+                                , lhs =
+                                    Located.merge
+                                        (\op args ->
+                                            let
+                                                ( lhs, rhs ) =
+                                                    Located.unwrap args
+                                            in
+                                            Frontend.Operator op lhs rhs
+                                        )
+                                        oldLeaf.op
+                                        (Located.merge Tuple.pair oldLeaf.lhs parentRhs)
                                 , rhs = Nothing
                                 , parent = oldLeaf.parent
                                 }
@@ -1504,7 +1516,7 @@ appendOperatorTo leaf appendingOp =
 
                         LT ->
                             -- Prev operator has lower precedence than the appending operator. We steal the previous
-                            -- operators's rhs and start a new layer of nesting with the previous rhs as our new lhs.
+                            -- operator's rhs and start a new layer of nesting with the previous rhs as our new lhs.
                             ExpressionNestingLeaf_Operator
                                 { op = appendingOp
                                 , lhs = parentRhs
@@ -1554,7 +1566,7 @@ appendValueExprTo leaf appendingExpr =
 
 
 collapseOperators :
-    { op : Operator
+    { op : Located Operator
     , lhs : Frontend.LocatedExpr
     , parent : Maybe ExpressionNestingParent
     }

@@ -61,7 +61,7 @@ type Expr
     | Var { qualifiedness : PossiblyQualified, name : VarName }
     | -- Both lambda arguments and let..in bindings
       Argument VarName
-    | Operator Operator LocatedExpr LocatedExpr
+    | Operator (Located Operator) LocatedExpr LocatedExpr
     | Lambda { arguments : List VarName, body : LocatedExpr }
     | Call { fn : LocatedExpr, argument : LocatedExpr }
     | If { test : LocatedExpr, then_ : LocatedExpr, else_ : LocatedExpr }
@@ -233,7 +233,7 @@ unwrap expr =
 
         Operator op e1 e2 ->
             Unwrapped.Operator
-                op
+                (Located.unwrap op)
                 (unwrap e1)
                 (unwrap e2)
 

@@ -1,6 +1,6 @@
 module Elm.Data.Located exposing
     ( Located(..), Region, Position
-    , located, unwrap, getRegion, map, merge, replaceWith
+    , located, unwrap, getRegion, map, merge, merge3, replaceWith
     , dummyRegion, mergeRegions, regionToComparable
     , positionToComparable, comparePosition
     )
@@ -18,7 +18,7 @@ Useful for error messages, but hopefully for stuff like source maps etc. too.
 
 # Located
 
-@docs located, unwrap, getRegion, map, merge, replaceWith
+@docs located, unwrap, getRegion, map, merge, merge3, replaceWith
 
 
 # Region
@@ -95,6 +95,15 @@ merge fn l1 l2 =
     Located
         (mergeRegions (getRegion l1) (getRegion l2))
         (fn l1 l2)
+
+
+{-| Merge the regions of the three wrappers.
+-}
+merge3 : (Located a -> Located b -> Located c -> d) -> Located a -> Located b -> Located c -> Located d
+merge3 fn l1 l2 l3 =
+    Located
+        (mergeRegions (mergeRegions (getRegion l1) (getRegion l2)) (getRegion l3))
+        (fn l1 l2 l3)
 
 
 {-| Merge the regions: the resulting region is always bigger or equal than the

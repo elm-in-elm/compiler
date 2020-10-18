@@ -200,7 +200,7 @@ expr expr_ =
         Frontend.Operator operator lhs rhs ->
             pair "Operator"
                 (Many
-                    [ pair "op" (Atom (Operator.toString operator))
+                    [ pair "op" (operator |> Located.unwrap |> Operator.toString |> Atom)
                     , pair "lhs" (expr lhs)
                     , pair "rhs" (expr rhs)
                     ]

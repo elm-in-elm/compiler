@@ -73,7 +73,7 @@ type Expr_
     | Bool Bool
     | Var { module_ : ModuleName, name : VarName }
     | Argument VarName
-    | Operator Operator LocatedExpr LocatedExpr
+    | Operator (Located Operator) LocatedExpr LocatedExpr
     | Lambda { argument : VarName, body : LocatedExpr }
     | Call { fn : LocatedExpr, argument : LocatedExpr }
     | If { test : LocatedExpr, then_ : LocatedExpr, else_ : LocatedExpr }
@@ -373,7 +373,7 @@ unwrap expr =
 
         Operator op e1 e2 ->
             Unwrapped.Operator
-                op
+                (Located.unwrap op)
                 (f e1)
                 (f e2)
 

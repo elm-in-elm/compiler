@@ -33,7 +33,7 @@ optimize =
                     [ ( "works with two literal ints"
                       , located
                             ( Operator
-                                Operator.Add
+                                (located Operator.Add)
                                 (typedInt 2)
                                 (typedInt 5)
                             , Type Type.Int
@@ -42,13 +42,15 @@ optimize =
                       )
                     , ( "doesn't work if left is not int"
                       , located
-                            ( Operator Operator.Add
+                            ( Operator
+                                (located Operator.Add)
                                 (located ( Argument "x", Type Type.Int ))
                                 (typedInt 5)
                             , Type Type.Int
                             )
                       , located
-                            ( Operator Operator.Add
+                            ( Operator
+                                (located Operator.Add)
                                 (located ( Argument "x", Type Type.Int ))
                                 (typedInt 5)
                             , Type Type.Int
@@ -56,13 +58,15 @@ optimize =
                       )
                     , ( "doesn't work if right is not int"
                       , located
-                            ( Operator Operator.Add
+                            ( Operator
+                                (located Operator.Add)
                                 (typedInt 5)
                                 (located ( Argument "x", Type Type.Int ))
                             , Type Type.Int
                             )
                       , located
-                            ( Operator Operator.Add
+                            ( Operator
+                                (located Operator.Add)
                                 (typedInt 5)
                                 (located ( Argument "x", Type Type.Int ))
                             , Type Type.Int
@@ -75,7 +79,7 @@ optimize =
                     [ ( "works with one value"
                       , located
                             ( Operator
-                                Operator.Cons
+                                (located Operator.Cons)
                                 (typedInt 1)
                                 (typedIntList [ 2, 3 ])
                             , Type Type.Int

@@ -563,17 +563,17 @@ expr =
                 (checkIndent (<) ExpectingIndentation
                     |> P.andThen (\() -> P.symbol (P.Token "++" ExpectingConcatOperator))
                 )
-                (Located.merge (Operator Operator.Append))
+                (Located.merge3 Operator (Located.located Located.dummyRegion Operator.Append))
             , PP.infixLeft 1
                 (checkIndent (<) ExpectingIndentation
                     |> P.andThen (\() -> P.symbol (P.Token "+" ExpectingPlusOperator))
                 )
-                (Located.merge (Operator Operator.Add))
+                (Located.merge3 Operator (Located.located Located.dummyRegion Operator.Add))
             , PP.infixRight 1
                 (checkIndent (<) ExpectingIndentation
                     |> P.andThen (\() -> P.symbol (P.Token "::" ExpectingConsOperator))
                 )
-                (Located.merge (Operator Operator.Cons))
+                (Located.merge (Operator (Located.located Located.dummyRegion Operator.Cons)))
             ]
         , spaces = ignorables
         }

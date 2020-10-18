@@ -12,7 +12,8 @@ import Stage.Emit.JsonAST as JSON
 import Test exposing (Test, describe, fuzz, test)
 import TestHelpers
     exposing
-        ( typed
+        ( located
+        , typed
         , typedInt
         , typedIntList
         , typedString
@@ -92,13 +93,13 @@ json =
                 )
             , describe "Plus"
                 (List.map runTest
-                    [ ( "simple", Operator Operator.Add (typedInt 1) (typedInt 2), "{\"type\":\"plus\",\"e1\":{\"type\":\"int\",\"value\":1},\"e2\":{\"type\":\"int\",\"value\":2}}" )
+                    [ ( "simple", Operator (located Operator.Add) (typedInt 1) (typedInt 2), "{\"type\":\"plus\",\"e1\":{\"type\":\"int\",\"value\":1},\"e2\":{\"type\":\"int\",\"value\":2}}" )
                     ]
                 )
             , describe "Cons"
                 (List.map runTest
                     [ ( "simple"
-                      , Operator Operator.Cons (typedInt 1) (typedIntList [ 2, 3 ])
+                      , Operator (located Operator.Cons) (typedInt 1) (typedIntList [ 2, 3 ])
                       , "{\"type\":\"cons\",\"e1\":{\"type\":\"int\",\"value\":1},\"e2\":{\"type\":\"list\",\"items\":[{\"type\":\"int\",\"value\":2},{\"type\":\"int\",\"value\":3}]}}"
                       )
                     ]

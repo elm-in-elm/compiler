@@ -169,7 +169,7 @@ frontendLambda arg1 arg2 =
             , body =
                 located <|
                     Frontend.Operator
-                        Operator.Add
+                        (located Operator.Add)
                         (located <| Frontend.Argument arg1)
                         (located <| Frontend.Argument arg2)
             }

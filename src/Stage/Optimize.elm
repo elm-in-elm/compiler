@@ -6,6 +6,7 @@ module Stage.Optimize exposing
     )
 
 import Elm.AST.Typed as Typed
+import Elm.Data.Located as Located
 import Elm.Data.Operator as Operator
 import Elm.Data.Project exposing (Project)
 import Stage.Optimize.Boilerplate as Boilerplate
@@ -39,10 +40,15 @@ defaultOptimizations =
 optimizePlus : Typed.LocatedExpr -> Maybe Typed.LocatedExpr
 optimizePlus located =
     case Typed.getExpr located of
-        Typed.Operator Operator.Add l r ->
-            case ( Typed.getExpr l, Typed.getExpr r ) of
-                ( Typed.Int left, Typed.Int right ) ->
-                    Just (Typed.setExpr (Typed.Int (left + right)) r)
+        Typed.Operator op l r ->
+            case Located.unwrap op of
+                Operator.Add ->
+                    case ( Typed.getExpr l, Typed.getExpr r ) of
+                        ( Typed.Int left, Typed.Int right ) ->
+                            Just (Typed.setExpr (Typed.Int (left + right)) r)
+
+                        _ ->
+                            Nothing
 
                 _ ->
                     Nothing
@@ -54,10 +60,15 @@ optimizePlus located =
 optimizeCons : Typed.LocatedExpr -> Maybe Typed.LocatedExpr
 optimizeCons located =
     case Typed.getExpr located of
-        Typed.Operator Operator.Cons l r ->
-            case Typed.getExpr r of
-                Typed.List list ->
-                    Just (Typed.setExpr (Typed.List (l :: list)) r)
+        Typed.Operator op l r ->
+            case Located.unwrap op of
+                Operator.Cons ->
+                    case Typed.getExpr r of
+                        Typed.List list ->
+                            Just (Typed.setExpr (Typed.List (l :: list)) r)
+
+                        _ ->
+                            Nothing
 
                 _ ->
                     Nothing

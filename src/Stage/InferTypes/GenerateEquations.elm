@@ -108,7 +108,7 @@ generateEquations currentId located =
                     generateEquations id1 right
 
                 opEquations =
-                    case op of
+                    case Located.unwrap op of
                         Operator.Add ->
                             [ equals leftType (Type Int) -- type of `a` is Int
                             , equals rightType (Type Int) -- type of `b` is Int

@@ -10,7 +10,8 @@ import Stage.Emit.JavaScript as JS
 import Test exposing (Test, describe, test)
 import TestHelpers
     exposing
-        ( typed
+        ( located
+        , typed
         , typedBool
         , typedInt
         , typedIntList
@@ -86,21 +87,30 @@ javascript =
             , describe "Plus"
                 (List.map runTest
                     -- We need to give the child `Expr`s a type too
-                    [ ( "simple", Operator Operator.Add (typedInt 1) (typedInt 2), "(1 + 2)" )
-                    , ( "nested", Operator Operator.Add (typedInt 1) (typed (Operator Operator.Add (typedInt 2) (typedInt 3))), "(1 + (2 + 3))" )
+                    [ ( "simple"
+                      , Operator (located Operator.Add) (typedInt 1) (typedInt 2)
+                      , "(1 + 2)"
+                      )
+                    , ( "nested"
+                      , Operator
+                            (located Operator.Add)
+                            (typedInt 1)
+                            (typed (Operator (located Operator.Add) (typedInt 2) (typedInt 3)))
+                      , "(1 + (2 + 3))"
+                      )
                     ]
                 )
             , describe "Cons"
                 (List.map runTest
                     [ ( "simple"
-                      , Operator Operator.Cons (typedInt 1) (typedIntList [ 2, 3 ])
+                      , Operator (located Operator.Cons) (typedInt 1) (typedIntList [ 2, 3 ])
                       , "[1].concat([2, 3])"
                       )
                     , ( "nested"
                       , Operator
-                            Operator.Cons
+                            (located Operator.Cons)
                             (typedInt 1)
-                            (typed (Operator Operator.Cons (typedInt 2) (typedIntList [ 3, 4 ])))
+                            (typed (Operator (located Operator.Cons) (typedInt 2) (typedIntList [ 3, 4 ])))
                       , "[1].concat([2].concat([3, 4]))"
                       )
                     ]
@@ -241,7 +251,7 @@ javascript =
                             , body =
                                 typed
                                     (Operator
-                                        Operator.Add
+                                        (located Operator.Add)
                                         (typedInt 1)
                                         (typed (Argument "x"))
                                     )
@@ -262,7 +272,7 @@ javascript =
                                         , body =
                                             typed
                                                 (Operator
-                                                    Operator.Add
+                                                    (located Operator.Add)
                                                     (typedInt 1)
                                                     (typed (Argument "x"))
                                                 )
@@ -337,14 +347,14 @@ javascript =
             , describe "Mixed expressions"
                 (List.map runTest
                     [ ( "plus in tuple"
-                      , Tuple (typed (Operator Operator.Add (typedInt 1) (typedInt 41))) (typedString "Hello")
+                      , Tuple (typed (Operator (located Operator.Add) (typedInt 1) (typedInt 41))) (typedString "Hello")
                       , """[(1 + 41),"Hello"]"""
                       )
                     , ( "tuple and cons in record"
                       , Record
                             (Dict.fromList
                                 [ ( "a", { name = "a", body = typed (Tuple (typedInt 2) (typedInt 3)) } )
-                                , ( "b", { name = "b", body = typed (Operator Operator.Cons (typedInt 2) (typedIntList [ 3, 4 ])) } )
+                                , ( "b", { name = "b", body = typed (Operator (located Operator.Cons) (typedInt 2) (typedIntList [ 3, 4 ])) } )
                                 ]
                             )
                       , """{a: [2,3], b: [2].concat([3, 4])}"""
