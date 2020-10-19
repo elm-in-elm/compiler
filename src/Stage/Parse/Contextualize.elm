@@ -1238,11 +1238,7 @@ exprAppend ({ parents, nesting } as currentLeaf) token =
             Result.map2
                 (\newOutput newParents ->
                     { parents = newParents
-                    , nesting =
-                        NestingLeafType_TypeWithArgs
-                            { name = token
-                            , args = empty
-                            }
+                    , nesting = newOutput
                     }
                 )
                 (case output of

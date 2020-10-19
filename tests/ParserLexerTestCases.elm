@@ -2382,6 +2382,225 @@ type alias Function3 = (Int, () -> (Int, String), ())
                 , Located { end = { col = 1, row = 2 }, start = { col = 42, row = 1 } } (Newlines [] 0)
                 ]
       }
+    , { name = "type-alias-function-type-args"
+      , source = """type alias Function = List A -> List B C D -> List D E F
+"""
+      , pretty = """
+        ( ( Ok
+          , ( TypeAlias
+            , ( ty, Function )
+            , ( genericArgs, () )
+            , ( expr
+              , ( Function
+                , ( ( from
+                    , ( UserDefinedType
+                      , ( ( qualifiedness
+                          , ( PossiblyQualified, Nothing )
+                          )
+                        , ( name, List )
+                        , ( args
+                          , ( ( UserDefinedType
+                              , ( ( qualifiedness
+                                  , ( PossiblyQualified, Nothing )
+                                  )
+                                , ( name, A )
+                                , ( args, () )
+                                )
+                              ) )
+                          )
+                        )
+                      )
+                    )
+                  , ( to
+                    , ( Function
+                      , ( ( from
+                          , ( UserDefinedType
+                            , ( ( qualifiedness
+                                , ( PossiblyQualified, Nothing )
+                                )
+                              , ( name, List )
+                              , ( args
+                                , ( ( UserDefinedType
+                                    , ( ( qualifiedness
+                                        , ( PossiblyQualified, Nothing )
+                                        )
+                                      , ( name, B )
+                                      , ( args, () )
+                                      )
+                                    )
+                                  , ( UserDefinedType
+                                    , ( ( qualifiedness
+                                        , ( PossiblyQualified, Nothing )
+                                        )
+                                      , ( name, C )
+                                      , ( args, () )
+                                      )
+                                    )
+                                  , ( UserDefinedType
+                                    , ( ( qualifiedness
+                                        , ( PossiblyQualified, Nothing )
+                                        )
+                                      , ( name, D )
+                                      , ( args, () )
+                                      )
+                                    )
+                                  )
+                                )
+                              )
+                            )
+                          )
+                        , ( to
+                          , ( UserDefinedType
+                            , ( ( qualifiedness
+                                , ( PossiblyQualified, Nothing )
+                                )
+                              , ( name, List )
+                              , ( args
+                                , ( ( UserDefinedType
+                                    , ( ( qualifiedness
+                                        , ( PossiblyQualified, Nothing )
+                                        )
+                                      , ( name, D )
+                                      , ( args, () )
+                                      )
+                                    )
+                                  , ( UserDefinedType
+                                    , ( ( qualifiedness
+                                        , ( PossiblyQualified, Nothing )
+                                        )
+                                      , ( name, E )
+                                      , ( args, () )
+                                      )
+                                    )
+                                  , ( UserDefinedType
+                                    , ( ( qualifiedness
+                                        , ( PossiblyQualified, Nothing )
+                                        )
+                                      , ( name, F )
+                                      , ( args, () )
+                                      )
+                                    )
+                                  )
+                                )
+                              )
+                            )
+                          )
+                        )
+                      )
+                    )
+                  )
+                )
+              )
+            )
+          ) )
+"""
+      , contextualized =
+            Just
+                [ Ok
+                    (TypeAlias
+                        { expr =
+                            Function
+                                { from =
+                                    UserDefinedType
+                                        { args =
+                                            [ UserDefinedType
+                                                { args = []
+                                                , name = "A"
+                                                , qualifiedness = PossiblyQualified Nothing
+                                                }
+                                            ]
+                                        , name = "List"
+                                        , qualifiedness = PossiblyQualified Nothing
+                                        }
+                                , to =
+                                    Function
+                                        { from =
+                                            UserDefinedType
+                                                { args =
+                                                    [ UserDefinedType
+                                                        { args = []
+                                                        , name = "B"
+                                                        , qualifiedness = PossiblyQualified Nothing
+                                                        }
+                                                    , UserDefinedType
+                                                        { args = []
+                                                        , name = "C"
+                                                        , qualifiedness = PossiblyQualified Nothing
+                                                        }
+                                                    , UserDefinedType
+                                                        { args = []
+                                                        , name = "D"
+                                                        , qualifiedness = PossiblyQualified Nothing
+                                                        }
+                                                    ]
+                                                , name = "List"
+                                                , qualifiedness = PossiblyQualified Nothing
+                                                }
+                                        , to =
+                                            UserDefinedType
+                                                { args =
+                                                    [ UserDefinedType
+                                                        { args = []
+                                                        , name = "D"
+                                                        , qualifiedness = PossiblyQualified Nothing
+                                                        }
+                                                    , UserDefinedType
+                                                        { args = []
+                                                        , name = "E"
+                                                        , qualifiedness = PossiblyQualified Nothing
+                                                        }
+                                                    , UserDefinedType
+                                                        { args = []
+                                                        , name = "F"
+                                                        , qualifiedness = PossiblyQualified Nothing
+                                                        }
+                                                    ]
+                                                , name = "List"
+                                                , qualifiedness = PossiblyQualified Nothing
+                                                }
+                                        }
+                                }
+                        , genericArgs = []
+                        , ty = "Function"
+                        }
+                    )
+                ]
+      , lexed =
+            Ok
+                [ Located { end = { col = 5, row = 1 }, start = { col = 1, row = 1 } } (Token (Keyword Type))
+                , Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 11, row = 1 }, start = { col = 6, row = 1 } } (Token (Keyword Alias))
+                , Located { end = { col = 12, row = 1 }, start = { col = 11, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 20, row = 1 }, start = { col = 12, row = 1 } } (Token (Identifier { name = "Function", qualifiers = [] }))
+                , Located { end = { col = 21, row = 1 }, start = { col = 20, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 22, row = 1 }, start = { col = 21, row = 1 } } (Token (Sigil Assign))
+                , Located { end = { col = 23, row = 1 }, start = { col = 22, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 27, row = 1 }, start = { col = 23, row = 1 } } (Token (Identifier { name = "List", qualifiers = [] }))
+                , Located { end = { col = 28, row = 1 }, start = { col = 27, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 29, row = 1 }, start = { col = 28, row = 1 } } (Token (Identifier { name = "A", qualifiers = [] }))
+                , Located { end = { col = 30, row = 1 }, start = { col = 29, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 32, row = 1 }, start = { col = 30, row = 1 } } (Token (Sigil ThinArrow))
+                , Located { end = { col = 33, row = 1 }, start = { col = 32, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 37, row = 1 }, start = { col = 33, row = 1 } } (Token (Identifier { name = "List", qualifiers = [] }))
+                , Located { end = { col = 38, row = 1 }, start = { col = 37, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 39, row = 1 }, start = { col = 38, row = 1 } } (Token (Identifier { name = "B", qualifiers = [] }))
+                , Located { end = { col = 40, row = 1 }, start = { col = 39, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 41, row = 1 }, start = { col = 40, row = 1 } } (Token (Identifier { name = "C", qualifiers = [] }))
+                , Located { end = { col = 42, row = 1 }, start = { col = 41, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 43, row = 1 }, start = { col = 42, row = 1 } } (Token (Identifier { name = "D", qualifiers = [] }))
+                , Located { end = { col = 44, row = 1 }, start = { col = 43, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 46, row = 1 }, start = { col = 44, row = 1 } } (Token (Sigil ThinArrow))
+                , Located { end = { col = 47, row = 1 }, start = { col = 46, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 51, row = 1 }, start = { col = 47, row = 1 } } (Token (Identifier { name = "List", qualifiers = [] }))
+                , Located { end = { col = 52, row = 1 }, start = { col = 51, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 53, row = 1 }, start = { col = 52, row = 1 } } (Token (Identifier { name = "D", qualifiers = [] }))
+                , Located { end = { col = 54, row = 1 }, start = { col = 53, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 55, row = 1 }, start = { col = 54, row = 1 } } (Token (Identifier { name = "E", qualifiers = [] }))
+                , Located { end = { col = 56, row = 1 }, start = { col = 55, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 57, row = 1 }, start = { col = 56, row = 1 } } (Token (Identifier { name = "F", qualifiers = [] }))
+                , Located { end = { col = 1, row = 2 }, start = { col = 57, row = 1 } } (Newlines [] 0)
+                ]
+      }
     , { name = "type-alias-funky-indentation"
       , source = """type alias
     Model = List Int
