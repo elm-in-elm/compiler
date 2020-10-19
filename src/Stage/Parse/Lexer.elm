@@ -4,16 +4,25 @@ import Elm.Data.Located as Located exposing (Located)
 import Elm.Data.Operator as Operator exposing (Operator)
 import Parser.Advanced as P exposing ((|.), (|=), Parser)
 import Set
+import Stage.Parse.Token as Token
 
 
 type LexItem
     = Sigil LexSigil
-    | Token String
+    | Identifier
+        { qualifiers : List String
+        , name : String
+        }
+    | Keyword Token.Keyword
     | NumericLiteral String
     | TextLiteral LexLiteralType String
     | Whitespace Int
     | Newlines (List Int) Int
     | Comment LexCommentType String
+    | IdentifierWithTrailingDot
+        { qualifiers : List String
+        , name : String
+        }
     | Invalid String
 
 
@@ -22,6 +31,7 @@ type LexSigil
     | Assign
     | Pipe
     | Comma
+      -- TODO(harry): remove and replace by property-accessor etc.
     | SingleDot
     | DoubleDot
     | ThinArrow
@@ -70,6 +80,7 @@ type LexProblem
     | ExpectingLineComment
     | ExpectingNumericLiteral
     | ExpectingEscape
+    | ExpectingKeyword
     | ExpectingEnd
 
 
@@ -128,8 +139,12 @@ toString item =
         Sigil (Operator op) ->
             Operator.toString op
 
-        Token s ->
-            s
+        Identifier { qualifiers, name } ->
+            (qualifiers ++ [ name ])
+                |> String.join "."
+
+        Keyword k ->
+            Token.keywordToString k
 
         NumericLiteral s ->
             s
@@ -156,6 +171,10 @@ toString item =
 
         Comment DocComment s ->
             "{-|" ++ s ++ "-}"
+
+        IdentifierWithTrailingDot { qualifiers, name } ->
+            (qualifiers ++ [ name, "" ])
+                |> String.join "."
 
         Invalid s ->
             s
@@ -184,14 +203,8 @@ parser =
             P.oneOf
                 [ P.oneOf
                     ([ -- commentParser must come before sigil parser as the sigil
-                       -- parser will try to interpret "--" as a sigil
-                       P.variable
-                        { start = Char.isAlpha
-                        , inner = \c -> Char.isAlphaNum c || c == '_'
-                        , reserved = Set.empty
-                        , expecting = ExpectingToken
-                        }
-                        |> P.map Token
+                       -- parser will try to interpret "--" as two "-" sigils.
+                       identifierParser
                      , numericLiteralParser
                         |> P.map NumericLiteral
                      , textLiteralParser
@@ -221,6 +234,69 @@ parser =
                     |> P.map (\() -> P.Done (List.reverse reversed))
                 ]
         )
+
+
+identifierParser : Parser_ LexItem
+identifierParser =
+    let
+        word =
+            P.variable
+                { start = Char.isAlpha
+                , inner = \c -> Char.isAlphaNum c || c == '_'
+                , reserved = Set.empty
+                , expecting = ExpectingToken
+                }
+
+        loopHelp { reversedQualifiers, name } =
+            P.oneOf
+                [ P.succeed (\x -> x)
+                    |. P.symbol (P.Token "." ExpectingSigil)
+                    |= P.oneOf
+                        [ word
+                            |> P.map
+                                (\new ->
+                                    P.Loop
+                                        { reversedQualifiers = name :: reversedQualifiers
+                                        , name = new
+                                        }
+                                )
+                        , { qualifiers = List.reverse reversedQualifiers
+                          , name = name
+                          }
+                            |> IdentifierWithTrailingDot
+                            |> P.Done
+                            |> P.succeed
+                        ]
+                , { qualifiers = List.reverse reversedQualifiers
+                  , name = name
+                  }
+                    |> Identifier
+                    |> P.Done
+                    |> P.succeed
+                ]
+    in
+    P.oneOf
+        [ P.token (P.Token "module" ExpectingKeyword)
+            |> P.map (\() -> Keyword Token.Module)
+        , P.token (P.Token "type" ExpectingKeyword)
+            |> P.map (\() -> Keyword Token.Type)
+        , P.token (P.Token "alias" ExpectingKeyword)
+            |> P.map (\() -> Keyword Token.Alias)
+        , P.token (P.Token "exposing" ExpectingKeyword)
+            |> P.map (\() -> Keyword Token.Exposing)
+        , P.token (P.Token "case" ExpectingKeyword)
+            |> P.map (\() -> Keyword Token.Case)
+        , P.token (P.Token "of" ExpectingKeyword)
+            |> P.map (\() -> Keyword Token.Of)
+        , P.token (P.Token "if" ExpectingKeyword)
+            |> P.map (\() -> Keyword Token.If)
+        , P.token (P.Token "then" ExpectingKeyword)
+            |> P.map (\() -> Keyword Token.Then)
+        , P.token (P.Token "else" ExpectingKeyword)
+            |> P.map (\() -> Keyword Token.Else)
+        , word
+            |> P.andThen (\first -> P.loop { reversedQualifiers = [], name = first } loopHelp)
+        ]
 
 
 newlinesParser : Parser_ ( List Int, Int )
@@ -261,11 +337,6 @@ chompSpacesAndCount =
     P.chompWhile (\c -> c == ' ')
         |> P.getChompedString
         |> P.map String.length
-
-
-alphaOrNumOr_ : Char -> Bool
-alphaOrNumOr_ c =
-    Char.isAlphaNum c || c == '_'
 
 
 textLiteralParser : Parser_ ( LexLiteralType, Bool, String )
@@ -327,7 +398,7 @@ delimitedLiteral ty =
                             |> P.map (\() -> P.Done True)
                         , P.token (P.Token "\\" ExpectingEscape)
                             |> P.andThen
-                                (\() -> P.chompIf (\c -> True) ExpectingAnything)
+                                (\() -> P.chompIf (\_ -> True) ExpectingAnything)
                             |> P.map P.Loop
                         , P.chompIf (\_ -> True) ExpectingAnything
                             |> P.map P.Loop
@@ -340,15 +411,19 @@ delimitedLiteral ty =
 
 numericLiteralParser : Parser_ String
 numericLiteralParser =
+    let
+        isValidNumericLiteralChar c =
+            Char.isAlphaNum c || c == '_' || c == '.'
+    in
     P.getChompedString
         (P.oneOf
             [ P.chompIf Char.isDigit ExpectingNumericLiteral
-                |> P.andThen (\() -> P.chompWhile (\c -> Char.isAlphaNum c || c == '_'))
+                |> P.andThen (\() -> P.chompWhile isValidNumericLiteralChar)
             , P.backtrackable
                 (P.succeed ()
                     |. P.chompIf (\c -> c == '-') ExpectingNumericLiteral
                     |. P.chompIf Char.isDigit ExpectingNumericLiteral
-                    |. P.chompWhile (\c -> Char.isAlphaNum c || c == '_')
+                    |. P.chompWhile isValidNumericLiteralChar
                 )
             ]
         )

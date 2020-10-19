@@ -101,25 +101,17 @@ block b =
                 ]
 
         ValueDeclaration record ->
-            let
-                (Token.ValueOrFunctionOrGenericType name) =
-                    Located.unwrap record.name
-            in
             Many
                 [ Atom "ValueDeclaration"
                 , Many
                     [ Atom "name"
-                    , Atom name
+                    , Atom (Located.unwrap record.name)
                     ]
                 , Many
                     [ Atom "args"
                     , listWith
                         (\locatedArg ->
-                            let
-                                (Token.ValueOrFunctionOrGenericType arg) =
-                                    Located.unwrap locatedArg
-                            in
-                            Atom arg
+                            Atom (Located.unwrap locatedArg)
                         )
                         record.args
                     ]
@@ -130,21 +122,17 @@ block b =
                 ]
 
         TypeAlias record ->
-            let
-                (Token.TypeOrConstructor ty) =
-                    record.ty
-            in
             Many
                 [ Atom "ValueDeclaration"
                 , Many
                     [ Atom "ty"
-                    , Atom ty
+                    , Atom record.ty
                     ]
                 , Many
                     [ Atom "genericArgs"
                     , Many
                         (record.genericArgs
-                            |> List.map (\(Token.ValueOrFunctionOrGenericType arg) -> Atom arg)
+                            |> List.map Atom
                         )
                     ]
                 , Many

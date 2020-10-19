@@ -22,9 +22,6 @@ runTest ( description, input ) =
     test description <|
         \() ->
             input
-                -- |> P.run ((located (Stage.Parse.Lexer.literalParser
-                --         |> P.map (\( ty, literalBody ) -> Literal ty literalBody  )))
-                --           |> P.map List.singleton)
                 |> P.run Stage.Parse.Lexer.parser
                 |> Expect.all
                     [ Result.map (List.map (Located.unwrap >> toString) >> String.join "")
