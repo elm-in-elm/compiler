@@ -8,6 +8,7 @@ import Html.Events as Events
 import Parser.Advanced as P
 import Stage.Parse.Contextualize as Contextualize
 import Stage.Parse.Lexer as Lexer
+import Stage.Parse.Pretty as Pretty
 
 
 {-| We're essentially a Node.JS app (until we get self-hosting :P ).
@@ -41,7 +42,7 @@ subscriptions _ =
 
 init : () -> ( Model, Cmd never )
 init () =
-    ( """type alias Model =""", Cmd.none )
+    ( """type alias Model = { h: (""", Cmd.none )
 
 
 view : Model -> Html Msg
@@ -106,10 +107,42 @@ view model =
             -- [ Attributes.style "w" ]
             (case lexed of
                 Ok lexItems ->
+                    let
+                        contextualized =
+                            Contextualize.run lexItems
+                    in
                     [ Html.div
                         [ Attributes.style "white-space" "pre-wrap" ]
-                        [ Html.text
-                            (Debug.toString (Contextualize.run lexItems))
+                        [ Html.div
+                            []
+                            [ Html.text
+                                (Debug.toString (Debug.log "parsed" <| contextualized))
+                            ]
+                        , Html.div
+                            []
+                            [ Html.text
+                                (Pretty.printWithIndentationOf 0
+                                    (Pretty.listWith
+                                        (\rBlock ->
+                                            case rBlock of
+                                                Ok block ->
+                                                    Pretty.Many
+                                                        [ Pretty.Atom "Ok"
+                                                        , Pretty.block block
+                                                        ]
+
+                                                Err e ->
+                                                    Pretty.Many
+                                                        [ Pretty.Atom "Err"
+                                                        , Pretty.Many
+                                                            [ Pretty.pair "state" (Pretty.state e.state)
+                                                            ]
+                                                        ]
+                                        )
+                                        contextualized
+                                    )
+                                )
+                            ]
                         ]
                     ]
 

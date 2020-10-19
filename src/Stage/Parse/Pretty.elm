@@ -7,7 +7,7 @@ import Elm.Data.Module as ModuleType exposing (ModuleType)
 import Elm.Data.Operator as Operator
 import Elm.Data.Qualifiedness exposing (PossiblyQualified(..))
 import Elm.Data.Type.Concrete as Concrete exposing (ConcreteType)
-import Stage.Parse.Contextualize exposing (Block(..))
+import Stage.Parse.Contextualize as Contextualize exposing (Block(..), BlockTypeAlias(..), State(..), TypeExpressionNestingLeaf(..))
 import Stage.Parse.Token as Token
 
 
@@ -143,6 +143,56 @@ block b =
 
         CustomType record ->
             Debug.todo ""
+
+
+state : State -> Sexpr String
+state s =
+    case s of
+        State_BlockStart ->
+            Atom "State_BlockStart"
+
+        State_Error_Recovery ->
+            Atom "State_Error_Recovery"
+
+        State_BlockFirstItem _ ->
+            pair "State_BlockFirstItem" (Atom "TODO")
+
+        State_BlockTypeAlias BlockTypeAlias_Keywords ->
+            pair "State_BlockTypeAlias" (Atom "BlockTypeAlias_Keywords")
+
+        State_BlockTypeAlias (BlockTypeAlias_Named name genericArgs) ->
+            pair "State_BlockTypeAlias"
+                (Many
+                    [ Atom "BlockTypeAlias_Named"
+                    , Atom name
+                    , listWith Atom (Contextualize.toList (\x -> x) genericArgs)
+                    ]
+                )
+
+        State_BlockTypeAlias (BlockTypeAlias_NamedAssigns name genericArgs) ->
+            pair "State_BlockTypeAlias"
+                (Many
+                    [ Atom "BlockTypeAlias_NamedAssigns"
+                    , Atom name
+                    , listWith Atom genericArgs
+                    ]
+                )
+
+        State_BlockTypeAlias (BlockTypeAlias_Completish name genericArgs typeExpr_) ->
+            pair "State_BlockTypeAlias"
+                (Many
+                    [ Atom "BlockTypeAlias_Completish"
+                    , Atom name
+                    , listWith Atom genericArgs
+                    , typeExpressionNestingLeaf typeExpr_
+                    ]
+                )
+
+        State_BlockCustomType _ ->
+            pair "State_BlockCustomType" (Atom "TODO")
+
+        State_BlockValueDeclaration _ ->
+            pair "State_BlockValueDeclaration" (Atom "TODO")
 
 
 expr : Frontend.LocatedExpr -> Sexpr String
@@ -295,6 +345,25 @@ typeExpr expr_ =
                     , pair "args" (listWith typeExpr args)
                     ]
                 )
+
+
+typeExpressionNestingLeaf : TypeExpressionNestingLeaf -> Sexpr String
+typeExpressionNestingLeaf leaf =
+    case leaf of
+        TypeExpressionNestingLeaf_Bracket record ->
+            pair "TypeExpressionNestingLeaf_Bracket" (Atom "TODO")
+
+        TypeExpressionNestingLeaf_PartialRecord partialRecord ->
+            pair "TypeExpressionNestingLeaf_PartialRecord" (Atom "TODO")
+
+        TypeExpressionNestingLeaf_TypeWithArgs record ->
+            pair "TypeExpressionNestingLeaf_TypeWithArgs" (Atom "TODO")
+
+        TypeExpressionNestingLeaf_Function record ->
+            pair "TypeExpressionNestingLeaf_Function" (Atom "TODO")
+
+        TypeExpressionNestingLeaf_Expr typeExpression ->
+            pair "TypeExpressionNestingLeaf_Expr" (Atom "TODO")
 
 
 moduleType : ModuleType -> Sexpr String

@@ -4206,16 +4206,7 @@ type alias Function3 = (Int, () ->, ())
                 [ Err
                     { error = Error_MissingFunctionReturnType
                     , item = Just (Located { end = { col = 31, row = 1 }, start = { col = 30, row = 1 } } (Token (Sigil (Bracket Round Close))))
-                    , state =
-                        State_BlockTypeAlias
-                            (BlockTypeAlias_Completish "Function"
-                                []
-                                { nesting = NestingLeafType_Function { firstInput = TypeExpression_Unit, otherInputs = Stack [], output = Nothing }
-                                , parents =
-                                    [ NestingParentType_Bracket (Stack [])
-                                    ]
-                                }
-                            )
+                    , state = State_BlockTypeAlias (BlockTypeAlias_Completish "Function" [] (TypeExpressionNestingLeaf_Function { firstInput = TypeExpression_Unit, otherInputs = Stack [], output = Nothing, parent = Just (NestingParentType_Bracket { expressions = Stack [], parent = Nothing }) }))
                     }
                 ]
       , lexed =
@@ -4326,7 +4317,7 @@ type alias Function3 = (Int, () ->, ())
                 [ Err
                     { error = Error_TypeDoesNotTakeArgs2 (TypeExpression_Bracketed (TypeExpression_NamedType { args = Stack [], name = "Int" }))
                     , item = Just (Located { end = { col = 24, row = 1 }, start = { col = 23, row = 1 } } (Token (Sigil (Bracket Round Open))))
-                    , state = State_BlockTypeAlias (BlockTypeAlias_Completish "Hi" [] { nesting = NestingLeafType_Expr (TypeExpression_Bracketed (TypeExpression_NamedType { args = Stack [], name = "Int" })), parents = [] })
+                    , state = State_BlockTypeAlias (BlockTypeAlias_Completish "Hi" [] (TypeExpressionNestingLeaf_Expr (TypeExpression_Bracketed (TypeExpression_NamedType { args = Stack [], name = "Int" }))))
                     }
                 ]
       , lexed =
@@ -4359,7 +4350,7 @@ type alias Function3 = (Int, () ->, ())
                 [ Err
                     { error = Error_TypeDoesNotTakeArgs2 TypeExpression_Unit
                     , item = Just (Located { end = { col = 21, row = 1 }, start = { col = 20, row = 1 } } (Token (Sigil (Bracket Round Open))))
-                    , state = State_BlockTypeAlias (BlockTypeAlias_Completish "Hi" [] { nesting = NestingLeafType_Expr TypeExpression_Unit, parents = [] })
+                    , state = State_BlockTypeAlias (BlockTypeAlias_Completish "Hi" [] (TypeExpressionNestingLeaf_Expr TypeExpression_Unit))
                     }
                 ]
       , lexed =
@@ -4391,7 +4382,7 @@ type alias Function3 = (Int, () ->, ())
                 [ Err
                     { error = Error_TypeDoesNotTakeArgs2 TypeExpression_Unit
                     , item = Just (Located { end = { col = 21, row = 1 }, start = { col = 20, row = 1 } } (Token (Sigil (Bracket Round Open))))
-                    , state = State_BlockTypeAlias (BlockTypeAlias_Completish "Hi" [] { nesting = NestingLeafType_Expr TypeExpression_Unit, parents = [] })
+                    , state = State_BlockTypeAlias (BlockTypeAlias_Completish "Hi" [] (TypeExpressionNestingLeaf_Expr TypeExpression_Unit))
                     }
                 ]
       , lexed =
@@ -4543,7 +4534,7 @@ List Int
                 [ Err
                     { error = Error_PartwayThroughBlock
                     , item = Just (Located { end = { col = 1, row = 2 }, start = { col = 18, row = 1 } } (Newlines [] 0))
-                    , state = State_BlockTypeAlias (BlockTypeAlias_Completish "Hi" [] { nesting = NestingLeafType_Bracket (Stack []) Nothing, parents = [] })
+                    , state = State_BlockTypeAlias (BlockTypeAlias_Completish "Hi" [] (TypeExpressionNestingLeaf_Bracket { firstExpressions = Stack [], parent = Nothing, trailingExpression = Nothing }))
                     }
                 ]
       , lexed =
@@ -4572,16 +4563,7 @@ List Int
                 [ Err
                     { error = Error_PartwayThroughBlock
                     , item = Just (Located { end = { col = 1, row = 3 }, start = { col = 12, row = 2 } } (Newlines [] 0))
-                    , state =
-                        State_BlockTypeAlias
-                            (BlockTypeAlias_Completish "Hi"
-                                []
-                                { nesting = NestingLeafType_TypeWithArgs { args = Stack [], name = "Int" }
-                                , parents =
-                                    [ NestingParentType_Bracket (Stack [])
-                                    ]
-                                }
-                            )
+                    , state = State_BlockTypeAlias (BlockTypeAlias_Completish "Hi" [] (TypeExpressionNestingLeaf_TypeWithArgs { args = Stack [], name = "Int", parent = Just (NestingParentType_Bracket { expressions = Stack [], parent = Nothing }) }))
                     }
                 ]
       , lexed =
@@ -4611,7 +4593,7 @@ List Int
                 [ Err
                     { error = Error_PartwayThroughBlock
                     , item = Just (Located { end = { col = 1, row = 2 }, start = { col = 18, row = 1 } } (Newlines [] 0))
-                    , state = State_BlockTypeAlias (BlockTypeAlias_Completish "Ty" [] { nesting = NestingLeafType_PartialRecord { firstEntries = Stack [], lastEntry = LastEntryOfRecord_Empty }, parents = [] })
+                    , state = State_BlockTypeAlias (BlockTypeAlias_Completish "Ty" [] (TypeExpressionNestingLeaf_PartialRecord { firstEntries = Stack [], lastEntry = LastEntryOfRecord_Empty, parent = Nothing }))
                     }
                 ]
       , lexed =
@@ -4639,7 +4621,7 @@ List Int
                 [ Err
                     { error = Error_ExpectedColonWhilstParsingRecord
                     , item = Just (Located { end = { col = 24, row = 1 }, start = { col = 22, row = 1 } } (Token (Identifier { name = "j7", qualifiers = [] })))
-                    , state = State_BlockTypeAlias (BlockTypeAlias_Completish "Ty" [] { nesting = NestingLeafType_PartialRecord { firstEntries = Stack [], lastEntry = LastEntryOfRecord_Key "hi" }, parents = [] })
+                    , state = State_BlockTypeAlias (BlockTypeAlias_Completish "Ty" [] (TypeExpressionNestingLeaf_PartialRecord { firstEntries = Stack [], lastEntry = LastEntryOfRecord_Key "hi", parent = Nothing }))
                     }
                 ]
       , lexed =
@@ -4711,17 +4693,15 @@ type alias Hi = (A Int, C D E F, H I (J K), L M () O P)
                         State_BlockTypeAlias
                             (BlockTypeAlias_Completish "Hi"
                                 []
-                                { nesting =
-                                    NestingLeafType_Expr
-                                        (TypeExpression_Tuple (TypeExpression_NamedType { args = Stack [], name = "Int" })
-                                            (TypeExpression_NamedType { args = Stack [], name = "A" })
-                                            [ TypeExpression_NamedType { args = Stack [], name = "B" }
-                                            , TypeExpression_NamedType { args = Stack [], name = "C" }
-                                            , TypeExpression_NamedType { args = Stack [], name = "D" }
-                                            ]
-                                        )
-                                , parents = []
-                                }
+                                (TypeExpressionNestingLeaf_Expr
+                                    (TypeExpression_Tuple (TypeExpression_NamedType { args = Stack [], name = "Int" })
+                                        (TypeExpression_NamedType { args = Stack [], name = "A" })
+                                        [ TypeExpression_NamedType { args = Stack [], name = "B" }
+                                        , TypeExpression_NamedType { args = Stack [], name = "C" }
+                                        , TypeExpression_NamedType { args = Stack [], name = "D" }
+                                        ]
+                                    )
+                                )
                             )
                     }
                 , Err
@@ -4813,57 +4793,55 @@ type alias Hi = (A Int, C D E F, H I (J K), L M () O P)
                         State_BlockTypeAlias
                             (BlockTypeAlias_Completish "Hi"
                                 []
-                                { nesting =
-                                    NestingLeafType_Expr
-                                        (TypeExpression_Tuple
-                                            (TypeExpression_NamedType
-                                                { args =
-                                                    Stack
-                                                        [ TypeExpression_NamedType { args = Stack [], name = "Int" }
-                                                        ]
-                                                , name = "A"
-                                                }
-                                            )
-                                            (TypeExpression_NamedType
-                                                { args =
-                                                    Stack
-                                                        [ TypeExpression_NamedType { args = Stack [], name = "F" }
-                                                        , TypeExpression_NamedType { args = Stack [], name = "E" }
-                                                        , TypeExpression_NamedType { args = Stack [], name = "D" }
-                                                        ]
-                                                , name = "C"
-                                                }
-                                            )
-                                            [ TypeExpression_NamedType
-                                                { args =
-                                                    Stack
-                                                        [ TypeExpression_Bracketed
-                                                            (TypeExpression_NamedType
-                                                                { args =
-                                                                    Stack
-                                                                        [ TypeExpression_NamedType { args = Stack [], name = "K" }
-                                                                        ]
-                                                                , name = "J"
-                                                                }
-                                                            )
-                                                        , TypeExpression_NamedType { args = Stack [], name = "I" }
-                                                        ]
-                                                , name = "H"
-                                                }
-                                            , TypeExpression_NamedType
-                                                { args =
-                                                    Stack
-                                                        [ TypeExpression_NamedType { args = Stack [], name = "P" }
-                                                        , TypeExpression_NamedType { args = Stack [], name = "O" }
-                                                        , TypeExpression_Unit
-                                                        , TypeExpression_NamedType { args = Stack [], name = "M" }
-                                                        ]
-                                                , name = "L"
-                                                }
-                                            ]
+                                (TypeExpressionNestingLeaf_Expr
+                                    (TypeExpression_Tuple
+                                        (TypeExpression_NamedType
+                                            { args =
+                                                Stack
+                                                    [ TypeExpression_NamedType { args = Stack [], name = "Int" }
+                                                    ]
+                                            , name = "A"
+                                            }
                                         )
-                                , parents = []
-                                }
+                                        (TypeExpression_NamedType
+                                            { args =
+                                                Stack
+                                                    [ TypeExpression_NamedType { args = Stack [], name = "F" }
+                                                    , TypeExpression_NamedType { args = Stack [], name = "E" }
+                                                    , TypeExpression_NamedType { args = Stack [], name = "D" }
+                                                    ]
+                                            , name = "C"
+                                            }
+                                        )
+                                        [ TypeExpression_NamedType
+                                            { args =
+                                                Stack
+                                                    [ TypeExpression_Bracketed
+                                                        (TypeExpression_NamedType
+                                                            { args =
+                                                                Stack
+                                                                    [ TypeExpression_NamedType { args = Stack [], name = "K" }
+                                                                    ]
+                                                            , name = "J"
+                                                            }
+                                                        )
+                                                    , TypeExpression_NamedType { args = Stack [], name = "I" }
+                                                    ]
+                                            , name = "H"
+                                            }
+                                        , TypeExpression_NamedType
+                                            { args =
+                                                Stack
+                                                    [ TypeExpression_NamedType { args = Stack [], name = "P" }
+                                                    , TypeExpression_NamedType { args = Stack [], name = "O" }
+                                                    , TypeExpression_Unit
+                                                    , TypeExpression_NamedType { args = Stack [], name = "M" }
+                                                    ]
+                                            , name = "L"
+                                            }
+                                        ]
+                                    )
+                                )
                             )
                     }
                 ]
@@ -4956,15 +4934,15 @@ type alias Hi = (A Int, C D E F, H I (J K), L M () O P)
                         State_BlockTypeAlias
                             (BlockTypeAlias_Completish "Hi"
                                 []
-                                { nesting =
-                                    NestingLeafType_Bracket
-                                        (Stack
+                                (TypeExpressionNestingLeaf_Bracket
+                                    { firstExpressions =
+                                        Stack
                                             [ TypeExpression_NamedType { args = Stack [], name = "Int" }
                                             ]
-                                        )
-                                        Nothing
-                                , parents = []
-                                }
+                                    , parent = Nothing
+                                    , trailingExpression = Nothing
+                                    }
+                                )
                             )
                     }
                 ]
@@ -5017,15 +4995,15 @@ type alias Hi = (A Int, C D E F, H I (J K), L M () O P)
                         State_BlockTypeAlias
                             (BlockTypeAlias_Completish "Hi"
                                 []
-                                { nesting =
-                                    NestingLeafType_Bracket
-                                        (Stack
+                                (TypeExpressionNestingLeaf_Bracket
+                                    { firstExpressions =
+                                        Stack
                                             [ TypeExpression_NamedType { args = Stack [], name = "Int" }
                                             ]
-                                        )
-                                        Nothing
-                                , parents = []
-                                }
+                                    , parent = Nothing
+                                    , trailingExpression = Nothing
+                                    }
+                                )
                             )
                     }
                 ]
