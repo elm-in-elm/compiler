@@ -66,19 +66,17 @@ b = 78
                 , Located { end = { col = 5, row = 1 }, start = { col = 4, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Token (NumericLiteral "5"))
                 , Located { end = { col = 1, row = 3 }, start = { col = 6, row = 1 } }
-                    (Token
-                        (Newlines
-                            [ 0
-                            ]
-                            0
-                        )
+                    (Newlines
+                        [ 0
+                        ]
+                        0
                     )
                 , Located { end = { col = 2, row = 3 }, start = { col = 1, row = 3 } } (Token (Identifier { name = "b", qualifiers = [] }))
                 , Located { end = { col = 3, row = 3 }, start = { col = 2, row = 3 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 4, row = 3 }, start = { col = 3, row = 3 } } (Token (Sigil Assign))
                 , Located { end = { col = 5, row = 3 }, start = { col = 4, row = 3 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 7, row = 3 }, start = { col = 5, row = 3 } } (Token (NumericLiteral "78"))
-                , Located { end = { col = 1, row = 4 }, start = { col = 7, row = 3 } } (Token (Newlines [] 0))
+                , Located { end = { col = 1, row = 4 }, start = { col = 7, row = 3 } } (Newlines [] 0)
                 ]
       }
     , { name = "expression-int-add"
@@ -160,12 +158,10 @@ b = 78 + 5 + 2+ 4
                 , Located { end = { col = 9, row = 1 }, start = { col = 8, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 10, row = 1 }, start = { col = 9, row = 1 } } (Token (NumericLiteral "5"))
                 , Located { end = { col = 1, row = 3 }, start = { col = 10, row = 1 } }
-                    (Token
-                        (Newlines
-                            [ 0
-                            ]
-                            0
-                        )
+                    (Newlines
+                        [ 0
+                        ]
+                        0
                     )
                 , Located { end = { col = 2, row = 3 }, start = { col = 1, row = 3 } } (Token (Identifier { name = "b", qualifiers = [] }))
                 , Located { end = { col = 3, row = 3 }, start = { col = 2, row = 3 } } (Ignorable (Whitespace 1))
@@ -183,7 +179,7 @@ b = 78 + 5 + 2+ 4
                 , Located { end = { col = 16, row = 3 }, start = { col = 15, row = 3 } } (Token (Sigil (Operator Add)))
                 , Located { end = { col = 17, row = 3 }, start = { col = 16, row = 3 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 18, row = 3 }, start = { col = 17, row = 3 } } (Token (NumericLiteral "4"))
-                , Located { end = { col = 1, row = 4 }, start = { col = 18, row = 3 } } (Token (Newlines [] 0))
+                , Located { end = { col = 1, row = 4 }, start = { col = 18, row = 3 } } (Newlines [] 0)
                 ]
       }
     , { name = "expression-int-multiply"
@@ -274,12 +270,10 @@ b = 78 * 5 * 2 / 4 * 5
                 , Located { end = { col = 9, row = 1 }, start = { col = 8, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 10, row = 1 }, start = { col = 9, row = 1 } } (Token (NumericLiteral "5"))
                 , Located { end = { col = 1, row = 3 }, start = { col = 10, row = 1 } }
-                    (Token
-                        (Newlines
-                            [ 0
-                            ]
-                            0
-                        )
+                    (Newlines
+                        [ 0
+                        ]
+                        0
                     )
                 , Located { end = { col = 2, row = 3 }, start = { col = 1, row = 3 } } (Token (Identifier { name = "b", qualifiers = [] }))
                 , Located { end = { col = 3, row = 3 }, start = { col = 2, row = 3 } } (Ignorable (Whitespace 1))
@@ -302,7 +296,7 @@ b = 78 * 5 * 2 / 4 * 5
                 , Located { end = { col = 21, row = 3 }, start = { col = 20, row = 3 } } (Token (Sigil (Operator Multiply)))
                 , Located { end = { col = 22, row = 3 }, start = { col = 21, row = 3 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 23, row = 3 }, start = { col = 22, row = 3 } } (Token (NumericLiteral "5"))
-                , Located { end = { col = 1, row = 4 }, start = { col = 23, row = 3 } } (Token (Newlines [] 0))
+                , Located { end = { col = 1, row = 4 }, start = { col = 23, row = 3 } } (Newlines [] 0)
                 ]
       }
     , { name = "expression-int-multiply-and-add"
@@ -729,7 +723,7 @@ b4 = 78 / 5 / 2 / 4 + 5
                 , Located { end = { col = 12, row = 1 }, start = { col = 11, row = 1 } } (Token (Sigil (Operator Add)))
                 , Located { end = { col = 13, row = 1 }, start = { col = 12, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 14, row = 1 }, start = { col = 13, row = 1 } } (Token (NumericLiteral "6"))
-                , Located { end = { col = 1, row = 2 }, start = { col = 14, row = 1 } } (Token (Newlines [] 0))
+                , Located { end = { col = 1, row = 2 }, start = { col = 14, row = 1 } } (Newlines [] 0)
                 , Located { end = { col = 3, row = 2 }, start = { col = 1, row = 2 } } (Token (Identifier { name = "a1", qualifiers = [] }))
                 , Located { end = { col = 4, row = 2 }, start = { col = 3, row = 2 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 5, row = 2 }, start = { col = 4, row = 2 } } (Token (Sigil Assign))
@@ -743,7 +737,7 @@ b4 = 78 / 5 / 2 / 4 + 5
                 , Located { end = { col = 14, row = 2 }, start = { col = 13, row = 2 } } (Token (Sigil (Operator Multiply)))
                 , Located { end = { col = 15, row = 2 }, start = { col = 14, row = 2 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 16, row = 2 }, start = { col = 15, row = 2 } } (Token (NumericLiteral "5"))
-                , Located { end = { col = 1, row = 3 }, start = { col = 16, row = 2 } } (Token (Newlines [] 0))
+                , Located { end = { col = 1, row = 3 }, start = { col = 16, row = 2 } } (Newlines [] 0)
                 , Located { end = { col = 4, row = 3 }, start = { col = 1, row = 3 } } (Token (Identifier { name = "a11", qualifiers = [] }))
                 , Located { end = { col = 5, row = 3 }, start = { col = 4, row = 3 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 6, row = 3 }, start = { col = 5, row = 3 } } (Token (Sigil Assign))
@@ -761,7 +755,7 @@ b4 = 78 / 5 / 2 / 4 + 5
                 , Located { end = { col = 19, row = 3 }, start = { col = 18, row = 3 } } (Token (Sigil (Operator Add)))
                 , Located { end = { col = 20, row = 3 }, start = { col = 19, row = 3 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 21, row = 3 }, start = { col = 20, row = 3 } } (Token (NumericLiteral "6"))
-                , Located { end = { col = 1, row = 4 }, start = { col = 21, row = 3 } } (Token (Newlines [] 0))
+                , Located { end = { col = 1, row = 4 }, start = { col = 21, row = 3 } } (Newlines [] 0)
                 , Located { end = { col = 3, row = 4 }, start = { col = 1, row = 4 } } (Token (Identifier { name = "a2", qualifiers = [] }))
                 , Located { end = { col = 4, row = 4 }, start = { col = 3, row = 4 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 5, row = 4 }, start = { col = 4, row = 4 } } (Token (Sigil Assign))
@@ -775,7 +769,7 @@ b4 = 78 / 5 / 2 / 4 + 5
                 , Located { end = { col = 16, row = 4 }, start = { col = 15, row = 4 } } (Token (Sigil (Operator Multiply)))
                 , Located { end = { col = 17, row = 4 }, start = { col = 16, row = 4 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 18, row = 4 }, start = { col = 17, row = 4 } } (Token (NumericLiteral "5"))
-                , Located { end = { col = 1, row = 5 }, start = { col = 18, row = 4 } } (Token (Newlines [] 0))
+                , Located { end = { col = 1, row = 5 }, start = { col = 18, row = 4 } } (Newlines [] 0)
                 , Located { end = { col = 3, row = 5 }, start = { col = 1, row = 5 } } (Token (Identifier { name = "a3", qualifiers = [] }))
                 , Located { end = { col = 4, row = 5 }, start = { col = 3, row = 5 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 5, row = 5 }, start = { col = 4, row = 5 } } (Token (Sigil Assign))
@@ -794,13 +788,11 @@ b4 = 78 / 5 / 2 / 4 + 5
                 , Located { end = { col = 26, row = 5 }, start = { col = 25, row = 5 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 30, row = 5 }, start = { col = 26, row = 5 } } (Token (NumericLiteral "1010"))
                 , Located { end = { col = 1, row = 8 }, start = { col = 30, row = 5 } }
-                    (Token
-                        (Newlines
-                            [ 0
-                            , 0
-                            ]
-                            0
-                        )
+                    (Newlines
+                        [ 0
+                        , 0
+                        ]
+                        0
                     )
                 , Located { end = { col = 2, row = 8 }, start = { col = 1, row = 8 } } (Token (Identifier { name = "b", qualifiers = [] }))
                 , Located { end = { col = 3, row = 8 }, start = { col = 2, row = 8 } } (Ignorable (Whitespace 1))
@@ -823,7 +815,7 @@ b4 = 78 / 5 / 2 / 4 + 5
                 , Located { end = { col = 21, row = 8 }, start = { col = 20, row = 8 } } (Token (Sigil (Operator Multiply)))
                 , Located { end = { col = 22, row = 8 }, start = { col = 21, row = 8 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 23, row = 8 }, start = { col = 22, row = 8 } } (Token (NumericLiteral "5"))
-                , Located { end = { col = 1, row = 9 }, start = { col = 23, row = 8 } } (Token (Newlines [] 0))
+                , Located { end = { col = 1, row = 9 }, start = { col = 23, row = 8 } } (Newlines [] 0)
                 , Located { end = { col = 3, row = 9 }, start = { col = 1, row = 9 } } (Token (Identifier { name = "b1", qualifiers = [] }))
                 , Located { end = { col = 4, row = 9 }, start = { col = 3, row = 9 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 5, row = 9 }, start = { col = 4, row = 9 } } (Token (Sigil Assign))
@@ -845,7 +837,7 @@ b4 = 78 / 5 / 2 / 4 + 5
                 , Located { end = { col = 22, row = 9 }, start = { col = 21, row = 9 } } (Token (Sigil (Operator Subtract)))
                 , Located { end = { col = 23, row = 9 }, start = { col = 22, row = 9 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 24, row = 9 }, start = { col = 23, row = 9 } } (Token (NumericLiteral "5"))
-                , Located { end = { col = 1, row = 10 }, start = { col = 24, row = 9 } } (Token (Newlines [] 0))
+                , Located { end = { col = 1, row = 10 }, start = { col = 24, row = 9 } } (Newlines [] 0)
                 , Located { end = { col = 3, row = 10 }, start = { col = 1, row = 10 } } (Token (Identifier { name = "b2", qualifiers = [] }))
                 , Located { end = { col = 4, row = 10 }, start = { col = 3, row = 10 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 5, row = 10 }, start = { col = 4, row = 10 } } (Token (Sigil Assign))
@@ -867,7 +859,7 @@ b4 = 78 / 5 / 2 / 4 + 5
                 , Located { end = { col = 22, row = 10 }, start = { col = 21, row = 10 } } (Token (Sigil (Operator Multiply)))
                 , Located { end = { col = 23, row = 10 }, start = { col = 22, row = 10 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 24, row = 10 }, start = { col = 23, row = 10 } } (Token (NumericLiteral "5"))
-                , Located { end = { col = 1, row = 11 }, start = { col = 24, row = 10 } } (Token (Newlines [] 0))
+                , Located { end = { col = 1, row = 11 }, start = { col = 24, row = 10 } } (Newlines [] 0)
                 , Located { end = { col = 3, row = 11 }, start = { col = 1, row = 11 } } (Token (Identifier { name = "b3", qualifiers = [] }))
                 , Located { end = { col = 4, row = 11 }, start = { col = 3, row = 11 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 5, row = 11 }, start = { col = 4, row = 11 } } (Token (Sigil Assign))
@@ -889,7 +881,7 @@ b4 = 78 / 5 / 2 / 4 + 5
                 , Located { end = { col = 22, row = 11 }, start = { col = 21, row = 11 } } (Token (Sigil (Operator Multiply)))
                 , Located { end = { col = 23, row = 11 }, start = { col = 22, row = 11 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 24, row = 11 }, start = { col = 23, row = 11 } } (Token (NumericLiteral "5"))
-                , Located { end = { col = 1, row = 12 }, start = { col = 24, row = 11 } } (Token (Newlines [] 0))
+                , Located { end = { col = 1, row = 12 }, start = { col = 24, row = 11 } } (Newlines [] 0)
                 , Located { end = { col = 3, row = 12 }, start = { col = 1, row = 12 } } (Token (Identifier { name = "b4", qualifiers = [] }))
                 , Located { end = { col = 4, row = 12 }, start = { col = 3, row = 12 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 5, row = 12 }, start = { col = 4, row = 12 } } (Token (Sigil Assign))
@@ -912,12 +904,10 @@ b4 = 78 / 5 / 2 / 4 + 5
                 , Located { end = { col = 23, row = 12 }, start = { col = 22, row = 12 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 24, row = 12 }, start = { col = 23, row = 12 } } (Token (NumericLiteral "5"))
                 , Located { end = { col = 1, row = 14 }, start = { col = 24, row = 12 } }
-                    (Token
-                        (Newlines
-                            [ 0
-                            ]
-                            0
-                        )
+                    (Newlines
+                        [ 0
+                        ]
+                        0
                     )
                 ]
       }
@@ -1009,12 +999,10 @@ b = 78 + 5 + 2 - 4 + 5
                 , Located { end = { col = 9, row = 1 }, start = { col = 8, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 10, row = 1 }, start = { col = 9, row = 1 } } (Token (NumericLiteral "5"))
                 , Located { end = { col = 1, row = 3 }, start = { col = 10, row = 1 } }
-                    (Token
-                        (Newlines
-                            [ 0
-                            ]
-                            0
-                        )
+                    (Newlines
+                        [ 0
+                        ]
+                        0
                     )
                 , Located { end = { col = 2, row = 3 }, start = { col = 1, row = 3 } } (Token (Identifier { name = "b", qualifiers = [] }))
                 , Located { end = { col = 3, row = 3 }, start = { col = 2, row = 3 } } (Ignorable (Whitespace 1))
@@ -1037,7 +1025,7 @@ b = 78 + 5 + 2 - 4 + 5
                 , Located { end = { col = 21, row = 3 }, start = { col = 20, row = 3 } } (Token (Sigil (Operator Add)))
                 , Located { end = { col = 22, row = 3 }, start = { col = 21, row = 3 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 23, row = 3 }, start = { col = 22, row = 3 } } (Token (NumericLiteral "5"))
-                , Located { end = { col = 1, row = 4 }, start = { col = 23, row = 3 } } (Token (Newlines [] 0))
+                , Located { end = { col = 1, row = 4 }, start = { col = 23, row = 3 } } (Newlines [] 0)
                 ]
       }
     , { name = "type-alias"
@@ -1104,7 +1092,7 @@ b = 78 + 5 + 2 - 4 + 5
                 , Located { end = { col = 24, row = 1 }, start = { col = 20, row = 1 } } (Token (Identifier { name = "List", qualifiers = [] }))
                 , Located { end = { col = 25, row = 1 }, start = { col = 24, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 28, row = 1 }, start = { col = 25, row = 1 } } (Token (Identifier { name = "Int", qualifiers = [] }))
-                , Located { end = { col = 1, row = 2 }, start = { col = 28, row = 1 } } (Token (Newlines [] 0))
+                , Located { end = { col = 1, row = 2 }, start = { col = 28, row = 1 } } (Newlines [] 0)
                 ]
       }
     , { name = "type-alias-and-expression"
@@ -1195,12 +1183,10 @@ expr hi = 77
                 , Located { end = { col = 25, row = 1 }, start = { col = 24, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 28, row = 1 }, start = { col = 25, row = 1 } } (Token (Identifier { name = "Int", qualifiers = [] }))
                 , Located { end = { col = 1, row = 3 }, start = { col = 28, row = 1 } }
-                    (Token
-                        (Newlines
-                            [ 0
-                            ]
-                            0
-                        )
+                    (Newlines
+                        [ 0
+                        ]
+                        0
                     )
                 , Located { end = { col = 5, row = 3 }, start = { col = 1, row = 3 } } (Token (Identifier { name = "expr", qualifiers = [] }))
                 , Located { end = { col = 6, row = 3 }, start = { col = 5, row = 3 } } (Ignorable (Whitespace 1))
@@ -1209,7 +1195,7 @@ expr hi = 77
                 , Located { end = { col = 10, row = 3 }, start = { col = 9, row = 3 } } (Token (Sigil Assign))
                 , Located { end = { col = 11, row = 3 }, start = { col = 10, row = 3 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 13, row = 3 }, start = { col = 11, row = 3 } } (Token (NumericLiteral "77"))
-                , Located { end = { col = 1, row = 4 }, start = { col = 13, row = 3 } } (Token (Newlines [] 0))
+                , Located { end = { col = 1, row = 4 }, start = { col = 13, row = 3 } } (Newlines [] 0)
                 ]
       }
     , { name = "type-alias-bracket-in-record"
@@ -1278,7 +1264,7 @@ expr hi = 77
                 , Located { end = { col = 28, row = 1 }, start = { col = 27, row = 1 } } (Token (Sigil (Bracket Round Close)))
                 , Located { end = { col = 29, row = 1 }, start = { col = 28, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 30, row = 1 }, start = { col = 29, row = 1 } } (Token (Sigil (Bracket Curly Close)))
-                , Located { end = { col = 1, row = 2 }, start = { col = 30, row = 1 } } (Token (Newlines [] 0))
+                , Located { end = { col = 1, row = 2 }, start = { col = 30, row = 1 } } (Newlines [] 0)
                 ]
       }
     , { name = "type-alias-function"
@@ -1409,7 +1395,7 @@ expr hi = 77
                 , Located { end = { col = 46, row = 1 }, start = { col = 45, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 49, row = 1 }, start = { col = 46, row = 1 } } (Token (Identifier { name = "Int", qualifiers = [] }))
                 , Located { end = { col = 50, row = 1 }, start = { col = 49, row = 1 } } (Token (Sigil (Bracket Round Close)))
-                , Located { end = { col = 1, row = 2 }, start = { col = 50, row = 1 } } (Token (Newlines [] 0))
+                , Located { end = { col = 1, row = 2 }, start = { col = 50, row = 1 } } (Newlines [] 0)
                 ]
       }
     , { name = "type-alias-function-binding-order"
@@ -1617,7 +1603,7 @@ type alias Function = A -> B -> C -> D
                 , Located { end = { col = 32, row = 1 }, start = { col = 30, row = 1 } } (Token (Sigil ThinArrow))
                 , Located { end = { col = 33, row = 1 }, start = { col = 32, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 34, row = 1 }, start = { col = 33, row = 1 } } (Token (Identifier { name = "C", qualifiers = [] }))
-                , Located { end = { col = 1, row = 2 }, start = { col = 34, row = 1 } } (Token (Newlines [] 0))
+                , Located { end = { col = 1, row = 2 }, start = { col = 34, row = 1 } } (Newlines [] 0)
                 , Located { end = { col = 5, row = 2 }, start = { col = 1, row = 2 } } (Token (Keyword Type))
                 , Located { end = { col = 6, row = 2 }, start = { col = 5, row = 2 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 11, row = 2 }, start = { col = 6, row = 2 } } (Token (Keyword Alias))
@@ -1639,7 +1625,7 @@ type alias Function = A -> B -> C -> D
                 , Located { end = { col = 37, row = 2 }, start = { col = 35, row = 2 } } (Token (Sigil ThinArrow))
                 , Located { end = { col = 38, row = 2 }, start = { col = 37, row = 2 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 39, row = 2 }, start = { col = 38, row = 2 } } (Token (Identifier { name = "D", qualifiers = [] }))
-                , Located { end = { col = 1, row = 3 }, start = { col = 39, row = 2 } } (Token (Newlines [] 0))
+                , Located { end = { col = 1, row = 3 }, start = { col = 39, row = 2 } } (Newlines [] 0)
                 ]
       }
     , { name = "type-alias-function-generic"
@@ -1776,7 +1762,7 @@ type alias Function = A -> B -> C -> D
                 , Located { end = { col = 48, row = 1 }, start = { col = 47, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 49, row = 1 }, start = { col = 48, row = 1 } } (Token (Identifier { name = "a", qualifiers = [] }))
                 , Located { end = { col = 50, row = 1 }, start = { col = 49, row = 1 } } (Token (Sigil (Bracket Round Close)))
-                , Located { end = { col = 1, row = 2 }, start = { col = 50, row = 1 } } (Token (Newlines [] 0))
+                , Located { end = { col = 1, row = 2 }, start = { col = 50, row = 1 } } (Newlines [] 0)
                 ]
       }
     , { name = "type-alias-function-nested"
@@ -2084,12 +2070,10 @@ type alias Function3 = (Int, () -> (Int, String), ())
                 , Located { end = { col = 43, row = 1 }, start = { col = 42, row = 1 } } (Token (Sigil (Bracket Round Close)))
                 , Located { end = { col = 44, row = 1 }, start = { col = 43, row = 1 } } (Token (Sigil (Bracket Round Close)))
                 , Located { end = { col = 1, row = 3 }, start = { col = 44, row = 1 } }
-                    (Token
-                        (Newlines
-                            [ 0
-                            ]
-                            0
-                        )
+                    (Newlines
+                        [ 0
+                        ]
+                        0
                     )
                 , Located { end = { col = 5, row = 3 }, start = { col = 1, row = 3 } } (Token (Keyword Type))
                 , Located { end = { col = 6, row = 3 }, start = { col = 5, row = 3 } } (Ignorable (Whitespace 1))
@@ -2118,12 +2102,10 @@ type alias Function3 = (Int, () -> (Int, String), ())
                 , Located { end = { col = 49, row = 3 }, start = { col = 48, row = 3 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 50, row = 3 }, start = { col = 49, row = 3 } } (Token (Sigil (Bracket Curly Close)))
                 , Located { end = { col = 1, row = 5 }, start = { col = 50, row = 3 } }
-                    (Token
-                        (Newlines
-                            [ 0
-                            ]
-                            0
-                        )
+                    (Newlines
+                        [ 0
+                        ]
+                        0
                     )
                 , Located { end = { col = 5, row = 5 }, start = { col = 1, row = 5 } } (Token (Keyword Type))
                 , Located { end = { col = 6, row = 5 }, start = { col = 5, row = 5 } } (Ignorable (Whitespace 1))
@@ -2151,12 +2133,10 @@ type alias Function3 = (Int, () -> (Int, String), ())
                 , Located { end = { col = 48, row = 5 }, start = { col = 47, row = 5 } } (Token (Sigil (Bracket Round Close)))
                 , Located { end = { col = 49, row = 5 }, start = { col = 48, row = 5 } } (Token (Sigil (Bracket Round Close)))
                 , Located { end = { col = 1, row = 7 }, start = { col = 49, row = 5 } }
-                    (Token
-                        (Newlines
-                            [ 0
-                            ]
-                            0
-                        )
+                    (Newlines
+                        [ 0
+                        ]
+                        0
                     )
                 , Located { end = { col = 5, row = 7 }, start = { col = 1, row = 7 } } (Token (Keyword Type))
                 , Located { end = { col = 6, row = 7 }, start = { col = 5, row = 7 } } (Ignorable (Whitespace 1))
@@ -2186,7 +2166,7 @@ type alias Function3 = (Int, () -> (Int, String), ())
                 , Located { end = { col = 52, row = 7 }, start = { col = 51, row = 7 } } (Token (Sigil (Bracket Round Open)))
                 , Located { end = { col = 53, row = 7 }, start = { col = 52, row = 7 } } (Token (Sigil (Bracket Round Close)))
                 , Located { end = { col = 54, row = 7 }, start = { col = 53, row = 7 } } (Token (Sigil (Bracket Round Close)))
-                , Located { end = { col = 1, row = 8 }, start = { col = 54, row = 7 } } (Token (Newlines [] 0))
+                , Located { end = { col = 1, row = 8 }, start = { col = 54, row = 7 } } (Newlines [] 0)
                 ]
       }
     , { name = "type-alias-function-record"
@@ -2310,7 +2290,7 @@ type alias Function3 = (Int, () -> (Int, String), ())
                 , Located { end = { col = 47, row = 1 }, start = { col = 46, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 48, row = 1 }, start = { col = 47, row = 1 } } (Token (Sigil (Bracket Curly Open)))
                 , Located { end = { col = 49, row = 1 }, start = { col = 48, row = 1 } } (Token (Sigil (Bracket Curly Close)))
-                , Located { end = { col = 1, row = 2 }, start = { col = 49, row = 1 } } (Token (Newlines [] 0))
+                , Located { end = { col = 1, row = 2 }, start = { col = 49, row = 1 } } (Newlines [] 0)
                 ]
       }
     , { name = "type-alias-function-tuple"
@@ -2399,7 +2379,7 @@ type alias Function3 = (Int, () -> (Int, String), ())
                 , Located { end = { col = 35, row = 1 }, start = { col = 34, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 41, row = 1 }, start = { col = 35, row = 1 } } (Token (Identifier { name = "String", qualifiers = [] }))
                 , Located { end = { col = 42, row = 1 }, start = { col = 41, row = 1 } } (Token (Sigil (Bracket Round Close)))
-                , Located { end = { col = 1, row = 2 }, start = { col = 42, row = 1 } } (Token (Newlines [] 0))
+                , Located { end = { col = 1, row = 2 }, start = { col = 42, row = 1 } } (Newlines [] 0)
                 ]
       }
     , { name = "type-alias-funky-indentation"
@@ -2459,7 +2439,7 @@ type alias Function3 = (Int, () -> (Int, String), ())
                 [ Located { end = { col = 5, row = 1 }, start = { col = 1, row = 1 } } (Token (Keyword Type))
                 , Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 11, row = 1 }, start = { col = 6, row = 1 } } (Token (Keyword Alias))
-                , Located { end = { col = 5, row = 2 }, start = { col = 11, row = 1 } } (Token (Newlines [] 4))
+                , Located { end = { col = 5, row = 2 }, start = { col = 11, row = 1 } } (Newlines [] 4)
                 , Located { end = { col = 10, row = 2 }, start = { col = 5, row = 2 } } (Token (Identifier { name = "Model", qualifiers = [] }))
                 , Located { end = { col = 11, row = 2 }, start = { col = 10, row = 2 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 12, row = 2 }, start = { col = 11, row = 2 } } (Token (Sigil Assign))
@@ -2467,7 +2447,7 @@ type alias Function3 = (Int, () -> (Int, String), ())
                 , Located { end = { col = 17, row = 2 }, start = { col = 13, row = 2 } } (Token (Identifier { name = "List", qualifiers = [] }))
                 , Located { end = { col = 18, row = 2 }, start = { col = 17, row = 2 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 21, row = 2 }, start = { col = 18, row = 2 } } (Token (Identifier { name = "Int", qualifiers = [] }))
-                , Located { end = { col = 1, row = 3 }, start = { col = 21, row = 2 } } (Token (Newlines [] 0))
+                , Located { end = { col = 1, row = 3 }, start = { col = 21, row = 2 } } (Newlines [] 0)
                 ]
       }
     , { name = "type-alias-funky-indentation-2"
@@ -2528,15 +2508,15 @@ type alias Function3 = (Int, () -> (Int, String), ())
                 [ Located { end = { col = 5, row = 1 }, start = { col = 1, row = 1 } } (Token (Keyword Type))
                 , Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 11, row = 1 }, start = { col = 6, row = 1 } } (Token (Keyword Alias))
-                , Located { end = { col = 5, row = 2 }, start = { col = 11, row = 1 } } (Token (Newlines [] 4))
+                , Located { end = { col = 5, row = 2 }, start = { col = 11, row = 1 } } (Newlines [] 4)
                 , Located { end = { col = 10, row = 2 }, start = { col = 5, row = 2 } } (Token (Identifier { name = "Model", qualifiers = [] }))
                 , Located { end = { col = 11, row = 2 }, start = { col = 10, row = 2 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 12, row = 2 }, start = { col = 11, row = 2 } } (Token (Sigil Assign))
-                , Located { end = { col = 2, row = 3 }, start = { col = 12, row = 2 } } (Token (Newlines [] 1))
+                , Located { end = { col = 2, row = 3 }, start = { col = 12, row = 2 } } (Newlines [] 1)
                 , Located { end = { col = 6, row = 3 }, start = { col = 2, row = 3 } } (Token (Identifier { name = "List", qualifiers = [] }))
                 , Located { end = { col = 7, row = 3 }, start = { col = 6, row = 3 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 10, row = 3 }, start = { col = 7, row = 3 } } (Token (Identifier { name = "Int", qualifiers = [] }))
-                , Located { end = { col = 1, row = 4 }, start = { col = 10, row = 3 } } (Token (Newlines [] 0))
+                , Located { end = { col = 1, row = 4 }, start = { col = 10, row = 3 } } (Newlines [] 0)
                 ]
       }
     , { name = "type-alias-record-3-entries"
@@ -2650,7 +2630,7 @@ type alias Function3 = (Int, () -> (Int, String), ())
                 , Located { end = { col = 35, row = 1 }, start = { col = 34, row = 1 } } (Token (Identifier { name = "C", qualifiers = [] }))
                 , Located { end = { col = 36, row = 1 }, start = { col = 35, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 37, row = 1 }, start = { col = 36, row = 1 } } (Token (Sigil (Bracket Curly Close)))
-                , Located { end = { col = 1, row = 2 }, start = { col = 37, row = 1 } } (Token (Newlines [] 0))
+                , Located { end = { col = 1, row = 2 }, start = { col = 37, row = 1 } } (Newlines [] 0)
                 ]
       }
     , { name = "type-alias-record-empty"
@@ -2683,7 +2663,7 @@ type alias Function3 = (Int, () -> (Int, String), ())
                 , Located { end = { col = 17, row = 1 }, start = { col = 16, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 18, row = 1 }, start = { col = 17, row = 1 } } (Token (Sigil (Bracket Curly Open)))
                 , Located { end = { col = 19, row = 1 }, start = { col = 18, row = 1 } } (Token (Sigil (Bracket Curly Close)))
-                , Located { end = { col = 1, row = 2 }, start = { col = 19, row = 1 } } (Token (Newlines [] 0))
+                , Located { end = { col = 1, row = 2 }, start = { col = 19, row = 1 } } (Newlines [] 0)
                 ]
       }
     , { name = "type-alias-record-empty-multiline"
@@ -2719,16 +2699,14 @@ type alias Function3 = (Int, () -> (Int, String), ())
                 , Located { end = { col = 17, row = 1 }, start = { col = 16, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 18, row = 1 }, start = { col = 17, row = 1 } } (Token (Sigil (Bracket Curly Open)))
                 , Located { end = { col = 5, row = 4 }, start = { col = 18, row = 1 } }
-                    (Token
-                        (Newlines
-                            [ 0
-                            , 0
-                            ]
-                            4
-                        )
+                    (Newlines
+                        [ 0
+                        , 0
+                        ]
+                        4
                     )
                 , Located { end = { col = 6, row = 4 }, start = { col = 5, row = 4 } } (Token (Sigil (Bracket Curly Close)))
-                , Located { end = { col = 1, row = 5 }, start = { col = 6, row = 4 } } (Token (Newlines [] 0))
+                , Located { end = { col = 1, row = 5 }, start = { col = 6, row = 4 } } (Newlines [] 0)
                 ]
       }
     , { name = "type-alias-record-in-bracket"
@@ -2797,7 +2775,7 @@ type alias Function3 = (Int, () -> (Int, String), ())
                 , Located { end = { col = 28, row = 1 }, start = { col = 27, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 29, row = 1 }, start = { col = 28, row = 1 } } (Token (Sigil (Bracket Curly Close)))
                 , Located { end = { col = 30, row = 1 }, start = { col = 29, row = 1 } } (Token (Sigil (Bracket Round Close)))
-                , Located { end = { col = 1, row = 2 }, start = { col = 30, row = 1 } } (Token (Newlines [] 0))
+                , Located { end = { col = 1, row = 2 }, start = { col = 30, row = 1 } } (Newlines [] 0)
                 ]
       }
     , { name = "type-alias-record-nested"
@@ -2989,7 +2967,7 @@ type alias Function3 = (Int, () -> (Int, String), ())
                 , Located { end = { col = 14, row = 1 }, start = { col = 12, row = 1 } } (Token (Identifier { name = "Ty", qualifiers = [] }))
                 , Located { end = { col = 15, row = 1 }, start = { col = 14, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 16, row = 1 }, start = { col = 15, row = 1 } } (Token (Sigil Assign))
-                , Located { end = { col = 5, row = 2 }, start = { col = 16, row = 1 } } (Token (Newlines [] 4))
+                , Located { end = { col = 5, row = 2 }, start = { col = 16, row = 1 } } (Newlines [] 4)
                 , Located { end = { col = 6, row = 2 }, start = { col = 5, row = 2 } } (Token (Sigil (Bracket Curly Open)))
                 , Located { end = { col = 7, row = 2 }, start = { col = 6, row = 2 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 9, row = 2 }, start = { col = 7, row = 2 } } (Token (Identifier { name = "hi", qualifiers = [] }))
@@ -3011,7 +2989,7 @@ type alias Function3 = (Int, () -> (Int, String), ())
                 , Located { end = { col = 36, row = 2 }, start = { col = 30, row = 2 } } (Token (Identifier { name = "String", qualifiers = [] }))
                 , Located { end = { col = 37, row = 2 }, start = { col = 36, row = 2 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 38, row = 2 }, start = { col = 37, row = 2 } } (Token (Sigil (Bracket Curly Close)))
-                , Located { end = { col = 5, row = 3 }, start = { col = 38, row = 2 } } (Token (Newlines [] 4))
+                , Located { end = { col = 5, row = 3 }, start = { col = 38, row = 2 } } (Newlines [] 4)
                 , Located { end = { col = 6, row = 3 }, start = { col = 5, row = 3 } } (Token (Sigil Comma))
                 , Located { end = { col = 7, row = 3 }, start = { col = 6, row = 3 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 9, row = 3 }, start = { col = 7, row = 3 } } (Token (Identifier { name = "ih", qualifiers = [] }))
@@ -3030,9 +3008,9 @@ type alias Function3 = (Int, () -> (Int, String), ())
                 , Located { end = { col = 31, row = 3 }, start = { col = 30, row = 3 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 32, row = 3 }, start = { col = 31, row = 3 } } (Token (Identifier { name = "E", qualifiers = [] }))
                 , Located { end = { col = 33, row = 3 }, start = { col = 32, row = 3 } } (Token (Sigil (Bracket Round Close)))
-                , Located { end = { col = 5, row = 4 }, start = { col = 33, row = 3 } } (Token (Newlines [] 4))
+                , Located { end = { col = 5, row = 4 }, start = { col = 33, row = 3 } } (Newlines [] 4)
                 , Located { end = { col = 6, row = 4 }, start = { col = 5, row = 4 } } (Token (Sigil (Bracket Curly Close)))
-                , Located { end = { col = 1, row = 5 }, start = { col = 6, row = 4 } } (Token (Newlines [] 0))
+                , Located { end = { col = 1, row = 5 }, start = { col = 6, row = 4 } } (Newlines [] 0)
                 ]
       }
     , { name = "type-alias-record-simple"
@@ -3099,7 +3077,7 @@ type alias Function3 = (Int, () -> (Int, String), ())
                 , Located { end = { col = 26, row = 1 }, start = { col = 23, row = 1 } } (Token (Identifier { name = "Int", qualifiers = [] }))
                 , Located { end = { col = 27, row = 1 }, start = { col = 26, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 28, row = 1 }, start = { col = 27, row = 1 } } (Token (Sigil (Bracket Curly Close)))
-                , Located { end = { col = 1, row = 2 }, start = { col = 28, row = 1 } } (Token (Newlines [] 0))
+                , Located { end = { col = 1, row = 2 }, start = { col = 28, row = 1 } } (Newlines [] 0)
                 ]
       }
     , { name = "type-alias-record-two-entries"
@@ -3176,7 +3154,7 @@ type alias Function3 = (Int, () -> (Int, String), ())
                 , Located { end = { col = 38, row = 1 }, start = { col = 32, row = 1 } } (Token (Identifier { name = "String", qualifiers = [] }))
                 , Located { end = { col = 39, row = 1 }, start = { col = 38, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 40, row = 1 }, start = { col = 39, row = 1 } } (Token (Sigil (Bracket Curly Close)))
-                , Located { end = { col = 1, row = 2 }, start = { col = 40, row = 1 } } (Token (Newlines [] 0))
+                , Located { end = { col = 1, row = 2 }, start = { col = 40, row = 1 } } (Newlines [] 0)
                 ]
       }
     , { name = "type-alias-unit"
@@ -3207,7 +3185,7 @@ type alias Function3 = (Int, () -> (Int, String), ())
                 , Located { end = { col = 17, row = 1 }, start = { col = 16, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 18, row = 1 }, start = { col = 17, row = 1 } } (Token (Sigil (Bracket Round Open)))
                 , Located { end = { col = 19, row = 1 }, start = { col = 18, row = 1 } } (Token (Sigil (Bracket Round Close)))
-                , Located { end = { col = 1, row = 2 }, start = { col = 19, row = 1 } } (Token (Newlines [] 0))
+                , Located { end = { col = 1, row = 2 }, start = { col = 19, row = 1 } } (Newlines [] 0)
                 ]
       }
     , { name = "type-alias-with-bracket"
@@ -3259,7 +3237,7 @@ type alias Function3 = (Int, () -> (Int, String), ())
                 , Located { end = { col = 18, row = 1 }, start = { col = 17, row = 1 } } (Token (Sigil (Bracket Round Open)))
                 , Located { end = { col = 21, row = 1 }, start = { col = 18, row = 1 } } (Token (Identifier { name = "Int", qualifiers = [] }))
                 , Located { end = { col = 22, row = 1 }, start = { col = 21, row = 1 } } (Token (Sigil (Bracket Round Close)))
-                , Located { end = { col = 1, row = 2 }, start = { col = 22, row = 1 } } (Token (Newlines [] 0))
+                , Located { end = { col = 1, row = 2 }, start = { col = 22, row = 1 } } (Newlines [] 0)
                 ]
       }
     , { name = "type-alias-with-bracket-2"
@@ -3328,7 +3306,7 @@ type alias Function3 = (Int, () -> (Int, String), ())
                 , Located { end = { col = 23, row = 1 }, start = { col = 22, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 26, row = 1 }, start = { col = 23, row = 1 } } (Token (Identifier { name = "Int", qualifiers = [] }))
                 , Located { end = { col = 27, row = 1 }, start = { col = 26, row = 1 } } (Token (Sigil (Bracket Round Close)))
-                , Located { end = { col = 1, row = 2 }, start = { col = 27, row = 1 } } (Token (Newlines [] 0))
+                , Located { end = { col = 1, row = 2 }, start = { col = 27, row = 1 } } (Newlines [] 0)
                 ]
       }
     , { name = "type-alias-with-pair"
@@ -3449,7 +3427,7 @@ type alias Hi = (Int)
                 , Located { end = { col = 28, row = 1 }, start = { col = 27, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 34, row = 1 }, start = { col = 28, row = 1 } } (Token (Identifier { name = "String", qualifiers = [] }))
                 , Located { end = { col = 35, row = 1 }, start = { col = 34, row = 1 } } (Token (Sigil (Bracket Round Close)))
-                , Located { end = { col = 1, row = 2 }, start = { col = 35, row = 1 } } (Token (Newlines [] 0))
+                , Located { end = { col = 1, row = 2 }, start = { col = 35, row = 1 } } (Newlines [] 0)
                 , Located { end = { col = 5, row = 2 }, start = { col = 1, row = 2 } } (Token (Keyword Type))
                 , Located { end = { col = 6, row = 2 }, start = { col = 5, row = 2 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 11, row = 2 }, start = { col = 6, row = 2 } } (Token (Keyword Alias))
@@ -3461,7 +3439,7 @@ type alias Hi = (Int)
                 , Located { end = { col = 18, row = 2 }, start = { col = 17, row = 2 } } (Token (Sigil (Bracket Round Open)))
                 , Located { end = { col = 21, row = 2 }, start = { col = 18, row = 2 } } (Token (Identifier { name = "Int", qualifiers = [] }))
                 , Located { end = { col = 22, row = 2 }, start = { col = 21, row = 2 } } (Token (Sigil (Bracket Round Close)))
-                , Located { end = { col = 1, row = 3 }, start = { col = 22, row = 2 } } (Token (Newlines [] 0))
+                , Located { end = { col = 1, row = 3 }, start = { col = 22, row = 2 } } (Newlines [] 0)
                 ]
       }
     , { name = "type-alias-with-tripple"
@@ -3569,7 +3547,7 @@ type alias Hi = ((), (), ())
                 , Located { end = { col = 28, row = 1 }, start = { col = 27, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 33, row = 1 }, start = { col = 28, row = 1 } } (Token (Identifier { name = "Three", qualifiers = [] }))
                 , Located { end = { col = 34, row = 1 }, start = { col = 33, row = 1 } } (Token (Sigil (Bracket Round Close)))
-                , Located { end = { col = 1, row = 2 }, start = { col = 34, row = 1 } } (Token (Newlines [] 0))
+                , Located { end = { col = 1, row = 2 }, start = { col = 34, row = 1 } } (Newlines [] 0)
                 , Located { end = { col = 5, row = 2 }, start = { col = 1, row = 2 } } (Token (Keyword Type))
                 , Located { end = { col = 6, row = 2 }, start = { col = 5, row = 2 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 11, row = 2 }, start = { col = 6, row = 2 } } (Token (Keyword Alias))
@@ -3590,7 +3568,7 @@ type alias Hi = ((), (), ())
                 , Located { end = { col = 27, row = 2 }, start = { col = 26, row = 2 } } (Token (Sigil (Bracket Round Open)))
                 , Located { end = { col = 28, row = 2 }, start = { col = 27, row = 2 } } (Token (Sigil (Bracket Round Close)))
                 , Located { end = { col = 29, row = 2 }, start = { col = 28, row = 2 } } (Token (Sigil (Bracket Round Close)))
-                , Located { end = { col = 1, row = 3 }, start = { col = 29, row = 2 } } (Token (Newlines [] 0))
+                , Located { end = { col = 1, row = 3 }, start = { col = 29, row = 2 } } (Newlines [] 0)
                 ]
       }
     , { name = "type-alias-with-tripple-in-record"
@@ -3697,7 +3675,7 @@ type alias Hi = ((), (), ())
                 , Located { end = { col = 14, row = 1 }, start = { col = 12, row = 1 } } (Token (Identifier { name = "Hi", qualifiers = [] }))
                 , Located { end = { col = 15, row = 1 }, start = { col = 14, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 16, row = 1 }, start = { col = 15, row = 1 } } (Token (Sigil Assign))
-                , Located { end = { col = 5, row = 2 }, start = { col = 16, row = 1 } } (Token (Newlines [] 4))
+                , Located { end = { col = 5, row = 2 }, start = { col = 16, row = 1 } } (Newlines [] 4)
                 , Located { end = { col = 6, row = 2 }, start = { col = 5, row = 2 } } (Token (Sigil (Bracket Curly Open)))
                 , Located { end = { col = 7, row = 2 }, start = { col = 6, row = 2 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 8, row = 2 }, start = { col = 7, row = 2 } } (Token (Identifier { name = "a", qualifiers = [] }))
@@ -3712,7 +3690,7 @@ type alias Hi = ((), (), ())
                 , Located { end = { col = 21, row = 2 }, start = { col = 20, row = 2 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 24, row = 2 }, start = { col = 21, row = 2 } } (Token (Identifier { name = "Int", qualifiers = [] }))
                 , Located { end = { col = 25, row = 2 }, start = { col = 24, row = 2 } } (Token (Sigil (Bracket Round Close)))
-                , Located { end = { col = 5, row = 3 }, start = { col = 25, row = 2 } } (Token (Newlines [] 4))
+                , Located { end = { col = 5, row = 3 }, start = { col = 25, row = 2 } } (Newlines [] 4)
                 , Located { end = { col = 6, row = 3 }, start = { col = 5, row = 3 } } (Token (Sigil Comma))
                 , Located { end = { col = 7, row = 3 }, start = { col = 6, row = 3 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 8, row = 3 }, start = { col = 7, row = 3 } } (Token (Identifier { name = "b", qualifiers = [] }))
@@ -3729,9 +3707,9 @@ type alias Hi = ((), (), ())
                 , Located { end = { col = 26, row = 3 }, start = { col = 25, row = 3 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 27, row = 3 }, start = { col = 26, row = 3 } } (Token (Sigil (Bracket Curly Close)))
                 , Located { end = { col = 28, row = 3 }, start = { col = 27, row = 3 } } (Token (Sigil (Bracket Round Close)))
-                , Located { end = { col = 5, row = 4 }, start = { col = 28, row = 3 } } (Token (Newlines [] 4))
+                , Located { end = { col = 5, row = 4 }, start = { col = 28, row = 3 } } (Newlines [] 4)
                 , Located { end = { col = 6, row = 4 }, start = { col = 5, row = 4 } } (Token (Sigil (Bracket Curly Close)))
-                , Located { end = { col = 1, row = 5 }, start = { col = 6, row = 4 } } (Token (Newlines [] 0))
+                , Located { end = { col = 1, row = 5 }, start = { col = 6, row = 4 } } (Newlines [] 0)
                 ]
       }
     ]
@@ -3782,17 +3760,6 @@ Hi. case"""
         , ( Err, todo )
         , ( Err, todo )
         , ( Err, todo )
-        , ( Err, todo )
-        , ( Err, todo )
-        , ( Err, todo )
-        , ( Err, todo )
-        , ( Err, todo )
-        , ( Err, todo )
-        , ( Err, todo )
-        , ( Err, todo )
-        , ( Err, todo )
-        , ( Err, todo )
-        , ( Err, todo )
         )
 """
       , contextualized =
@@ -3800,54 +3767,6 @@ Hi. case"""
                 [ Err
                     { error = Error_InvalidToken Expecting_Unknown
                     , item = Just (Located { end = { col = 5, row = 1 }, start = { col = 1, row = 1 } } (Invalid (IdentifierWithTrailingDot { name = "Foo", qualifiers = [] })))
-                    , state = State_BlockStart
-                    }
-                , Err
-                    { error =
-                        Error_BlockStartsWithQualifiedName
-                            { name = "Bar"
-                            , qualifiers =
-                                [ "Foo"
-                                ]
-                            }
-                    , item =
-                        Just
-                            (Located { end = { col = 8, row = 3 }, start = { col = 1, row = 3 } }
-                                (Token
-                                    (Identifier
-                                        { name = "Bar"
-                                        , qualifiers =
-                                            [ "Foo"
-                                            ]
-                                        }
-                                    )
-                                )
-                            )
-                    , state = State_BlockStart
-                    }
-                , Err
-                    { error =
-                        Error_BlockStartsWithQualifiedName
-                            { name = "baz"
-                            , qualifiers =
-                                [ "Foo"
-                                , "Bar"
-                                ]
-                            }
-                    , item =
-                        Just
-                            (Located { end = { col = 12, row = 5 }, start = { col = 1, row = 5 } }
-                                (Token
-                                    (Identifier
-                                        { name = "baz"
-                                        , qualifiers =
-                                            [ "Foo"
-                                            , "Bar"
-                                            ]
-                                        }
-                                    )
-                                )
-                            )
                     , state = State_BlockStart
                     }
                 , Err
@@ -3865,12 +3784,12 @@ Hi. case"""
                                     )
                                 )
                             )
-                    , state = State_BlockStart
+                    , state = State_Error_Recovery
                     }
                 , Err
                     { error = Error_InvalidToken Expecting_Unknown
                     , item = Just (Located { end = { col = 5, row = 9 }, start = { col = 1, row = 9 } } (Invalid (IdentifierWithTrailingDot { name = "Bor", qualifiers = [] })))
-                    , state = State_BlockStart
+                    , state = State_Error_Recovery
                     }
                 , Err
                     { error = Error_InvalidToken Expecting_Unknown
@@ -3878,102 +3797,19 @@ Hi. case"""
                     , state = State_Error_Recovery
                     }
                 , Err
-                    { error = Error_InvalidToken Expecting_Block
-                    , item = Just (Located { end = { col = 4, row = 11 }, start = { col = 1, row = 11 } } (Token (RecordAccessorFunction "sf")))
-                    , state = State_BlockStart
-                    }
-                , Err
-                    { error = Error_InvalidToken (Expecting_Sigil Assign)
-                    , item = Just (Located { end = { col = 13, row = 13 }, start = { col = 7, row = 13 } } (Token (RecordAccessorFunction "sdfsd")))
-                    , state = State_BlockValueDeclaration (BlockValueDeclaration_Named { args = Stack [], name = Located { end = { col = 6, row = 13 }, start = { col = 1, row = 13 } } "sfsdf" })
-                    }
-                , Err
-                    { error =
-                        Error_BlockStartsWithQualifiedName
-                            { name = "sdgsghj"
-                            , qualifiers =
-                                [ "asfasf"
-                                ]
-                            }
-                    , item =
-                        Just
-                            (Located { end = { col = 15, row = 15 }, start = { col = 1, row = 15 } }
-                                (Token
-                                    (Identifier
-                                        { name = "sdgsghj"
-                                        , qualifiers =
-                                            [ "asfasf"
-                                            ]
-                                        }
-                                    )
-                                )
-                            )
-                    , state = State_BlockStart
-                    }
-                , Err
-                    { error = Error_InvalidToken Expecting_Block
-                    , item = Just (Located { end = { col = 2, row = 17 }, start = { col = 1, row = 17 } } (Token (Sigil (Bracket Round Open))))
-                    , state = State_BlockStart
-                    }
-                , Err
-                    { error = Error_InvalidToken Expecting_Block
-                    , item = Just (Located { end = { col = 2, row = 19 }, start = { col = 1, row = 19 } } (Token (Sigil (Bracket Round Open))))
-                    , state = State_BlockStart
-                    }
-                , Err
-                    { error = Error_InvalidToken (Expecting_Sigil Assign)
-                    , item = Just (Located { end = { col = 8, row = 21 }, start = { col = 7, row = 21 } } (Token (Sigil (Bracket Round Open))))
-                    , state = State_BlockValueDeclaration (BlockValueDeclaration_Named { args = Stack [], name = Located { end = { col = 7, row = 21 }, start = { col = 1, row = 21 } } "sfhsdf" })
-                    }
-                , Err
-                    { error = Error_MisplacedKeyword Case
-                    , item = Just (Located { end = { col = 5, row = 23 }, start = { col = 1, row = 23 } } (Token (Keyword Case)))
-                    , state = State_BlockStart
-                    }
-                , Err
-                    { error =
-                        Error_BlockStartsWithQualifiedName
-                            { name = "case"
-                            , qualifiers =
-                                [ "Hi"
-                                ]
-                            }
-                    , item =
-                        Just
-                            (Located { end = { col = 8, row = 25 }, start = { col = 1, row = 25 } }
-                                (Token
-                                    (Identifier
-                                        { name = "case"
-                                        , qualifiers =
-                                            [ "Hi"
-                                            ]
-                                        }
-                                    )
-                                )
-                            )
-                    , state = State_BlockStart
-                    }
-                , Err
-                    { error = Error_MisplacedKeyword Case
-                    , item = Just (Located { end = { col = 5, row = 27 }, start = { col = 1, row = 27 } } (Token (Keyword Case)))
-                    , state = State_BlockStart
-                    }
-                , Err
                     { error = Error_InvalidToken Expecting_Unknown
                     , item = Just (Located { end = { col = 4, row = 29 }, start = { col = 1, row = 29 } } (Invalid (IdentifierWithTrailingDot { name = "Hi", qualifiers = [] })))
-                    , state = State_BlockStart
+                    , state = State_Error_Recovery
                     }
                 ]
       , lexed =
             Ok
                 [ Located { end = { col = 5, row = 1 }, start = { col = 1, row = 1 } } (Invalid (IdentifierWithTrailingDot { name = "Foo", qualifiers = [] }))
                 , Located { end = { col = 1, row = 3 }, start = { col = 5, row = 1 } }
-                    (Token
-                        (Newlines
-                            [ 0
-                            ]
-                            0
-                        )
+                    (Newlines
+                        [ 0
+                        ]
+                        0
                     )
                 , Located { end = { col = 8, row = 3 }, start = { col = 1, row = 3 } }
                     (Token
@@ -3986,12 +3822,10 @@ Hi. case"""
                         )
                     )
                 , Located { end = { col = 1, row = 5 }, start = { col = 8, row = 3 } }
-                    (Token
-                        (Newlines
-                            [ 0
-                            ]
-                            0
-                        )
+                    (Newlines
+                        [ 0
+                        ]
+                        0
                     )
                 , Located { end = { col = 12, row = 5 }, start = { col = 1, row = 5 } }
                     (Token
@@ -4005,12 +3839,10 @@ Hi. case"""
                         )
                     )
                 , Located { end = { col = 1, row = 7 }, start = { col = 12, row = 5 } }
-                    (Token
-                        (Newlines
-                            [ 0
-                            ]
-                            0
-                        )
+                    (Newlines
+                        [ 0
+                        ]
+                        0
                     )
                 , Located { end = { col = 11, row = 7 }, start = { col = 1, row = 7 } }
                     (Invalid
@@ -4023,43 +3855,35 @@ Hi. case"""
                         )
                     )
                 , Located { end = { col = 1, row = 9 }, start = { col = 11, row = 7 } }
-                    (Token
-                        (Newlines
-                            [ 0
-                            ]
-                            0
-                        )
+                    (Newlines
+                        [ 0
+                        ]
+                        0
                     )
                 , Located { end = { col = 5, row = 9 }, start = { col = 1, row = 9 } } (Invalid (IdentifierWithTrailingDot { name = "Bor", qualifiers = [] }))
                 , Located { end = { col = 6, row = 9 }, start = { col = 5, row = 9 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 10, row = 9 }, start = { col = 6, row = 9 } } (Invalid (IdentifierWithTrailingDot { name = "Big", qualifiers = [] }))
                 , Located { end = { col = 1, row = 11 }, start = { col = 10, row = 9 } }
-                    (Token
-                        (Newlines
-                            [ 0
-                            ]
-                            0
-                        )
+                    (Newlines
+                        [ 0
+                        ]
+                        0
                     )
                 , Located { end = { col = 4, row = 11 }, start = { col = 1, row = 11 } } (Token (RecordAccessorFunction "sf"))
                 , Located { end = { col = 1, row = 13 }, start = { col = 4, row = 11 } }
-                    (Token
-                        (Newlines
-                            [ 0
-                            ]
-                            0
-                        )
+                    (Newlines
+                        [ 0
+                        ]
+                        0
                     )
                 , Located { end = { col = 6, row = 13 }, start = { col = 1, row = 13 } } (Token (Identifier { name = "sfsdf", qualifiers = [] }))
                 , Located { end = { col = 7, row = 13 }, start = { col = 6, row = 13 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 13, row = 13 }, start = { col = 7, row = 13 } } (Token (RecordAccessorFunction "sdfsd"))
                 , Located { end = { col = 1, row = 15 }, start = { col = 13, row = 13 } }
-                    (Token
-                        (Newlines
-                            [ 0
-                            ]
-                            0
-                        )
+                    (Newlines
+                        [ 0
+                        ]
+                        0
                     )
                 , Located { end = { col = 15, row = 15 }, start = { col = 1, row = 15 } }
                     (Token
@@ -4072,24 +3896,20 @@ Hi. case"""
                         )
                     )
                 , Located { end = { col = 1, row = 17 }, start = { col = 15, row = 15 } }
-                    (Token
-                        (Newlines
-                            [ 0
-                            ]
-                            0
-                        )
+                    (Newlines
+                        [ 0
+                        ]
+                        0
                     )
                 , Located { end = { col = 2, row = 17 }, start = { col = 1, row = 17 } } (Token (Sigil (Bracket Round Open)))
                 , Located { end = { col = 6, row = 17 }, start = { col = 2, row = 17 } } (Token (Identifier { name = "shdf", qualifiers = [] }))
                 , Located { end = { col = 7, row = 17 }, start = { col = 6, row = 17 } } (Token (Sigil (Bracket Round Close)))
                 , Located { end = { col = 20, row = 17 }, start = { col = 7, row = 17 } } (Token (RecordAccessorLiteral "helloLiteral"))
                 , Located { end = { col = 1, row = 19 }, start = { col = 20, row = 17 } }
-                    (Token
-                        (Newlines
-                            [ 0
-                            ]
-                            0
-                        )
+                    (Newlines
+                        [ 0
+                        ]
+                        0
                     )
                 , Located { end = { col = 2, row = 19 }, start = { col = 1, row = 19 } } (Token (Sigil (Bracket Round Open)))
                 , Located { end = { col = 7, row = 19 }, start = { col = 2, row = 19 } } (Token (Identifier { name = "sjhsf", qualifiers = [] }))
@@ -4097,34 +3917,28 @@ Hi. case"""
                 , Located { end = { col = 9, row = 19 }, start = { col = 8, row = 19 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 23, row = 19 }, start = { col = 9, row = 19 } } (Token (RecordAccessorFunction "helloFunction"))
                 , Located { end = { col = 1, row = 21 }, start = { col = 23, row = 19 } }
-                    (Token
-                        (Newlines
-                            [ 0
-                            ]
-                            0
-                        )
+                    (Newlines
+                        [ 0
+                        ]
+                        0
                     )
                 , Located { end = { col = 7, row = 21 }, start = { col = 1, row = 21 } } (Token (Identifier { name = "sfhsdf", qualifiers = [] }))
                 , Located { end = { col = 8, row = 21 }, start = { col = 7, row = 21 } } (Token (Sigil (Bracket Round Open)))
                 , Located { end = { col = 22, row = 21 }, start = { col = 8, row = 21 } } (Token (RecordAccessorFunction "helloFunction"))
                 , Located { end = { col = 23, row = 21 }, start = { col = 22, row = 21 } } (Token (Sigil (Bracket Round Close)))
                 , Located { end = { col = 1, row = 23 }, start = { col = 23, row = 21 } }
-                    (Token
-                        (Newlines
-                            [ 0
-                            ]
-                            0
-                        )
+                    (Newlines
+                        [ 0
+                        ]
+                        0
                     )
                 , Located { end = { col = 5, row = 23 }, start = { col = 1, row = 23 } } (Token (Keyword Case))
                 , Located { end = { col = 8, row = 23 }, start = { col = 5, row = 23 } } (Token (RecordAccessorFunction "hi"))
                 , Located { end = { col = 1, row = 25 }, start = { col = 8, row = 23 } }
-                    (Token
-                        (Newlines
-                            [ 0
-                            ]
-                            0
-                        )
+                    (Newlines
+                        [ 0
+                        ]
+                        0
                     )
                 , Located { end = { col = 8, row = 25 }, start = { col = 1, row = 25 } }
                     (Token
@@ -4137,23 +3951,19 @@ Hi. case"""
                         )
                     )
                 , Located { end = { col = 1, row = 27 }, start = { col = 8, row = 25 } }
-                    (Token
-                        (Newlines
-                            [ 0
-                            ]
-                            0
-                        )
+                    (Newlines
+                        [ 0
+                        ]
+                        0
                     )
                 , Located { end = { col = 5, row = 27 }, start = { col = 1, row = 27 } } (Token (Keyword Case))
                 , Located { end = { col = 6, row = 27 }, start = { col = 5, row = 27 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 9, row = 27 }, start = { col = 6, row = 27 } } (Token (RecordAccessorFunction "hi"))
                 , Located { end = { col = 1, row = 29 }, start = { col = 9, row = 27 } }
-                    (Token
-                        (Newlines
-                            [ 0
-                            ]
-                            0
-                        )
+                    (Newlines
+                        [ 0
+                        ]
+                        0
                     )
                 , Located { end = { col = 4, row = 29 }, start = { col = 1, row = 29 } } (Invalid (IdentifierWithTrailingDot { name = "Hi", qualifiers = [] }))
                 , Located { end = { col = 5, row = 29 }, start = { col = 4, row = 29 } } (Ignorable (Whitespace 1))
@@ -4170,11 +3980,7 @@ type alias Function3 = (() -> , ())
 type alias Function3 = (Int, () ->, ())
 """
       , pretty = """
-        ( ( Err, todo )
-        , ( Err, todo )
-        , ( Err, todo )
-        , ( Err, todo )
-        )
+        ( ( Err, todo ) )
 """
       , contextualized =
             Just
@@ -4188,52 +3994,6 @@ type alias Function3 = (Int, () ->, ())
                                 { nesting = NestingLeafType_Function { firstInput = TypeExpression_Unit, otherInputs = Stack [], output = Nothing }
                                 , parents =
                                     [ NestingParentType_Bracket (Stack [])
-                                    ]
-                                }
-                            )
-                    }
-                , Err
-                    { error = Error_MissingFunctionReturnType
-                    , item = Just (Located { end = { col = 37, row = 3 }, start = { col = 36, row = 3 } } (Token (Sigil (Bracket Curly Close))))
-                    , state =
-                        State_BlockTypeAlias
-                            (BlockTypeAlias_Completish "Function2"
-                                []
-                                { nesting = NestingLeafType_Function { firstInput = TypeExpression_Unit, otherInputs = Stack [], output = Nothing }
-                                , parents =
-                                    [ NestingParentType_PartialRecord { firstEntries = Stack [], lastEntryName = "a" }
-                                    ]
-                                }
-                            )
-                    }
-                , Err
-                    { error = Error_InvalidToken Expecting_Unknown
-                    , item = Just (Located { end = { col = 32, row = 5 }, start = { col = 31, row = 5 } } (Token (Sigil Comma)))
-                    , state =
-                        State_BlockTypeAlias
-                            (BlockTypeAlias_Completish "Function3"
-                                []
-                                { nesting = NestingLeafType_Function { firstInput = TypeExpression_Unit, otherInputs = Stack [], output = Nothing }
-                                , parents =
-                                    [ NestingParentType_Bracket (Stack [])
-                                    ]
-                                }
-                            )
-                    }
-                , Err
-                    { error = Error_InvalidToken Expecting_Unknown
-                    , item = Just (Located { end = { col = 36, row = 7 }, start = { col = 35, row = 7 } } (Token (Sigil Comma)))
-                    , state =
-                        State_BlockTypeAlias
-                            (BlockTypeAlias_Completish "Function3"
-                                []
-                                { nesting = NestingLeafType_Function { firstInput = TypeExpression_Unit, otherInputs = Stack [], output = Nothing }
-                                , parents =
-                                    [ NestingParentType_Bracket
-                                        (Stack
-                                            [ TypeExpression_NamedType { args = Stack [], name = "Int" }
-                                            ]
-                                        )
                                     ]
                                 }
                             )
@@ -4257,12 +4017,10 @@ type alias Function3 = (Int, () ->, ())
                 , Located { end = { col = 30, row = 1 }, start = { col = 29, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 31, row = 1 }, start = { col = 30, row = 1 } } (Token (Sigil (Bracket Round Close)))
                 , Located { end = { col = 1, row = 3 }, start = { col = 31, row = 1 } }
-                    (Token
-                        (Newlines
-                            [ 0
-                            ]
-                            0
-                        )
+                    (Newlines
+                        [ 0
+                        ]
+                        0
                     )
                 , Located { end = { col = 5, row = 3 }, start = { col = 1, row = 3 } } (Token (Keyword Type))
                 , Located { end = { col = 6, row = 3 }, start = { col = 5, row = 3 } } (Ignorable (Whitespace 1))
@@ -4284,12 +4042,10 @@ type alias Function3 = (Int, () ->, ())
                 , Located { end = { col = 36, row = 3 }, start = { col = 34, row = 3 } } (Ignorable (Whitespace 2))
                 , Located { end = { col = 37, row = 3 }, start = { col = 36, row = 3 } } (Token (Sigil (Bracket Curly Close)))
                 , Located { end = { col = 1, row = 5 }, start = { col = 37, row = 3 } }
-                    (Token
-                        (Newlines
-                            [ 0
-                            ]
-                            0
-                        )
+                    (Newlines
+                        [ 0
+                        ]
+                        0
                     )
                 , Located { end = { col = 5, row = 5 }, start = { col = 1, row = 5 } } (Token (Keyword Type))
                 , Located { end = { col = 6, row = 5 }, start = { col = 5, row = 5 } } (Ignorable (Whitespace 1))
@@ -4311,12 +4067,10 @@ type alias Function3 = (Int, () ->, ())
                 , Located { end = { col = 35, row = 5 }, start = { col = 34, row = 5 } } (Token (Sigil (Bracket Round Close)))
                 , Located { end = { col = 36, row = 5 }, start = { col = 35, row = 5 } } (Token (Sigil (Bracket Round Close)))
                 , Located { end = { col = 1, row = 7 }, start = { col = 36, row = 5 } }
-                    (Token
-                        (Newlines
-                            [ 0
-                            ]
-                            0
-                        )
+                    (Newlines
+                        [ 0
+                        ]
+                        0
                     )
                 , Located { end = { col = 5, row = 7 }, start = { col = 1, row = 7 } } (Token (Keyword Type))
                 , Located { end = { col = 6, row = 7 }, start = { col = 5, row = 7 } } (Ignorable (Whitespace 1))
@@ -4339,7 +4093,7 @@ type alias Function3 = (Int, () ->, ())
                 , Located { end = { col = 38, row = 7 }, start = { col = 37, row = 7 } } (Token (Sigil (Bracket Round Open)))
                 , Located { end = { col = 39, row = 7 }, start = { col = 38, row = 7 } } (Token (Sigil (Bracket Round Close)))
                 , Located { end = { col = 40, row = 7 }, start = { col = 39, row = 7 } } (Token (Sigil (Bracket Round Close)))
-                , Located { end = { col = 1, row = 8 }, start = { col = 40, row = 7 } } (Token (Newlines [] 0))
+                , Located { end = { col = 1, row = 8 }, start = { col = 40, row = 7 } } (Newlines [] 0)
                 ]
       }
     , { name = "type-alias-invalid-multiple-brackets"
@@ -4372,7 +4126,7 @@ type alias Function3 = (Int, () ->, ())
                 , Located { end = { col = 23, row = 1 }, start = { col = 22, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 24, row = 1 }, start = { col = 23, row = 1 } } (Token (Sigil (Bracket Round Open)))
                 , Located { end = { col = 25, row = 1 }, start = { col = 24, row = 1 } } (Token (Sigil (Bracket Round Close)))
-                , Located { end = { col = 1, row = 2 }, start = { col = 25, row = 1 } } (Token (Newlines [] 0))
+                , Located { end = { col = 1, row = 2 }, start = { col = 25, row = 1 } } (Newlines [] 0)
                 ]
       }
     , { name = "type-alias-invalid-multiple-brackets-2"
@@ -4404,7 +4158,7 @@ type alias Function3 = (Int, () ->, ())
                 , Located { end = { col = 20, row = 1 }, start = { col = 19, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 21, row = 1 }, start = { col = 20, row = 1 } } (Token (Sigil (Bracket Round Open)))
                 , Located { end = { col = 22, row = 1 }, start = { col = 21, row = 1 } } (Token (Sigil (Bracket Round Close)))
-                , Located { end = { col = 1, row = 2 }, start = { col = 22, row = 1 } } (Token (Newlines [] 0))
+                , Located { end = { col = 1, row = 2 }, start = { col = 22, row = 1 } } (Newlines [] 0)
                 ]
       }
     , { name = "type-alias-invalid-multiple-brackets-3"
@@ -4437,7 +4191,7 @@ type alias Function3 = (Int, () ->, ())
                 , Located { end = { col = 21, row = 1 }, start = { col = 20, row = 1 } } (Token (Sigil (Bracket Round Open)))
                 , Located { end = { col = 24, row = 1 }, start = { col = 21, row = 1 } } (Token (Identifier { name = "Int", qualifiers = [] }))
                 , Located { end = { col = 25, row = 1 }, start = { col = 24, row = 1 } } (Token (Sigil (Bracket Round Close)))
-                , Located { end = { col = 1, row = 2 }, start = { col = 25, row = 1 } } (Token (Newlines [] 0))
+                , Located { end = { col = 1, row = 2 }, start = { col = 25, row = 1 } } (Newlines [] 0)
                 ]
       }
     , { name = "type-alias-multiline-missing-indentation"
@@ -4452,13 +4206,13 @@ List Int
       , contextualized =
             Just
                 [ Err
-                    { error = Error_PartwayThroughTypeAlias
-                    , item = Just (Located { end = { col = 1, row = 2 }, start = { col = 19, row = 1 } } (Token (Newlines [] 0)))
+                    { error = Error_PartwayThroughBlock
+                    , item = Just (Located { end = { col = 1, row = 2 }, start = { col = 19, row = 1 } } (Newlines [] 0))
                     , state = State_BlockTypeAlias (BlockTypeAlias_NamedAssigns "Model" [])
                     }
                 , Err
-                    { error = Error_PartwayThroughTypeAlias
-                    , item = Just (Located { end = { col = 1, row = 3 }, start = { col = 9, row = 2 } } (Token (Newlines [] 0)))
+                    { error = Error_PartwayThroughBlock
+                    , item = Just (Located { end = { col = 1, row = 3 }, start = { col = 9, row = 2 } } (Newlines [] 0))
                     , state =
                         State_BlockValueDeclaration
                             (BlockValueDeclaration_Named
@@ -4480,11 +4234,11 @@ List Int
                 , Located { end = { col = 17, row = 1 }, start = { col = 12, row = 1 } } (Token (Identifier { name = "Model", qualifiers = [] }))
                 , Located { end = { col = 18, row = 1 }, start = { col = 17, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 19, row = 1 }, start = { col = 18, row = 1 } } (Token (Sigil Assign))
-                , Located { end = { col = 1, row = 2 }, start = { col = 19, row = 1 } } (Token (Newlines [] 0))
+                , Located { end = { col = 1, row = 2 }, start = { col = 19, row = 1 } } (Newlines [] 0)
                 , Located { end = { col = 5, row = 2 }, start = { col = 1, row = 2 } } (Token (Identifier { name = "List", qualifiers = [] }))
                 , Located { end = { col = 6, row = 2 }, start = { col = 5, row = 2 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 9, row = 2 }, start = { col = 6, row = 2 } } (Token (Identifier { name = "Int", qualifiers = [] }))
-                , Located { end = { col = 1, row = 3 }, start = { col = 9, row = 2 } } (Token (Newlines [] 0))
+                , Located { end = { col = 1, row = 3 }, start = { col = 9, row = 2 } } (Newlines [] 0)
                 ]
       }
     , { name = "type-alias-partial"
@@ -4496,8 +4250,8 @@ List Int
       , contextualized =
             Just
                 [ Err
-                    { error = Error_PartwayThroughTypeAlias
-                    , item = Just (Located { end = { col = 1, row = 2 }, start = { col = 11, row = 1 } } (Token (Newlines [] 0)))
+                    { error = Error_PartwayThroughBlock
+                    , item = Just (Located { end = { col = 1, row = 2 }, start = { col = 11, row = 1 } } (Newlines [] 0))
                     , state = State_BlockTypeAlias BlockTypeAlias_Keywords
                     }
                 ]
@@ -4506,7 +4260,7 @@ List Int
                 [ Located { end = { col = 5, row = 1 }, start = { col = 1, row = 1 } } (Token (Keyword Type))
                 , Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 11, row = 1 }, start = { col = 6, row = 1 } } (Token (Keyword Alias))
-                , Located { end = { col = 1, row = 2 }, start = { col = 11, row = 1 } } (Token (Newlines [] 0))
+                , Located { end = { col = 1, row = 2 }, start = { col = 11, row = 1 } } (Newlines [] 0)
                 ]
       }
     , { name = "type-alias-partial-2"
@@ -4518,8 +4272,8 @@ List Int
       , contextualized =
             Just
                 [ Err
-                    { error = Error_PartwayThroughTypeAlias
-                    , item = Just (Located { end = { col = 1, row = 2 }, start = { col = 14, row = 1 } } (Token (Newlines [] 0)))
+                    { error = Error_PartwayThroughBlock
+                    , item = Just (Located { end = { col = 1, row = 2 }, start = { col = 14, row = 1 } } (Newlines [] 0))
                     , state = State_BlockTypeAlias (BlockTypeAlias_Named "Hi" (Stack []))
                     }
                 ]
@@ -4530,7 +4284,7 @@ List Int
                 , Located { end = { col = 11, row = 1 }, start = { col = 6, row = 1 } } (Token (Keyword Alias))
                 , Located { end = { col = 12, row = 1 }, start = { col = 11, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 14, row = 1 }, start = { col = 12, row = 1 } } (Token (Identifier { name = "Hi", qualifiers = [] }))
-                , Located { end = { col = 1, row = 2 }, start = { col = 14, row = 1 } } (Token (Newlines [] 0))
+                , Located { end = { col = 1, row = 2 }, start = { col = 14, row = 1 } } (Newlines [] 0)
                 ]
       }
     , { name = "type-alias-partial-3"
@@ -4542,8 +4296,8 @@ List Int
       , contextualized =
             Just
                 [ Err
-                    { error = Error_PartwayThroughTypeAlias
-                    , item = Just (Located { end = { col = 1, row = 2 }, start = { col = 16, row = 1 } } (Token (Newlines [] 0)))
+                    { error = Error_PartwayThroughBlock
+                    , item = Just (Located { end = { col = 1, row = 2 }, start = { col = 16, row = 1 } } (Newlines [] 0))
                     , state = State_BlockTypeAlias (BlockTypeAlias_NamedAssigns "Hi" [])
                     }
                 ]
@@ -4556,7 +4310,7 @@ List Int
                 , Located { end = { col = 14, row = 1 }, start = { col = 12, row = 1 } } (Token (Identifier { name = "Hi", qualifiers = [] }))
                 , Located { end = { col = 15, row = 1 }, start = { col = 14, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 16, row = 1 }, start = { col = 15, row = 1 } } (Token (Sigil Assign))
-                , Located { end = { col = 1, row = 2 }, start = { col = 16, row = 1 } } (Token (Newlines [] 0))
+                , Located { end = { col = 1, row = 2 }, start = { col = 16, row = 1 } } (Newlines [] 0)
                 ]
       }
     , { name = "type-alias-partial-with-bracket"
@@ -4568,8 +4322,8 @@ List Int
       , contextualized =
             Just
                 [ Err
-                    { error = Error_PartwayThroughTypeAlias
-                    , item = Just (Located { end = { col = 1, row = 2 }, start = { col = 18, row = 1 } } (Token (Newlines [] 0)))
+                    { error = Error_PartwayThroughBlock
+                    , item = Just (Located { end = { col = 1, row = 2 }, start = { col = 18, row = 1 } } (Newlines [] 0))
                     , state = State_BlockTypeAlias (BlockTypeAlias_Completish "Hi" [] { nesting = NestingLeafType_Bracket (Stack []) Nothing, parents = [] })
                     }
                 ]
@@ -4584,7 +4338,7 @@ List Int
                 , Located { end = { col = 16, row = 1 }, start = { col = 15, row = 1 } } (Token (Sigil Assign))
                 , Located { end = { col = 17, row = 1 }, start = { col = 16, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 18, row = 1 }, start = { col = 17, row = 1 } } (Token (Sigil (Bracket Round Open)))
-                , Located { end = { col = 1, row = 2 }, start = { col = 18, row = 1 } } (Token (Newlines [] 0))
+                , Located { end = { col = 1, row = 2 }, start = { col = 18, row = 1 } } (Newlines [] 0)
                 ]
       }
     , { name = "type-alias-partial-with-bracket-2"
@@ -4597,8 +4351,8 @@ List Int
       , contextualized =
             Just
                 [ Err
-                    { error = Error_PartwayThroughTypeAlias
-                    , item = Just (Located { end = { col = 1, row = 3 }, start = { col = 12, row = 2 } } (Token (Newlines [] 0)))
+                    { error = Error_PartwayThroughBlock
+                    , item = Just (Located { end = { col = 1, row = 3 }, start = { col = 12, row = 2 } } (Newlines [] 0))
                     , state =
                         State_BlockTypeAlias
                             (BlockTypeAlias_Completish "Hi"
@@ -4622,9 +4376,9 @@ List Int
                 , Located { end = { col = 16, row = 1 }, start = { col = 15, row = 1 } } (Token (Sigil Assign))
                 , Located { end = { col = 17, row = 1 }, start = { col = 16, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 18, row = 1 }, start = { col = 17, row = 1 } } (Token (Sigil (Bracket Round Open)))
-                , Located { end = { col = 9, row = 2 }, start = { col = 18, row = 1 } } (Token (Newlines [] 8))
+                , Located { end = { col = 9, row = 2 }, start = { col = 18, row = 1 } } (Newlines [] 8)
                 , Located { end = { col = 12, row = 2 }, start = { col = 9, row = 2 } } (Token (Identifier { name = "Int", qualifiers = [] }))
-                , Located { end = { col = 1, row = 3 }, start = { col = 12, row = 2 } } (Token (Newlines [] 0))
+                , Located { end = { col = 1, row = 3 }, start = { col = 12, row = 2 } } (Newlines [] 0)
                 ]
       }
     , { name = "type-alias-record-half-empty"
@@ -4636,8 +4390,8 @@ List Int
       , contextualized =
             Just
                 [ Err
-                    { error = Error_PartwayThroughTypeAlias
-                    , item = Just (Located { end = { col = 1, row = 2 }, start = { col = 18, row = 1 } } (Token (Newlines [] 0)))
+                    { error = Error_PartwayThroughBlock
+                    , item = Just (Located { end = { col = 1, row = 2 }, start = { col = 18, row = 1 } } (Newlines [] 0))
                     , state = State_BlockTypeAlias (BlockTypeAlias_Completish "Ty" [] { nesting = NestingLeafType_PartialRecord { firstEntries = Stack [], lastEntry = LastEntryOfRecord_Empty }, parents = [] })
                     }
                 ]
@@ -4652,7 +4406,7 @@ List Int
                 , Located { end = { col = 16, row = 1 }, start = { col = 15, row = 1 } } (Token (Sigil Assign))
                 , Located { end = { col = 17, row = 1 }, start = { col = 16, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 18, row = 1 }, start = { col = 17, row = 1 } } (Token (Sigil (Bracket Curly Open)))
-                , Located { end = { col = 1, row = 2 }, start = { col = 18, row = 1 } } (Token (Newlines [] 0))
+                , Located { end = { col = 1, row = 2 }, start = { col = 18, row = 1 } } (Newlines [] 0)
                 ]
       }
     , { name = "type-alias-record-missing-colon"
@@ -4686,7 +4440,7 @@ List Int
                 , Located { end = { col = 24, row = 1 }, start = { col = 22, row = 1 } } (Token (Identifier { name = "j7", qualifiers = [] }))
                 , Located { end = { col = 25, row = 1 }, start = { col = 24, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 26, row = 1 }, start = { col = 25, row = 1 } } (Token (Sigil (Bracket Curly Close)))
-                , Located { end = { col = 1, row = 2 }, start = { col = 26, row = 1 } } (Token (Newlines [] 0))
+                , Located { end = { col = 1, row = 2 }, start = { col = 26, row = 1 } } (Newlines [] 0)
                 ]
       }
     , { name = "type-alias-with-quadruple"
@@ -4733,7 +4487,7 @@ type alias Hi = (A Int, C D E F, H I (J K), L M () O P)
                                 , qualifiedness = PossiblyQualified Nothing
                                 }
                             ]
-                    , item = Just (Located { end = { col = 1, row = 2 }, start = { col = 34, row = 1 } } (Token (Newlines [] 0)))
+                    , item = Just (Located { end = { col = 1, row = 2 }, start = { col = 34, row = 1 } } (Newlines [] 0))
                     , state =
                         State_BlockTypeAlias
                             (BlockTypeAlias_Completish "Hi"
@@ -4835,7 +4589,7 @@ type alias Hi = (A Int, C D E F, H I (J K), L M () O P)
                                 }
                             )
                             []
-                    , item = Just (Located { end = { col = 1, row = 3 }, start = { col = 56, row = 2 } } (Token (Newlines [] 0)))
+                    , item = Just (Located { end = { col = 1, row = 3 }, start = { col = 56, row = 2 } } (Newlines [] 0))
                     , state =
                         State_BlockTypeAlias
                             (BlockTypeAlias_Completish "Hi"
@@ -4919,7 +4673,7 @@ type alias Hi = (A Int, C D E F, H I (J K), L M () O P)
                 , Located { end = { col = 32, row = 1 }, start = { col = 31, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 33, row = 1 }, start = { col = 32, row = 1 } } (Token (Identifier { name = "D", qualifiers = [] }))
                 , Located { end = { col = 34, row = 1 }, start = { col = 33, row = 1 } } (Token (Sigil (Bracket Round Close)))
-                , Located { end = { col = 1, row = 2 }, start = { col = 34, row = 1 } } (Token (Newlines [] 0))
+                , Located { end = { col = 1, row = 2 }, start = { col = 34, row = 1 } } (Newlines [] 0)
                 , Located { end = { col = 5, row = 2 }, start = { col = 1, row = 2 } } (Token (Keyword Type))
                 , Located { end = { col = 6, row = 2 }, start = { col = 5, row = 2 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 11, row = 2 }, start = { col = 6, row = 2 } } (Token (Keyword Alias))
@@ -4965,7 +4719,7 @@ type alias Hi = (A Int, C D E F, H I (J K), L M () O P)
                 , Located { end = { col = 54, row = 2 }, start = { col = 53, row = 2 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 55, row = 2 }, start = { col = 54, row = 2 } } (Token (Identifier { name = "P", qualifiers = [] }))
                 , Located { end = { col = 56, row = 2 }, start = { col = 55, row = 2 } } (Token (Sigil (Bracket Round Close)))
-                , Located { end = { col = 1, row = 3 }, start = { col = 56, row = 2 } } (Token (Newlines [] 0))
+                , Located { end = { col = 1, row = 3 }, start = { col = 56, row = 2 } } (Newlines [] 0)
                 ]
       }
     , { name = "type-alias-with-tuple-double-comma"
@@ -5013,7 +4767,7 @@ type alias Hi = (A Int, C D E F, H I (J K), L M () O P)
                 , Located { end = { col = 25, row = 1 }, start = { col = 24, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 26, row = 1 }, start = { col = 25, row = 1 } } (Token (Identifier { name = "A", qualifiers = [] }))
                 , Located { end = { col = 27, row = 1 }, start = { col = 26, row = 1 } } (Token (Sigil (Bracket Round Close)))
-                , Located { end = { col = 1, row = 2 }, start = { col = 27, row = 1 } } (Token (Newlines [] 0))
+                , Located { end = { col = 1, row = 2 }, start = { col = 27, row = 1 } } (Newlines [] 0)
                 ]
       }
     , { name = "type-alias-with-tuple-not-closed"
@@ -5028,18 +4782,16 @@ type alias Hi = (A Int, C D E F, H I (J K), L M () O P)
       , contextualized =
             Just
                 [ Err
-                    { error = Error_PartwayThroughTypeAlias
+                    { error = Error_PartwayThroughBlock
                     , item =
                         Just
                             (Located { end = { col = 1, row = 5 }, start = { col = 22, row = 1 } }
-                                (Token
-                                    (Newlines
-                                        [ 0
-                                        , 0
-                                        , 0
-                                        ]
-                                        0
-                                    )
+                                (Newlines
+                                    [ 0
+                                    , 0
+                                    , 0
+                                    ]
+                                    0
                                 )
                             )
                     , state =
@@ -5072,14 +4824,12 @@ type alias Hi = (A Int, C D E F, H I (J K), L M () O P)
                 , Located { end = { col = 21, row = 1 }, start = { col = 18, row = 1 } } (Token (Identifier { name = "Int", qualifiers = [] }))
                 , Located { end = { col = 22, row = 1 }, start = { col = 21, row = 1 } } (Token (Sigil Comma))
                 , Located { end = { col = 1, row = 5 }, start = { col = 22, row = 1 } }
-                    (Token
-                        (Newlines
-                            [ 0
-                            , 0
-                            , 0
-                            ]
-                            0
-                        )
+                    (Newlines
+                        [ 0
+                        , 0
+                        , 0
+                        ]
+                        0
                     )
                 ]
       }
@@ -5092,15 +4842,15 @@ type alias Hi = (A Int, C D E F, H I (J K), L M () O P)
       , contextualized =
             Just
                 [ Err
-                    { error = Error_PartwayThroughTypeAlias
-                    , item = Just (Located { end = { col = 1, row = 2 }, start = { col = 5, row = 1 } } (Token (Newlines [] 0)))
+                    { error = Error_PartwayThroughBlock
+                    , item = Just (Located { end = { col = 1, row = 2 }, start = { col = 5, row = 1 } } (Newlines [] 0))
                     , state = State_BlockFirstItem BlockFirstItem_Type
                     }
                 ]
       , lexed =
             Ok
                 [ Located { end = { col = 5, row = 1 }, start = { col = 1, row = 1 } } (Token (Keyword Type))
-                , Located { end = { col = 1, row = 2 }, start = { col = 5, row = 1 } } (Token (Newlines [] 0))
+                , Located { end = { col = 1, row = 2 }, start = { col = 5, row = 1 } } (Newlines [] 0)
                 ]
       }
     ]

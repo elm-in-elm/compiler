@@ -11,6 +11,7 @@ type LexItem
     = Token LexToken
     | Ignorable LexIgnorable
     | Invalid LexInvalid
+    | Newlines (List Int) Int
 
 
 type LexToken
@@ -24,7 +25,6 @@ type LexToken
     | Keyword Token.Keyword
     | NumericLiteral String
     | TextLiteral LexLiteralType String
-    | Newlines (List Int) Int
 
 
 type LexIgnorable
@@ -56,7 +56,7 @@ type LexSigil
 
 type LexCommentType
     = LineComment
-    | MutlilineComment
+    | MultilineComment
     | DocComment
 
 
@@ -171,18 +171,18 @@ toString item =
         Ignorable (Whitespace i) ->
             String.repeat i " "
 
-        Token (Newlines empties identationSpaces) ->
+        Newlines empties indentationSpaces ->
             (empties
                 |> List.map (\spacesInEmptyLine -> "\n" ++ String.repeat spacesInEmptyLine " ")
                 |> String.join ""
             )
                 ++ "\n"
-                ++ String.repeat identationSpaces " "
+                ++ String.repeat indentationSpaces " "
 
         Ignorable (Comment LineComment s) ->
             "//" ++ s
 
-        Ignorable (Comment MutlilineComment s) ->
+        Ignorable (Comment MultilineComment s) ->
             "{-" ++ s ++ "-}"
 
         Ignorable (Comment DocComment s) ->
@@ -248,7 +248,7 @@ parser =
                         |> P.andThen (\() -> chompSpacesAndCount)
                         |> P.map (\count -> (count + 1) |> Whitespace |> Ignorable)
                      , newlinesParser
-                        |> P.map (\( emptyLines, indentation ) -> Newlines emptyLines indentation |> Token)
+                        |> P.map (\( emptyLines, indentation ) -> Newlines emptyLines indentation)
                      , P.getChompedString (P.chompIf (\_ -> True) ExpectingAnything)
                         |> P.map
                             (\s ->
@@ -447,7 +447,7 @@ chompSpacesAndCount =
 textLiteralParser : Parser_ ( LexLiteralType, Bool, String )
 textLiteralParser =
     P.oneOf
-        [ -- order matters! We must try parsing a tripple delimited string first!
+        [ -- order matters! We must try parsing a triple delimited string first!
           delimitedLiteral (StringL Triple)
         , delimitedLiteral (StringL Single)
         , delimitedLiteral CharL

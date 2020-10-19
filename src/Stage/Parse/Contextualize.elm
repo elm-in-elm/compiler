@@ -286,7 +286,7 @@ type Error
     | Error_InvalidNumericLiteral String
     | Error_ConflictingOperators (Located Operator) (Located Operator)
       -- Incomplete parsing --
-    | Error_PartwayThroughTypeAlias
+    | Error_PartwayThroughBlock
     | Error_PartwayThroughValueDeclaration
       -- Bugs in the parser --
     | Error_Panic String
@@ -355,7 +355,7 @@ runHelp items state =
                                 :: state.previousBlocks
                         , state =
                             case Located.unwrap item of
-                                Lexer.Token (Lexer.Newlines _ 0) ->
+                                Lexer.Newlines _ 0 ->
                                     State_BlockStart
 
                                 _ ->
@@ -452,23 +452,92 @@ parseAnything state item =
             Located.getRegion item
     in
     case Located.unwrap item of
-        Lexer.Ignorable _ ->
-            ParseResult_Skip
-
         Lexer.Invalid _ ->
             ParseResult_Err (Error_InvalidToken Expecting_Unknown)
+
+        Lexer.Newlines _ 0 ->
+            case state of
+                State_Error_Recovery ->
+                    State_Error_Recovery
+                        |> ParseResult_Ok
+
+                State_BlockStart ->
+                    ParseResult_Ok State_BlockStart
+
+                State_BlockFirstItem BlockFirstItem_Type ->
+                    Error_PartwayThroughBlock
+                        |> ParseResult_Err
+
+                State_BlockFirstItem BlockFirstItem_Module ->
+                    Error_PartwayThroughBlock
+                        |> ParseResult_Err
+
+                State_BlockValueDeclaration (BlockValueDeclaration_Named _) ->
+                    Error_PartwayThroughBlock
+                        |> ParseResult_Err
+
+                State_BlockValueDeclaration (BlockValueDeclaration_NamedAssigns _) ->
+                    Error_PartwayThroughBlock
+                        |> ParseResult_Err
+
+                State_BlockValueDeclaration (BlockValueDeclaration_Completish { name, args, partialExpr }) ->
+                    case partialExpr of
+                        ExpressionNestingLeaf_Operator { rhs, lhs, op, parent } ->
+                            case rhs of
+                                Just rhs_ ->
+                                    collapseOperators { op = op, lhs = lhs, parent = parent } rhs_
+                                        |> PartialResult_Done
+                                        |> newExpressionState name args
+
+                                Nothing ->
+                                    Error_PartwayThroughBlock
+                                        |> ParseResult_Err
+
+                        ExpressionNestingLeafType_Expr expr ->
+                            expr
+                                |> PartialResult_Done
+                                |> newExpressionState name args
+
+                State_BlockTypeAlias BlockTypeAlias_Keywords ->
+                    Error_PartwayThroughBlock
+                        |> ParseResult_Err
+
+                State_BlockTypeAlias (BlockTypeAlias_Named name typeArgs) ->
+                    Error_PartwayThroughBlock
+                        |> ParseResult_Err
+
+                State_BlockTypeAlias (BlockTypeAlias_NamedAssigns name typeArgs) ->
+                    Error_PartwayThroughBlock
+                        |> ParseResult_Err
+
+                State_BlockTypeAlias (BlockTypeAlias_Completish name typeArgs exprSoFar) ->
+                    case (autoCollapseNesting CollapseLevel_Function exprSoFar).nesting of
+                        NestingLeafType_Expr expr ->
+                            PartialResult_Done expr
+                                |> newTypeAliasState name typeArgs
+
+                        _ ->
+                            Error_PartwayThroughBlock
+                                |> ParseResult_Err
+
+                State_BlockCustomType (BlockCustomType_Named name typeArgs) ->
+                    Error_PartwayThroughBlock
+                        |> ParseResult_Err
+
+                State_BlockCustomType (BlockCustomType_NamedAssigns name typeArgs) ->
+                    Debug.todo "BlockCustomType_NamedAssigns"
+
+        Lexer.Newlines _ _ ->
+            ParseResult_Skip
+
+        Lexer.Ignorable _ ->
+            ParseResult_Skip
 
         Lexer.Token token ->
             case state of
                 State_Error_Recovery ->
-                    case token of
-                        Lexer.Newlines _ 0 ->
-                            State_BlockStart
-                                |> ParseResult_Ok
-
-                        _ ->
-                            State_Error_Recovery
-                                |> ParseResult_Ok
+                    State_Error_Recovery
+                        |> ParseResult_Ok
 
                 State_BlockStart ->
                     parseBlockStart region token
@@ -597,12 +666,6 @@ parseBlockStart region item =
                         )
                     )
 
-        Lexer.Newlines _ 0 ->
-            ParseResult_Ok State_BlockStart
-
-        Lexer.Newlines _ _ ->
-            ParseResult_Panic "parseBlockStart expects a block but found some indented content."
-
         _ ->
             ParseResult_Err (Error_InvalidToken Expecting_Block)
 
@@ -626,15 +689,6 @@ parseTypeBlock item =
                 State_BlockCustomType (BlockCustomType_Named name empty)
                     |> ParseResult_Ok
 
-        Lexer.Newlines _ 0 ->
-            -- TODO(harry): we might be partway through a custom type here,
-            -- adjust error accordingly.
-            Error_PartwayThroughTypeAlias
-                |> ParseResult_Err
-
-        Lexer.Newlines _ _ ->
-            ParseResult_Skip
-
         _ ->
             -- TODO(harry) indicate that we could also be expecting the `alias`
             -- keyword.
@@ -656,13 +710,6 @@ parseTypeAliasName item =
             else
                 State_BlockTypeAlias (BlockTypeAlias_Named name empty)
                     |> ParseResult_Ok
-
-        Lexer.Newlines _ 0 ->
-            Error_PartwayThroughTypeAlias
-                |> ParseResult_Err
-
-        Lexer.Newlines _ _ ->
-            ParseResult_Skip
 
         _ ->
             Error_InvalidToken Expecting_TypeName
@@ -691,15 +738,6 @@ parseLowercaseArgsOrAssignment onTypeArg onAssignment item =
         Lexer.Sigil Lexer.Assign ->
             onAssignment
                 |> ParseResult_Ok
-
-        Lexer.Newlines _ 0 ->
-            -- TODO(harry): we might be partway through almsot anything here,
-            -- adjust error accordingly.
-            Error_PartwayThroughTypeAlias
-                |> ParseResult_Err
-
-        Lexer.Newlines _ _ ->
-            ParseResult_Skip
 
         _ ->
             Error_InvalidToken (Expecting_Sigil Lexer.Assign)
@@ -760,13 +798,6 @@ parserTypeExprFromEmpty newState item =
         Lexer.Sigil Lexer.ThinArrow ->
             Error_InvalidToken Expecting_Unknown
                 |> ParseResult_Err
-
-        Lexer.Newlines _ 0 ->
-            Error_PartwayThroughTypeAlias
-                |> ParseResult_Err
-
-        Lexer.Newlines _ _ ->
-            ParseResult_Skip
 
         _ ->
             Error_InvalidToken Expecting_Unknown
@@ -989,19 +1020,6 @@ parserTypeExpr newState prevExpr item =
                                 |> PartialResult_Progress
                                 |> newState
 
-        Lexer.Newlines _ 0 ->
-            case (autoCollapseNesting CollapseLevel_Function prevExpr).nesting of
-                NestingLeafType_Expr expr ->
-                    PartialResult_Done expr
-                        |> newState
-
-                _ ->
-                    Error_PartwayThroughTypeAlias
-                        |> ParseResult_Err
-
-        Lexer.Newlines _ _ ->
-            ParseResult_Skip
-
         _ ->
             Error_InvalidToken Expecting_Unknown
                 |> ParseResult_Err
@@ -1029,13 +1047,6 @@ parserExpressionFromEmpty newState item =
                 Nothing ->
                     Error_InvalidNumericLiteral str
                         |> ParseResult_Err
-
-        Lexer.Newlines _ 0 ->
-            Error_PartwayThroughTypeAlias
-                |> ParseResult_Err
-
-        Lexer.Newlines _ _ ->
-            ParseResult_Skip
 
         _ ->
             Error_InvalidToken Expecting_Unknown
@@ -1068,27 +1079,6 @@ parserExpression newState prevExpr item =
                 Nothing ->
                     Error_InvalidNumericLiteral str
                         |> ParseResult_Err
-
-        Lexer.Newlines _ 0 ->
-            case prevExpr of
-                ExpressionNestingLeaf_Operator partialExpr ->
-                    case partialExpr.rhs of
-                        Just rhs ->
-                            collapseOperators { op = partialExpr.op, lhs = partialExpr.lhs, parent = partialExpr.parent } rhs
-                                |> PartialResult_Done
-                                |> newState
-
-                        Nothing ->
-                            Error_PartwayThroughValueDeclaration
-                                |> ParseResult_Err
-
-                ExpressionNestingLeafType_Expr expr ->
-                    expr
-                        |> PartialResult_Done
-                        |> newState
-
-        Lexer.Newlines _ _ ->
-            ParseResult_Skip
 
         _ ->
             Error_InvalidToken Expecting_Unknown
@@ -1594,17 +1584,17 @@ blockFromState state =
             Debug.todo "handle incomplete block"
 
         State_BlockTypeAlias BlockTypeAlias_Keywords ->
-            Error_PartwayThroughTypeAlias
+            Error_PartwayThroughBlock
                 |> Err
                 |> Just
 
         State_BlockTypeAlias (BlockTypeAlias_Named _ _) ->
-            Error_PartwayThroughTypeAlias
+            Error_PartwayThroughBlock
                 |> Err
                 |> Just
 
         State_BlockTypeAlias (BlockTypeAlias_NamedAssigns _ _) ->
-            Error_PartwayThroughTypeAlias
+            Error_PartwayThroughBlock
                 |> Err
                 |> Just
 
@@ -1624,7 +1614,7 @@ blockFromState state =
                         |> Just
 
                 _ ->
-                    Error_PartwayThroughTypeAlias
+                    Error_PartwayThroughBlock
                         |> Err
                         |> Just
 
