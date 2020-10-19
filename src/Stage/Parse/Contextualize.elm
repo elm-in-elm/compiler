@@ -19,13 +19,9 @@ import Elm.Data.Module exposing (Module, ModuleType(..))
 import Elm.Data.ModuleName exposing (ModuleName)
 import Elm.Data.Operator as Operator exposing (Operator)
 import Elm.Data.Qualifiedness as Qualifiedness exposing (PossiblyQualified(..))
-import Elm.Data.Type exposing (Type)
 import Elm.Data.Type.Concrete as ConcreteType exposing (ConcreteType)
-import Elm.Data.TypeAnnotation exposing (TypeAnnotation)
 import Elm.Data.VarName exposing (VarName)
-import List.NonEmpty.Zipper exposing (prev)
-import Parser exposing (oneOf)
-import Stage.Parse.Lexer as Lexer exposing (LexItem(..), LexSigil(..), newlinesParser)
+import Stage.Parse.Lexer as Lexer exposing (LexItem(..), LexSigil(..))
 import Stage.Parse.Token as Token exposing (Keyword)
 
 
@@ -502,11 +498,11 @@ parseAnything state item =
                     Error_PartwayThroughBlock
                         |> ParseResult_Err
 
-                State_BlockTypeAlias (BlockTypeAlias_Named name typeArgs) ->
+                State_BlockTypeAlias (BlockTypeAlias_Named _ _) ->
                     Error_PartwayThroughBlock
                         |> ParseResult_Err
 
-                State_BlockTypeAlias (BlockTypeAlias_NamedAssigns name typeArgs) ->
+                State_BlockTypeAlias (BlockTypeAlias_NamedAssigns _ _) ->
                     Error_PartwayThroughBlock
                         |> ParseResult_Err
 
@@ -520,11 +516,11 @@ parseAnything state item =
                             Error_PartwayThroughBlock
                                 |> ParseResult_Err
 
-                State_BlockCustomType (BlockCustomType_Named name typeArgs) ->
+                State_BlockCustomType (BlockCustomType_Named _ _) ->
                     Error_PartwayThroughBlock
                         |> ParseResult_Err
 
-                State_BlockCustomType (BlockCustomType_NamedAssigns name typeArgs) ->
+                State_BlockCustomType (BlockCustomType_NamedAssigns _ _) ->
                     Debug.todo "BlockCustomType_NamedAssigns"
 
         Lexer.Newlines _ _ ->
@@ -624,7 +620,7 @@ parseAnything state item =
                         )
                         (Located.located region token)
 
-                State_BlockCustomType (BlockCustomType_NamedAssigns name typeArgs) ->
+                State_BlockCustomType (BlockCustomType_NamedAssigns _ _) ->
                     Debug.todo "BlockCustomType_NamedAssigns"
 
 
@@ -750,7 +746,7 @@ parserTypeExprFromEmpty :
     -> ParseResult
 parserTypeExprFromEmpty newState item =
     case Located.unwrap item of
-        Lexer.Identifier ({ qualifiers, name } as identifier) ->
+        Lexer.Identifier { qualifiers, name } ->
             if qualifiers /= [] then
                 Debug.todo ""
 
@@ -811,7 +807,7 @@ parserTypeExpr :
     -> ParseResult
 parserTypeExpr newState prevExpr item =
     case Located.unwrap item of
-        Lexer.Identifier ({ qualifiers, name } as identifier) ->
+        Lexer.Identifier { qualifiers, name } ->
             if qualifiers /= [] then
                 Debug.todo ""
 
@@ -835,7 +831,7 @@ parserTypeExpr newState prevExpr item =
                     autoCollapseNesting CollapseLevel_Function prevExpr
             in
             case collapsedLeaf.nesting of
-                NestingLeafType_Expr expr ->
+                NestingLeafType_Expr _ ->
                     Error_UnmatchedBracket Lexer.Round Lexer.Close
                         |> ParseResult_Err
 
@@ -890,14 +886,14 @@ parserTypeExpr newState prevExpr item =
                     autoCollapseNesting CollapseLevel_Function prevExpr
             in
             case collapsedLeaf.nesting of
-                NestingLeafType_Expr expr ->
+                NestingLeafType_Expr _ ->
                     Error_UnmatchedBracket Lexer.Curly Lexer.Close
                         |> ParseResult_Err
 
                 NestingLeafType_TypeWithArgs { name, args } ->
                     Debug.todo "Make this state impossible"
 
-                NestingLeafType_Bracket argStack mLastExpression ->
+                NestingLeafType_Bracket _ _ ->
                     Error_WrongClosingBracket
                         { expecting = Lexer.Round
                         , found = Lexer.Curly
@@ -919,23 +915,6 @@ parserTypeExpr newState prevExpr item =
 
         Lexer.Sigil Lexer.ThinArrow ->
             let
-                getNewPartialRecord parents { firstEntries, lastEntry } =
-                    case lastEntry of
-                        LastEntryOfRecord_KeyValue key value ->
-                            { parents = parents
-                            , nesting =
-                                NestingLeafType_PartialRecord
-                                    { firstEntries = ( key, value ) |> pushOnto firstEntries
-                                    , lastEntry = LastEntryOfRecord_Empty
-                                    }
-                            }
-                                |> PartialResult_Progress
-                                |> newState
-
-                        _ ->
-                            Error_InvalidToken Expecting_Unknown
-                                |> ParseResult_Err
-
                 collapsedLeaf =
                     autoCollapseNesting CollapseLevel_TypeWithArgs prevExpr
             in
@@ -985,7 +964,7 @@ parserTypeExpr newState prevExpr item =
                         |> PartialResult_Progress
                         |> newState
 
-                NestingLeafType_Bracket argStack Nothing ->
+                NestingLeafType_Bracket _ Nothing ->
                     Error_InvalidToken Expecting_Unknown
                         |> ParseResult_Err
 
@@ -1195,7 +1174,7 @@ exprAppend ({ parents, nesting } as currentLeaf) token =
     in
     case nesting of
         -- We are within a nested bracket.
-        NestingLeafType_Bracket argStack mostNested ->
+        NestingLeafType_Bracket _ mostNested ->
             case mostNested of
                 Nothing ->
                     leafToParents currentLeaf
@@ -1255,7 +1234,7 @@ exprAppend ({ parents, nesting } as currentLeaf) token =
             }
                 |> Ok
 
-        (NestingLeafType_Function { firstInput, output }) as lt ->
+        NestingLeafType_Function { firstInput, output } ->
             Result.map2
                 (\newOutput newParents ->
                     { parents = newParents
@@ -1580,7 +1559,7 @@ blockFromState state =
         State_BlockStart ->
             Nothing
 
-        State_BlockFirstItem firstItem ->
+        State_BlockFirstItem _ ->
             Debug.todo "handle incomplete block"
 
         State_BlockTypeAlias BlockTypeAlias_Keywords ->
@@ -1618,7 +1597,7 @@ blockFromState state =
                         |> Err
                         |> Just
 
-        State_BlockCustomType firstItem ->
+        State_BlockCustomType _ ->
             Debug.todo "handle incomplete block"
 
         State_BlockValueDeclaration (BlockValueDeclaration_Named _) ->
@@ -1792,19 +1771,6 @@ partialTypeExpressionToConcreteType pte =
                     )
 
         TypeExpression_Function functionTypeExpr ->
-            let
-                folder :
-                    ConcreteType a
-                    -> (ConcreteType a -> ConcreteType a)
-                    -> (ConcreteType a -> ConcreteType a)
-                folder nextArg createConcreteFunction someOutput =
-                    createConcreteFunction
-                        (ConcreteType.Function
-                            { from = nextArg
-                            , to = someOutput
-                            }
-                        )
-            in
             Result.map3
                 (\concreteFirstInput concreteOtherInputs concreteOutput ->
                     ConcreteType.Function
@@ -1888,8 +1854,3 @@ toList mapper (Stack ls) =
         (\curr prev -> mapper curr :: prev)
         []
         ls
-
-
-reverseToList : Stack a -> List a
-reverseToList (Stack ls) =
-    ls
