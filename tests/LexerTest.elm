@@ -30,8 +30,11 @@ runTest ( description, input ) =
                         (List.filterMap
                             (\item ->
                                 case Located.unwrap item of
-                                    Invalid s ->
+                                    Invalid (OtherInvalid s) ->
                                         Just s
+
+                                    Invalid (IllegalCharacter c) ->
+                                        Just (String.fromChar c)
 
                                     _ ->
                                         Nothing

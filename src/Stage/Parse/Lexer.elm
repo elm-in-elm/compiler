@@ -8,6 +8,12 @@ import Stage.Parse.Token as Token
 
 
 type LexItem
+    = Token LexToken
+    | Ignorable LexIgnorable
+    | Invalid LexInvalid
+
+
+type LexToken
     = Sigil LexSigil
     | Identifier
         { qualifiers : List String
@@ -18,14 +24,21 @@ type LexItem
     | Keyword Token.Keyword
     | NumericLiteral String
     | TextLiteral LexLiteralType String
-    | Whitespace Int
     | Newlines (List Int) Int
+
+
+type LexIgnorable
+    = Whitespace Int
     | Comment LexCommentType String
-    | IdentifierWithTrailingDot
+
+
+type LexInvalid
+    = IdentifierWithTrailingDot
         { qualifiers : List String
         , name : String
         }
-    | Invalid String
+    | IllegalCharacter Char
+    | OtherInvalid String
 
 
 type LexSigil
@@ -91,74 +104,74 @@ type alias Parser_ a =
 toString : LexItem -> String
 toString item =
     case item of
-        Sigil (Bracket Round Open) ->
+        Token (Sigil (Bracket Round Open)) ->
             "("
 
-        Sigil (Bracket Round Close) ->
+        Token (Sigil (Bracket Round Close)) ->
             ")"
 
-        Sigil (Bracket Square Open) ->
+        Token (Sigil (Bracket Square Open)) ->
             "["
 
-        Sigil (Bracket Square Close) ->
+        Token (Sigil (Bracket Square Close)) ->
             "]"
 
-        Sigil (Bracket Curly Open) ->
+        Token (Sigil (Bracket Curly Open)) ->
             "{"
 
-        Sigil (Bracket Curly Close) ->
+        Token (Sigil (Bracket Curly Close)) ->
             "}"
 
-        Sigil Assign ->
+        Token (Sigil Assign) ->
             "="
 
-        Sigil Pipe ->
+        Token (Sigil Pipe) ->
             "|"
 
-        Sigil Comma ->
+        Token (Sigil Comma) ->
             ","
 
-        Sigil DoubleDot ->
+        Token (Sigil DoubleDot) ->
             ".."
 
-        Sigil ThinArrow ->
+        Token (Sigil ThinArrow) ->
             "->"
 
-        Sigil Backslash ->
+        Token (Sigil Backslash) ->
             "\\"
 
-        Sigil Colon ->
+        Token (Sigil Colon) ->
             ":"
 
-        Sigil Underscore ->
+        Token (Sigil Underscore) ->
             "_"
 
-        Sigil (Operator op) ->
+        Token (Sigil (Operator op)) ->
             Operator.toString op
 
-        Identifier { qualifiers, name } ->
+        Token (Identifier { qualifiers, name }) ->
             (qualifiers ++ [ name ])
                 |> String.join "."
 
-        RecordAccessorLiteral name ->
+        Token (RecordAccessorLiteral name) ->
             "." ++ name
 
-        RecordAccessorFunction name ->
+        Token (RecordAccessorFunction name) ->
             "." ++ name
 
-        Keyword k ->
+        Token (Keyword k) ->
             Token.keywordToString k
 
-        NumericLiteral s ->
+        Token (NumericLiteral s) ->
             s
 
-        TextLiteral ty s ->
+        Token (TextLiteral ty s) ->
             delimiterFor ty ++ s ++ delimiterFor ty
 
-        Whitespace i ->
+        Ignorable (Whitespace i) ->
             String.repeat i " "
 
-        Newlines empties identationSpaces ->
+        Token (Newlines empties identationSpaces) ->
             (empties
                 |> List.map (\spacesInEmptyLine -> "\n" ++ String.repeat spacesInEmptyLine " ")
                 |> String.join ""
@@ -166,20 +179,23 @@ toString item =
                 ++ "\n"
                 ++ String.repeat identationSpaces " "
 
-        Comment LineComment s ->
+        Ignorable (Comment LineComment s) ->
             "//" ++ s
 
-        Comment MutlilineComment s ->
+        Ignorable (Comment MutlilineComment s) ->
             "{-" ++ s ++ "-}"
 
-        Comment DocComment s ->
+        Ignorable (Comment DocComment s) ->
             "{-|" ++ s ++ "-}"
 
-        IdentifierWithTrailingDot { qualifiers, name } ->
+        Invalid (IdentifierWithTrailingDot { qualifiers, name }) ->
             (qualifiers ++ [ name, "" ])
                 |> String.join "."
 
-        Invalid s ->
+        Invalid (IllegalCharacter c) ->
+            String.fromChar c
+
+        Invalid (OtherInvalid s) ->
             s
 
 
@@ -210,29 +226,39 @@ parser =
                        -- 2. sigilParser must come before recordAccessorLiteralParser so that ".." is parsed as the
                        --    DoubleDot sigil.
                        commentParser
-                        |> P.map (\( ty, commentBody ) -> Comment ty commentBody)
+                        |> P.map (\( ty, commentBody ) -> Comment ty commentBody |> Ignorable)
                      , sigilParser
-                        |> P.map Sigil
+                        |> P.map (Sigil >> Token)
                      , identifierParser
                      , recordAccessorParser (List.head reversed |> Maybe.map Located.unwrap)
                      , numericLiteralParser
-                        |> P.map NumericLiteral
+                        |> P.map (NumericLiteral >> Token)
                      , textLiteralParser
                         |> P.map
                             (\( ty, terminates, literalBody ) ->
                                 if terminates then
-                                    TextLiteral ty literalBody
+                                    TextLiteral ty literalBody |> Token
 
                                 else
-                                    Invalid (delimiterFor ty ++ literalBody)
+                                    (delimiterFor ty ++ literalBody)
+                                        |> OtherInvalid
+                                        |> Invalid
                             )
                      , P.symbol (P.Token " " ExpectingWhitespace)
                         |> P.andThen (\() -> chompSpacesAndCount)
-                        |> P.map (\count -> Whitespace (count + 1))
+                        |> P.map (\count -> (count + 1) |> Whitespace |> Ignorable)
                      , newlinesParser
-                        |> P.map (\( emptyLines, indentation ) -> Newlines emptyLines indentation)
+                        |> P.map (\( emptyLines, indentation ) -> Newlines emptyLines indentation |> Token)
                      , P.getChompedString (P.chompIf (\_ -> True) ExpectingAnything)
-                        |> P.map (\s -> Invalid s)
+                        |> P.map
+                            (\s ->
+                                case String.toList s of
+                                    [ c ] ->
+                                        c |> IllegalCharacter |> Invalid
+
+                                    _ ->
+                                        Debug.todo "ICE here"
+                            )
                      ]
                         |> List.map (located >> P.map (\t -> P.Loop (t :: reversed)))
                     )
@@ -272,6 +298,7 @@ identifierParser =
                           , name = name
                           }
                             |> IdentifierWithTrailingDot
+                            |> Invalid
                             |> P.Done
                             |> P.succeed
                         ]
@@ -279,29 +306,75 @@ identifierParser =
                   , name = name
                   }
                     |> Identifier
+                    |> Token
                     |> P.Done
                     |> P.succeed
                 ]
     in
     P.oneOf
         [ P.token (P.Token "module" ExpectingKeyword)
-            |> P.map (\() -> Keyword Token.Module)
+            |> P.map
+                (\() ->
+                    Token.Module
+                        |> Keyword
+                        |> Token
+                )
         , P.token (P.Token "type" ExpectingKeyword)
-            |> P.map (\() -> Keyword Token.Type)
+            |> P.map
+                (\() ->
+                    Token.Type
+                        |> Keyword
+                        |> Token
+                )
         , P.token (P.Token "alias" ExpectingKeyword)
-            |> P.map (\() -> Keyword Token.Alias)
+            |> P.map
+                (\() ->
+                    Token.Alias
+                        |> Keyword
+                        |> Token
+                )
         , P.token (P.Token "exposing" ExpectingKeyword)
-            |> P.map (\() -> Keyword Token.Exposing)
+            |> P.map
+                (\() ->
+                    Token.Exposing
+                        |> Keyword
+                        |> Token
+                )
         , P.token (P.Token "case" ExpectingKeyword)
-            |> P.map (\() -> Keyword Token.Case)
+            |> P.map
+                (\() ->
+                    Token.Case
+                        |> Keyword
+                        |> Token
+                )
         , P.token (P.Token "of" ExpectingKeyword)
-            |> P.map (\() -> Keyword Token.Of)
+            |> P.map
+                (\() ->
+                    Token.Of
+                        |> Keyword
+                        |> Token
+                )
         , P.token (P.Token "if" ExpectingKeyword)
-            |> P.map (\() -> Keyword Token.If)
+            |> P.map
+                (\() ->
+                    Token.If
+                        |> Keyword
+                        |> Token
+                )
         , P.token (P.Token "then" ExpectingKeyword)
-            |> P.map (\() -> Keyword Token.Then)
+            |> P.map
+                (\() ->
+                    Token.Then
+                        |> Keyword
+                        |> Token
+                )
         , P.token (P.Token "else" ExpectingKeyword)
-            |> P.map (\() -> Keyword Token.Else)
+            |> P.map
+                (\() ->
+                    Token.Else
+                        |> Keyword
+                        |> Token
+                )
         , word
             |> P.andThen (\first -> P.loop { reversedQualifiers = [], name = first } loopHelp)
         ]
@@ -315,19 +388,19 @@ recordAccessorParser previous =
             [ word
                 |> P.map
                     (case previous of
-                        Just (Sigil (Bracket Round Close)) ->
-                            RecordAccessorLiteral
+                        Just (Token (Sigil (Bracket Round Close))) ->
+                            RecordAccessorLiteral >> Token
 
-                        Just (Sigil (Bracket Curly Close)) ->
-                            RecordAccessorLiteral
+                        Just (Token (Sigil (Bracket Curly Close))) ->
+                            RecordAccessorLiteral >> Token
 
-                        Just (Identifier _) ->
+                        Just (Token (Identifier _)) ->
                             \_ -> Debug.todo "impossible state: add ICE here"
 
                         _ ->
-                            RecordAccessorFunction
+                            RecordAccessorFunction >> Token
                     )
-            , P.succeed (Invalid ".")
+            , P.succeed ('.' |> IllegalCharacter |> Invalid)
             ]
 
 

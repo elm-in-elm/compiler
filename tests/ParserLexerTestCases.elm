@@ -60,23 +60,25 @@ b = 78
                 ]
       , lexed =
             Ok
-                [ Located { end = { col = 2, row = 1 }, start = { col = 1, row = 1 } } (Identifier { name = "a", qualifiers = [] })
-                , Located { end = { col = 3, row = 1 }, start = { col = 2, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 4, row = 1 }, start = { col = 3, row = 1 } } (Sigil Assign)
-                , Located { end = { col = 5, row = 1 }, start = { col = 4, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (NumericLiteral "5")
+                [ Located { end = { col = 2, row = 1 }, start = { col = 1, row = 1 } } (Token (Identifier { name = "a", qualifiers = [] }))
+                , Located { end = { col = 3, row = 1 }, start = { col = 2, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 4, row = 1 }, start = { col = 3, row = 1 } } (Token (Sigil Assign))
+                , Located { end = { col = 5, row = 1 }, start = { col = 4, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Token (NumericLiteral "5"))
                 , Located { end = { col = 1, row = 3 }, start = { col = 6, row = 1 } }
-                    (Newlines
-                        [ 0
-                        ]
-                        0
+                    (Token
+                        (Newlines
+                            [ 0
+                            ]
+                            0
+                        )
                     )
-                , Located { end = { col = 2, row = 3 }, start = { col = 1, row = 3 } } (Identifier { name = "b", qualifiers = [] })
-                , Located { end = { col = 3, row = 3 }, start = { col = 2, row = 3 } } (Whitespace 1)
-                , Located { end = { col = 4, row = 3 }, start = { col = 3, row = 3 } } (Sigil Assign)
-                , Located { end = { col = 5, row = 3 }, start = { col = 4, row = 3 } } (Whitespace 1)
-                , Located { end = { col = 7, row = 3 }, start = { col = 5, row = 3 } } (NumericLiteral "78")
-                , Located { end = { col = 1, row = 4 }, start = { col = 7, row = 3 } } (Newlines [] 0)
+                , Located { end = { col = 2, row = 3 }, start = { col = 1, row = 3 } } (Token (Identifier { name = "b", qualifiers = [] }))
+                , Located { end = { col = 3, row = 3 }, start = { col = 2, row = 3 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 4, row = 3 }, start = { col = 3, row = 3 } } (Token (Sigil Assign))
+                , Located { end = { col = 5, row = 3 }, start = { col = 4, row = 3 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 7, row = 3 }, start = { col = 5, row = 3 } } (Token (NumericLiteral "78"))
+                , Located { end = { col = 1, row = 4 }, start = { col = 7, row = 3 } } (Token (Newlines [] 0))
                 ]
       }
     , { name = "expression-int-add"
@@ -148,38 +150,40 @@ b = 78 + 5 + 2+ 4
                 ]
       , lexed =
             Ok
-                [ Located { end = { col = 2, row = 1 }, start = { col = 1, row = 1 } } (Identifier { name = "a", qualifiers = [] })
-                , Located { end = { col = 3, row = 1 }, start = { col = 2, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 4, row = 1 }, start = { col = 3, row = 1 } } (Sigil Assign)
-                , Located { end = { col = 5, row = 1 }, start = { col = 4, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (NumericLiteral "5")
-                , Located { end = { col = 7, row = 1 }, start = { col = 6, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 8, row = 1 }, start = { col = 7, row = 1 } } (Sigil (Operator Add))
-                , Located { end = { col = 9, row = 1 }, start = { col = 8, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 10, row = 1 }, start = { col = 9, row = 1 } } (NumericLiteral "5")
+                [ Located { end = { col = 2, row = 1 }, start = { col = 1, row = 1 } } (Token (Identifier { name = "a", qualifiers = [] }))
+                , Located { end = { col = 3, row = 1 }, start = { col = 2, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 4, row = 1 }, start = { col = 3, row = 1 } } (Token (Sigil Assign))
+                , Located { end = { col = 5, row = 1 }, start = { col = 4, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Token (NumericLiteral "5"))
+                , Located { end = { col = 7, row = 1 }, start = { col = 6, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 8, row = 1 }, start = { col = 7, row = 1 } } (Token (Sigil (Operator Add)))
+                , Located { end = { col = 9, row = 1 }, start = { col = 8, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 10, row = 1 }, start = { col = 9, row = 1 } } (Token (NumericLiteral "5"))
                 , Located { end = { col = 1, row = 3 }, start = { col = 10, row = 1 } }
-                    (Newlines
-                        [ 0
-                        ]
-                        0
+                    (Token
+                        (Newlines
+                            [ 0
+                            ]
+                            0
+                        )
                     )
-                , Located { end = { col = 2, row = 3 }, start = { col = 1, row = 3 } } (Identifier { name = "b", qualifiers = [] })
-                , Located { end = { col = 3, row = 3 }, start = { col = 2, row = 3 } } (Whitespace 1)
-                , Located { end = { col = 4, row = 3 }, start = { col = 3, row = 3 } } (Sigil Assign)
-                , Located { end = { col = 5, row = 3 }, start = { col = 4, row = 3 } } (Whitespace 1)
-                , Located { end = { col = 7, row = 3 }, start = { col = 5, row = 3 } } (NumericLiteral "78")
-                , Located { end = { col = 8, row = 3 }, start = { col = 7, row = 3 } } (Whitespace 1)
-                , Located { end = { col = 9, row = 3 }, start = { col = 8, row = 3 } } (Sigil (Operator Add))
-                , Located { end = { col = 10, row = 3 }, start = { col = 9, row = 3 } } (Whitespace 1)
-                , Located { end = { col = 11, row = 3 }, start = { col = 10, row = 3 } } (NumericLiteral "5")
-                , Located { end = { col = 12, row = 3 }, start = { col = 11, row = 3 } } (Whitespace 1)
-                , Located { end = { col = 13, row = 3 }, start = { col = 12, row = 3 } } (Sigil (Operator Add))
-                , Located { end = { col = 14, row = 3 }, start = { col = 13, row = 3 } } (Whitespace 1)
-                , Located { end = { col = 15, row = 3 }, start = { col = 14, row = 3 } } (NumericLiteral "2")
-                , Located { end = { col = 16, row = 3 }, start = { col = 15, row = 3 } } (Sigil (Operator Add))
-                , Located { end = { col = 17, row = 3 }, start = { col = 16, row = 3 } } (Whitespace 1)
-                , Located { end = { col = 18, row = 3 }, start = { col = 17, row = 3 } } (NumericLiteral "4")
-                , Located { end = { col = 1, row = 4 }, start = { col = 18, row = 3 } } (Newlines [] 0)
+                , Located { end = { col = 2, row = 3 }, start = { col = 1, row = 3 } } (Token (Identifier { name = "b", qualifiers = [] }))
+                , Located { end = { col = 3, row = 3 }, start = { col = 2, row = 3 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 4, row = 3 }, start = { col = 3, row = 3 } } (Token (Sigil Assign))
+                , Located { end = { col = 5, row = 3 }, start = { col = 4, row = 3 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 7, row = 3 }, start = { col = 5, row = 3 } } (Token (NumericLiteral "78"))
+                , Located { end = { col = 8, row = 3 }, start = { col = 7, row = 3 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 9, row = 3 }, start = { col = 8, row = 3 } } (Token (Sigil (Operator Add)))
+                , Located { end = { col = 10, row = 3 }, start = { col = 9, row = 3 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 11, row = 3 }, start = { col = 10, row = 3 } } (Token (NumericLiteral "5"))
+                , Located { end = { col = 12, row = 3 }, start = { col = 11, row = 3 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 13, row = 3 }, start = { col = 12, row = 3 } } (Token (Sigil (Operator Add)))
+                , Located { end = { col = 14, row = 3 }, start = { col = 13, row = 3 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 15, row = 3 }, start = { col = 14, row = 3 } } (Token (NumericLiteral "2"))
+                , Located { end = { col = 16, row = 3 }, start = { col = 15, row = 3 } } (Token (Sigil (Operator Add)))
+                , Located { end = { col = 17, row = 3 }, start = { col = 16, row = 3 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 18, row = 3 }, start = { col = 17, row = 3 } } (Token (NumericLiteral "4"))
+                , Located { end = { col = 1, row = 4 }, start = { col = 18, row = 3 } } (Token (Newlines [] 0))
                 ]
       }
     , { name = "expression-int-multiply"
@@ -260,43 +264,45 @@ b = 78 * 5 * 2 / 4 * 5
                 ]
       , lexed =
             Ok
-                [ Located { end = { col = 2, row = 1 }, start = { col = 1, row = 1 } } (Identifier { name = "a", qualifiers = [] })
-                , Located { end = { col = 3, row = 1 }, start = { col = 2, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 4, row = 1 }, start = { col = 3, row = 1 } } (Sigil Assign)
-                , Located { end = { col = 5, row = 1 }, start = { col = 4, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (NumericLiteral "5")
-                , Located { end = { col = 7, row = 1 }, start = { col = 6, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 8, row = 1 }, start = { col = 7, row = 1 } } (Sigil (Operator Multiply))
-                , Located { end = { col = 9, row = 1 }, start = { col = 8, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 10, row = 1 }, start = { col = 9, row = 1 } } (NumericLiteral "5")
+                [ Located { end = { col = 2, row = 1 }, start = { col = 1, row = 1 } } (Token (Identifier { name = "a", qualifiers = [] }))
+                , Located { end = { col = 3, row = 1 }, start = { col = 2, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 4, row = 1 }, start = { col = 3, row = 1 } } (Token (Sigil Assign))
+                , Located { end = { col = 5, row = 1 }, start = { col = 4, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Token (NumericLiteral "5"))
+                , Located { end = { col = 7, row = 1 }, start = { col = 6, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 8, row = 1 }, start = { col = 7, row = 1 } } (Token (Sigil (Operator Multiply)))
+                , Located { end = { col = 9, row = 1 }, start = { col = 8, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 10, row = 1 }, start = { col = 9, row = 1 } } (Token (NumericLiteral "5"))
                 , Located { end = { col = 1, row = 3 }, start = { col = 10, row = 1 } }
-                    (Newlines
-                        [ 0
-                        ]
-                        0
+                    (Token
+                        (Newlines
+                            [ 0
+                            ]
+                            0
+                        )
                     )
-                , Located { end = { col = 2, row = 3 }, start = { col = 1, row = 3 } } (Identifier { name = "b", qualifiers = [] })
-                , Located { end = { col = 3, row = 3 }, start = { col = 2, row = 3 } } (Whitespace 1)
-                , Located { end = { col = 4, row = 3 }, start = { col = 3, row = 3 } } (Sigil Assign)
-                , Located { end = { col = 5, row = 3 }, start = { col = 4, row = 3 } } (Whitespace 1)
-                , Located { end = { col = 7, row = 3 }, start = { col = 5, row = 3 } } (NumericLiteral "78")
-                , Located { end = { col = 8, row = 3 }, start = { col = 7, row = 3 } } (Whitespace 1)
-                , Located { end = { col = 9, row = 3 }, start = { col = 8, row = 3 } } (Sigil (Operator Multiply))
-                , Located { end = { col = 10, row = 3 }, start = { col = 9, row = 3 } } (Whitespace 1)
-                , Located { end = { col = 11, row = 3 }, start = { col = 10, row = 3 } } (NumericLiteral "5")
-                , Located { end = { col = 12, row = 3 }, start = { col = 11, row = 3 } } (Whitespace 1)
-                , Located { end = { col = 13, row = 3 }, start = { col = 12, row = 3 } } (Sigil (Operator Multiply))
-                , Located { end = { col = 14, row = 3 }, start = { col = 13, row = 3 } } (Whitespace 1)
-                , Located { end = { col = 15, row = 3 }, start = { col = 14, row = 3 } } (NumericLiteral "2")
-                , Located { end = { col = 16, row = 3 }, start = { col = 15, row = 3 } } (Whitespace 1)
-                , Located { end = { col = 17, row = 3 }, start = { col = 16, row = 3 } } (Sigil (Operator Divide))
-                , Located { end = { col = 18, row = 3 }, start = { col = 17, row = 3 } } (Whitespace 1)
-                , Located { end = { col = 19, row = 3 }, start = { col = 18, row = 3 } } (NumericLiteral "4")
-                , Located { end = { col = 20, row = 3 }, start = { col = 19, row = 3 } } (Whitespace 1)
-                , Located { end = { col = 21, row = 3 }, start = { col = 20, row = 3 } } (Sigil (Operator Multiply))
-                , Located { end = { col = 22, row = 3 }, start = { col = 21, row = 3 } } (Whitespace 1)
-                , Located { end = { col = 23, row = 3 }, start = { col = 22, row = 3 } } (NumericLiteral "5")
-                , Located { end = { col = 1, row = 4 }, start = { col = 23, row = 3 } } (Newlines [] 0)
+                , Located { end = { col = 2, row = 3 }, start = { col = 1, row = 3 } } (Token (Identifier { name = "b", qualifiers = [] }))
+                , Located { end = { col = 3, row = 3 }, start = { col = 2, row = 3 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 4, row = 3 }, start = { col = 3, row = 3 } } (Token (Sigil Assign))
+                , Located { end = { col = 5, row = 3 }, start = { col = 4, row = 3 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 7, row = 3 }, start = { col = 5, row = 3 } } (Token (NumericLiteral "78"))
+                , Located { end = { col = 8, row = 3 }, start = { col = 7, row = 3 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 9, row = 3 }, start = { col = 8, row = 3 } } (Token (Sigil (Operator Multiply)))
+                , Located { end = { col = 10, row = 3 }, start = { col = 9, row = 3 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 11, row = 3 }, start = { col = 10, row = 3 } } (Token (NumericLiteral "5"))
+                , Located { end = { col = 12, row = 3 }, start = { col = 11, row = 3 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 13, row = 3 }, start = { col = 12, row = 3 } } (Token (Sigil (Operator Multiply)))
+                , Located { end = { col = 14, row = 3 }, start = { col = 13, row = 3 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 15, row = 3 }, start = { col = 14, row = 3 } } (Token (NumericLiteral "2"))
+                , Located { end = { col = 16, row = 3 }, start = { col = 15, row = 3 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 17, row = 3 }, start = { col = 16, row = 3 } } (Token (Sigil (Operator Divide)))
+                , Located { end = { col = 18, row = 3 }, start = { col = 17, row = 3 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 19, row = 3 }, start = { col = 18, row = 3 } } (Token (NumericLiteral "4"))
+                , Located { end = { col = 20, row = 3 }, start = { col = 19, row = 3 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 21, row = 3 }, start = { col = 20, row = 3 } } (Token (Sigil (Operator Multiply)))
+                , Located { end = { col = 22, row = 3 }, start = { col = 21, row = 3 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 23, row = 3 }, start = { col = 22, row = 3 } } (Token (NumericLiteral "5"))
+                , Located { end = { col = 1, row = 4 }, start = { col = 23, row = 3 } } (Token (Newlines [] 0))
                 ]
       }
     , { name = "expression-int-multiply-and-add"
@@ -710,204 +716,208 @@ b4 = 78 / 5 / 2 / 4 + 5
                 ]
       , lexed =
             Ok
-                [ Located { end = { col = 2, row = 1 }, start = { col = 1, row = 1 } } (Identifier { name = "a", qualifiers = [] })
-                , Located { end = { col = 3, row = 1 }, start = { col = 2, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 4, row = 1 }, start = { col = 3, row = 1 } } (Sigil Assign)
-                , Located { end = { col = 5, row = 1 }, start = { col = 4, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (NumericLiteral "5")
-                , Located { end = { col = 7, row = 1 }, start = { col = 6, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 8, row = 1 }, start = { col = 7, row = 1 } } (Sigil (Operator Multiply))
-                , Located { end = { col = 9, row = 1 }, start = { col = 8, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 10, row = 1 }, start = { col = 9, row = 1 } } (NumericLiteral "5")
-                , Located { end = { col = 11, row = 1 }, start = { col = 10, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 12, row = 1 }, start = { col = 11, row = 1 } } (Sigil (Operator Add))
-                , Located { end = { col = 13, row = 1 }, start = { col = 12, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 14, row = 1 }, start = { col = 13, row = 1 } } (NumericLiteral "6")
-                , Located { end = { col = 1, row = 2 }, start = { col = 14, row = 1 } } (Newlines [] 0)
-                , Located { end = { col = 3, row = 2 }, start = { col = 1, row = 2 } } (Identifier { name = "a1", qualifiers = [] })
-                , Located { end = { col = 4, row = 2 }, start = { col = 3, row = 2 } } (Whitespace 1)
-                , Located { end = { col = 5, row = 2 }, start = { col = 4, row = 2 } } (Sigil Assign)
-                , Located { end = { col = 7, row = 2 }, start = { col = 5, row = 2 } } (Whitespace 2)
-                , Located { end = { col = 8, row = 2 }, start = { col = 7, row = 2 } } (NumericLiteral "7")
-                , Located { end = { col = 9, row = 2 }, start = { col = 8, row = 2 } } (Whitespace 1)
-                , Located { end = { col = 10, row = 2 }, start = { col = 9, row = 2 } } (Sigil (Operator Add))
-                , Located { end = { col = 11, row = 2 }, start = { col = 10, row = 2 } } (Whitespace 1)
-                , Located { end = { col = 12, row = 2 }, start = { col = 11, row = 2 } } (NumericLiteral "5")
-                , Located { end = { col = 13, row = 2 }, start = { col = 12, row = 2 } } (Whitespace 1)
-                , Located { end = { col = 14, row = 2 }, start = { col = 13, row = 2 } } (Sigil (Operator Multiply))
-                , Located { end = { col = 15, row = 2 }, start = { col = 14, row = 2 } } (Whitespace 1)
-                , Located { end = { col = 16, row = 2 }, start = { col = 15, row = 2 } } (NumericLiteral "5")
-                , Located { end = { col = 1, row = 3 }, start = { col = 16, row = 2 } } (Newlines [] 0)
-                , Located { end = { col = 4, row = 3 }, start = { col = 1, row = 3 } } (Identifier { name = "a11", qualifiers = [] })
-                , Located { end = { col = 5, row = 3 }, start = { col = 4, row = 3 } } (Whitespace 1)
-                , Located { end = { col = 6, row = 3 }, start = { col = 5, row = 3 } } (Sigil Assign)
-                , Located { end = { col = 8, row = 3 }, start = { col = 6, row = 3 } } (Whitespace 2)
-                , Located { end = { col = 9, row = 3 }, start = { col = 8, row = 3 } } (NumericLiteral "7")
-                , Located { end = { col = 10, row = 3 }, start = { col = 9, row = 3 } } (Whitespace 1)
-                , Located { end = { col = 11, row = 3 }, start = { col = 10, row = 3 } } (Sigil (Operator Add))
-                , Located { end = { col = 12, row = 3 }, start = { col = 11, row = 3 } } (Whitespace 1)
-                , Located { end = { col = 13, row = 3 }, start = { col = 12, row = 3 } } (NumericLiteral "5")
-                , Located { end = { col = 14, row = 3 }, start = { col = 13, row = 3 } } (Whitespace 1)
-                , Located { end = { col = 15, row = 3 }, start = { col = 14, row = 3 } } (Sigil (Operator Multiply))
-                , Located { end = { col = 16, row = 3 }, start = { col = 15, row = 3 } } (Whitespace 1)
-                , Located { end = { col = 17, row = 3 }, start = { col = 16, row = 3 } } (NumericLiteral "5")
-                , Located { end = { col = 18, row = 3 }, start = { col = 17, row = 3 } } (Whitespace 1)
-                , Located { end = { col = 19, row = 3 }, start = { col = 18, row = 3 } } (Sigil (Operator Add))
-                , Located { end = { col = 20, row = 3 }, start = { col = 19, row = 3 } } (Whitespace 1)
-                , Located { end = { col = 21, row = 3 }, start = { col = 20, row = 3 } } (NumericLiteral "6")
-                , Located { end = { col = 1, row = 4 }, start = { col = 21, row = 3 } } (Newlines [] 0)
-                , Located { end = { col = 3, row = 4 }, start = { col = 1, row = 4 } } (Identifier { name = "a2", qualifiers = [] })
-                , Located { end = { col = 4, row = 4 }, start = { col = 3, row = 4 } } (Whitespace 1)
-                , Located { end = { col = 5, row = 4 }, start = { col = 4, row = 4 } } (Sigil Assign)
-                , Located { end = { col = 6, row = 4 }, start = { col = 5, row = 4 } } (Whitespace 1)
-                , Located { end = { col = 9, row = 4 }, start = { col = 6, row = 4 } } (NumericLiteral "100")
-                , Located { end = { col = 11, row = 4 }, start = { col = 9, row = 4 } } (Whitespace 2)
-                , Located { end = { col = 12, row = 4 }, start = { col = 11, row = 4 } } (Sigil (Operator Add))
-                , Located { end = { col = 13, row = 4 }, start = { col = 12, row = 4 } } (Whitespace 1)
-                , Located { end = { col = 14, row = 4 }, start = { col = 13, row = 4 } } (NumericLiteral "5")
-                , Located { end = { col = 15, row = 4 }, start = { col = 14, row = 4 } } (Whitespace 1)
-                , Located { end = { col = 16, row = 4 }, start = { col = 15, row = 4 } } (Sigil (Operator Multiply))
-                , Located { end = { col = 17, row = 4 }, start = { col = 16, row = 4 } } (Whitespace 1)
-                , Located { end = { col = 18, row = 4 }, start = { col = 17, row = 4 } } (NumericLiteral "5")
-                , Located { end = { col = 1, row = 5 }, start = { col = 18, row = 4 } } (Newlines [] 0)
-                , Located { end = { col = 3, row = 5 }, start = { col = 1, row = 5 } } (Identifier { name = "a3", qualifiers = [] })
-                , Located { end = { col = 4, row = 5 }, start = { col = 3, row = 5 } } (Whitespace 1)
-                , Located { end = { col = 5, row = 5 }, start = { col = 4, row = 5 } } (Sigil Assign)
-                , Located { end = { col = 6, row = 5 }, start = { col = 5, row = 5 } } (Whitespace 1)
-                , Located { end = { col = 9, row = 5 }, start = { col = 6, row = 5 } } (NumericLiteral "345")
-                , Located { end = { col = 10, row = 5 }, start = { col = 9, row = 5 } } (Whitespace 1)
-                , Located { end = { col = 11, row = 5 }, start = { col = 10, row = 5 } } (Sigil (Operator Multiply))
-                , Located { end = { col = 12, row = 5 }, start = { col = 11, row = 5 } } (Whitespace 1)
-                , Located { end = { col = 16, row = 5 }, start = { col = 12, row = 5 } } (NumericLiteral "2234")
-                , Located { end = { col = 17, row = 5 }, start = { col = 16, row = 5 } } (Whitespace 1)
-                , Located { end = { col = 18, row = 5 }, start = { col = 17, row = 5 } } (Sigil (Operator Add))
-                , Located { end = { col = 19, row = 5 }, start = { col = 18, row = 5 } } (Whitespace 1)
-                , Located { end = { col = 23, row = 5 }, start = { col = 19, row = 5 } } (NumericLiteral "2342")
-                , Located { end = { col = 24, row = 5 }, start = { col = 23, row = 5 } } (Whitespace 1)
-                , Located { end = { col = 25, row = 5 }, start = { col = 24, row = 5 } } (Sigil (Operator Multiply))
-                , Located { end = { col = 26, row = 5 }, start = { col = 25, row = 5 } } (Whitespace 1)
-                , Located { end = { col = 30, row = 5 }, start = { col = 26, row = 5 } } (NumericLiteral "1010")
+                [ Located { end = { col = 2, row = 1 }, start = { col = 1, row = 1 } } (Token (Identifier { name = "a", qualifiers = [] }))
+                , Located { end = { col = 3, row = 1 }, start = { col = 2, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 4, row = 1 }, start = { col = 3, row = 1 } } (Token (Sigil Assign))
+                , Located { end = { col = 5, row = 1 }, start = { col = 4, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Token (NumericLiteral "5"))
+                , Located { end = { col = 7, row = 1 }, start = { col = 6, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 8, row = 1 }, start = { col = 7, row = 1 } } (Token (Sigil (Operator Multiply)))
+                , Located { end = { col = 9, row = 1 }, start = { col = 8, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 10, row = 1 }, start = { col = 9, row = 1 } } (Token (NumericLiteral "5"))
+                , Located { end = { col = 11, row = 1 }, start = { col = 10, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 12, row = 1 }, start = { col = 11, row = 1 } } (Token (Sigil (Operator Add)))
+                , Located { end = { col = 13, row = 1 }, start = { col = 12, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 14, row = 1 }, start = { col = 13, row = 1 } } (Token (NumericLiteral "6"))
+                , Located { end = { col = 1, row = 2 }, start = { col = 14, row = 1 } } (Token (Newlines [] 0))
+                , Located { end = { col = 3, row = 2 }, start = { col = 1, row = 2 } } (Token (Identifier { name = "a1", qualifiers = [] }))
+                , Located { end = { col = 4, row = 2 }, start = { col = 3, row = 2 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 5, row = 2 }, start = { col = 4, row = 2 } } (Token (Sigil Assign))
+                , Located { end = { col = 7, row = 2 }, start = { col = 5, row = 2 } } (Ignorable (Whitespace 2))
+                , Located { end = { col = 8, row = 2 }, start = { col = 7, row = 2 } } (Token (NumericLiteral "7"))
+                , Located { end = { col = 9, row = 2 }, start = { col = 8, row = 2 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 10, row = 2 }, start = { col = 9, row = 2 } } (Token (Sigil (Operator Add)))
+                , Located { end = { col = 11, row = 2 }, start = { col = 10, row = 2 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 12, row = 2 }, start = { col = 11, row = 2 } } (Token (NumericLiteral "5"))
+                , Located { end = { col = 13, row = 2 }, start = { col = 12, row = 2 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 14, row = 2 }, start = { col = 13, row = 2 } } (Token (Sigil (Operator Multiply)))
+                , Located { end = { col = 15, row = 2 }, start = { col = 14, row = 2 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 16, row = 2 }, start = { col = 15, row = 2 } } (Token (NumericLiteral "5"))
+                , Located { end = { col = 1, row = 3 }, start = { col = 16, row = 2 } } (Token (Newlines [] 0))
+                , Located { end = { col = 4, row = 3 }, start = { col = 1, row = 3 } } (Token (Identifier { name = "a11", qualifiers = [] }))
+                , Located { end = { col = 5, row = 3 }, start = { col = 4, row = 3 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 6, row = 3 }, start = { col = 5, row = 3 } } (Token (Sigil Assign))
+                , Located { end = { col = 8, row = 3 }, start = { col = 6, row = 3 } } (Ignorable (Whitespace 2))
+                , Located { end = { col = 9, row = 3 }, start = { col = 8, row = 3 } } (Token (NumericLiteral "7"))
+                , Located { end = { col = 10, row = 3 }, start = { col = 9, row = 3 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 11, row = 3 }, start = { col = 10, row = 3 } } (Token (Sigil (Operator Add)))
+                , Located { end = { col = 12, row = 3 }, start = { col = 11, row = 3 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 13, row = 3 }, start = { col = 12, row = 3 } } (Token (NumericLiteral "5"))
+                , Located { end = { col = 14, row = 3 }, start = { col = 13, row = 3 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 15, row = 3 }, start = { col = 14, row = 3 } } (Token (Sigil (Operator Multiply)))
+                , Located { end = { col = 16, row = 3 }, start = { col = 15, row = 3 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 17, row = 3 }, start = { col = 16, row = 3 } } (Token (NumericLiteral "5"))
+                , Located { end = { col = 18, row = 3 }, start = { col = 17, row = 3 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 19, row = 3 }, start = { col = 18, row = 3 } } (Token (Sigil (Operator Add)))
+                , Located { end = { col = 20, row = 3 }, start = { col = 19, row = 3 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 21, row = 3 }, start = { col = 20, row = 3 } } (Token (NumericLiteral "6"))
+                , Located { end = { col = 1, row = 4 }, start = { col = 21, row = 3 } } (Token (Newlines [] 0))
+                , Located { end = { col = 3, row = 4 }, start = { col = 1, row = 4 } } (Token (Identifier { name = "a2", qualifiers = [] }))
+                , Located { end = { col = 4, row = 4 }, start = { col = 3, row = 4 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 5, row = 4 }, start = { col = 4, row = 4 } } (Token (Sigil Assign))
+                , Located { end = { col = 6, row = 4 }, start = { col = 5, row = 4 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 9, row = 4 }, start = { col = 6, row = 4 } } (Token (NumericLiteral "100"))
+                , Located { end = { col = 11, row = 4 }, start = { col = 9, row = 4 } } (Ignorable (Whitespace 2))
+                , Located { end = { col = 12, row = 4 }, start = { col = 11, row = 4 } } (Token (Sigil (Operator Add)))
+                , Located { end = { col = 13, row = 4 }, start = { col = 12, row = 4 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 14, row = 4 }, start = { col = 13, row = 4 } } (Token (NumericLiteral "5"))
+                , Located { end = { col = 15, row = 4 }, start = { col = 14, row = 4 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 16, row = 4 }, start = { col = 15, row = 4 } } (Token (Sigil (Operator Multiply)))
+                , Located { end = { col = 17, row = 4 }, start = { col = 16, row = 4 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 18, row = 4 }, start = { col = 17, row = 4 } } (Token (NumericLiteral "5"))
+                , Located { end = { col = 1, row = 5 }, start = { col = 18, row = 4 } } (Token (Newlines [] 0))
+                , Located { end = { col = 3, row = 5 }, start = { col = 1, row = 5 } } (Token (Identifier { name = "a3", qualifiers = [] }))
+                , Located { end = { col = 4, row = 5 }, start = { col = 3, row = 5 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 5, row = 5 }, start = { col = 4, row = 5 } } (Token (Sigil Assign))
+                , Located { end = { col = 6, row = 5 }, start = { col = 5, row = 5 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 9, row = 5 }, start = { col = 6, row = 5 } } (Token (NumericLiteral "345"))
+                , Located { end = { col = 10, row = 5 }, start = { col = 9, row = 5 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 11, row = 5 }, start = { col = 10, row = 5 } } (Token (Sigil (Operator Multiply)))
+                , Located { end = { col = 12, row = 5 }, start = { col = 11, row = 5 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 16, row = 5 }, start = { col = 12, row = 5 } } (Token (NumericLiteral "2234"))
+                , Located { end = { col = 17, row = 5 }, start = { col = 16, row = 5 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 18, row = 5 }, start = { col = 17, row = 5 } } (Token (Sigil (Operator Add)))
+                , Located { end = { col = 19, row = 5 }, start = { col = 18, row = 5 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 23, row = 5 }, start = { col = 19, row = 5 } } (Token (NumericLiteral "2342"))
+                , Located { end = { col = 24, row = 5 }, start = { col = 23, row = 5 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 25, row = 5 }, start = { col = 24, row = 5 } } (Token (Sigil (Operator Multiply)))
+                , Located { end = { col = 26, row = 5 }, start = { col = 25, row = 5 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 30, row = 5 }, start = { col = 26, row = 5 } } (Token (NumericLiteral "1010"))
                 , Located { end = { col = 1, row = 8 }, start = { col = 30, row = 5 } }
-                    (Newlines
-                        [ 0
-                        , 0
-                        ]
-                        0
+                    (Token
+                        (Newlines
+                            [ 0
+                            , 0
+                            ]
+                            0
+                        )
                     )
-                , Located { end = { col = 2, row = 8 }, start = { col = 1, row = 8 } } (Identifier { name = "b", qualifiers = [] })
-                , Located { end = { col = 3, row = 8 }, start = { col = 2, row = 8 } } (Whitespace 1)
-                , Located { end = { col = 4, row = 8 }, start = { col = 3, row = 8 } } (Sigil Assign)
-                , Located { end = { col = 5, row = 8 }, start = { col = 4, row = 8 } } (Whitespace 1)
-                , Located { end = { col = 7, row = 8 }, start = { col = 5, row = 8 } } (NumericLiteral "78")
-                , Located { end = { col = 8, row = 8 }, start = { col = 7, row = 8 } } (Whitespace 1)
-                , Located { end = { col = 9, row = 8 }, start = { col = 8, row = 8 } } (Sigil (Operator Add))
-                , Located { end = { col = 10, row = 8 }, start = { col = 9, row = 8 } } (Whitespace 1)
-                , Located { end = { col = 11, row = 8 }, start = { col = 10, row = 8 } } (NumericLiteral "5")
-                , Located { end = { col = 12, row = 8 }, start = { col = 11, row = 8 } } (Whitespace 1)
-                , Located { end = { col = 13, row = 8 }, start = { col = 12, row = 8 } } (Sigil (Operator Multiply))
-                , Located { end = { col = 14, row = 8 }, start = { col = 13, row = 8 } } (Whitespace 1)
-                , Located { end = { col = 15, row = 8 }, start = { col = 14, row = 8 } } (NumericLiteral "2")
-                , Located { end = { col = 16, row = 8 }, start = { col = 15, row = 8 } } (Whitespace 1)
-                , Located { end = { col = 17, row = 8 }, start = { col = 16, row = 8 } } (Sigil (Operator Divide))
-                , Located { end = { col = 18, row = 8 }, start = { col = 17, row = 8 } } (Whitespace 1)
-                , Located { end = { col = 19, row = 8 }, start = { col = 18, row = 8 } } (NumericLiteral "4")
-                , Located { end = { col = 20, row = 8 }, start = { col = 19, row = 8 } } (Whitespace 1)
-                , Located { end = { col = 21, row = 8 }, start = { col = 20, row = 8 } } (Sigil (Operator Multiply))
-                , Located { end = { col = 22, row = 8 }, start = { col = 21, row = 8 } } (Whitespace 1)
-                , Located { end = { col = 23, row = 8 }, start = { col = 22, row = 8 } } (NumericLiteral "5")
-                , Located { end = { col = 1, row = 9 }, start = { col = 23, row = 8 } } (Newlines [] 0)
-                , Located { end = { col = 3, row = 9 }, start = { col = 1, row = 9 } } (Identifier { name = "b1", qualifiers = [] })
-                , Located { end = { col = 4, row = 9 }, start = { col = 3, row = 9 } } (Whitespace 1)
-                , Located { end = { col = 5, row = 9 }, start = { col = 4, row = 9 } } (Sigil Assign)
-                , Located { end = { col = 6, row = 9 }, start = { col = 5, row = 9 } } (Whitespace 1)
-                , Located { end = { col = 8, row = 9 }, start = { col = 6, row = 9 } } (NumericLiteral "78")
-                , Located { end = { col = 9, row = 9 }, start = { col = 8, row = 9 } } (Whitespace 1)
-                , Located { end = { col = 10, row = 9 }, start = { col = 9, row = 9 } } (Sigil (Operator Multiply))
-                , Located { end = { col = 11, row = 9 }, start = { col = 10, row = 9 } } (Whitespace 1)
-                , Located { end = { col = 12, row = 9 }, start = { col = 11, row = 9 } } (NumericLiteral "5")
-                , Located { end = { col = 13, row = 9 }, start = { col = 12, row = 9 } } (Whitespace 1)
-                , Located { end = { col = 14, row = 9 }, start = { col = 13, row = 9 } } (Sigil (Operator Multiply))
-                , Located { end = { col = 15, row = 9 }, start = { col = 14, row = 9 } } (Whitespace 1)
-                , Located { end = { col = 16, row = 9 }, start = { col = 15, row = 9 } } (NumericLiteral "2")
-                , Located { end = { col = 17, row = 9 }, start = { col = 16, row = 9 } } (Whitespace 1)
-                , Located { end = { col = 18, row = 9 }, start = { col = 17, row = 9 } } (Sigil (Operator Divide))
-                , Located { end = { col = 19, row = 9 }, start = { col = 18, row = 9 } } (Whitespace 1)
-                , Located { end = { col = 20, row = 9 }, start = { col = 19, row = 9 } } (NumericLiteral "4")
-                , Located { end = { col = 21, row = 9 }, start = { col = 20, row = 9 } } (Whitespace 1)
-                , Located { end = { col = 22, row = 9 }, start = { col = 21, row = 9 } } (Sigil (Operator Subtract))
-                , Located { end = { col = 23, row = 9 }, start = { col = 22, row = 9 } } (Whitespace 1)
-                , Located { end = { col = 24, row = 9 }, start = { col = 23, row = 9 } } (NumericLiteral "5")
-                , Located { end = { col = 1, row = 10 }, start = { col = 24, row = 9 } } (Newlines [] 0)
-                , Located { end = { col = 3, row = 10 }, start = { col = 1, row = 10 } } (Identifier { name = "b2", qualifiers = [] })
-                , Located { end = { col = 4, row = 10 }, start = { col = 3, row = 10 } } (Whitespace 1)
-                , Located { end = { col = 5, row = 10 }, start = { col = 4, row = 10 } } (Sigil Assign)
-                , Located { end = { col = 6, row = 10 }, start = { col = 5, row = 10 } } (Whitespace 1)
-                , Located { end = { col = 8, row = 10 }, start = { col = 6, row = 10 } } (NumericLiteral "78")
-                , Located { end = { col = 9, row = 10 }, start = { col = 8, row = 10 } } (Whitespace 1)
-                , Located { end = { col = 10, row = 10 }, start = { col = 9, row = 10 } } (Sigil (Operator Multiply))
-                , Located { end = { col = 11, row = 10 }, start = { col = 10, row = 10 } } (Whitespace 1)
-                , Located { end = { col = 12, row = 10 }, start = { col = 11, row = 10 } } (NumericLiteral "5")
-                , Located { end = { col = 13, row = 10 }, start = { col = 12, row = 10 } } (Whitespace 1)
-                , Located { end = { col = 14, row = 10 }, start = { col = 13, row = 10 } } (Sigil (Operator Subtract))
-                , Located { end = { col = 15, row = 10 }, start = { col = 14, row = 10 } } (Whitespace 1)
-                , Located { end = { col = 16, row = 10 }, start = { col = 15, row = 10 } } (NumericLiteral "2")
-                , Located { end = { col = 17, row = 10 }, start = { col = 16, row = 10 } } (Whitespace 1)
-                , Located { end = { col = 18, row = 10 }, start = { col = 17, row = 10 } } (Sigil (Operator Divide))
-                , Located { end = { col = 19, row = 10 }, start = { col = 18, row = 10 } } (Whitespace 1)
-                , Located { end = { col = 20, row = 10 }, start = { col = 19, row = 10 } } (NumericLiteral "4")
-                , Located { end = { col = 21, row = 10 }, start = { col = 20, row = 10 } } (Whitespace 1)
-                , Located { end = { col = 22, row = 10 }, start = { col = 21, row = 10 } } (Sigil (Operator Multiply))
-                , Located { end = { col = 23, row = 10 }, start = { col = 22, row = 10 } } (Whitespace 1)
-                , Located { end = { col = 24, row = 10 }, start = { col = 23, row = 10 } } (NumericLiteral "5")
-                , Located { end = { col = 1, row = 11 }, start = { col = 24, row = 10 } } (Newlines [] 0)
-                , Located { end = { col = 3, row = 11 }, start = { col = 1, row = 11 } } (Identifier { name = "b3", qualifiers = [] })
-                , Located { end = { col = 4, row = 11 }, start = { col = 3, row = 11 } } (Whitespace 1)
-                , Located { end = { col = 5, row = 11 }, start = { col = 4, row = 11 } } (Sigil Assign)
-                , Located { end = { col = 6, row = 11 }, start = { col = 5, row = 11 } } (Whitespace 1)
-                , Located { end = { col = 8, row = 11 }, start = { col = 6, row = 11 } } (NumericLiteral "78")
-                , Located { end = { col = 9, row = 11 }, start = { col = 8, row = 11 } } (Whitespace 1)
-                , Located { end = { col = 10, row = 11 }, start = { col = 9, row = 11 } } (Sigil (Operator Subtract))
-                , Located { end = { col = 11, row = 11 }, start = { col = 10, row = 11 } } (Whitespace 1)
-                , Located { end = { col = 12, row = 11 }, start = { col = 11, row = 11 } } (NumericLiteral "5")
-                , Located { end = { col = 13, row = 11 }, start = { col = 12, row = 11 } } (Whitespace 1)
-                , Located { end = { col = 14, row = 11 }, start = { col = 13, row = 11 } } (Sigil (Operator Add))
-                , Located { end = { col = 15, row = 11 }, start = { col = 14, row = 11 } } (Whitespace 1)
-                , Located { end = { col = 16, row = 11 }, start = { col = 15, row = 11 } } (NumericLiteral "2")
-                , Located { end = { col = 17, row = 11 }, start = { col = 16, row = 11 } } (Whitespace 1)
-                , Located { end = { col = 18, row = 11 }, start = { col = 17, row = 11 } } (Sigil (Operator Divide))
-                , Located { end = { col = 19, row = 11 }, start = { col = 18, row = 11 } } (Whitespace 1)
-                , Located { end = { col = 20, row = 11 }, start = { col = 19, row = 11 } } (NumericLiteral "4")
-                , Located { end = { col = 21, row = 11 }, start = { col = 20, row = 11 } } (Whitespace 1)
-                , Located { end = { col = 22, row = 11 }, start = { col = 21, row = 11 } } (Sigil (Operator Multiply))
-                , Located { end = { col = 23, row = 11 }, start = { col = 22, row = 11 } } (Whitespace 1)
-                , Located { end = { col = 24, row = 11 }, start = { col = 23, row = 11 } } (NumericLiteral "5")
-                , Located { end = { col = 1, row = 12 }, start = { col = 24, row = 11 } } (Newlines [] 0)
-                , Located { end = { col = 3, row = 12 }, start = { col = 1, row = 12 } } (Identifier { name = "b4", qualifiers = [] })
-                , Located { end = { col = 4, row = 12 }, start = { col = 3, row = 12 } } (Whitespace 1)
-                , Located { end = { col = 5, row = 12 }, start = { col = 4, row = 12 } } (Sigil Assign)
-                , Located { end = { col = 6, row = 12 }, start = { col = 5, row = 12 } } (Whitespace 1)
-                , Located { end = { col = 8, row = 12 }, start = { col = 6, row = 12 } } (NumericLiteral "78")
-                , Located { end = { col = 9, row = 12 }, start = { col = 8, row = 12 } } (Whitespace 1)
-                , Located { end = { col = 10, row = 12 }, start = { col = 9, row = 12 } } (Sigil (Operator Divide))
-                , Located { end = { col = 11, row = 12 }, start = { col = 10, row = 12 } } (Whitespace 1)
-                , Located { end = { col = 12, row = 12 }, start = { col = 11, row = 12 } } (NumericLiteral "5")
-                , Located { end = { col = 13, row = 12 }, start = { col = 12, row = 12 } } (Whitespace 1)
-                , Located { end = { col = 14, row = 12 }, start = { col = 13, row = 12 } } (Sigil (Operator Divide))
-                , Located { end = { col = 15, row = 12 }, start = { col = 14, row = 12 } } (Whitespace 1)
-                , Located { end = { col = 16, row = 12 }, start = { col = 15, row = 12 } } (NumericLiteral "2")
-                , Located { end = { col = 17, row = 12 }, start = { col = 16, row = 12 } } (Whitespace 1)
-                , Located { end = { col = 18, row = 12 }, start = { col = 17, row = 12 } } (Sigil (Operator Divide))
-                , Located { end = { col = 19, row = 12 }, start = { col = 18, row = 12 } } (Whitespace 1)
-                , Located { end = { col = 20, row = 12 }, start = { col = 19, row = 12 } } (NumericLiteral "4")
-                , Located { end = { col = 21, row = 12 }, start = { col = 20, row = 12 } } (Whitespace 1)
-                , Located { end = { col = 22, row = 12 }, start = { col = 21, row = 12 } } (Sigil (Operator Add))
-                , Located { end = { col = 23, row = 12 }, start = { col = 22, row = 12 } } (Whitespace 1)
-                , Located { end = { col = 24, row = 12 }, start = { col = 23, row = 12 } } (NumericLiteral "5")
+                , Located { end = { col = 2, row = 8 }, start = { col = 1, row = 8 } } (Token (Identifier { name = "b", qualifiers = [] }))
+                , Located { end = { col = 3, row = 8 }, start = { col = 2, row = 8 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 4, row = 8 }, start = { col = 3, row = 8 } } (Token (Sigil Assign))
+                , Located { end = { col = 5, row = 8 }, start = { col = 4, row = 8 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 7, row = 8 }, start = { col = 5, row = 8 } } (Token (NumericLiteral "78"))
+                , Located { end = { col = 8, row = 8 }, start = { col = 7, row = 8 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 9, row = 8 }, start = { col = 8, row = 8 } } (Token (Sigil (Operator Add)))
+                , Located { end = { col = 10, row = 8 }, start = { col = 9, row = 8 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 11, row = 8 }, start = { col = 10, row = 8 } } (Token (NumericLiteral "5"))
+                , Located { end = { col = 12, row = 8 }, start = { col = 11, row = 8 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 13, row = 8 }, start = { col = 12, row = 8 } } (Token (Sigil (Operator Multiply)))
+                , Located { end = { col = 14, row = 8 }, start = { col = 13, row = 8 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 15, row = 8 }, start = { col = 14, row = 8 } } (Token (NumericLiteral "2"))
+                , Located { end = { col = 16, row = 8 }, start = { col = 15, row = 8 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 17, row = 8 }, start = { col = 16, row = 8 } } (Token (Sigil (Operator Divide)))
+                , Located { end = { col = 18, row = 8 }, start = { col = 17, row = 8 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 19, row = 8 }, start = { col = 18, row = 8 } } (Token (NumericLiteral "4"))
+                , Located { end = { col = 20, row = 8 }, start = { col = 19, row = 8 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 21, row = 8 }, start = { col = 20, row = 8 } } (Token (Sigil (Operator Multiply)))
+                , Located { end = { col = 22, row = 8 }, start = { col = 21, row = 8 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 23, row = 8 }, start = { col = 22, row = 8 } } (Token (NumericLiteral "5"))
+                , Located { end = { col = 1, row = 9 }, start = { col = 23, row = 8 } } (Token (Newlines [] 0))
+                , Located { end = { col = 3, row = 9 }, start = { col = 1, row = 9 } } (Token (Identifier { name = "b1", qualifiers = [] }))
+                , Located { end = { col = 4, row = 9 }, start = { col = 3, row = 9 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 5, row = 9 }, start = { col = 4, row = 9 } } (Token (Sigil Assign))
+                , Located { end = { col = 6, row = 9 }, start = { col = 5, row = 9 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 8, row = 9 }, start = { col = 6, row = 9 } } (Token (NumericLiteral "78"))
+                , Located { end = { col = 9, row = 9 }, start = { col = 8, row = 9 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 10, row = 9 }, start = { col = 9, row = 9 } } (Token (Sigil (Operator Multiply)))
+                , Located { end = { col = 11, row = 9 }, start = { col = 10, row = 9 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 12, row = 9 }, start = { col = 11, row = 9 } } (Token (NumericLiteral "5"))
+                , Located { end = { col = 13, row = 9 }, start = { col = 12, row = 9 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 14, row = 9 }, start = { col = 13, row = 9 } } (Token (Sigil (Operator Multiply)))
+                , Located { end = { col = 15, row = 9 }, start = { col = 14, row = 9 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 16, row = 9 }, start = { col = 15, row = 9 } } (Token (NumericLiteral "2"))
+                , Located { end = { col = 17, row = 9 }, start = { col = 16, row = 9 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 18, row = 9 }, start = { col = 17, row = 9 } } (Token (Sigil (Operator Divide)))
+                , Located { end = { col = 19, row = 9 }, start = { col = 18, row = 9 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 20, row = 9 }, start = { col = 19, row = 9 } } (Token (NumericLiteral "4"))
+                , Located { end = { col = 21, row = 9 }, start = { col = 20, row = 9 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 22, row = 9 }, start = { col = 21, row = 9 } } (Token (Sigil (Operator Subtract)))
+                , Located { end = { col = 23, row = 9 }, start = { col = 22, row = 9 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 24, row = 9 }, start = { col = 23, row = 9 } } (Token (NumericLiteral "5"))
+                , Located { end = { col = 1, row = 10 }, start = { col = 24, row = 9 } } (Token (Newlines [] 0))
+                , Located { end = { col = 3, row = 10 }, start = { col = 1, row = 10 } } (Token (Identifier { name = "b2", qualifiers = [] }))
+                , Located { end = { col = 4, row = 10 }, start = { col = 3, row = 10 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 5, row = 10 }, start = { col = 4, row = 10 } } (Token (Sigil Assign))
+                , Located { end = { col = 6, row = 10 }, start = { col = 5, row = 10 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 8, row = 10 }, start = { col = 6, row = 10 } } (Token (NumericLiteral "78"))
+                , Located { end = { col = 9, row = 10 }, start = { col = 8, row = 10 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 10, row = 10 }, start = { col = 9, row = 10 } } (Token (Sigil (Operator Multiply)))
+                , Located { end = { col = 11, row = 10 }, start = { col = 10, row = 10 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 12, row = 10 }, start = { col = 11, row = 10 } } (Token (NumericLiteral "5"))
+                , Located { end = { col = 13, row = 10 }, start = { col = 12, row = 10 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 14, row = 10 }, start = { col = 13, row = 10 } } (Token (Sigil (Operator Subtract)))
+                , Located { end = { col = 15, row = 10 }, start = { col = 14, row = 10 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 16, row = 10 }, start = { col = 15, row = 10 } } (Token (NumericLiteral "2"))
+                , Located { end = { col = 17, row = 10 }, start = { col = 16, row = 10 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 18, row = 10 }, start = { col = 17, row = 10 } } (Token (Sigil (Operator Divide)))
+                , Located { end = { col = 19, row = 10 }, start = { col = 18, row = 10 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 20, row = 10 }, start = { col = 19, row = 10 } } (Token (NumericLiteral "4"))
+                , Located { end = { col = 21, row = 10 }, start = { col = 20, row = 10 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 22, row = 10 }, start = { col = 21, row = 10 } } (Token (Sigil (Operator Multiply)))
+                , Located { end = { col = 23, row = 10 }, start = { col = 22, row = 10 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 24, row = 10 }, start = { col = 23, row = 10 } } (Token (NumericLiteral "5"))
+                , Located { end = { col = 1, row = 11 }, start = { col = 24, row = 10 } } (Token (Newlines [] 0))
+                , Located { end = { col = 3, row = 11 }, start = { col = 1, row = 11 } } (Token (Identifier { name = "b3", qualifiers = [] }))
+                , Located { end = { col = 4, row = 11 }, start = { col = 3, row = 11 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 5, row = 11 }, start = { col = 4, row = 11 } } (Token (Sigil Assign))
+                , Located { end = { col = 6, row = 11 }, start = { col = 5, row = 11 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 8, row = 11 }, start = { col = 6, row = 11 } } (Token (NumericLiteral "78"))
+                , Located { end = { col = 9, row = 11 }, start = { col = 8, row = 11 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 10, row = 11 }, start = { col = 9, row = 11 } } (Token (Sigil (Operator Subtract)))
+                , Located { end = { col = 11, row = 11 }, start = { col = 10, row = 11 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 12, row = 11 }, start = { col = 11, row = 11 } } (Token (NumericLiteral "5"))
+                , Located { end = { col = 13, row = 11 }, start = { col = 12, row = 11 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 14, row = 11 }, start = { col = 13, row = 11 } } (Token (Sigil (Operator Add)))
+                , Located { end = { col = 15, row = 11 }, start = { col = 14, row = 11 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 16, row = 11 }, start = { col = 15, row = 11 } } (Token (NumericLiteral "2"))
+                , Located { end = { col = 17, row = 11 }, start = { col = 16, row = 11 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 18, row = 11 }, start = { col = 17, row = 11 } } (Token (Sigil (Operator Divide)))
+                , Located { end = { col = 19, row = 11 }, start = { col = 18, row = 11 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 20, row = 11 }, start = { col = 19, row = 11 } } (Token (NumericLiteral "4"))
+                , Located { end = { col = 21, row = 11 }, start = { col = 20, row = 11 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 22, row = 11 }, start = { col = 21, row = 11 } } (Token (Sigil (Operator Multiply)))
+                , Located { end = { col = 23, row = 11 }, start = { col = 22, row = 11 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 24, row = 11 }, start = { col = 23, row = 11 } } (Token (NumericLiteral "5"))
+                , Located { end = { col = 1, row = 12 }, start = { col = 24, row = 11 } } (Token (Newlines [] 0))
+                , Located { end = { col = 3, row = 12 }, start = { col = 1, row = 12 } } (Token (Identifier { name = "b4", qualifiers = [] }))
+                , Located { end = { col = 4, row = 12 }, start = { col = 3, row = 12 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 5, row = 12 }, start = { col = 4, row = 12 } } (Token (Sigil Assign))
+                , Located { end = { col = 6, row = 12 }, start = { col = 5, row = 12 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 8, row = 12 }, start = { col = 6, row = 12 } } (Token (NumericLiteral "78"))
+                , Located { end = { col = 9, row = 12 }, start = { col = 8, row = 12 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 10, row = 12 }, start = { col = 9, row = 12 } } (Token (Sigil (Operator Divide)))
+                , Located { end = { col = 11, row = 12 }, start = { col = 10, row = 12 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 12, row = 12 }, start = { col = 11, row = 12 } } (Token (NumericLiteral "5"))
+                , Located { end = { col = 13, row = 12 }, start = { col = 12, row = 12 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 14, row = 12 }, start = { col = 13, row = 12 } } (Token (Sigil (Operator Divide)))
+                , Located { end = { col = 15, row = 12 }, start = { col = 14, row = 12 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 16, row = 12 }, start = { col = 15, row = 12 } } (Token (NumericLiteral "2"))
+                , Located { end = { col = 17, row = 12 }, start = { col = 16, row = 12 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 18, row = 12 }, start = { col = 17, row = 12 } } (Token (Sigil (Operator Divide)))
+                , Located { end = { col = 19, row = 12 }, start = { col = 18, row = 12 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 20, row = 12 }, start = { col = 19, row = 12 } } (Token (NumericLiteral "4"))
+                , Located { end = { col = 21, row = 12 }, start = { col = 20, row = 12 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 22, row = 12 }, start = { col = 21, row = 12 } } (Token (Sigil (Operator Add)))
+                , Located { end = { col = 23, row = 12 }, start = { col = 22, row = 12 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 24, row = 12 }, start = { col = 23, row = 12 } } (Token (NumericLiteral "5"))
                 , Located { end = { col = 1, row = 14 }, start = { col = 24, row = 12 } }
-                    (Newlines
-                        [ 0
-                        ]
-                        0
+                    (Token
+                        (Newlines
+                            [ 0
+                            ]
+                            0
+                        )
                     )
                 ]
       }
@@ -989,43 +999,45 @@ b = 78 + 5 + 2 - 4 + 5
                 ]
       , lexed =
             Ok
-                [ Located { end = { col = 2, row = 1 }, start = { col = 1, row = 1 } } (Identifier { name = "a", qualifiers = [] })
-                , Located { end = { col = 3, row = 1 }, start = { col = 2, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 4, row = 1 }, start = { col = 3, row = 1 } } (Sigil Assign)
-                , Located { end = { col = 5, row = 1 }, start = { col = 4, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (NumericLiteral "5")
-                , Located { end = { col = 7, row = 1 }, start = { col = 6, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 8, row = 1 }, start = { col = 7, row = 1 } } (Sigil (Operator Subtract))
-                , Located { end = { col = 9, row = 1 }, start = { col = 8, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 10, row = 1 }, start = { col = 9, row = 1 } } (NumericLiteral "5")
+                [ Located { end = { col = 2, row = 1 }, start = { col = 1, row = 1 } } (Token (Identifier { name = "a", qualifiers = [] }))
+                , Located { end = { col = 3, row = 1 }, start = { col = 2, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 4, row = 1 }, start = { col = 3, row = 1 } } (Token (Sigil Assign))
+                , Located { end = { col = 5, row = 1 }, start = { col = 4, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Token (NumericLiteral "5"))
+                , Located { end = { col = 7, row = 1 }, start = { col = 6, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 8, row = 1 }, start = { col = 7, row = 1 } } (Token (Sigil (Operator Subtract)))
+                , Located { end = { col = 9, row = 1 }, start = { col = 8, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 10, row = 1 }, start = { col = 9, row = 1 } } (Token (NumericLiteral "5"))
                 , Located { end = { col = 1, row = 3 }, start = { col = 10, row = 1 } }
-                    (Newlines
-                        [ 0
-                        ]
-                        0
+                    (Token
+                        (Newlines
+                            [ 0
+                            ]
+                            0
+                        )
                     )
-                , Located { end = { col = 2, row = 3 }, start = { col = 1, row = 3 } } (Identifier { name = "b", qualifiers = [] })
-                , Located { end = { col = 3, row = 3 }, start = { col = 2, row = 3 } } (Whitespace 1)
-                , Located { end = { col = 4, row = 3 }, start = { col = 3, row = 3 } } (Sigil Assign)
-                , Located { end = { col = 5, row = 3 }, start = { col = 4, row = 3 } } (Whitespace 1)
-                , Located { end = { col = 7, row = 3 }, start = { col = 5, row = 3 } } (NumericLiteral "78")
-                , Located { end = { col = 8, row = 3 }, start = { col = 7, row = 3 } } (Whitespace 1)
-                , Located { end = { col = 9, row = 3 }, start = { col = 8, row = 3 } } (Sigil (Operator Add))
-                , Located { end = { col = 10, row = 3 }, start = { col = 9, row = 3 } } (Whitespace 1)
-                , Located { end = { col = 11, row = 3 }, start = { col = 10, row = 3 } } (NumericLiteral "5")
-                , Located { end = { col = 12, row = 3 }, start = { col = 11, row = 3 } } (Whitespace 1)
-                , Located { end = { col = 13, row = 3 }, start = { col = 12, row = 3 } } (Sigil (Operator Add))
-                , Located { end = { col = 14, row = 3 }, start = { col = 13, row = 3 } } (Whitespace 1)
-                , Located { end = { col = 15, row = 3 }, start = { col = 14, row = 3 } } (NumericLiteral "2")
-                , Located { end = { col = 16, row = 3 }, start = { col = 15, row = 3 } } (Whitespace 1)
-                , Located { end = { col = 17, row = 3 }, start = { col = 16, row = 3 } } (Sigil (Operator Subtract))
-                , Located { end = { col = 18, row = 3 }, start = { col = 17, row = 3 } } (Whitespace 1)
-                , Located { end = { col = 19, row = 3 }, start = { col = 18, row = 3 } } (NumericLiteral "4")
-                , Located { end = { col = 20, row = 3 }, start = { col = 19, row = 3 } } (Whitespace 1)
-                , Located { end = { col = 21, row = 3 }, start = { col = 20, row = 3 } } (Sigil (Operator Add))
-                , Located { end = { col = 22, row = 3 }, start = { col = 21, row = 3 } } (Whitespace 1)
-                , Located { end = { col = 23, row = 3 }, start = { col = 22, row = 3 } } (NumericLiteral "5")
-                , Located { end = { col = 1, row = 4 }, start = { col = 23, row = 3 } } (Newlines [] 0)
+                , Located { end = { col = 2, row = 3 }, start = { col = 1, row = 3 } } (Token (Identifier { name = "b", qualifiers = [] }))
+                , Located { end = { col = 3, row = 3 }, start = { col = 2, row = 3 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 4, row = 3 }, start = { col = 3, row = 3 } } (Token (Sigil Assign))
+                , Located { end = { col = 5, row = 3 }, start = { col = 4, row = 3 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 7, row = 3 }, start = { col = 5, row = 3 } } (Token (NumericLiteral "78"))
+                , Located { end = { col = 8, row = 3 }, start = { col = 7, row = 3 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 9, row = 3 }, start = { col = 8, row = 3 } } (Token (Sigil (Operator Add)))
+                , Located { end = { col = 10, row = 3 }, start = { col = 9, row = 3 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 11, row = 3 }, start = { col = 10, row = 3 } } (Token (NumericLiteral "5"))
+                , Located { end = { col = 12, row = 3 }, start = { col = 11, row = 3 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 13, row = 3 }, start = { col = 12, row = 3 } } (Token (Sigil (Operator Add)))
+                , Located { end = { col = 14, row = 3 }, start = { col = 13, row = 3 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 15, row = 3 }, start = { col = 14, row = 3 } } (Token (NumericLiteral "2"))
+                , Located { end = { col = 16, row = 3 }, start = { col = 15, row = 3 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 17, row = 3 }, start = { col = 16, row = 3 } } (Token (Sigil (Operator Subtract)))
+                , Located { end = { col = 18, row = 3 }, start = { col = 17, row = 3 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 19, row = 3 }, start = { col = 18, row = 3 } } (Token (NumericLiteral "4"))
+                , Located { end = { col = 20, row = 3 }, start = { col = 19, row = 3 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 21, row = 3 }, start = { col = 20, row = 3 } } (Token (Sigil (Operator Add)))
+                , Located { end = { col = 22, row = 3 }, start = { col = 21, row = 3 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 23, row = 3 }, start = { col = 22, row = 3 } } (Token (NumericLiteral "5"))
+                , Located { end = { col = 1, row = 4 }, start = { col = 23, row = 3 } } (Token (Newlines [] 0))
                 ]
       }
     , { name = "type-alias"
@@ -1081,18 +1093,18 @@ b = 78 + 5 + 2 - 4 + 5
                 ]
       , lexed =
             Ok
-                [ Located { end = { col = 5, row = 1 }, start = { col = 1, row = 1 } } (Keyword Type)
-                , Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 11, row = 1 }, start = { col = 6, row = 1 } } (Keyword Alias)
-                , Located { end = { col = 12, row = 1 }, start = { col = 11, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 17, row = 1 }, start = { col = 12, row = 1 } } (Identifier { name = "Model", qualifiers = [] })
-                , Located { end = { col = 18, row = 1 }, start = { col = 17, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 19, row = 1 }, start = { col = 18, row = 1 } } (Sigil Assign)
-                , Located { end = { col = 20, row = 1 }, start = { col = 19, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 24, row = 1 }, start = { col = 20, row = 1 } } (Identifier { name = "List", qualifiers = [] })
-                , Located { end = { col = 25, row = 1 }, start = { col = 24, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 28, row = 1 }, start = { col = 25, row = 1 } } (Identifier { name = "Int", qualifiers = [] })
-                , Located { end = { col = 1, row = 2 }, start = { col = 28, row = 1 } } (Newlines [] 0)
+                [ Located { end = { col = 5, row = 1 }, start = { col = 1, row = 1 } } (Token (Keyword Type))
+                , Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 11, row = 1 }, start = { col = 6, row = 1 } } (Token (Keyword Alias))
+                , Located { end = { col = 12, row = 1 }, start = { col = 11, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 17, row = 1 }, start = { col = 12, row = 1 } } (Token (Identifier { name = "Model", qualifiers = [] }))
+                , Located { end = { col = 18, row = 1 }, start = { col = 17, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 19, row = 1 }, start = { col = 18, row = 1 } } (Token (Sigil Assign))
+                , Located { end = { col = 20, row = 1 }, start = { col = 19, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 24, row = 1 }, start = { col = 20, row = 1 } } (Token (Identifier { name = "List", qualifiers = [] }))
+                , Located { end = { col = 25, row = 1 }, start = { col = 24, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 28, row = 1 }, start = { col = 25, row = 1 } } (Token (Identifier { name = "Int", qualifiers = [] }))
+                , Located { end = { col = 1, row = 2 }, start = { col = 28, row = 1 } } (Token (Newlines [] 0))
                 ]
       }
     , { name = "type-alias-and-expression"
@@ -1171,31 +1183,33 @@ expr hi = 77
                 ]
       , lexed =
             Ok
-                [ Located { end = { col = 5, row = 1 }, start = { col = 1, row = 1 } } (Keyword Type)
-                , Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 11, row = 1 }, start = { col = 6, row = 1 } } (Keyword Alias)
-                , Located { end = { col = 12, row = 1 }, start = { col = 11, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 17, row = 1 }, start = { col = 12, row = 1 } } (Identifier { name = "Model", qualifiers = [] })
-                , Located { end = { col = 18, row = 1 }, start = { col = 17, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 19, row = 1 }, start = { col = 18, row = 1 } } (Sigil Assign)
-                , Located { end = { col = 20, row = 1 }, start = { col = 19, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 24, row = 1 }, start = { col = 20, row = 1 } } (Identifier { name = "List", qualifiers = [] })
-                , Located { end = { col = 25, row = 1 }, start = { col = 24, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 28, row = 1 }, start = { col = 25, row = 1 } } (Identifier { name = "Int", qualifiers = [] })
+                [ Located { end = { col = 5, row = 1 }, start = { col = 1, row = 1 } } (Token (Keyword Type))
+                , Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 11, row = 1 }, start = { col = 6, row = 1 } } (Token (Keyword Alias))
+                , Located { end = { col = 12, row = 1 }, start = { col = 11, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 17, row = 1 }, start = { col = 12, row = 1 } } (Token (Identifier { name = "Model", qualifiers = [] }))
+                , Located { end = { col = 18, row = 1 }, start = { col = 17, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 19, row = 1 }, start = { col = 18, row = 1 } } (Token (Sigil Assign))
+                , Located { end = { col = 20, row = 1 }, start = { col = 19, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 24, row = 1 }, start = { col = 20, row = 1 } } (Token (Identifier { name = "List", qualifiers = [] }))
+                , Located { end = { col = 25, row = 1 }, start = { col = 24, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 28, row = 1 }, start = { col = 25, row = 1 } } (Token (Identifier { name = "Int", qualifiers = [] }))
                 , Located { end = { col = 1, row = 3 }, start = { col = 28, row = 1 } }
-                    (Newlines
-                        [ 0
-                        ]
-                        0
+                    (Token
+                        (Newlines
+                            [ 0
+                            ]
+                            0
+                        )
                     )
-                , Located { end = { col = 5, row = 3 }, start = { col = 1, row = 3 } } (Identifier { name = "expr", qualifiers = [] })
-                , Located { end = { col = 6, row = 3 }, start = { col = 5, row = 3 } } (Whitespace 1)
-                , Located { end = { col = 8, row = 3 }, start = { col = 6, row = 3 } } (Identifier { name = "hi", qualifiers = [] })
-                , Located { end = { col = 9, row = 3 }, start = { col = 8, row = 3 } } (Whitespace 1)
-                , Located { end = { col = 10, row = 3 }, start = { col = 9, row = 3 } } (Sigil Assign)
-                , Located { end = { col = 11, row = 3 }, start = { col = 10, row = 3 } } (Whitespace 1)
-                , Located { end = { col = 13, row = 3 }, start = { col = 11, row = 3 } } (NumericLiteral "77")
-                , Located { end = { col = 1, row = 4 }, start = { col = 13, row = 3 } } (Newlines [] 0)
+                , Located { end = { col = 5, row = 3 }, start = { col = 1, row = 3 } } (Token (Identifier { name = "expr", qualifiers = [] }))
+                , Located { end = { col = 6, row = 3 }, start = { col = 5, row = 3 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 8, row = 3 }, start = { col = 6, row = 3 } } (Token (Identifier { name = "hi", qualifiers = [] }))
+                , Located { end = { col = 9, row = 3 }, start = { col = 8, row = 3 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 10, row = 3 }, start = { col = 9, row = 3 } } (Token (Sigil Assign))
+                , Located { end = { col = 11, row = 3 }, start = { col = 10, row = 3 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 13, row = 3 }, start = { col = 11, row = 3 } } (Token (NumericLiteral "77"))
+                , Located { end = { col = 1, row = 4 }, start = { col = 13, row = 3 } } (Token (Newlines [] 0))
                 ]
       }
     , { name = "type-alias-bracket-in-record"
@@ -1246,25 +1260,25 @@ expr hi = 77
                 ]
       , lexed =
             Ok
-                [ Located { end = { col = 5, row = 1 }, start = { col = 1, row = 1 } } (Keyword Type)
-                , Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 11, row = 1 }, start = { col = 6, row = 1 } } (Keyword Alias)
-                , Located { end = { col = 12, row = 1 }, start = { col = 11, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 14, row = 1 }, start = { col = 12, row = 1 } } (Identifier { name = "Ty", qualifiers = [] })
-                , Located { end = { col = 15, row = 1 }, start = { col = 14, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 16, row = 1 }, start = { col = 15, row = 1 } } (Sigil Assign)
-                , Located { end = { col = 17, row = 1 }, start = { col = 16, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 18, row = 1 }, start = { col = 17, row = 1 } } (Sigil (Bracket Curly Open))
-                , Located { end = { col = 19, row = 1 }, start = { col = 18, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 21, row = 1 }, start = { col = 19, row = 1 } } (Identifier { name = "hi", qualifiers = [] })
-                , Located { end = { col = 22, row = 1 }, start = { col = 21, row = 1 } } (Sigil Colon)
-                , Located { end = { col = 23, row = 1 }, start = { col = 22, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 24, row = 1 }, start = { col = 23, row = 1 } } (Sigil (Bracket Round Open))
-                , Located { end = { col = 27, row = 1 }, start = { col = 24, row = 1 } } (Identifier { name = "Int", qualifiers = [] })
-                , Located { end = { col = 28, row = 1 }, start = { col = 27, row = 1 } } (Sigil (Bracket Round Close))
-                , Located { end = { col = 29, row = 1 }, start = { col = 28, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 30, row = 1 }, start = { col = 29, row = 1 } } (Sigil (Bracket Curly Close))
-                , Located { end = { col = 1, row = 2 }, start = { col = 30, row = 1 } } (Newlines [] 0)
+                [ Located { end = { col = 5, row = 1 }, start = { col = 1, row = 1 } } (Token (Keyword Type))
+                , Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 11, row = 1 }, start = { col = 6, row = 1 } } (Token (Keyword Alias))
+                , Located { end = { col = 12, row = 1 }, start = { col = 11, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 14, row = 1 }, start = { col = 12, row = 1 } } (Token (Identifier { name = "Ty", qualifiers = [] }))
+                , Located { end = { col = 15, row = 1 }, start = { col = 14, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 16, row = 1 }, start = { col = 15, row = 1 } } (Token (Sigil Assign))
+                , Located { end = { col = 17, row = 1 }, start = { col = 16, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 18, row = 1 }, start = { col = 17, row = 1 } } (Token (Sigil (Bracket Curly Open)))
+                , Located { end = { col = 19, row = 1 }, start = { col = 18, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 21, row = 1 }, start = { col = 19, row = 1 } } (Token (Identifier { name = "hi", qualifiers = [] }))
+                , Located { end = { col = 22, row = 1 }, start = { col = 21, row = 1 } } (Token (Sigil Colon))
+                , Located { end = { col = 23, row = 1 }, start = { col = 22, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 24, row = 1 }, start = { col = 23, row = 1 } } (Token (Sigil (Bracket Round Open)))
+                , Located { end = { col = 27, row = 1 }, start = { col = 24, row = 1 } } (Token (Identifier { name = "Int", qualifiers = [] }))
+                , Located { end = { col = 28, row = 1 }, start = { col = 27, row = 1 } } (Token (Sigil (Bracket Round Close)))
+                , Located { end = { col = 29, row = 1 }, start = { col = 28, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 30, row = 1 }, start = { col = 29, row = 1 } } (Token (Sigil (Bracket Curly Close)))
+                , Located { end = { col = 1, row = 2 }, start = { col = 30, row = 1 } } (Token (Newlines [] 0))
                 ]
       }
     , { name = "type-alias-function"
@@ -1374,28 +1388,28 @@ expr hi = 77
                 ]
       , lexed =
             Ok
-                [ Located { end = { col = 5, row = 1 }, start = { col = 1, row = 1 } } (Keyword Type)
-                , Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 11, row = 1 }, start = { col = 6, row = 1 } } (Keyword Alias)
-                , Located { end = { col = 12, row = 1 }, start = { col = 11, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 20, row = 1 }, start = { col = 12, row = 1 } } (Identifier { name = "Function", qualifiers = [] })
-                , Located { end = { col = 21, row = 1 }, start = { col = 20, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 22, row = 1 }, start = { col = 21, row = 1 } } (Sigil Assign)
-                , Located { end = { col = 23, row = 1 }, start = { col = 22, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 27, row = 1 }, start = { col = 23, row = 1 } } (Identifier { name = "List", qualifiers = [] })
-                , Located { end = { col = 28, row = 1 }, start = { col = 27, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 31, row = 1 }, start = { col = 28, row = 1 } } (Identifier { name = "Int", qualifiers = [] })
-                , Located { end = { col = 32, row = 1 }, start = { col = 31, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 34, row = 1 }, start = { col = 32, row = 1 } } (Sigil ThinArrow)
-                , Located { end = { col = 35, row = 1 }, start = { col = 34, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 39, row = 1 }, start = { col = 35, row = 1 } } (Identifier { name = "List", qualifiers = [] })
-                , Located { end = { col = 40, row = 1 }, start = { col = 39, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 41, row = 1 }, start = { col = 40, row = 1 } } (Sigil (Bracket Round Open))
-                , Located { end = { col = 45, row = 1 }, start = { col = 41, row = 1 } } (Identifier { name = "List", qualifiers = [] })
-                , Located { end = { col = 46, row = 1 }, start = { col = 45, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 49, row = 1 }, start = { col = 46, row = 1 } } (Identifier { name = "Int", qualifiers = [] })
-                , Located { end = { col = 50, row = 1 }, start = { col = 49, row = 1 } } (Sigil (Bracket Round Close))
-                , Located { end = { col = 1, row = 2 }, start = { col = 50, row = 1 } } (Newlines [] 0)
+                [ Located { end = { col = 5, row = 1 }, start = { col = 1, row = 1 } } (Token (Keyword Type))
+                , Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 11, row = 1 }, start = { col = 6, row = 1 } } (Token (Keyword Alias))
+                , Located { end = { col = 12, row = 1 }, start = { col = 11, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 20, row = 1 }, start = { col = 12, row = 1 } } (Token (Identifier { name = "Function", qualifiers = [] }))
+                , Located { end = { col = 21, row = 1 }, start = { col = 20, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 22, row = 1 }, start = { col = 21, row = 1 } } (Token (Sigil Assign))
+                , Located { end = { col = 23, row = 1 }, start = { col = 22, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 27, row = 1 }, start = { col = 23, row = 1 } } (Token (Identifier { name = "List", qualifiers = [] }))
+                , Located { end = { col = 28, row = 1 }, start = { col = 27, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 31, row = 1 }, start = { col = 28, row = 1 } } (Token (Identifier { name = "Int", qualifiers = [] }))
+                , Located { end = { col = 32, row = 1 }, start = { col = 31, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 34, row = 1 }, start = { col = 32, row = 1 } } (Token (Sigil ThinArrow))
+                , Located { end = { col = 35, row = 1 }, start = { col = 34, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 39, row = 1 }, start = { col = 35, row = 1 } } (Token (Identifier { name = "List", qualifiers = [] }))
+                , Located { end = { col = 40, row = 1 }, start = { col = 39, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 41, row = 1 }, start = { col = 40, row = 1 } } (Token (Sigil (Bracket Round Open)))
+                , Located { end = { col = 45, row = 1 }, start = { col = 41, row = 1 } } (Token (Identifier { name = "List", qualifiers = [] }))
+                , Located { end = { col = 46, row = 1 }, start = { col = 45, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 49, row = 1 }, start = { col = 46, row = 1 } } (Token (Identifier { name = "Int", qualifiers = [] }))
+                , Located { end = { col = 50, row = 1 }, start = { col = 49, row = 1 } } (Token (Sigil (Bracket Round Close)))
+                , Located { end = { col = 1, row = 2 }, start = { col = 50, row = 1 } } (Token (Newlines [] 0))
                 ]
       }
     , { name = "type-alias-function-binding-order"
@@ -1586,46 +1600,46 @@ type alias Function = A -> B -> C -> D
                 ]
       , lexed =
             Ok
-                [ Located { end = { col = 5, row = 1 }, start = { col = 1, row = 1 } } (Keyword Type)
-                , Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 11, row = 1 }, start = { col = 6, row = 1 } } (Keyword Alias)
-                , Located { end = { col = 12, row = 1 }, start = { col = 11, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 20, row = 1 }, start = { col = 12, row = 1 } } (Identifier { name = "Function", qualifiers = [] })
-                , Located { end = { col = 21, row = 1 }, start = { col = 20, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 22, row = 1 }, start = { col = 21, row = 1 } } (Sigil Assign)
-                , Located { end = { col = 23, row = 1 }, start = { col = 22, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 24, row = 1 }, start = { col = 23, row = 1 } } (Identifier { name = "A", qualifiers = [] })
-                , Located { end = { col = 25, row = 1 }, start = { col = 24, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 27, row = 1 }, start = { col = 25, row = 1 } } (Sigil ThinArrow)
-                , Located { end = { col = 28, row = 1 }, start = { col = 27, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 29, row = 1 }, start = { col = 28, row = 1 } } (Identifier { name = "B", qualifiers = [] })
-                , Located { end = { col = 30, row = 1 }, start = { col = 29, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 32, row = 1 }, start = { col = 30, row = 1 } } (Sigil ThinArrow)
-                , Located { end = { col = 33, row = 1 }, start = { col = 32, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 34, row = 1 }, start = { col = 33, row = 1 } } (Identifier { name = "C", qualifiers = [] })
-                , Located { end = { col = 1, row = 2 }, start = { col = 34, row = 1 } } (Newlines [] 0)
-                , Located { end = { col = 5, row = 2 }, start = { col = 1, row = 2 } } (Keyword Type)
-                , Located { end = { col = 6, row = 2 }, start = { col = 5, row = 2 } } (Whitespace 1)
-                , Located { end = { col = 11, row = 2 }, start = { col = 6, row = 2 } } (Keyword Alias)
-                , Located { end = { col = 12, row = 2 }, start = { col = 11, row = 2 } } (Whitespace 1)
-                , Located { end = { col = 20, row = 2 }, start = { col = 12, row = 2 } } (Identifier { name = "Function", qualifiers = [] })
-                , Located { end = { col = 21, row = 2 }, start = { col = 20, row = 2 } } (Whitespace 1)
-                , Located { end = { col = 22, row = 2 }, start = { col = 21, row = 2 } } (Sigil Assign)
-                , Located { end = { col = 23, row = 2 }, start = { col = 22, row = 2 } } (Whitespace 1)
-                , Located { end = { col = 24, row = 2 }, start = { col = 23, row = 2 } } (Identifier { name = "A", qualifiers = [] })
-                , Located { end = { col = 25, row = 2 }, start = { col = 24, row = 2 } } (Whitespace 1)
-                , Located { end = { col = 27, row = 2 }, start = { col = 25, row = 2 } } (Sigil ThinArrow)
-                , Located { end = { col = 28, row = 2 }, start = { col = 27, row = 2 } } (Whitespace 1)
-                , Located { end = { col = 29, row = 2 }, start = { col = 28, row = 2 } } (Identifier { name = "B", qualifiers = [] })
-                , Located { end = { col = 30, row = 2 }, start = { col = 29, row = 2 } } (Whitespace 1)
-                , Located { end = { col = 32, row = 2 }, start = { col = 30, row = 2 } } (Sigil ThinArrow)
-                , Located { end = { col = 33, row = 2 }, start = { col = 32, row = 2 } } (Whitespace 1)
-                , Located { end = { col = 34, row = 2 }, start = { col = 33, row = 2 } } (Identifier { name = "C", qualifiers = [] })
-                , Located { end = { col = 35, row = 2 }, start = { col = 34, row = 2 } } (Whitespace 1)
-                , Located { end = { col = 37, row = 2 }, start = { col = 35, row = 2 } } (Sigil ThinArrow)
-                , Located { end = { col = 38, row = 2 }, start = { col = 37, row = 2 } } (Whitespace 1)
-                , Located { end = { col = 39, row = 2 }, start = { col = 38, row = 2 } } (Identifier { name = "D", qualifiers = [] })
-                , Located { end = { col = 1, row = 3 }, start = { col = 39, row = 2 } } (Newlines [] 0)
+                [ Located { end = { col = 5, row = 1 }, start = { col = 1, row = 1 } } (Token (Keyword Type))
+                , Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 11, row = 1 }, start = { col = 6, row = 1 } } (Token (Keyword Alias))
+                , Located { end = { col = 12, row = 1 }, start = { col = 11, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 20, row = 1 }, start = { col = 12, row = 1 } } (Token (Identifier { name = "Function", qualifiers = [] }))
+                , Located { end = { col = 21, row = 1 }, start = { col = 20, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 22, row = 1 }, start = { col = 21, row = 1 } } (Token (Sigil Assign))
+                , Located { end = { col = 23, row = 1 }, start = { col = 22, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 24, row = 1 }, start = { col = 23, row = 1 } } (Token (Identifier { name = "A", qualifiers = [] }))
+                , Located { end = { col = 25, row = 1 }, start = { col = 24, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 27, row = 1 }, start = { col = 25, row = 1 } } (Token (Sigil ThinArrow))
+                , Located { end = { col = 28, row = 1 }, start = { col = 27, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 29, row = 1 }, start = { col = 28, row = 1 } } (Token (Identifier { name = "B", qualifiers = [] }))
+                , Located { end = { col = 30, row = 1 }, start = { col = 29, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 32, row = 1 }, start = { col = 30, row = 1 } } (Token (Sigil ThinArrow))
+                , Located { end = { col = 33, row = 1 }, start = { col = 32, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 34, row = 1 }, start = { col = 33, row = 1 } } (Token (Identifier { name = "C", qualifiers = [] }))
+                , Located { end = { col = 1, row = 2 }, start = { col = 34, row = 1 } } (Token (Newlines [] 0))
+                , Located { end = { col = 5, row = 2 }, start = { col = 1, row = 2 } } (Token (Keyword Type))
+                , Located { end = { col = 6, row = 2 }, start = { col = 5, row = 2 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 11, row = 2 }, start = { col = 6, row = 2 } } (Token (Keyword Alias))
+                , Located { end = { col = 12, row = 2 }, start = { col = 11, row = 2 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 20, row = 2 }, start = { col = 12, row = 2 } } (Token (Identifier { name = "Function", qualifiers = [] }))
+                , Located { end = { col = 21, row = 2 }, start = { col = 20, row = 2 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 22, row = 2 }, start = { col = 21, row = 2 } } (Token (Sigil Assign))
+                , Located { end = { col = 23, row = 2 }, start = { col = 22, row = 2 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 24, row = 2 }, start = { col = 23, row = 2 } } (Token (Identifier { name = "A", qualifiers = [] }))
+                , Located { end = { col = 25, row = 2 }, start = { col = 24, row = 2 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 27, row = 2 }, start = { col = 25, row = 2 } } (Token (Sigil ThinArrow))
+                , Located { end = { col = 28, row = 2 }, start = { col = 27, row = 2 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 29, row = 2 }, start = { col = 28, row = 2 } } (Token (Identifier { name = "B", qualifiers = [] }))
+                , Located { end = { col = 30, row = 2 }, start = { col = 29, row = 2 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 32, row = 2 }, start = { col = 30, row = 2 } } (Token (Sigil ThinArrow))
+                , Located { end = { col = 33, row = 2 }, start = { col = 32, row = 2 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 34, row = 2 }, start = { col = 33, row = 2 } } (Token (Identifier { name = "C", qualifiers = [] }))
+                , Located { end = { col = 35, row = 2 }, start = { col = 34, row = 2 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 37, row = 2 }, start = { col = 35, row = 2 } } (Token (Sigil ThinArrow))
+                , Located { end = { col = 38, row = 2 }, start = { col = 37, row = 2 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 39, row = 2 }, start = { col = 38, row = 2 } } (Token (Identifier { name = "D", qualifiers = [] }))
+                , Located { end = { col = 1, row = 3 }, start = { col = 39, row = 2 } } (Token (Newlines [] 0))
                 ]
       }
     , { name = "type-alias-function-generic"
@@ -1739,30 +1753,30 @@ type alias Function = A -> B -> C -> D
                 ]
       , lexed =
             Ok
-                [ Located { end = { col = 5, row = 1 }, start = { col = 1, row = 1 } } (Keyword Type)
-                , Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 11, row = 1 }, start = { col = 6, row = 1 } } (Keyword Alias)
-                , Located { end = { col = 12, row = 1 }, start = { col = 11, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 20, row = 1 }, start = { col = 12, row = 1 } } (Identifier { name = "Function", qualifiers = [] })
-                , Located { end = { col = 21, row = 1 }, start = { col = 20, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 22, row = 1 }, start = { col = 21, row = 1 } } (Identifier { name = "a", qualifiers = [] })
-                , Located { end = { col = 23, row = 1 }, start = { col = 22, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 24, row = 1 }, start = { col = 23, row = 1 } } (Sigil Assign)
-                , Located { end = { col = 25, row = 1 }, start = { col = 24, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 29, row = 1 }, start = { col = 25, row = 1 } } (Identifier { name = "List", qualifiers = [] })
-                , Located { end = { col = 30, row = 1 }, start = { col = 29, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 33, row = 1 }, start = { col = 30, row = 1 } } (Identifier { name = "Int", qualifiers = [] })
-                , Located { end = { col = 34, row = 1 }, start = { col = 33, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 36, row = 1 }, start = { col = 34, row = 1 } } (Sigil ThinArrow)
-                , Located { end = { col = 37, row = 1 }, start = { col = 36, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 41, row = 1 }, start = { col = 37, row = 1 } } (Identifier { name = "List", qualifiers = [] })
-                , Located { end = { col = 42, row = 1 }, start = { col = 41, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 43, row = 1 }, start = { col = 42, row = 1 } } (Sigil (Bracket Round Open))
-                , Located { end = { col = 47, row = 1 }, start = { col = 43, row = 1 } } (Identifier { name = "List", qualifiers = [] })
-                , Located { end = { col = 48, row = 1 }, start = { col = 47, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 49, row = 1 }, start = { col = 48, row = 1 } } (Identifier { name = "a", qualifiers = [] })
-                , Located { end = { col = 50, row = 1 }, start = { col = 49, row = 1 } } (Sigil (Bracket Round Close))
-                , Located { end = { col = 1, row = 2 }, start = { col = 50, row = 1 } } (Newlines [] 0)
+                [ Located { end = { col = 5, row = 1 }, start = { col = 1, row = 1 } } (Token (Keyword Type))
+                , Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 11, row = 1 }, start = { col = 6, row = 1 } } (Token (Keyword Alias))
+                , Located { end = { col = 12, row = 1 }, start = { col = 11, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 20, row = 1 }, start = { col = 12, row = 1 } } (Token (Identifier { name = "Function", qualifiers = [] }))
+                , Located { end = { col = 21, row = 1 }, start = { col = 20, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 22, row = 1 }, start = { col = 21, row = 1 } } (Token (Identifier { name = "a", qualifiers = [] }))
+                , Located { end = { col = 23, row = 1 }, start = { col = 22, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 24, row = 1 }, start = { col = 23, row = 1 } } (Token (Sigil Assign))
+                , Located { end = { col = 25, row = 1 }, start = { col = 24, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 29, row = 1 }, start = { col = 25, row = 1 } } (Token (Identifier { name = "List", qualifiers = [] }))
+                , Located { end = { col = 30, row = 1 }, start = { col = 29, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 33, row = 1 }, start = { col = 30, row = 1 } } (Token (Identifier { name = "Int", qualifiers = [] }))
+                , Located { end = { col = 34, row = 1 }, start = { col = 33, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 36, row = 1 }, start = { col = 34, row = 1 } } (Token (Sigil ThinArrow))
+                , Located { end = { col = 37, row = 1 }, start = { col = 36, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 41, row = 1 }, start = { col = 37, row = 1 } } (Token (Identifier { name = "List", qualifiers = [] }))
+                , Located { end = { col = 42, row = 1 }, start = { col = 41, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 43, row = 1 }, start = { col = 42, row = 1 } } (Token (Sigil (Bracket Round Open)))
+                , Located { end = { col = 47, row = 1 }, start = { col = 43, row = 1 } } (Token (Identifier { name = "List", qualifiers = [] }))
+                , Located { end = { col = 48, row = 1 }, start = { col = 47, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 49, row = 1 }, start = { col = 48, row = 1 } } (Token (Identifier { name = "a", qualifiers = [] }))
+                , Located { end = { col = 50, row = 1 }, start = { col = 49, row = 1 } } (Token (Sigil (Bracket Round Close)))
+                , Located { end = { col = 1, row = 2 }, start = { col = 50, row = 1 } } (Token (Newlines [] 0))
                 ]
       }
     , { name = "type-alias-function-nested"
@@ -2048,125 +2062,131 @@ type alias Function3 = (Int, () -> (Int, String), ())
                 ]
       , lexed =
             Ok
-                [ Located { end = { col = 5, row = 1 }, start = { col = 1, row = 1 } } (Keyword Type)
-                , Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 11, row = 1 }, start = { col = 6, row = 1 } } (Keyword Alias)
-                , Located { end = { col = 12, row = 1 }, start = { col = 11, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 20, row = 1 }, start = { col = 12, row = 1 } } (Identifier { name = "Function", qualifiers = [] })
-                , Located { end = { col = 21, row = 1 }, start = { col = 20, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 22, row = 1 }, start = { col = 21, row = 1 } } (Sigil Assign)
-                , Located { end = { col = 23, row = 1 }, start = { col = 22, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 24, row = 1 }, start = { col = 23, row = 1 } } (Sigil (Bracket Round Open))
-                , Located { end = { col = 25, row = 1 }, start = { col = 24, row = 1 } } (Sigil (Bracket Round Open))
-                , Located { end = { col = 26, row = 1 }, start = { col = 25, row = 1 } } (Sigil (Bracket Round Close))
-                , Located { end = { col = 27, row = 1 }, start = { col = 26, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 29, row = 1 }, start = { col = 27, row = 1 } } (Sigil ThinArrow)
-                , Located { end = { col = 30, row = 1 }, start = { col = 29, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 31, row = 1 }, start = { col = 30, row = 1 } } (Sigil (Bracket Round Open))
-                , Located { end = { col = 34, row = 1 }, start = { col = 31, row = 1 } } (Identifier { name = "Int", qualifiers = [] })
-                , Located { end = { col = 35, row = 1 }, start = { col = 34, row = 1 } } (Sigil Comma)
-                , Located { end = { col = 36, row = 1 }, start = { col = 35, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 42, row = 1 }, start = { col = 36, row = 1 } } (Identifier { name = "String", qualifiers = [] })
-                , Located { end = { col = 43, row = 1 }, start = { col = 42, row = 1 } } (Sigil (Bracket Round Close))
-                , Located { end = { col = 44, row = 1 }, start = { col = 43, row = 1 } } (Sigil (Bracket Round Close))
+                [ Located { end = { col = 5, row = 1 }, start = { col = 1, row = 1 } } (Token (Keyword Type))
+                , Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 11, row = 1 }, start = { col = 6, row = 1 } } (Token (Keyword Alias))
+                , Located { end = { col = 12, row = 1 }, start = { col = 11, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 20, row = 1 }, start = { col = 12, row = 1 } } (Token (Identifier { name = "Function", qualifiers = [] }))
+                , Located { end = { col = 21, row = 1 }, start = { col = 20, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 22, row = 1 }, start = { col = 21, row = 1 } } (Token (Sigil Assign))
+                , Located { end = { col = 23, row = 1 }, start = { col = 22, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 24, row = 1 }, start = { col = 23, row = 1 } } (Token (Sigil (Bracket Round Open)))
+                , Located { end = { col = 25, row = 1 }, start = { col = 24, row = 1 } } (Token (Sigil (Bracket Round Open)))
+                , Located { end = { col = 26, row = 1 }, start = { col = 25, row = 1 } } (Token (Sigil (Bracket Round Close)))
+                , Located { end = { col = 27, row = 1 }, start = { col = 26, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 29, row = 1 }, start = { col = 27, row = 1 } } (Token (Sigil ThinArrow))
+                , Located { end = { col = 30, row = 1 }, start = { col = 29, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 31, row = 1 }, start = { col = 30, row = 1 } } (Token (Sigil (Bracket Round Open)))
+                , Located { end = { col = 34, row = 1 }, start = { col = 31, row = 1 } } (Token (Identifier { name = "Int", qualifiers = [] }))
+                , Located { end = { col = 35, row = 1 }, start = { col = 34, row = 1 } } (Token (Sigil Comma))
+                , Located { end = { col = 36, row = 1 }, start = { col = 35, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 42, row = 1 }, start = { col = 36, row = 1 } } (Token (Identifier { name = "String", qualifiers = [] }))
+                , Located { end = { col = 43, row = 1 }, start = { col = 42, row = 1 } } (Token (Sigil (Bracket Round Close)))
+                , Located { end = { col = 44, row = 1 }, start = { col = 43, row = 1 } } (Token (Sigil (Bracket Round Close)))
                 , Located { end = { col = 1, row = 3 }, start = { col = 44, row = 1 } }
-                    (Newlines
-                        [ 0
-                        ]
-                        0
+                    (Token
+                        (Newlines
+                            [ 0
+                            ]
+                            0
+                        )
                     )
-                , Located { end = { col = 5, row = 3 }, start = { col = 1, row = 3 } } (Keyword Type)
-                , Located { end = { col = 6, row = 3 }, start = { col = 5, row = 3 } } (Whitespace 1)
-                , Located { end = { col = 11, row = 3 }, start = { col = 6, row = 3 } } (Keyword Alias)
-                , Located { end = { col = 12, row = 3 }, start = { col = 11, row = 3 } } (Whitespace 1)
-                , Located { end = { col = 21, row = 3 }, start = { col = 12, row = 3 } } (Identifier { name = "Function2", qualifiers = [] })
-                , Located { end = { col = 22, row = 3 }, start = { col = 21, row = 3 } } (Whitespace 1)
-                , Located { end = { col = 23, row = 3 }, start = { col = 22, row = 3 } } (Sigil Assign)
-                , Located { end = { col = 24, row = 3 }, start = { col = 23, row = 3 } } (Whitespace 1)
-                , Located { end = { col = 25, row = 3 }, start = { col = 24, row = 3 } } (Sigil (Bracket Curly Open))
-                , Located { end = { col = 26, row = 3 }, start = { col = 25, row = 3 } } (Whitespace 1)
-                , Located { end = { col = 27, row = 3 }, start = { col = 26, row = 3 } } (Identifier { name = "a", qualifiers = [] })
-                , Located { end = { col = 28, row = 3 }, start = { col = 27, row = 3 } } (Sigil Colon)
-                , Located { end = { col = 29, row = 3 }, start = { col = 28, row = 3 } } (Whitespace 1)
-                , Located { end = { col = 30, row = 3 }, start = { col = 29, row = 3 } } (Sigil (Bracket Round Open))
-                , Located { end = { col = 31, row = 3 }, start = { col = 30, row = 3 } } (Sigil (Bracket Round Close))
-                , Located { end = { col = 32, row = 3 }, start = { col = 31, row = 3 } } (Whitespace 1)
-                , Located { end = { col = 34, row = 3 }, start = { col = 32, row = 3 } } (Sigil ThinArrow)
-                , Located { end = { col = 35, row = 3 }, start = { col = 34, row = 3 } } (Whitespace 1)
-                , Located { end = { col = 36, row = 3 }, start = { col = 35, row = 3 } } (Sigil (Bracket Round Open))
-                , Located { end = { col = 39, row = 3 }, start = { col = 36, row = 3 } } (Identifier { name = "Int", qualifiers = [] })
-                , Located { end = { col = 40, row = 3 }, start = { col = 39, row = 3 } } (Sigil Comma)
-                , Located { end = { col = 41, row = 3 }, start = { col = 40, row = 3 } } (Whitespace 1)
-                , Located { end = { col = 47, row = 3 }, start = { col = 41, row = 3 } } (Identifier { name = "String", qualifiers = [] })
-                , Located { end = { col = 48, row = 3 }, start = { col = 47, row = 3 } } (Sigil (Bracket Round Close))
-                , Located { end = { col = 49, row = 3 }, start = { col = 48, row = 3 } } (Whitespace 1)
-                , Located { end = { col = 50, row = 3 }, start = { col = 49, row = 3 } } (Sigil (Bracket Curly Close))
+                , Located { end = { col = 5, row = 3 }, start = { col = 1, row = 3 } } (Token (Keyword Type))
+                , Located { end = { col = 6, row = 3 }, start = { col = 5, row = 3 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 11, row = 3 }, start = { col = 6, row = 3 } } (Token (Keyword Alias))
+                , Located { end = { col = 12, row = 3 }, start = { col = 11, row = 3 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 21, row = 3 }, start = { col = 12, row = 3 } } (Token (Identifier { name = "Function2", qualifiers = [] }))
+                , Located { end = { col = 22, row = 3 }, start = { col = 21, row = 3 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 23, row = 3 }, start = { col = 22, row = 3 } } (Token (Sigil Assign))
+                , Located { end = { col = 24, row = 3 }, start = { col = 23, row = 3 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 25, row = 3 }, start = { col = 24, row = 3 } } (Token (Sigil (Bracket Curly Open)))
+                , Located { end = { col = 26, row = 3 }, start = { col = 25, row = 3 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 27, row = 3 }, start = { col = 26, row = 3 } } (Token (Identifier { name = "a", qualifiers = [] }))
+                , Located { end = { col = 28, row = 3 }, start = { col = 27, row = 3 } } (Token (Sigil Colon))
+                , Located { end = { col = 29, row = 3 }, start = { col = 28, row = 3 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 30, row = 3 }, start = { col = 29, row = 3 } } (Token (Sigil (Bracket Round Open)))
+                , Located { end = { col = 31, row = 3 }, start = { col = 30, row = 3 } } (Token (Sigil (Bracket Round Close)))
+                , Located { end = { col = 32, row = 3 }, start = { col = 31, row = 3 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 34, row = 3 }, start = { col = 32, row = 3 } } (Token (Sigil ThinArrow))
+                , Located { end = { col = 35, row = 3 }, start = { col = 34, row = 3 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 36, row = 3 }, start = { col = 35, row = 3 } } (Token (Sigil (Bracket Round Open)))
+                , Located { end = { col = 39, row = 3 }, start = { col = 36, row = 3 } } (Token (Identifier { name = "Int", qualifiers = [] }))
+                , Located { end = { col = 40, row = 3 }, start = { col = 39, row = 3 } } (Token (Sigil Comma))
+                , Located { end = { col = 41, row = 3 }, start = { col = 40, row = 3 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 47, row = 3 }, start = { col = 41, row = 3 } } (Token (Identifier { name = "String", qualifiers = [] }))
+                , Located { end = { col = 48, row = 3 }, start = { col = 47, row = 3 } } (Token (Sigil (Bracket Round Close)))
+                , Located { end = { col = 49, row = 3 }, start = { col = 48, row = 3 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 50, row = 3 }, start = { col = 49, row = 3 } } (Token (Sigil (Bracket Curly Close)))
                 , Located { end = { col = 1, row = 5 }, start = { col = 50, row = 3 } }
-                    (Newlines
-                        [ 0
-                        ]
-                        0
+                    (Token
+                        (Newlines
+                            [ 0
+                            ]
+                            0
+                        )
                     )
-                , Located { end = { col = 5, row = 5 }, start = { col = 1, row = 5 } } (Keyword Type)
-                , Located { end = { col = 6, row = 5 }, start = { col = 5, row = 5 } } (Whitespace 1)
-                , Located { end = { col = 11, row = 5 }, start = { col = 6, row = 5 } } (Keyword Alias)
-                , Located { end = { col = 12, row = 5 }, start = { col = 11, row = 5 } } (Whitespace 1)
-                , Located { end = { col = 21, row = 5 }, start = { col = 12, row = 5 } } (Identifier { name = "Function3", qualifiers = [] })
-                , Located { end = { col = 22, row = 5 }, start = { col = 21, row = 5 } } (Whitespace 1)
-                , Located { end = { col = 23, row = 5 }, start = { col = 22, row = 5 } } (Sigil Assign)
-                , Located { end = { col = 24, row = 5 }, start = { col = 23, row = 5 } } (Whitespace 1)
-                , Located { end = { col = 25, row = 5 }, start = { col = 24, row = 5 } } (Sigil (Bracket Round Open))
-                , Located { end = { col = 26, row = 5 }, start = { col = 25, row = 5 } } (Sigil (Bracket Round Open))
-                , Located { end = { col = 27, row = 5 }, start = { col = 26, row = 5 } } (Sigil (Bracket Round Close))
-                , Located { end = { col = 28, row = 5 }, start = { col = 27, row = 5 } } (Whitespace 1)
-                , Located { end = { col = 30, row = 5 }, start = { col = 28, row = 5 } } (Sigil ThinArrow)
-                , Located { end = { col = 31, row = 5 }, start = { col = 30, row = 5 } } (Whitespace 1)
-                , Located { end = { col = 32, row = 5 }, start = { col = 31, row = 5 } } (Sigil (Bracket Round Open))
-                , Located { end = { col = 35, row = 5 }, start = { col = 32, row = 5 } } (Identifier { name = "Int", qualifiers = [] })
-                , Located { end = { col = 36, row = 5 }, start = { col = 35, row = 5 } } (Sigil Comma)
-                , Located { end = { col = 37, row = 5 }, start = { col = 36, row = 5 } } (Whitespace 1)
-                , Located { end = { col = 43, row = 5 }, start = { col = 37, row = 5 } } (Identifier { name = "String", qualifiers = [] })
-                , Located { end = { col = 44, row = 5 }, start = { col = 43, row = 5 } } (Sigil (Bracket Round Close))
-                , Located { end = { col = 45, row = 5 }, start = { col = 44, row = 5 } } (Sigil Comma)
-                , Located { end = { col = 46, row = 5 }, start = { col = 45, row = 5 } } (Whitespace 1)
-                , Located { end = { col = 47, row = 5 }, start = { col = 46, row = 5 } } (Sigil (Bracket Round Open))
-                , Located { end = { col = 48, row = 5 }, start = { col = 47, row = 5 } } (Sigil (Bracket Round Close))
-                , Located { end = { col = 49, row = 5 }, start = { col = 48, row = 5 } } (Sigil (Bracket Round Close))
+                , Located { end = { col = 5, row = 5 }, start = { col = 1, row = 5 } } (Token (Keyword Type))
+                , Located { end = { col = 6, row = 5 }, start = { col = 5, row = 5 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 11, row = 5 }, start = { col = 6, row = 5 } } (Token (Keyword Alias))
+                , Located { end = { col = 12, row = 5 }, start = { col = 11, row = 5 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 21, row = 5 }, start = { col = 12, row = 5 } } (Token (Identifier { name = "Function3", qualifiers = [] }))
+                , Located { end = { col = 22, row = 5 }, start = { col = 21, row = 5 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 23, row = 5 }, start = { col = 22, row = 5 } } (Token (Sigil Assign))
+                , Located { end = { col = 24, row = 5 }, start = { col = 23, row = 5 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 25, row = 5 }, start = { col = 24, row = 5 } } (Token (Sigil (Bracket Round Open)))
+                , Located { end = { col = 26, row = 5 }, start = { col = 25, row = 5 } } (Token (Sigil (Bracket Round Open)))
+                , Located { end = { col = 27, row = 5 }, start = { col = 26, row = 5 } } (Token (Sigil (Bracket Round Close)))
+                , Located { end = { col = 28, row = 5 }, start = { col = 27, row = 5 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 30, row = 5 }, start = { col = 28, row = 5 } } (Token (Sigil ThinArrow))
+                , Located { end = { col = 31, row = 5 }, start = { col = 30, row = 5 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 32, row = 5 }, start = { col = 31, row = 5 } } (Token (Sigil (Bracket Round Open)))
+                , Located { end = { col = 35, row = 5 }, start = { col = 32, row = 5 } } (Token (Identifier { name = "Int", qualifiers = [] }))
+                , Located { end = { col = 36, row = 5 }, start = { col = 35, row = 5 } } (Token (Sigil Comma))
+                , Located { end = { col = 37, row = 5 }, start = { col = 36, row = 5 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 43, row = 5 }, start = { col = 37, row = 5 } } (Token (Identifier { name = "String", qualifiers = [] }))
+                , Located { end = { col = 44, row = 5 }, start = { col = 43, row = 5 } } (Token (Sigil (Bracket Round Close)))
+                , Located { end = { col = 45, row = 5 }, start = { col = 44, row = 5 } } (Token (Sigil Comma))
+                , Located { end = { col = 46, row = 5 }, start = { col = 45, row = 5 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 47, row = 5 }, start = { col = 46, row = 5 } } (Token (Sigil (Bracket Round Open)))
+                , Located { end = { col = 48, row = 5 }, start = { col = 47, row = 5 } } (Token (Sigil (Bracket Round Close)))
+                , Located { end = { col = 49, row = 5 }, start = { col = 48, row = 5 } } (Token (Sigil (Bracket Round Close)))
                 , Located { end = { col = 1, row = 7 }, start = { col = 49, row = 5 } }
-                    (Newlines
-                        [ 0
-                        ]
-                        0
+                    (Token
+                        (Newlines
+                            [ 0
+                            ]
+                            0
+                        )
                     )
-                , Located { end = { col = 5, row = 7 }, start = { col = 1, row = 7 } } (Keyword Type)
-                , Located { end = { col = 6, row = 7 }, start = { col = 5, row = 7 } } (Whitespace 1)
-                , Located { end = { col = 11, row = 7 }, start = { col = 6, row = 7 } } (Keyword Alias)
-                , Located { end = { col = 12, row = 7 }, start = { col = 11, row = 7 } } (Whitespace 1)
-                , Located { end = { col = 21, row = 7 }, start = { col = 12, row = 7 } } (Identifier { name = "Function3", qualifiers = [] })
-                , Located { end = { col = 22, row = 7 }, start = { col = 21, row = 7 } } (Whitespace 1)
-                , Located { end = { col = 23, row = 7 }, start = { col = 22, row = 7 } } (Sigil Assign)
-                , Located { end = { col = 24, row = 7 }, start = { col = 23, row = 7 } } (Whitespace 1)
-                , Located { end = { col = 25, row = 7 }, start = { col = 24, row = 7 } } (Sigil (Bracket Round Open))
-                , Located { end = { col = 28, row = 7 }, start = { col = 25, row = 7 } } (Identifier { name = "Int", qualifiers = [] })
-                , Located { end = { col = 29, row = 7 }, start = { col = 28, row = 7 } } (Sigil Comma)
-                , Located { end = { col = 30, row = 7 }, start = { col = 29, row = 7 } } (Whitespace 1)
-                , Located { end = { col = 31, row = 7 }, start = { col = 30, row = 7 } } (Sigil (Bracket Round Open))
-                , Located { end = { col = 32, row = 7 }, start = { col = 31, row = 7 } } (Sigil (Bracket Round Close))
-                , Located { end = { col = 33, row = 7 }, start = { col = 32, row = 7 } } (Whitespace 1)
-                , Located { end = { col = 35, row = 7 }, start = { col = 33, row = 7 } } (Sigil ThinArrow)
-                , Located { end = { col = 36, row = 7 }, start = { col = 35, row = 7 } } (Whitespace 1)
-                , Located { end = { col = 37, row = 7 }, start = { col = 36, row = 7 } } (Sigil (Bracket Round Open))
-                , Located { end = { col = 40, row = 7 }, start = { col = 37, row = 7 } } (Identifier { name = "Int", qualifiers = [] })
-                , Located { end = { col = 41, row = 7 }, start = { col = 40, row = 7 } } (Sigil Comma)
-                , Located { end = { col = 42, row = 7 }, start = { col = 41, row = 7 } } (Whitespace 1)
-                , Located { end = { col = 48, row = 7 }, start = { col = 42, row = 7 } } (Identifier { name = "String", qualifiers = [] })
-                , Located { end = { col = 49, row = 7 }, start = { col = 48, row = 7 } } (Sigil (Bracket Round Close))
-                , Located { end = { col = 50, row = 7 }, start = { col = 49, row = 7 } } (Sigil Comma)
-                , Located { end = { col = 51, row = 7 }, start = { col = 50, row = 7 } } (Whitespace 1)
-                , Located { end = { col = 52, row = 7 }, start = { col = 51, row = 7 } } (Sigil (Bracket Round Open))
-                , Located { end = { col = 53, row = 7 }, start = { col = 52, row = 7 } } (Sigil (Bracket Round Close))
-                , Located { end = { col = 54, row = 7 }, start = { col = 53, row = 7 } } (Sigil (Bracket Round Close))
-                , Located { end = { col = 1, row = 8 }, start = { col = 54, row = 7 } } (Newlines [] 0)
+                , Located { end = { col = 5, row = 7 }, start = { col = 1, row = 7 } } (Token (Keyword Type))
+                , Located { end = { col = 6, row = 7 }, start = { col = 5, row = 7 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 11, row = 7 }, start = { col = 6, row = 7 } } (Token (Keyword Alias))
+                , Located { end = { col = 12, row = 7 }, start = { col = 11, row = 7 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 21, row = 7 }, start = { col = 12, row = 7 } } (Token (Identifier { name = "Function3", qualifiers = [] }))
+                , Located { end = { col = 22, row = 7 }, start = { col = 21, row = 7 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 23, row = 7 }, start = { col = 22, row = 7 } } (Token (Sigil Assign))
+                , Located { end = { col = 24, row = 7 }, start = { col = 23, row = 7 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 25, row = 7 }, start = { col = 24, row = 7 } } (Token (Sigil (Bracket Round Open)))
+                , Located { end = { col = 28, row = 7 }, start = { col = 25, row = 7 } } (Token (Identifier { name = "Int", qualifiers = [] }))
+                , Located { end = { col = 29, row = 7 }, start = { col = 28, row = 7 } } (Token (Sigil Comma))
+                , Located { end = { col = 30, row = 7 }, start = { col = 29, row = 7 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 31, row = 7 }, start = { col = 30, row = 7 } } (Token (Sigil (Bracket Round Open)))
+                , Located { end = { col = 32, row = 7 }, start = { col = 31, row = 7 } } (Token (Sigil (Bracket Round Close)))
+                , Located { end = { col = 33, row = 7 }, start = { col = 32, row = 7 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 35, row = 7 }, start = { col = 33, row = 7 } } (Token (Sigil ThinArrow))
+                , Located { end = { col = 36, row = 7 }, start = { col = 35, row = 7 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 37, row = 7 }, start = { col = 36, row = 7 } } (Token (Sigil (Bracket Round Open)))
+                , Located { end = { col = 40, row = 7 }, start = { col = 37, row = 7 } } (Token (Identifier { name = "Int", qualifiers = [] }))
+                , Located { end = { col = 41, row = 7 }, start = { col = 40, row = 7 } } (Token (Sigil Comma))
+                , Located { end = { col = 42, row = 7 }, start = { col = 41, row = 7 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 48, row = 7 }, start = { col = 42, row = 7 } } (Token (Identifier { name = "String", qualifiers = [] }))
+                , Located { end = { col = 49, row = 7 }, start = { col = 48, row = 7 } } (Token (Sigil (Bracket Round Close)))
+                , Located { end = { col = 50, row = 7 }, start = { col = 49, row = 7 } } (Token (Sigil Comma))
+                , Located { end = { col = 51, row = 7 }, start = { col = 50, row = 7 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 52, row = 7 }, start = { col = 51, row = 7 } } (Token (Sigil (Bracket Round Open)))
+                , Located { end = { col = 53, row = 7 }, start = { col = 52, row = 7 } } (Token (Sigil (Bracket Round Close)))
+                , Located { end = { col = 54, row = 7 }, start = { col = 53, row = 7 } } (Token (Sigil (Bracket Round Close)))
+                , Located { end = { col = 1, row = 8 }, start = { col = 54, row = 7 } } (Token (Newlines [] 0))
                 ]
       }
     , { name = "type-alias-function-record"
@@ -2257,40 +2277,40 @@ type alias Function3 = (Int, () -> (Int, String), ())
                 ]
       , lexed =
             Ok
-                [ Located { end = { col = 5, row = 1 }, start = { col = 1, row = 1 } } (Keyword Type)
-                , Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 11, row = 1 }, start = { col = 6, row = 1 } } (Keyword Alias)
-                , Located { end = { col = 12, row = 1 }, start = { col = 11, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 20, row = 1 }, start = { col = 12, row = 1 } } (Identifier { name = "Function", qualifiers = [] })
-                , Located { end = { col = 21, row = 1 }, start = { col = 20, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 22, row = 1 }, start = { col = 21, row = 1 } } (Sigil Assign)
-                , Located { end = { col = 23, row = 1 }, start = { col = 22, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 24, row = 1 }, start = { col = 23, row = 1 } } (Sigil (Bracket Curly Open))
-                , Located { end = { col = 25, row = 1 }, start = { col = 24, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 26, row = 1 }, start = { col = 25, row = 1 } } (Identifier { name = "a", qualifiers = [] })
-                , Located { end = { col = 27, row = 1 }, start = { col = 26, row = 1 } } (Sigil Colon)
-                , Located { end = { col = 28, row = 1 }, start = { col = 27, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 29, row = 1 }, start = { col = 28, row = 1 } } (Sigil (Bracket Curly Open))
-                , Located { end = { col = 30, row = 1 }, start = { col = 29, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 31, row = 1 }, start = { col = 30, row = 1 } } (Identifier { name = "b", qualifiers = [] })
-                , Located { end = { col = 32, row = 1 }, start = { col = 31, row = 1 } } (Sigil Colon)
-                , Located { end = { col = 33, row = 1 }, start = { col = 32, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 34, row = 1 }, start = { col = 33, row = 1 } } (Identifier { name = "C", qualifiers = [] })
-                , Located { end = { col = 35, row = 1 }, start = { col = 34, row = 1 } } (Sigil (Bracket Curly Close))
-                , Located { end = { col = 36, row = 1 }, start = { col = 35, row = 1 } } (Sigil Comma)
-                , Located { end = { col = 37, row = 1 }, start = { col = 36, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 38, row = 1 }, start = { col = 37, row = 1 } } (Identifier { name = "d", qualifiers = [] })
-                , Located { end = { col = 39, row = 1 }, start = { col = 38, row = 1 } } (Sigil Colon)
-                , Located { end = { col = 40, row = 1 }, start = { col = 39, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 41, row = 1 }, start = { col = 40, row = 1 } } (Identifier { name = "E", qualifiers = [] })
-                , Located { end = { col = 42, row = 1 }, start = { col = 41, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 43, row = 1 }, start = { col = 42, row = 1 } } (Sigil (Bracket Curly Close))
-                , Located { end = { col = 44, row = 1 }, start = { col = 43, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 46, row = 1 }, start = { col = 44, row = 1 } } (Sigil ThinArrow)
-                , Located { end = { col = 47, row = 1 }, start = { col = 46, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 48, row = 1 }, start = { col = 47, row = 1 } } (Sigil (Bracket Curly Open))
-                , Located { end = { col = 49, row = 1 }, start = { col = 48, row = 1 } } (Sigil (Bracket Curly Close))
-                , Located { end = { col = 1, row = 2 }, start = { col = 49, row = 1 } } (Newlines [] 0)
+                [ Located { end = { col = 5, row = 1 }, start = { col = 1, row = 1 } } (Token (Keyword Type))
+                , Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 11, row = 1 }, start = { col = 6, row = 1 } } (Token (Keyword Alias))
+                , Located { end = { col = 12, row = 1 }, start = { col = 11, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 20, row = 1 }, start = { col = 12, row = 1 } } (Token (Identifier { name = "Function", qualifiers = [] }))
+                , Located { end = { col = 21, row = 1 }, start = { col = 20, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 22, row = 1 }, start = { col = 21, row = 1 } } (Token (Sigil Assign))
+                , Located { end = { col = 23, row = 1 }, start = { col = 22, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 24, row = 1 }, start = { col = 23, row = 1 } } (Token (Sigil (Bracket Curly Open)))
+                , Located { end = { col = 25, row = 1 }, start = { col = 24, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 26, row = 1 }, start = { col = 25, row = 1 } } (Token (Identifier { name = "a", qualifiers = [] }))
+                , Located { end = { col = 27, row = 1 }, start = { col = 26, row = 1 } } (Token (Sigil Colon))
+                , Located { end = { col = 28, row = 1 }, start = { col = 27, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 29, row = 1 }, start = { col = 28, row = 1 } } (Token (Sigil (Bracket Curly Open)))
+                , Located { end = { col = 30, row = 1 }, start = { col = 29, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 31, row = 1 }, start = { col = 30, row = 1 } } (Token (Identifier { name = "b", qualifiers = [] }))
+                , Located { end = { col = 32, row = 1 }, start = { col = 31, row = 1 } } (Token (Sigil Colon))
+                , Located { end = { col = 33, row = 1 }, start = { col = 32, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 34, row = 1 }, start = { col = 33, row = 1 } } (Token (Identifier { name = "C", qualifiers = [] }))
+                , Located { end = { col = 35, row = 1 }, start = { col = 34, row = 1 } } (Token (Sigil (Bracket Curly Close)))
+                , Located { end = { col = 36, row = 1 }, start = { col = 35, row = 1 } } (Token (Sigil Comma))
+                , Located { end = { col = 37, row = 1 }, start = { col = 36, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 38, row = 1 }, start = { col = 37, row = 1 } } (Token (Identifier { name = "d", qualifiers = [] }))
+                , Located { end = { col = 39, row = 1 }, start = { col = 38, row = 1 } } (Token (Sigil Colon))
+                , Located { end = { col = 40, row = 1 }, start = { col = 39, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 41, row = 1 }, start = { col = 40, row = 1 } } (Token (Identifier { name = "E", qualifiers = [] }))
+                , Located { end = { col = 42, row = 1 }, start = { col = 41, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 43, row = 1 }, start = { col = 42, row = 1 } } (Token (Sigil (Bracket Curly Close)))
+                , Located { end = { col = 44, row = 1 }, start = { col = 43, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 46, row = 1 }, start = { col = 44, row = 1 } } (Token (Sigil ThinArrow))
+                , Located { end = { col = 47, row = 1 }, start = { col = 46, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 48, row = 1 }, start = { col = 47, row = 1 } } (Token (Sigil (Bracket Curly Open)))
+                , Located { end = { col = 49, row = 1 }, start = { col = 48, row = 1 } } (Token (Sigil (Bracket Curly Close)))
+                , Located { end = { col = 1, row = 2 }, start = { col = 49, row = 1 } } (Token (Newlines [] 0))
                 ]
       }
     , { name = "type-alias-function-tuple"
@@ -2360,26 +2380,26 @@ type alias Function3 = (Int, () -> (Int, String), ())
                 ]
       , lexed =
             Ok
-                [ Located { end = { col = 5, row = 1 }, start = { col = 1, row = 1 } } (Keyword Type)
-                , Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 11, row = 1 }, start = { col = 6, row = 1 } } (Keyword Alias)
-                , Located { end = { col = 12, row = 1 }, start = { col = 11, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 20, row = 1 }, start = { col = 12, row = 1 } } (Identifier { name = "Function", qualifiers = [] })
-                , Located { end = { col = 21, row = 1 }, start = { col = 20, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 22, row = 1 }, start = { col = 21, row = 1 } } (Sigil Assign)
-                , Located { end = { col = 23, row = 1 }, start = { col = 22, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 24, row = 1 }, start = { col = 23, row = 1 } } (Sigil (Bracket Round Open))
-                , Located { end = { col = 25, row = 1 }, start = { col = 24, row = 1 } } (Sigil (Bracket Round Close))
-                , Located { end = { col = 26, row = 1 }, start = { col = 25, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 28, row = 1 }, start = { col = 26, row = 1 } } (Sigil ThinArrow)
-                , Located { end = { col = 29, row = 1 }, start = { col = 28, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 30, row = 1 }, start = { col = 29, row = 1 } } (Sigil (Bracket Round Open))
-                , Located { end = { col = 33, row = 1 }, start = { col = 30, row = 1 } } (Identifier { name = "Int", qualifiers = [] })
-                , Located { end = { col = 34, row = 1 }, start = { col = 33, row = 1 } } (Sigil Comma)
-                , Located { end = { col = 35, row = 1 }, start = { col = 34, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 41, row = 1 }, start = { col = 35, row = 1 } } (Identifier { name = "String", qualifiers = [] })
-                , Located { end = { col = 42, row = 1 }, start = { col = 41, row = 1 } } (Sigil (Bracket Round Close))
-                , Located { end = { col = 1, row = 2 }, start = { col = 42, row = 1 } } (Newlines [] 0)
+                [ Located { end = { col = 5, row = 1 }, start = { col = 1, row = 1 } } (Token (Keyword Type))
+                , Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 11, row = 1 }, start = { col = 6, row = 1 } } (Token (Keyword Alias))
+                , Located { end = { col = 12, row = 1 }, start = { col = 11, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 20, row = 1 }, start = { col = 12, row = 1 } } (Token (Identifier { name = "Function", qualifiers = [] }))
+                , Located { end = { col = 21, row = 1 }, start = { col = 20, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 22, row = 1 }, start = { col = 21, row = 1 } } (Token (Sigil Assign))
+                , Located { end = { col = 23, row = 1 }, start = { col = 22, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 24, row = 1 }, start = { col = 23, row = 1 } } (Token (Sigil (Bracket Round Open)))
+                , Located { end = { col = 25, row = 1 }, start = { col = 24, row = 1 } } (Token (Sigil (Bracket Round Close)))
+                , Located { end = { col = 26, row = 1 }, start = { col = 25, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 28, row = 1 }, start = { col = 26, row = 1 } } (Token (Sigil ThinArrow))
+                , Located { end = { col = 29, row = 1 }, start = { col = 28, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 30, row = 1 }, start = { col = 29, row = 1 } } (Token (Sigil (Bracket Round Open)))
+                , Located { end = { col = 33, row = 1 }, start = { col = 30, row = 1 } } (Token (Identifier { name = "Int", qualifiers = [] }))
+                , Located { end = { col = 34, row = 1 }, start = { col = 33, row = 1 } } (Token (Sigil Comma))
+                , Located { end = { col = 35, row = 1 }, start = { col = 34, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 41, row = 1 }, start = { col = 35, row = 1 } } (Token (Identifier { name = "String", qualifiers = [] }))
+                , Located { end = { col = 42, row = 1 }, start = { col = 41, row = 1 } } (Token (Sigil (Bracket Round Close)))
+                , Located { end = { col = 1, row = 2 }, start = { col = 42, row = 1 } } (Token (Newlines [] 0))
                 ]
       }
     , { name = "type-alias-funky-indentation"
@@ -2436,18 +2456,18 @@ type alias Function3 = (Int, () -> (Int, String), ())
                 ]
       , lexed =
             Ok
-                [ Located { end = { col = 5, row = 1 }, start = { col = 1, row = 1 } } (Keyword Type)
-                , Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 11, row = 1 }, start = { col = 6, row = 1 } } (Keyword Alias)
-                , Located { end = { col = 5, row = 2 }, start = { col = 11, row = 1 } } (Newlines [] 4)
-                , Located { end = { col = 10, row = 2 }, start = { col = 5, row = 2 } } (Identifier { name = "Model", qualifiers = [] })
-                , Located { end = { col = 11, row = 2 }, start = { col = 10, row = 2 } } (Whitespace 1)
-                , Located { end = { col = 12, row = 2 }, start = { col = 11, row = 2 } } (Sigil Assign)
-                , Located { end = { col = 13, row = 2 }, start = { col = 12, row = 2 } } (Whitespace 1)
-                , Located { end = { col = 17, row = 2 }, start = { col = 13, row = 2 } } (Identifier { name = "List", qualifiers = [] })
-                , Located { end = { col = 18, row = 2 }, start = { col = 17, row = 2 } } (Whitespace 1)
-                , Located { end = { col = 21, row = 2 }, start = { col = 18, row = 2 } } (Identifier { name = "Int", qualifiers = [] })
-                , Located { end = { col = 1, row = 3 }, start = { col = 21, row = 2 } } (Newlines [] 0)
+                [ Located { end = { col = 5, row = 1 }, start = { col = 1, row = 1 } } (Token (Keyword Type))
+                , Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 11, row = 1 }, start = { col = 6, row = 1 } } (Token (Keyword Alias))
+                , Located { end = { col = 5, row = 2 }, start = { col = 11, row = 1 } } (Token (Newlines [] 4))
+                , Located { end = { col = 10, row = 2 }, start = { col = 5, row = 2 } } (Token (Identifier { name = "Model", qualifiers = [] }))
+                , Located { end = { col = 11, row = 2 }, start = { col = 10, row = 2 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 12, row = 2 }, start = { col = 11, row = 2 } } (Token (Sigil Assign))
+                , Located { end = { col = 13, row = 2 }, start = { col = 12, row = 2 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 17, row = 2 }, start = { col = 13, row = 2 } } (Token (Identifier { name = "List", qualifiers = [] }))
+                , Located { end = { col = 18, row = 2 }, start = { col = 17, row = 2 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 21, row = 2 }, start = { col = 18, row = 2 } } (Token (Identifier { name = "Int", qualifiers = [] }))
+                , Located { end = { col = 1, row = 3 }, start = { col = 21, row = 2 } } (Token (Newlines [] 0))
                 ]
       }
     , { name = "type-alias-funky-indentation-2"
@@ -2505,18 +2525,18 @@ type alias Function3 = (Int, () -> (Int, String), ())
                 ]
       , lexed =
             Ok
-                [ Located { end = { col = 5, row = 1 }, start = { col = 1, row = 1 } } (Keyword Type)
-                , Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 11, row = 1 }, start = { col = 6, row = 1 } } (Keyword Alias)
-                , Located { end = { col = 5, row = 2 }, start = { col = 11, row = 1 } } (Newlines [] 4)
-                , Located { end = { col = 10, row = 2 }, start = { col = 5, row = 2 } } (Identifier { name = "Model", qualifiers = [] })
-                , Located { end = { col = 11, row = 2 }, start = { col = 10, row = 2 } } (Whitespace 1)
-                , Located { end = { col = 12, row = 2 }, start = { col = 11, row = 2 } } (Sigil Assign)
-                , Located { end = { col = 2, row = 3 }, start = { col = 12, row = 2 } } (Newlines [] 1)
-                , Located { end = { col = 6, row = 3 }, start = { col = 2, row = 3 } } (Identifier { name = "List", qualifiers = [] })
-                , Located { end = { col = 7, row = 3 }, start = { col = 6, row = 3 } } (Whitespace 1)
-                , Located { end = { col = 10, row = 3 }, start = { col = 7, row = 3 } } (Identifier { name = "Int", qualifiers = [] })
-                , Located { end = { col = 1, row = 4 }, start = { col = 10, row = 3 } } (Newlines [] 0)
+                [ Located { end = { col = 5, row = 1 }, start = { col = 1, row = 1 } } (Token (Keyword Type))
+                , Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 11, row = 1 }, start = { col = 6, row = 1 } } (Token (Keyword Alias))
+                , Located { end = { col = 5, row = 2 }, start = { col = 11, row = 1 } } (Token (Newlines [] 4))
+                , Located { end = { col = 10, row = 2 }, start = { col = 5, row = 2 } } (Token (Identifier { name = "Model", qualifiers = [] }))
+                , Located { end = { col = 11, row = 2 }, start = { col = 10, row = 2 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 12, row = 2 }, start = { col = 11, row = 2 } } (Token (Sigil Assign))
+                , Located { end = { col = 2, row = 3 }, start = { col = 12, row = 2 } } (Token (Newlines [] 1))
+                , Located { end = { col = 6, row = 3 }, start = { col = 2, row = 3 } } (Token (Identifier { name = "List", qualifiers = [] }))
+                , Located { end = { col = 7, row = 3 }, start = { col = 6, row = 3 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 10, row = 3 }, start = { col = 7, row = 3 } } (Token (Identifier { name = "Int", qualifiers = [] }))
+                , Located { end = { col = 1, row = 4 }, start = { col = 10, row = 3 } } (Token (Newlines [] 0))
                 ]
       }
     , { name = "type-alias-record-3-entries"
@@ -2602,35 +2622,35 @@ type alias Function3 = (Int, () -> (Int, String), ())
                 ]
       , lexed =
             Ok
-                [ Located { end = { col = 5, row = 1 }, start = { col = 1, row = 1 } } (Keyword Type)
-                , Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 11, row = 1 }, start = { col = 6, row = 1 } } (Keyword Alias)
-                , Located { end = { col = 12, row = 1 }, start = { col = 11, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 14, row = 1 }, start = { col = 12, row = 1 } } (Identifier { name = "Ty", qualifiers = [] })
-                , Located { end = { col = 15, row = 1 }, start = { col = 14, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 16, row = 1 }, start = { col = 15, row = 1 } } (Sigil Assign)
-                , Located { end = { col = 17, row = 1 }, start = { col = 16, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 18, row = 1 }, start = { col = 17, row = 1 } } (Sigil (Bracket Curly Open))
-                , Located { end = { col = 19, row = 1 }, start = { col = 18, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 20, row = 1 }, start = { col = 19, row = 1 } } (Identifier { name = "a", qualifiers = [] })
-                , Located { end = { col = 21, row = 1 }, start = { col = 20, row = 1 } } (Sigil Colon)
-                , Located { end = { col = 22, row = 1 }, start = { col = 21, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 23, row = 1 }, start = { col = 22, row = 1 } } (Identifier { name = "A", qualifiers = [] })
-                , Located { end = { col = 24, row = 1 }, start = { col = 23, row = 1 } } (Sigil Comma)
-                , Located { end = { col = 25, row = 1 }, start = { col = 24, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 26, row = 1 }, start = { col = 25, row = 1 } } (Identifier { name = "b", qualifiers = [] })
-                , Located { end = { col = 27, row = 1 }, start = { col = 26, row = 1 } } (Sigil Colon)
-                , Located { end = { col = 28, row = 1 }, start = { col = 27, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 29, row = 1 }, start = { col = 28, row = 1 } } (Identifier { name = "B", qualifiers = [] })
-                , Located { end = { col = 30, row = 1 }, start = { col = 29, row = 1 } } (Sigil Comma)
-                , Located { end = { col = 31, row = 1 }, start = { col = 30, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 32, row = 1 }, start = { col = 31, row = 1 } } (Identifier { name = "c", qualifiers = [] })
-                , Located { end = { col = 33, row = 1 }, start = { col = 32, row = 1 } } (Sigil Colon)
-                , Located { end = { col = 34, row = 1 }, start = { col = 33, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 35, row = 1 }, start = { col = 34, row = 1 } } (Identifier { name = "C", qualifiers = [] })
-                , Located { end = { col = 36, row = 1 }, start = { col = 35, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 37, row = 1 }, start = { col = 36, row = 1 } } (Sigil (Bracket Curly Close))
-                , Located { end = { col = 1, row = 2 }, start = { col = 37, row = 1 } } (Newlines [] 0)
+                [ Located { end = { col = 5, row = 1 }, start = { col = 1, row = 1 } } (Token (Keyword Type))
+                , Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 11, row = 1 }, start = { col = 6, row = 1 } } (Token (Keyword Alias))
+                , Located { end = { col = 12, row = 1 }, start = { col = 11, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 14, row = 1 }, start = { col = 12, row = 1 } } (Token (Identifier { name = "Ty", qualifiers = [] }))
+                , Located { end = { col = 15, row = 1 }, start = { col = 14, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 16, row = 1 }, start = { col = 15, row = 1 } } (Token (Sigil Assign))
+                , Located { end = { col = 17, row = 1 }, start = { col = 16, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 18, row = 1 }, start = { col = 17, row = 1 } } (Token (Sigil (Bracket Curly Open)))
+                , Located { end = { col = 19, row = 1 }, start = { col = 18, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 20, row = 1 }, start = { col = 19, row = 1 } } (Token (Identifier { name = "a", qualifiers = [] }))
+                , Located { end = { col = 21, row = 1 }, start = { col = 20, row = 1 } } (Token (Sigil Colon))
+                , Located { end = { col = 22, row = 1 }, start = { col = 21, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 23, row = 1 }, start = { col = 22, row = 1 } } (Token (Identifier { name = "A", qualifiers = [] }))
+                , Located { end = { col = 24, row = 1 }, start = { col = 23, row = 1 } } (Token (Sigil Comma))
+                , Located { end = { col = 25, row = 1 }, start = { col = 24, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 26, row = 1 }, start = { col = 25, row = 1 } } (Token (Identifier { name = "b", qualifiers = [] }))
+                , Located { end = { col = 27, row = 1 }, start = { col = 26, row = 1 } } (Token (Sigil Colon))
+                , Located { end = { col = 28, row = 1 }, start = { col = 27, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 29, row = 1 }, start = { col = 28, row = 1 } } (Token (Identifier { name = "B", qualifiers = [] }))
+                , Located { end = { col = 30, row = 1 }, start = { col = 29, row = 1 } } (Token (Sigil Comma))
+                , Located { end = { col = 31, row = 1 }, start = { col = 30, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 32, row = 1 }, start = { col = 31, row = 1 } } (Token (Identifier { name = "c", qualifiers = [] }))
+                , Located { end = { col = 33, row = 1 }, start = { col = 32, row = 1 } } (Token (Sigil Colon))
+                , Located { end = { col = 34, row = 1 }, start = { col = 33, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 35, row = 1 }, start = { col = 34, row = 1 } } (Token (Identifier { name = "C", qualifiers = [] }))
+                , Located { end = { col = 36, row = 1 }, start = { col = 35, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 37, row = 1 }, start = { col = 36, row = 1 } } (Token (Sigil (Bracket Curly Close)))
+                , Located { end = { col = 1, row = 2 }, start = { col = 37, row = 1 } } (Token (Newlines [] 0))
                 ]
       }
     , { name = "type-alias-record-empty"
@@ -2653,17 +2673,17 @@ type alias Function3 = (Int, () -> (Int, String), ())
                 ]
       , lexed =
             Ok
-                [ Located { end = { col = 5, row = 1 }, start = { col = 1, row = 1 } } (Keyword Type)
-                , Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 11, row = 1 }, start = { col = 6, row = 1 } } (Keyword Alias)
-                , Located { end = { col = 12, row = 1 }, start = { col = 11, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 14, row = 1 }, start = { col = 12, row = 1 } } (Identifier { name = "Ty", qualifiers = [] })
-                , Located { end = { col = 15, row = 1 }, start = { col = 14, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 16, row = 1 }, start = { col = 15, row = 1 } } (Sigil Assign)
-                , Located { end = { col = 17, row = 1 }, start = { col = 16, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 18, row = 1 }, start = { col = 17, row = 1 } } (Sigil (Bracket Curly Open))
-                , Located { end = { col = 19, row = 1 }, start = { col = 18, row = 1 } } (Sigil (Bracket Curly Close))
-                , Located { end = { col = 1, row = 2 }, start = { col = 19, row = 1 } } (Newlines [] 0)
+                [ Located { end = { col = 5, row = 1 }, start = { col = 1, row = 1 } } (Token (Keyword Type))
+                , Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 11, row = 1 }, start = { col = 6, row = 1 } } (Token (Keyword Alias))
+                , Located { end = { col = 12, row = 1 }, start = { col = 11, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 14, row = 1 }, start = { col = 12, row = 1 } } (Token (Identifier { name = "Ty", qualifiers = [] }))
+                , Located { end = { col = 15, row = 1 }, start = { col = 14, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 16, row = 1 }, start = { col = 15, row = 1 } } (Token (Sigil Assign))
+                , Located { end = { col = 17, row = 1 }, start = { col = 16, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 18, row = 1 }, start = { col = 17, row = 1 } } (Token (Sigil (Bracket Curly Open)))
+                , Located { end = { col = 19, row = 1 }, start = { col = 18, row = 1 } } (Token (Sigil (Bracket Curly Close)))
+                , Located { end = { col = 1, row = 2 }, start = { col = 19, row = 1 } } (Token (Newlines [] 0))
                 ]
       }
     , { name = "type-alias-record-empty-multiline"
@@ -2689,24 +2709,26 @@ type alias Function3 = (Int, () -> (Int, String), ())
                 ]
       , lexed =
             Ok
-                [ Located { end = { col = 5, row = 1 }, start = { col = 1, row = 1 } } (Keyword Type)
-                , Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 11, row = 1 }, start = { col = 6, row = 1 } } (Keyword Alias)
-                , Located { end = { col = 12, row = 1 }, start = { col = 11, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 14, row = 1 }, start = { col = 12, row = 1 } } (Identifier { name = "Ty", qualifiers = [] })
-                , Located { end = { col = 15, row = 1 }, start = { col = 14, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 16, row = 1 }, start = { col = 15, row = 1 } } (Sigil Assign)
-                , Located { end = { col = 17, row = 1 }, start = { col = 16, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 18, row = 1 }, start = { col = 17, row = 1 } } (Sigil (Bracket Curly Open))
+                [ Located { end = { col = 5, row = 1 }, start = { col = 1, row = 1 } } (Token (Keyword Type))
+                , Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 11, row = 1 }, start = { col = 6, row = 1 } } (Token (Keyword Alias))
+                , Located { end = { col = 12, row = 1 }, start = { col = 11, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 14, row = 1 }, start = { col = 12, row = 1 } } (Token (Identifier { name = "Ty", qualifiers = [] }))
+                , Located { end = { col = 15, row = 1 }, start = { col = 14, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 16, row = 1 }, start = { col = 15, row = 1 } } (Token (Sigil Assign))
+                , Located { end = { col = 17, row = 1 }, start = { col = 16, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 18, row = 1 }, start = { col = 17, row = 1 } } (Token (Sigil (Bracket Curly Open)))
                 , Located { end = { col = 5, row = 4 }, start = { col = 18, row = 1 } }
-                    (Newlines
-                        [ 0
-                        , 0
-                        ]
-                        4
+                    (Token
+                        (Newlines
+                            [ 0
+                            , 0
+                            ]
+                            4
+                        )
                     )
-                , Located { end = { col = 6, row = 4 }, start = { col = 5, row = 4 } } (Sigil (Bracket Curly Close))
-                , Located { end = { col = 1, row = 5 }, start = { col = 6, row = 4 } } (Newlines [] 0)
+                , Located { end = { col = 6, row = 4 }, start = { col = 5, row = 4 } } (Token (Sigil (Bracket Curly Close)))
+                , Located { end = { col = 1, row = 5 }, start = { col = 6, row = 4 } } (Token (Newlines [] 0))
                 ]
       }
     , { name = "type-alias-record-in-bracket"
@@ -2757,25 +2779,25 @@ type alias Function3 = (Int, () -> (Int, String), ())
                 ]
       , lexed =
             Ok
-                [ Located { end = { col = 5, row = 1 }, start = { col = 1, row = 1 } } (Keyword Type)
-                , Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 11, row = 1 }, start = { col = 6, row = 1 } } (Keyword Alias)
-                , Located { end = { col = 12, row = 1 }, start = { col = 11, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 14, row = 1 }, start = { col = 12, row = 1 } } (Identifier { name = "Ty", qualifiers = [] })
-                , Located { end = { col = 15, row = 1 }, start = { col = 14, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 16, row = 1 }, start = { col = 15, row = 1 } } (Sigil Assign)
-                , Located { end = { col = 17, row = 1 }, start = { col = 16, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 18, row = 1 }, start = { col = 17, row = 1 } } (Sigil (Bracket Round Open))
-                , Located { end = { col = 19, row = 1 }, start = { col = 18, row = 1 } } (Sigil (Bracket Curly Open))
-                , Located { end = { col = 20, row = 1 }, start = { col = 19, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 22, row = 1 }, start = { col = 20, row = 1 } } (Identifier { name = "hi", qualifiers = [] })
-                , Located { end = { col = 23, row = 1 }, start = { col = 22, row = 1 } } (Sigil Colon)
-                , Located { end = { col = 24, row = 1 }, start = { col = 23, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 27, row = 1 }, start = { col = 24, row = 1 } } (Identifier { name = "Int", qualifiers = [] })
-                , Located { end = { col = 28, row = 1 }, start = { col = 27, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 29, row = 1 }, start = { col = 28, row = 1 } } (Sigil (Bracket Curly Close))
-                , Located { end = { col = 30, row = 1 }, start = { col = 29, row = 1 } } (Sigil (Bracket Round Close))
-                , Located { end = { col = 1, row = 2 }, start = { col = 30, row = 1 } } (Newlines [] 0)
+                [ Located { end = { col = 5, row = 1 }, start = { col = 1, row = 1 } } (Token (Keyword Type))
+                , Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 11, row = 1 }, start = { col = 6, row = 1 } } (Token (Keyword Alias))
+                , Located { end = { col = 12, row = 1 }, start = { col = 11, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 14, row = 1 }, start = { col = 12, row = 1 } } (Token (Identifier { name = "Ty", qualifiers = [] }))
+                , Located { end = { col = 15, row = 1 }, start = { col = 14, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 16, row = 1 }, start = { col = 15, row = 1 } } (Token (Sigil Assign))
+                , Located { end = { col = 17, row = 1 }, start = { col = 16, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 18, row = 1 }, start = { col = 17, row = 1 } } (Token (Sigil (Bracket Round Open)))
+                , Located { end = { col = 19, row = 1 }, start = { col = 18, row = 1 } } (Token (Sigil (Bracket Curly Open)))
+                , Located { end = { col = 20, row = 1 }, start = { col = 19, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 22, row = 1 }, start = { col = 20, row = 1 } } (Token (Identifier { name = "hi", qualifiers = [] }))
+                , Located { end = { col = 23, row = 1 }, start = { col = 22, row = 1 } } (Token (Sigil Colon))
+                , Located { end = { col = 24, row = 1 }, start = { col = 23, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 27, row = 1 }, start = { col = 24, row = 1 } } (Token (Identifier { name = "Int", qualifiers = [] }))
+                , Located { end = { col = 28, row = 1 }, start = { col = 27, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 29, row = 1 }, start = { col = 28, row = 1 } } (Token (Sigil (Bracket Curly Close)))
+                , Located { end = { col = 30, row = 1 }, start = { col = 29, row = 1 } } (Token (Sigil (Bracket Round Close)))
+                , Located { end = { col = 1, row = 2 }, start = { col = 30, row = 1 } } (Token (Newlines [] 0))
                 ]
       }
     , { name = "type-alias-record-nested"
@@ -2960,57 +2982,57 @@ type alias Function3 = (Int, () -> (Int, String), ())
                 ]
       , lexed =
             Ok
-                [ Located { end = { col = 5, row = 1 }, start = { col = 1, row = 1 } } (Keyword Type)
-                , Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 11, row = 1 }, start = { col = 6, row = 1 } } (Keyword Alias)
-                , Located { end = { col = 12, row = 1 }, start = { col = 11, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 14, row = 1 }, start = { col = 12, row = 1 } } (Identifier { name = "Ty", qualifiers = [] })
-                , Located { end = { col = 15, row = 1 }, start = { col = 14, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 16, row = 1 }, start = { col = 15, row = 1 } } (Sigil Assign)
-                , Located { end = { col = 5, row = 2 }, start = { col = 16, row = 1 } } (Newlines [] 4)
-                , Located { end = { col = 6, row = 2 }, start = { col = 5, row = 2 } } (Sigil (Bracket Curly Open))
-                , Located { end = { col = 7, row = 2 }, start = { col = 6, row = 2 } } (Whitespace 1)
-                , Located { end = { col = 9, row = 2 }, start = { col = 7, row = 2 } } (Identifier { name = "hi", qualifiers = [] })
-                , Located { end = { col = 10, row = 2 }, start = { col = 9, row = 2 } } (Sigil Colon)
-                , Located { end = { col = 12, row = 2 }, start = { col = 10, row = 2 } } (Whitespace 2)
-                , Located { end = { col = 13, row = 2 }, start = { col = 12, row = 2 } } (Sigil (Bracket Curly Open))
-                , Located { end = { col = 14, row = 2 }, start = { col = 13, row = 2 } } (Whitespace 1)
-                , Located { end = { col = 15, row = 2 }, start = { col = 14, row = 2 } } (Identifier { name = "a", qualifiers = [] })
-                , Located { end = { col = 16, row = 2 }, start = { col = 15, row = 2 } } (Sigil Colon)
-                , Located { end = { col = 17, row = 2 }, start = { col = 16, row = 2 } } (Whitespace 1)
-                , Located { end = { col = 20, row = 2 }, start = { col = 17, row = 2 } } (Identifier { name = "Int", qualifiers = [] })
-                , Located { end = { col = 21, row = 2 }, start = { col = 20, row = 2 } } (Sigil Comma)
-                , Located { end = { col = 22, row = 2 }, start = { col = 21, row = 2 } } (Whitespace 1)
-                , Located { end = { col = 23, row = 2 }, start = { col = 22, row = 2 } } (Identifier { name = "b", qualifiers = [] })
-                , Located { end = { col = 24, row = 2 }, start = { col = 23, row = 2 } } (Sigil Colon)
-                , Located { end = { col = 25, row = 2 }, start = { col = 24, row = 2 } } (Whitespace 1)
-                , Located { end = { col = 29, row = 2 }, start = { col = 25, row = 2 } } (Identifier { name = "List", qualifiers = [] })
-                , Located { end = { col = 30, row = 2 }, start = { col = 29, row = 2 } } (Whitespace 1)
-                , Located { end = { col = 36, row = 2 }, start = { col = 30, row = 2 } } (Identifier { name = "String", qualifiers = [] })
-                , Located { end = { col = 37, row = 2 }, start = { col = 36, row = 2 } } (Whitespace 1)
-                , Located { end = { col = 38, row = 2 }, start = { col = 37, row = 2 } } (Sigil (Bracket Curly Close))
-                , Located { end = { col = 5, row = 3 }, start = { col = 38, row = 2 } } (Newlines [] 4)
-                , Located { end = { col = 6, row = 3 }, start = { col = 5, row = 3 } } (Sigil Comma)
-                , Located { end = { col = 7, row = 3 }, start = { col = 6, row = 3 } } (Whitespace 1)
-                , Located { end = { col = 9, row = 3 }, start = { col = 7, row = 3 } } (Identifier { name = "ih", qualifiers = [] })
-                , Located { end = { col = 10, row = 3 }, start = { col = 9, row = 3 } } (Sigil Colon)
-                , Located { end = { col = 11, row = 3 }, start = { col = 10, row = 3 } } (Whitespace 1)
-                , Located { end = { col = 21, row = 3 }, start = { col = 11, row = 3 } } (Identifier { name = "CustomType", qualifiers = [] })
-                , Located { end = { col = 22, row = 3 }, start = { col = 21, row = 3 } } (Whitespace 1)
-                , Located { end = { col = 23, row = 3 }, start = { col = 22, row = 3 } } (Identifier { name = "A", qualifiers = [] })
-                , Located { end = { col = 24, row = 3 }, start = { col = 23, row = 3 } } (Whitespace 1)
-                , Located { end = { col = 25, row = 3 }, start = { col = 24, row = 3 } } (Identifier { name = "B", qualifiers = [] })
-                , Located { end = { col = 26, row = 3 }, start = { col = 25, row = 3 } } (Whitespace 1)
-                , Located { end = { col = 27, row = 3 }, start = { col = 26, row = 3 } } (Identifier { name = "C", qualifiers = [] })
-                , Located { end = { col = 28, row = 3 }, start = { col = 27, row = 3 } } (Whitespace 1)
-                , Located { end = { col = 29, row = 3 }, start = { col = 28, row = 3 } } (Sigil (Bracket Round Open))
-                , Located { end = { col = 30, row = 3 }, start = { col = 29, row = 3 } } (Identifier { name = "D", qualifiers = [] })
-                , Located { end = { col = 31, row = 3 }, start = { col = 30, row = 3 } } (Whitespace 1)
-                , Located { end = { col = 32, row = 3 }, start = { col = 31, row = 3 } } (Identifier { name = "E", qualifiers = [] })
-                , Located { end = { col = 33, row = 3 }, start = { col = 32, row = 3 } } (Sigil (Bracket Round Close))
-                , Located { end = { col = 5, row = 4 }, start = { col = 33, row = 3 } } (Newlines [] 4)
-                , Located { end = { col = 6, row = 4 }, start = { col = 5, row = 4 } } (Sigil (Bracket Curly Close))
-                , Located { end = { col = 1, row = 5 }, start = { col = 6, row = 4 } } (Newlines [] 0)
+                [ Located { end = { col = 5, row = 1 }, start = { col = 1, row = 1 } } (Token (Keyword Type))
+                , Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 11, row = 1 }, start = { col = 6, row = 1 } } (Token (Keyword Alias))
+                , Located { end = { col = 12, row = 1 }, start = { col = 11, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 14, row = 1 }, start = { col = 12, row = 1 } } (Token (Identifier { name = "Ty", qualifiers = [] }))
+                , Located { end = { col = 15, row = 1 }, start = { col = 14, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 16, row = 1 }, start = { col = 15, row = 1 } } (Token (Sigil Assign))
+                , Located { end = { col = 5, row = 2 }, start = { col = 16, row = 1 } } (Token (Newlines [] 4))
+                , Located { end = { col = 6, row = 2 }, start = { col = 5, row = 2 } } (Token (Sigil (Bracket Curly Open)))
+                , Located { end = { col = 7, row = 2 }, start = { col = 6, row = 2 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 9, row = 2 }, start = { col = 7, row = 2 } } (Token (Identifier { name = "hi", qualifiers = [] }))
+                , Located { end = { col = 10, row = 2 }, start = { col = 9, row = 2 } } (Token (Sigil Colon))
+                , Located { end = { col = 12, row = 2 }, start = { col = 10, row = 2 } } (Ignorable (Whitespace 2))
+                , Located { end = { col = 13, row = 2 }, start = { col = 12, row = 2 } } (Token (Sigil (Bracket Curly Open)))
+                , Located { end = { col = 14, row = 2 }, start = { col = 13, row = 2 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 15, row = 2 }, start = { col = 14, row = 2 } } (Token (Identifier { name = "a", qualifiers = [] }))
+                , Located { end = { col = 16, row = 2 }, start = { col = 15, row = 2 } } (Token (Sigil Colon))
+                , Located { end = { col = 17, row = 2 }, start = { col = 16, row = 2 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 20, row = 2 }, start = { col = 17, row = 2 } } (Token (Identifier { name = "Int", qualifiers = [] }))
+                , Located { end = { col = 21, row = 2 }, start = { col = 20, row = 2 } } (Token (Sigil Comma))
+                , Located { end = { col = 22, row = 2 }, start = { col = 21, row = 2 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 23, row = 2 }, start = { col = 22, row = 2 } } (Token (Identifier { name = "b", qualifiers = [] }))
+                , Located { end = { col = 24, row = 2 }, start = { col = 23, row = 2 } } (Token (Sigil Colon))
+                , Located { end = { col = 25, row = 2 }, start = { col = 24, row = 2 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 29, row = 2 }, start = { col = 25, row = 2 } } (Token (Identifier { name = "List", qualifiers = [] }))
+                , Located { end = { col = 30, row = 2 }, start = { col = 29, row = 2 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 36, row = 2 }, start = { col = 30, row = 2 } } (Token (Identifier { name = "String", qualifiers = [] }))
+                , Located { end = { col = 37, row = 2 }, start = { col = 36, row = 2 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 38, row = 2 }, start = { col = 37, row = 2 } } (Token (Sigil (Bracket Curly Close)))
+                , Located { end = { col = 5, row = 3 }, start = { col = 38, row = 2 } } (Token (Newlines [] 4))
+                , Located { end = { col = 6, row = 3 }, start = { col = 5, row = 3 } } (Token (Sigil Comma))
+                , Located { end = { col = 7, row = 3 }, start = { col = 6, row = 3 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 9, row = 3 }, start = { col = 7, row = 3 } } (Token (Identifier { name = "ih", qualifiers = [] }))
+                , Located { end = { col = 10, row = 3 }, start = { col = 9, row = 3 } } (Token (Sigil Colon))
+                , Located { end = { col = 11, row = 3 }, start = { col = 10, row = 3 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 21, row = 3 }, start = { col = 11, row = 3 } } (Token (Identifier { name = "CustomType", qualifiers = [] }))
+                , Located { end = { col = 22, row = 3 }, start = { col = 21, row = 3 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 23, row = 3 }, start = { col = 22, row = 3 } } (Token (Identifier { name = "A", qualifiers = [] }))
+                , Located { end = { col = 24, row = 3 }, start = { col = 23, row = 3 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 25, row = 3 }, start = { col = 24, row = 3 } } (Token (Identifier { name = "B", qualifiers = [] }))
+                , Located { end = { col = 26, row = 3 }, start = { col = 25, row = 3 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 27, row = 3 }, start = { col = 26, row = 3 } } (Token (Identifier { name = "C", qualifiers = [] }))
+                , Located { end = { col = 28, row = 3 }, start = { col = 27, row = 3 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 29, row = 3 }, start = { col = 28, row = 3 } } (Token (Sigil (Bracket Round Open)))
+                , Located { end = { col = 30, row = 3 }, start = { col = 29, row = 3 } } (Token (Identifier { name = "D", qualifiers = [] }))
+                , Located { end = { col = 31, row = 3 }, start = { col = 30, row = 3 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 32, row = 3 }, start = { col = 31, row = 3 } } (Token (Identifier { name = "E", qualifiers = [] }))
+                , Located { end = { col = 33, row = 3 }, start = { col = 32, row = 3 } } (Token (Sigil (Bracket Round Close)))
+                , Located { end = { col = 5, row = 4 }, start = { col = 33, row = 3 } } (Token (Newlines [] 4))
+                , Located { end = { col = 6, row = 4 }, start = { col = 5, row = 4 } } (Token (Sigil (Bracket Curly Close)))
+                , Located { end = { col = 1, row = 5 }, start = { col = 6, row = 4 } } (Token (Newlines [] 0))
                 ]
       }
     , { name = "type-alias-record-simple"
@@ -3061,23 +3083,23 @@ type alias Function3 = (Int, () -> (Int, String), ())
                 ]
       , lexed =
             Ok
-                [ Located { end = { col = 5, row = 1 }, start = { col = 1, row = 1 } } (Keyword Type)
-                , Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 11, row = 1 }, start = { col = 6, row = 1 } } (Keyword Alias)
-                , Located { end = { col = 12, row = 1 }, start = { col = 11, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 14, row = 1 }, start = { col = 12, row = 1 } } (Identifier { name = "Ty", qualifiers = [] })
-                , Located { end = { col = 15, row = 1 }, start = { col = 14, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 16, row = 1 }, start = { col = 15, row = 1 } } (Sigil Assign)
-                , Located { end = { col = 17, row = 1 }, start = { col = 16, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 18, row = 1 }, start = { col = 17, row = 1 } } (Sigil (Bracket Curly Open))
-                , Located { end = { col = 19, row = 1 }, start = { col = 18, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 21, row = 1 }, start = { col = 19, row = 1 } } (Identifier { name = "hi", qualifiers = [] })
-                , Located { end = { col = 22, row = 1 }, start = { col = 21, row = 1 } } (Sigil Colon)
-                , Located { end = { col = 23, row = 1 }, start = { col = 22, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 26, row = 1 }, start = { col = 23, row = 1 } } (Identifier { name = "Int", qualifiers = [] })
-                , Located { end = { col = 27, row = 1 }, start = { col = 26, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 28, row = 1 }, start = { col = 27, row = 1 } } (Sigil (Bracket Curly Close))
-                , Located { end = { col = 1, row = 2 }, start = { col = 28, row = 1 } } (Newlines [] 0)
+                [ Located { end = { col = 5, row = 1 }, start = { col = 1, row = 1 } } (Token (Keyword Type))
+                , Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 11, row = 1 }, start = { col = 6, row = 1 } } (Token (Keyword Alias))
+                , Located { end = { col = 12, row = 1 }, start = { col = 11, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 14, row = 1 }, start = { col = 12, row = 1 } } (Token (Identifier { name = "Ty", qualifiers = [] }))
+                , Located { end = { col = 15, row = 1 }, start = { col = 14, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 16, row = 1 }, start = { col = 15, row = 1 } } (Token (Sigil Assign))
+                , Located { end = { col = 17, row = 1 }, start = { col = 16, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 18, row = 1 }, start = { col = 17, row = 1 } } (Token (Sigil (Bracket Curly Open)))
+                , Located { end = { col = 19, row = 1 }, start = { col = 18, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 21, row = 1 }, start = { col = 19, row = 1 } } (Token (Identifier { name = "hi", qualifiers = [] }))
+                , Located { end = { col = 22, row = 1 }, start = { col = 21, row = 1 } } (Token (Sigil Colon))
+                , Located { end = { col = 23, row = 1 }, start = { col = 22, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 26, row = 1 }, start = { col = 23, row = 1 } } (Token (Identifier { name = "Int", qualifiers = [] }))
+                , Located { end = { col = 27, row = 1 }, start = { col = 26, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 28, row = 1 }, start = { col = 27, row = 1 } } (Token (Sigil (Bracket Curly Close)))
+                , Located { end = { col = 1, row = 2 }, start = { col = 28, row = 1 } } (Token (Newlines [] 0))
                 ]
       }
     , { name = "type-alias-record-two-entries"
@@ -3131,30 +3153,30 @@ type alias Function3 = (Int, () -> (Int, String), ())
                 ]
       , lexed =
             Ok
-                [ Located { end = { col = 5, row = 1 }, start = { col = 1, row = 1 } } (Keyword Type)
-                , Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 11, row = 1 }, start = { col = 6, row = 1 } } (Keyword Alias)
-                , Located { end = { col = 12, row = 1 }, start = { col = 11, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 14, row = 1 }, start = { col = 12, row = 1 } } (Identifier { name = "Ty", qualifiers = [] })
-                , Located { end = { col = 15, row = 1 }, start = { col = 14, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 16, row = 1 }, start = { col = 15, row = 1 } } (Sigil Assign)
-                , Located { end = { col = 17, row = 1 }, start = { col = 16, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 18, row = 1 }, start = { col = 17, row = 1 } } (Sigil (Bracket Curly Open))
-                , Located { end = { col = 19, row = 1 }, start = { col = 18, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 21, row = 1 }, start = { col = 19, row = 1 } } (Identifier { name = "hi", qualifiers = [] })
-                , Located { end = { col = 22, row = 1 }, start = { col = 21, row = 1 } } (Sigil Colon)
-                , Located { end = { col = 23, row = 1 }, start = { col = 22, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 24, row = 1 }, start = { col = 23, row = 1 } } (Sigil (Bracket Round Open))
-                , Located { end = { col = 25, row = 1 }, start = { col = 24, row = 1 } } (Sigil (Bracket Round Close))
-                , Located { end = { col = 26, row = 1 }, start = { col = 25, row = 1 } } (Sigil Comma)
-                , Located { end = { col = 27, row = 1 }, start = { col = 26, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 30, row = 1 }, start = { col = 27, row = 1 } } (Identifier { name = "buy", qualifiers = [] })
-                , Located { end = { col = 31, row = 1 }, start = { col = 30, row = 1 } } (Sigil Colon)
-                , Located { end = { col = 32, row = 1 }, start = { col = 31, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 38, row = 1 }, start = { col = 32, row = 1 } } (Identifier { name = "String", qualifiers = [] })
-                , Located { end = { col = 39, row = 1 }, start = { col = 38, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 40, row = 1 }, start = { col = 39, row = 1 } } (Sigil (Bracket Curly Close))
-                , Located { end = { col = 1, row = 2 }, start = { col = 40, row = 1 } } (Newlines [] 0)
+                [ Located { end = { col = 5, row = 1 }, start = { col = 1, row = 1 } } (Token (Keyword Type))
+                , Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 11, row = 1 }, start = { col = 6, row = 1 } } (Token (Keyword Alias))
+                , Located { end = { col = 12, row = 1 }, start = { col = 11, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 14, row = 1 }, start = { col = 12, row = 1 } } (Token (Identifier { name = "Ty", qualifiers = [] }))
+                , Located { end = { col = 15, row = 1 }, start = { col = 14, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 16, row = 1 }, start = { col = 15, row = 1 } } (Token (Sigil Assign))
+                , Located { end = { col = 17, row = 1 }, start = { col = 16, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 18, row = 1 }, start = { col = 17, row = 1 } } (Token (Sigil (Bracket Curly Open)))
+                , Located { end = { col = 19, row = 1 }, start = { col = 18, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 21, row = 1 }, start = { col = 19, row = 1 } } (Token (Identifier { name = "hi", qualifiers = [] }))
+                , Located { end = { col = 22, row = 1 }, start = { col = 21, row = 1 } } (Token (Sigil Colon))
+                , Located { end = { col = 23, row = 1 }, start = { col = 22, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 24, row = 1 }, start = { col = 23, row = 1 } } (Token (Sigil (Bracket Round Open)))
+                , Located { end = { col = 25, row = 1 }, start = { col = 24, row = 1 } } (Token (Sigil (Bracket Round Close)))
+                , Located { end = { col = 26, row = 1 }, start = { col = 25, row = 1 } } (Token (Sigil Comma))
+                , Located { end = { col = 27, row = 1 }, start = { col = 26, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 30, row = 1 }, start = { col = 27, row = 1 } } (Token (Identifier { name = "buy", qualifiers = [] }))
+                , Located { end = { col = 31, row = 1 }, start = { col = 30, row = 1 } } (Token (Sigil Colon))
+                , Located { end = { col = 32, row = 1 }, start = { col = 31, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 38, row = 1 }, start = { col = 32, row = 1 } } (Token (Identifier { name = "String", qualifiers = [] }))
+                , Located { end = { col = 39, row = 1 }, start = { col = 38, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 40, row = 1 }, start = { col = 39, row = 1 } } (Token (Sigil (Bracket Curly Close)))
+                , Located { end = { col = 1, row = 2 }, start = { col = 40, row = 1 } } (Token (Newlines [] 0))
                 ]
       }
     , { name = "type-alias-unit"
@@ -3175,17 +3197,17 @@ type alias Function3 = (Int, () -> (Int, String), ())
                 ]
       , lexed =
             Ok
-                [ Located { end = { col = 5, row = 1 }, start = { col = 1, row = 1 } } (Keyword Type)
-                , Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 11, row = 1 }, start = { col = 6, row = 1 } } (Keyword Alias)
-                , Located { end = { col = 12, row = 1 }, start = { col = 11, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 14, row = 1 }, start = { col = 12, row = 1 } } (Identifier { name = "Hi", qualifiers = [] })
-                , Located { end = { col = 15, row = 1 }, start = { col = 14, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 16, row = 1 }, start = { col = 15, row = 1 } } (Sigil Assign)
-                , Located { end = { col = 17, row = 1 }, start = { col = 16, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 18, row = 1 }, start = { col = 17, row = 1 } } (Sigil (Bracket Round Open))
-                , Located { end = { col = 19, row = 1 }, start = { col = 18, row = 1 } } (Sigil (Bracket Round Close))
-                , Located { end = { col = 1, row = 2 }, start = { col = 19, row = 1 } } (Newlines [] 0)
+                [ Located { end = { col = 5, row = 1 }, start = { col = 1, row = 1 } } (Token (Keyword Type))
+                , Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 11, row = 1 }, start = { col = 6, row = 1 } } (Token (Keyword Alias))
+                , Located { end = { col = 12, row = 1 }, start = { col = 11, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 14, row = 1 }, start = { col = 12, row = 1 } } (Token (Identifier { name = "Hi", qualifiers = [] }))
+                , Located { end = { col = 15, row = 1 }, start = { col = 14, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 16, row = 1 }, start = { col = 15, row = 1 } } (Token (Sigil Assign))
+                , Located { end = { col = 17, row = 1 }, start = { col = 16, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 18, row = 1 }, start = { col = 17, row = 1 } } (Token (Sigil (Bracket Round Open)))
+                , Located { end = { col = 19, row = 1 }, start = { col = 18, row = 1 } } (Token (Sigil (Bracket Round Close)))
+                , Located { end = { col = 1, row = 2 }, start = { col = 19, row = 1 } } (Token (Newlines [] 0))
                 ]
       }
     , { name = "type-alias-with-bracket"
@@ -3226,18 +3248,18 @@ type alias Function3 = (Int, () -> (Int, String), ())
                 ]
       , lexed =
             Ok
-                [ Located { end = { col = 5, row = 1 }, start = { col = 1, row = 1 } } (Keyword Type)
-                , Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 11, row = 1 }, start = { col = 6, row = 1 } } (Keyword Alias)
-                , Located { end = { col = 12, row = 1 }, start = { col = 11, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 14, row = 1 }, start = { col = 12, row = 1 } } (Identifier { name = "Hi", qualifiers = [] })
-                , Located { end = { col = 15, row = 1 }, start = { col = 14, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 16, row = 1 }, start = { col = 15, row = 1 } } (Sigil Assign)
-                , Located { end = { col = 17, row = 1 }, start = { col = 16, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 18, row = 1 }, start = { col = 17, row = 1 } } (Sigil (Bracket Round Open))
-                , Located { end = { col = 21, row = 1 }, start = { col = 18, row = 1 } } (Identifier { name = "Int", qualifiers = [] })
-                , Located { end = { col = 22, row = 1 }, start = { col = 21, row = 1 } } (Sigil (Bracket Round Close))
-                , Located { end = { col = 1, row = 2 }, start = { col = 22, row = 1 } } (Newlines [] 0)
+                [ Located { end = { col = 5, row = 1 }, start = { col = 1, row = 1 } } (Token (Keyword Type))
+                , Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 11, row = 1 }, start = { col = 6, row = 1 } } (Token (Keyword Alias))
+                , Located { end = { col = 12, row = 1 }, start = { col = 11, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 14, row = 1 }, start = { col = 12, row = 1 } } (Token (Identifier { name = "Hi", qualifiers = [] }))
+                , Located { end = { col = 15, row = 1 }, start = { col = 14, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 16, row = 1 }, start = { col = 15, row = 1 } } (Token (Sigil Assign))
+                , Located { end = { col = 17, row = 1 }, start = { col = 16, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 18, row = 1 }, start = { col = 17, row = 1 } } (Token (Sigil (Bracket Round Open)))
+                , Located { end = { col = 21, row = 1 }, start = { col = 18, row = 1 } } (Token (Identifier { name = "Int", qualifiers = [] }))
+                , Located { end = { col = 22, row = 1 }, start = { col = 21, row = 1 } } (Token (Sigil (Bracket Round Close)))
+                , Located { end = { col = 1, row = 2 }, start = { col = 22, row = 1 } } (Token (Newlines [] 0))
                 ]
       }
     , { name = "type-alias-with-bracket-2"
@@ -3293,20 +3315,20 @@ type alias Function3 = (Int, () -> (Int, String), ())
                 ]
       , lexed =
             Ok
-                [ Located { end = { col = 5, row = 1 }, start = { col = 1, row = 1 } } (Keyword Type)
-                , Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 11, row = 1 }, start = { col = 6, row = 1 } } (Keyword Alias)
-                , Located { end = { col = 12, row = 1 }, start = { col = 11, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 14, row = 1 }, start = { col = 12, row = 1 } } (Identifier { name = "Hi", qualifiers = [] })
-                , Located { end = { col = 15, row = 1 }, start = { col = 14, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 16, row = 1 }, start = { col = 15, row = 1 } } (Sigil Assign)
-                , Located { end = { col = 17, row = 1 }, start = { col = 16, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 18, row = 1 }, start = { col = 17, row = 1 } } (Sigil (Bracket Round Open))
-                , Located { end = { col = 22, row = 1 }, start = { col = 18, row = 1 } } (Identifier { name = "List", qualifiers = [] })
-                , Located { end = { col = 23, row = 1 }, start = { col = 22, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 26, row = 1 }, start = { col = 23, row = 1 } } (Identifier { name = "Int", qualifiers = [] })
-                , Located { end = { col = 27, row = 1 }, start = { col = 26, row = 1 } } (Sigil (Bracket Round Close))
-                , Located { end = { col = 1, row = 2 }, start = { col = 27, row = 1 } } (Newlines [] 0)
+                [ Located { end = { col = 5, row = 1 }, start = { col = 1, row = 1 } } (Token (Keyword Type))
+                , Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 11, row = 1 }, start = { col = 6, row = 1 } } (Token (Keyword Alias))
+                , Located { end = { col = 12, row = 1 }, start = { col = 11, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 14, row = 1 }, start = { col = 12, row = 1 } } (Token (Identifier { name = "Hi", qualifiers = [] }))
+                , Located { end = { col = 15, row = 1 }, start = { col = 14, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 16, row = 1 }, start = { col = 15, row = 1 } } (Token (Sigil Assign))
+                , Located { end = { col = 17, row = 1 }, start = { col = 16, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 18, row = 1 }, start = { col = 17, row = 1 } } (Token (Sigil (Bracket Round Open)))
+                , Located { end = { col = 22, row = 1 }, start = { col = 18, row = 1 } } (Token (Identifier { name = "List", qualifiers = [] }))
+                , Located { end = { col = 23, row = 1 }, start = { col = 22, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 26, row = 1 }, start = { col = 23, row = 1 } } (Token (Identifier { name = "Int", qualifiers = [] }))
+                , Located { end = { col = 27, row = 1 }, start = { col = 26, row = 1 } } (Token (Sigil (Bracket Round Close)))
+                , Located { end = { col = 1, row = 2 }, start = { col = 27, row = 1 } } (Token (Newlines [] 0))
                 ]
       }
     , { name = "type-alias-with-pair"
@@ -3411,35 +3433,35 @@ type alias Hi = (Int)
                 ]
       , lexed =
             Ok
-                [ Located { end = { col = 5, row = 1 }, start = { col = 1, row = 1 } } (Keyword Type)
-                , Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 11, row = 1 }, start = { col = 6, row = 1 } } (Keyword Alias)
-                , Located { end = { col = 12, row = 1 }, start = { col = 11, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 14, row = 1 }, start = { col = 12, row = 1 } } (Identifier { name = "Hi", qualifiers = [] })
-                , Located { end = { col = 15, row = 1 }, start = { col = 14, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 16, row = 1 }, start = { col = 15, row = 1 } } (Sigil Assign)
-                , Located { end = { col = 17, row = 1 }, start = { col = 16, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 18, row = 1 }, start = { col = 17, row = 1 } } (Sigil (Bracket Round Open))
-                , Located { end = { col = 21, row = 1 }, start = { col = 18, row = 1 } } (Identifier { name = "Int", qualifiers = [] })
-                , Located { end = { col = 22, row = 1 }, start = { col = 21, row = 1 } } (Sigil Comma)
-                , Located { end = { col = 23, row = 1 }, start = { col = 22, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 27, row = 1 }, start = { col = 23, row = 1 } } (Identifier { name = "List", qualifiers = [] })
-                , Located { end = { col = 28, row = 1 }, start = { col = 27, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 34, row = 1 }, start = { col = 28, row = 1 } } (Identifier { name = "String", qualifiers = [] })
-                , Located { end = { col = 35, row = 1 }, start = { col = 34, row = 1 } } (Sigil (Bracket Round Close))
-                , Located { end = { col = 1, row = 2 }, start = { col = 35, row = 1 } } (Newlines [] 0)
-                , Located { end = { col = 5, row = 2 }, start = { col = 1, row = 2 } } (Keyword Type)
-                , Located { end = { col = 6, row = 2 }, start = { col = 5, row = 2 } } (Whitespace 1)
-                , Located { end = { col = 11, row = 2 }, start = { col = 6, row = 2 } } (Keyword Alias)
-                , Located { end = { col = 12, row = 2 }, start = { col = 11, row = 2 } } (Whitespace 1)
-                , Located { end = { col = 14, row = 2 }, start = { col = 12, row = 2 } } (Identifier { name = "Hi", qualifiers = [] })
-                , Located { end = { col = 15, row = 2 }, start = { col = 14, row = 2 } } (Whitespace 1)
-                , Located { end = { col = 16, row = 2 }, start = { col = 15, row = 2 } } (Sigil Assign)
-                , Located { end = { col = 17, row = 2 }, start = { col = 16, row = 2 } } (Whitespace 1)
-                , Located { end = { col = 18, row = 2 }, start = { col = 17, row = 2 } } (Sigil (Bracket Round Open))
-                , Located { end = { col = 21, row = 2 }, start = { col = 18, row = 2 } } (Identifier { name = "Int", qualifiers = [] })
-                , Located { end = { col = 22, row = 2 }, start = { col = 21, row = 2 } } (Sigil (Bracket Round Close))
-                , Located { end = { col = 1, row = 3 }, start = { col = 22, row = 2 } } (Newlines [] 0)
+                [ Located { end = { col = 5, row = 1 }, start = { col = 1, row = 1 } } (Token (Keyword Type))
+                , Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 11, row = 1 }, start = { col = 6, row = 1 } } (Token (Keyword Alias))
+                , Located { end = { col = 12, row = 1 }, start = { col = 11, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 14, row = 1 }, start = { col = 12, row = 1 } } (Token (Identifier { name = "Hi", qualifiers = [] }))
+                , Located { end = { col = 15, row = 1 }, start = { col = 14, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 16, row = 1 }, start = { col = 15, row = 1 } } (Token (Sigil Assign))
+                , Located { end = { col = 17, row = 1 }, start = { col = 16, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 18, row = 1 }, start = { col = 17, row = 1 } } (Token (Sigil (Bracket Round Open)))
+                , Located { end = { col = 21, row = 1 }, start = { col = 18, row = 1 } } (Token (Identifier { name = "Int", qualifiers = [] }))
+                , Located { end = { col = 22, row = 1 }, start = { col = 21, row = 1 } } (Token (Sigil Comma))
+                , Located { end = { col = 23, row = 1 }, start = { col = 22, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 27, row = 1 }, start = { col = 23, row = 1 } } (Token (Identifier { name = "List", qualifiers = [] }))
+                , Located { end = { col = 28, row = 1 }, start = { col = 27, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 34, row = 1 }, start = { col = 28, row = 1 } } (Token (Identifier { name = "String", qualifiers = [] }))
+                , Located { end = { col = 35, row = 1 }, start = { col = 34, row = 1 } } (Token (Sigil (Bracket Round Close)))
+                , Located { end = { col = 1, row = 2 }, start = { col = 35, row = 1 } } (Token (Newlines [] 0))
+                , Located { end = { col = 5, row = 2 }, start = { col = 1, row = 2 } } (Token (Keyword Type))
+                , Located { end = { col = 6, row = 2 }, start = { col = 5, row = 2 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 11, row = 2 }, start = { col = 6, row = 2 } } (Token (Keyword Alias))
+                , Located { end = { col = 12, row = 2 }, start = { col = 11, row = 2 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 14, row = 2 }, start = { col = 12, row = 2 } } (Token (Identifier { name = "Hi", qualifiers = [] }))
+                , Located { end = { col = 15, row = 2 }, start = { col = 14, row = 2 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 16, row = 2 }, start = { col = 15, row = 2 } } (Token (Sigil Assign))
+                , Located { end = { col = 17, row = 2 }, start = { col = 16, row = 2 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 18, row = 2 }, start = { col = 17, row = 2 } } (Token (Sigil (Bracket Round Open)))
+                , Located { end = { col = 21, row = 2 }, start = { col = 18, row = 2 } } (Token (Identifier { name = "Int", qualifiers = [] }))
+                , Located { end = { col = 22, row = 2 }, start = { col = 21, row = 2 } } (Token (Sigil (Bracket Round Close)))
+                , Located { end = { col = 1, row = 3 }, start = { col = 22, row = 2 } } (Token (Newlines [] 0))
                 ]
       }
     , { name = "type-alias-with-tripple"
@@ -3530,45 +3552,45 @@ type alias Hi = ((), (), ())
                 ]
       , lexed =
             Ok
-                [ Located { end = { col = 5, row = 1 }, start = { col = 1, row = 1 } } (Keyword Type)
-                , Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 11, row = 1 }, start = { col = 6, row = 1 } } (Keyword Alias)
-                , Located { end = { col = 12, row = 1 }, start = { col = 11, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 14, row = 1 }, start = { col = 12, row = 1 } } (Identifier { name = "Hi", qualifiers = [] })
-                , Located { end = { col = 15, row = 1 }, start = { col = 14, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 16, row = 1 }, start = { col = 15, row = 1 } } (Sigil Assign)
-                , Located { end = { col = 17, row = 1 }, start = { col = 16, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 18, row = 1 }, start = { col = 17, row = 1 } } (Sigil (Bracket Round Open))
-                , Located { end = { col = 21, row = 1 }, start = { col = 18, row = 1 } } (Identifier { name = "Int", qualifiers = [] })
-                , Located { end = { col = 22, row = 1 }, start = { col = 21, row = 1 } } (Sigil Comma)
-                , Located { end = { col = 23, row = 1 }, start = { col = 22, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 26, row = 1 }, start = { col = 23, row = 1 } } (Identifier { name = "Two", qualifiers = [] })
-                , Located { end = { col = 27, row = 1 }, start = { col = 26, row = 1 } } (Sigil Comma)
-                , Located { end = { col = 28, row = 1 }, start = { col = 27, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 33, row = 1 }, start = { col = 28, row = 1 } } (Identifier { name = "Three", qualifiers = [] })
-                , Located { end = { col = 34, row = 1 }, start = { col = 33, row = 1 } } (Sigil (Bracket Round Close))
-                , Located { end = { col = 1, row = 2 }, start = { col = 34, row = 1 } } (Newlines [] 0)
-                , Located { end = { col = 5, row = 2 }, start = { col = 1, row = 2 } } (Keyword Type)
-                , Located { end = { col = 6, row = 2 }, start = { col = 5, row = 2 } } (Whitespace 1)
-                , Located { end = { col = 11, row = 2 }, start = { col = 6, row = 2 } } (Keyword Alias)
-                , Located { end = { col = 12, row = 2 }, start = { col = 11, row = 2 } } (Whitespace 1)
-                , Located { end = { col = 14, row = 2 }, start = { col = 12, row = 2 } } (Identifier { name = "Hi", qualifiers = [] })
-                , Located { end = { col = 15, row = 2 }, start = { col = 14, row = 2 } } (Whitespace 1)
-                , Located { end = { col = 16, row = 2 }, start = { col = 15, row = 2 } } (Sigil Assign)
-                , Located { end = { col = 17, row = 2 }, start = { col = 16, row = 2 } } (Whitespace 1)
-                , Located { end = { col = 18, row = 2 }, start = { col = 17, row = 2 } } (Sigil (Bracket Round Open))
-                , Located { end = { col = 19, row = 2 }, start = { col = 18, row = 2 } } (Sigil (Bracket Round Open))
-                , Located { end = { col = 20, row = 2 }, start = { col = 19, row = 2 } } (Sigil (Bracket Round Close))
-                , Located { end = { col = 21, row = 2 }, start = { col = 20, row = 2 } } (Sigil Comma)
-                , Located { end = { col = 22, row = 2 }, start = { col = 21, row = 2 } } (Whitespace 1)
-                , Located { end = { col = 23, row = 2 }, start = { col = 22, row = 2 } } (Sigil (Bracket Round Open))
-                , Located { end = { col = 24, row = 2 }, start = { col = 23, row = 2 } } (Sigil (Bracket Round Close))
-                , Located { end = { col = 25, row = 2 }, start = { col = 24, row = 2 } } (Sigil Comma)
-                , Located { end = { col = 26, row = 2 }, start = { col = 25, row = 2 } } (Whitespace 1)
-                , Located { end = { col = 27, row = 2 }, start = { col = 26, row = 2 } } (Sigil (Bracket Round Open))
-                , Located { end = { col = 28, row = 2 }, start = { col = 27, row = 2 } } (Sigil (Bracket Round Close))
-                , Located { end = { col = 29, row = 2 }, start = { col = 28, row = 2 } } (Sigil (Bracket Round Close))
-                , Located { end = { col = 1, row = 3 }, start = { col = 29, row = 2 } } (Newlines [] 0)
+                [ Located { end = { col = 5, row = 1 }, start = { col = 1, row = 1 } } (Token (Keyword Type))
+                , Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 11, row = 1 }, start = { col = 6, row = 1 } } (Token (Keyword Alias))
+                , Located { end = { col = 12, row = 1 }, start = { col = 11, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 14, row = 1 }, start = { col = 12, row = 1 } } (Token (Identifier { name = "Hi", qualifiers = [] }))
+                , Located { end = { col = 15, row = 1 }, start = { col = 14, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 16, row = 1 }, start = { col = 15, row = 1 } } (Token (Sigil Assign))
+                , Located { end = { col = 17, row = 1 }, start = { col = 16, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 18, row = 1 }, start = { col = 17, row = 1 } } (Token (Sigil (Bracket Round Open)))
+                , Located { end = { col = 21, row = 1 }, start = { col = 18, row = 1 } } (Token (Identifier { name = "Int", qualifiers = [] }))
+                , Located { end = { col = 22, row = 1 }, start = { col = 21, row = 1 } } (Token (Sigil Comma))
+                , Located { end = { col = 23, row = 1 }, start = { col = 22, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 26, row = 1 }, start = { col = 23, row = 1 } } (Token (Identifier { name = "Two", qualifiers = [] }))
+                , Located { end = { col = 27, row = 1 }, start = { col = 26, row = 1 } } (Token (Sigil Comma))
+                , Located { end = { col = 28, row = 1 }, start = { col = 27, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 33, row = 1 }, start = { col = 28, row = 1 } } (Token (Identifier { name = "Three", qualifiers = [] }))
+                , Located { end = { col = 34, row = 1 }, start = { col = 33, row = 1 } } (Token (Sigil (Bracket Round Close)))
+                , Located { end = { col = 1, row = 2 }, start = { col = 34, row = 1 } } (Token (Newlines [] 0))
+                , Located { end = { col = 5, row = 2 }, start = { col = 1, row = 2 } } (Token (Keyword Type))
+                , Located { end = { col = 6, row = 2 }, start = { col = 5, row = 2 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 11, row = 2 }, start = { col = 6, row = 2 } } (Token (Keyword Alias))
+                , Located { end = { col = 12, row = 2 }, start = { col = 11, row = 2 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 14, row = 2 }, start = { col = 12, row = 2 } } (Token (Identifier { name = "Hi", qualifiers = [] }))
+                , Located { end = { col = 15, row = 2 }, start = { col = 14, row = 2 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 16, row = 2 }, start = { col = 15, row = 2 } } (Token (Sigil Assign))
+                , Located { end = { col = 17, row = 2 }, start = { col = 16, row = 2 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 18, row = 2 }, start = { col = 17, row = 2 } } (Token (Sigil (Bracket Round Open)))
+                , Located { end = { col = 19, row = 2 }, start = { col = 18, row = 2 } } (Token (Sigil (Bracket Round Open)))
+                , Located { end = { col = 20, row = 2 }, start = { col = 19, row = 2 } } (Token (Sigil (Bracket Round Close)))
+                , Located { end = { col = 21, row = 2 }, start = { col = 20, row = 2 } } (Token (Sigil Comma))
+                , Located { end = { col = 22, row = 2 }, start = { col = 21, row = 2 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 23, row = 2 }, start = { col = 22, row = 2 } } (Token (Sigil (Bracket Round Open)))
+                , Located { end = { col = 24, row = 2 }, start = { col = 23, row = 2 } } (Token (Sigil (Bracket Round Close)))
+                , Located { end = { col = 25, row = 2 }, start = { col = 24, row = 2 } } (Token (Sigil Comma))
+                , Located { end = { col = 26, row = 2 }, start = { col = 25, row = 2 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 27, row = 2 }, start = { col = 26, row = 2 } } (Token (Sigil (Bracket Round Open)))
+                , Located { end = { col = 28, row = 2 }, start = { col = 27, row = 2 } } (Token (Sigil (Bracket Round Close)))
+                , Located { end = { col = 29, row = 2 }, start = { col = 28, row = 2 } } (Token (Sigil (Bracket Round Close)))
+                , Located { end = { col = 1, row = 3 }, start = { col = 29, row = 2 } } (Token (Newlines [] 0))
                 ]
       }
     , { name = "type-alias-with-tripple-in-record"
@@ -3668,48 +3690,48 @@ type alias Hi = ((), (), ())
                 ]
       , lexed =
             Ok
-                [ Located { end = { col = 5, row = 1 }, start = { col = 1, row = 1 } } (Keyword Type)
-                , Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 11, row = 1 }, start = { col = 6, row = 1 } } (Keyword Alias)
-                , Located { end = { col = 12, row = 1 }, start = { col = 11, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 14, row = 1 }, start = { col = 12, row = 1 } } (Identifier { name = "Hi", qualifiers = [] })
-                , Located { end = { col = 15, row = 1 }, start = { col = 14, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 16, row = 1 }, start = { col = 15, row = 1 } } (Sigil Assign)
-                , Located { end = { col = 5, row = 2 }, start = { col = 16, row = 1 } } (Newlines [] 4)
-                , Located { end = { col = 6, row = 2 }, start = { col = 5, row = 2 } } (Sigil (Bracket Curly Open))
-                , Located { end = { col = 7, row = 2 }, start = { col = 6, row = 2 } } (Whitespace 1)
-                , Located { end = { col = 8, row = 2 }, start = { col = 7, row = 2 } } (Identifier { name = "a", qualifiers = [] })
-                , Located { end = { col = 9, row = 2 }, start = { col = 8, row = 2 } } (Sigil Colon)
-                , Located { end = { col = 10, row = 2 }, start = { col = 9, row = 2 } } (Whitespace 1)
-                , Located { end = { col = 11, row = 2 }, start = { col = 10, row = 2 } } (Sigil (Bracket Round Open))
-                , Located { end = { col = 14, row = 2 }, start = { col = 11, row = 2 } } (Identifier { name = "Int", qualifiers = [] })
-                , Located { end = { col = 15, row = 2 }, start = { col = 14, row = 2 } } (Sigil Comma)
-                , Located { end = { col = 16, row = 2 }, start = { col = 15, row = 2 } } (Whitespace 1)
-                , Located { end = { col = 19, row = 2 }, start = { col = 16, row = 2 } } (Identifier { name = "Int", qualifiers = [] })
-                , Located { end = { col = 20, row = 2 }, start = { col = 19, row = 2 } } (Sigil Comma)
-                , Located { end = { col = 21, row = 2 }, start = { col = 20, row = 2 } } (Whitespace 1)
-                , Located { end = { col = 24, row = 2 }, start = { col = 21, row = 2 } } (Identifier { name = "Int", qualifiers = [] })
-                , Located { end = { col = 25, row = 2 }, start = { col = 24, row = 2 } } (Sigil (Bracket Round Close))
-                , Located { end = { col = 5, row = 3 }, start = { col = 25, row = 2 } } (Newlines [] 4)
-                , Located { end = { col = 6, row = 3 }, start = { col = 5, row = 3 } } (Sigil Comma)
-                , Located { end = { col = 7, row = 3 }, start = { col = 6, row = 3 } } (Whitespace 1)
-                , Located { end = { col = 8, row = 3 }, start = { col = 7, row = 3 } } (Identifier { name = "b", qualifiers = [] })
-                , Located { end = { col = 9, row = 3 }, start = { col = 8, row = 3 } } (Sigil Colon)
-                , Located { end = { col = 10, row = 3 }, start = { col = 9, row = 3 } } (Whitespace 1)
-                , Located { end = { col = 11, row = 3 }, start = { col = 10, row = 3 } } (Sigil (Bracket Round Open))
-                , Located { end = { col = 12, row = 3 }, start = { col = 11, row = 3 } } (Sigil (Bracket Curly Open))
-                , Located { end = { col = 13, row = 3 }, start = { col = 12, row = 3 } } (Whitespace 1)
-                , Located { end = { col = 21, row = 3 }, start = { col = 13, row = 3 } } (Identifier { name = "good_bye", qualifiers = [] })
-                , Located { end = { col = 22, row = 3 }, start = { col = 21, row = 3 } } (Sigil Colon)
-                , Located { end = { col = 23, row = 3 }, start = { col = 22, row = 3 } } (Whitespace 1)
-                , Located { end = { col = 24, row = 3 }, start = { col = 23, row = 3 } } (Sigil (Bracket Round Open))
-                , Located { end = { col = 25, row = 3 }, start = { col = 24, row = 3 } } (Sigil (Bracket Round Close))
-                , Located { end = { col = 26, row = 3 }, start = { col = 25, row = 3 } } (Whitespace 1)
-                , Located { end = { col = 27, row = 3 }, start = { col = 26, row = 3 } } (Sigil (Bracket Curly Close))
-                , Located { end = { col = 28, row = 3 }, start = { col = 27, row = 3 } } (Sigil (Bracket Round Close))
-                , Located { end = { col = 5, row = 4 }, start = { col = 28, row = 3 } } (Newlines [] 4)
-                , Located { end = { col = 6, row = 4 }, start = { col = 5, row = 4 } } (Sigil (Bracket Curly Close))
-                , Located { end = { col = 1, row = 5 }, start = { col = 6, row = 4 } } (Newlines [] 0)
+                [ Located { end = { col = 5, row = 1 }, start = { col = 1, row = 1 } } (Token (Keyword Type))
+                , Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 11, row = 1 }, start = { col = 6, row = 1 } } (Token (Keyword Alias))
+                , Located { end = { col = 12, row = 1 }, start = { col = 11, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 14, row = 1 }, start = { col = 12, row = 1 } } (Token (Identifier { name = "Hi", qualifiers = [] }))
+                , Located { end = { col = 15, row = 1 }, start = { col = 14, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 16, row = 1 }, start = { col = 15, row = 1 } } (Token (Sigil Assign))
+                , Located { end = { col = 5, row = 2 }, start = { col = 16, row = 1 } } (Token (Newlines [] 4))
+                , Located { end = { col = 6, row = 2 }, start = { col = 5, row = 2 } } (Token (Sigil (Bracket Curly Open)))
+                , Located { end = { col = 7, row = 2 }, start = { col = 6, row = 2 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 8, row = 2 }, start = { col = 7, row = 2 } } (Token (Identifier { name = "a", qualifiers = [] }))
+                , Located { end = { col = 9, row = 2 }, start = { col = 8, row = 2 } } (Token (Sigil Colon))
+                , Located { end = { col = 10, row = 2 }, start = { col = 9, row = 2 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 11, row = 2 }, start = { col = 10, row = 2 } } (Token (Sigil (Bracket Round Open)))
+                , Located { end = { col = 14, row = 2 }, start = { col = 11, row = 2 } } (Token (Identifier { name = "Int", qualifiers = [] }))
+                , Located { end = { col = 15, row = 2 }, start = { col = 14, row = 2 } } (Token (Sigil Comma))
+                , Located { end = { col = 16, row = 2 }, start = { col = 15, row = 2 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 19, row = 2 }, start = { col = 16, row = 2 } } (Token (Identifier { name = "Int", qualifiers = [] }))
+                , Located { end = { col = 20, row = 2 }, start = { col = 19, row = 2 } } (Token (Sigil Comma))
+                , Located { end = { col = 21, row = 2 }, start = { col = 20, row = 2 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 24, row = 2 }, start = { col = 21, row = 2 } } (Token (Identifier { name = "Int", qualifiers = [] }))
+                , Located { end = { col = 25, row = 2 }, start = { col = 24, row = 2 } } (Token (Sigil (Bracket Round Close)))
+                , Located { end = { col = 5, row = 3 }, start = { col = 25, row = 2 } } (Token (Newlines [] 4))
+                , Located { end = { col = 6, row = 3 }, start = { col = 5, row = 3 } } (Token (Sigil Comma))
+                , Located { end = { col = 7, row = 3 }, start = { col = 6, row = 3 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 8, row = 3 }, start = { col = 7, row = 3 } } (Token (Identifier { name = "b", qualifiers = [] }))
+                , Located { end = { col = 9, row = 3 }, start = { col = 8, row = 3 } } (Token (Sigil Colon))
+                , Located { end = { col = 10, row = 3 }, start = { col = 9, row = 3 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 11, row = 3 }, start = { col = 10, row = 3 } } (Token (Sigil (Bracket Round Open)))
+                , Located { end = { col = 12, row = 3 }, start = { col = 11, row = 3 } } (Token (Sigil (Bracket Curly Open)))
+                , Located { end = { col = 13, row = 3 }, start = { col = 12, row = 3 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 21, row = 3 }, start = { col = 13, row = 3 } } (Token (Identifier { name = "good_bye", qualifiers = [] }))
+                , Located { end = { col = 22, row = 3 }, start = { col = 21, row = 3 } } (Token (Sigil Colon))
+                , Located { end = { col = 23, row = 3 }, start = { col = 22, row = 3 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 24, row = 3 }, start = { col = 23, row = 3 } } (Token (Sigil (Bracket Round Open)))
+                , Located { end = { col = 25, row = 3 }, start = { col = 24, row = 3 } } (Token (Sigil (Bracket Round Close)))
+                , Located { end = { col = 26, row = 3 }, start = { col = 25, row = 3 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 27, row = 3 }, start = { col = 26, row = 3 } } (Token (Sigil (Bracket Curly Close)))
+                , Located { end = { col = 28, row = 3 }, start = { col = 27, row = 3 } } (Token (Sigil (Bracket Round Close)))
+                , Located { end = { col = 5, row = 4 }, start = { col = 28, row = 3 } } (Token (Newlines [] 4))
+                , Located { end = { col = 6, row = 4 }, start = { col = 5, row = 4 } } (Token (Sigil (Bracket Curly Close)))
+                , Located { end = { col = 1, row = 5 }, start = { col = 6, row = 4 } } (Token (Newlines [] 0))
                 ]
       }
     ]
@@ -3770,13 +3792,14 @@ Hi. case"""
         , ( Err, todo )
         , ( Err, todo )
         , ( Err, todo )
+        , ( Err, todo )
         )
 """
       , contextualized =
             Just
                 [ Err
-                    { error = Error_InvalidToken Expecting_Block
-                    , item = Just (Located { end = { col = 5, row = 1 }, start = { col = 1, row = 1 } } (IdentifierWithTrailingDot { name = "Foo", qualifiers = [] }))
+                    { error = Error_InvalidToken Expecting_Unknown
+                    , item = Just (Located { end = { col = 5, row = 1 }, start = { col = 1, row = 1 } } (Invalid (IdentifierWithTrailingDot { name = "Foo", qualifiers = [] })))
                     , state = State_BlockStart
                     }
                 , Err
@@ -3790,12 +3813,14 @@ Hi. case"""
                     , item =
                         Just
                             (Located { end = { col = 8, row = 3 }, start = { col = 1, row = 3 } }
-                                (Identifier
-                                    { name = "Bar"
-                                    , qualifiers =
-                                        [ "Foo"
-                                        ]
-                                    }
+                                (Token
+                                    (Identifier
+                                        { name = "Bar"
+                                        , qualifiers =
+                                            [ "Foo"
+                                            ]
+                                        }
+                                    )
                                 )
                             )
                     , state = State_BlockStart
@@ -3812,45 +3837,54 @@ Hi. case"""
                     , item =
                         Just
                             (Located { end = { col = 12, row = 5 }, start = { col = 1, row = 5 } }
-                                (Identifier
-                                    { name = "baz"
-                                    , qualifiers =
-                                        [ "Foo"
-                                        , "Bar"
-                                        ]
-                                    }
+                                (Token
+                                    (Identifier
+                                        { name = "baz"
+                                        , qualifiers =
+                                            [ "Foo"
+                                            , "Bar"
+                                            ]
+                                        }
+                                    )
                                 )
                             )
                     , state = State_BlockStart
                     }
                 , Err
-                    { error = Error_InvalidToken Expecting_Block
+                    { error = Error_InvalidToken Expecting_Unknown
                     , item =
                         Just
                             (Located { end = { col = 11, row = 7 }, start = { col = 1, row = 7 } }
-                                (IdentifierWithTrailingDot
-                                    { name = "Bing"
-                                    , qualifiers =
-                                        [ "Boor"
-                                        ]
-                                    }
+                                (Invalid
+                                    (IdentifierWithTrailingDot
+                                        { name = "Bing"
+                                        , qualifiers =
+                                            [ "Boor"
+                                            ]
+                                        }
+                                    )
                                 )
                             )
                     , state = State_BlockStart
                     }
                 , Err
-                    { error = Error_InvalidToken Expecting_Block
-                    , item = Just (Located { end = { col = 5, row = 9 }, start = { col = 1, row = 9 } } (IdentifierWithTrailingDot { name = "Bor", qualifiers = [] }))
+                    { error = Error_InvalidToken Expecting_Unknown
+                    , item = Just (Located { end = { col = 5, row = 9 }, start = { col = 1, row = 9 } } (Invalid (IdentifierWithTrailingDot { name = "Bor", qualifiers = [] })))
                     , state = State_BlockStart
                     }
                 , Err
+                    { error = Error_InvalidToken Expecting_Unknown
+                    , item = Just (Located { end = { col = 10, row = 9 }, start = { col = 6, row = 9 } } (Invalid (IdentifierWithTrailingDot { name = "Big", qualifiers = [] })))
+                    , state = State_Error_Recovery
+                    }
+                , Err
                     { error = Error_InvalidToken Expecting_Block
-                    , item = Just (Located { end = { col = 4, row = 11 }, start = { col = 1, row = 11 } } (RecordAccessorFunction "sf"))
+                    , item = Just (Located { end = { col = 4, row = 11 }, start = { col = 1, row = 11 } } (Token (RecordAccessorFunction "sf")))
                     , state = State_BlockStart
                     }
                 , Err
                     { error = Error_InvalidToken (Expecting_Sigil Assign)
-                    , item = Just (Located { end = { col = 13, row = 13 }, start = { col = 7, row = 13 } } (RecordAccessorFunction "sdfsd"))
+                    , item = Just (Located { end = { col = 13, row = 13 }, start = { col = 7, row = 13 } } (Token (RecordAccessorFunction "sdfsd")))
                     , state = State_BlockValueDeclaration (BlockValueDeclaration_Named { args = Stack [], name = Located { end = { col = 6, row = 13 }, start = { col = 1, row = 13 } } "sfsdf" })
                     }
                 , Err
@@ -3864,34 +3898,36 @@ Hi. case"""
                     , item =
                         Just
                             (Located { end = { col = 15, row = 15 }, start = { col = 1, row = 15 } }
-                                (Identifier
-                                    { name = "sdgsghj"
-                                    , qualifiers =
-                                        [ "asfasf"
-                                        ]
-                                    }
+                                (Token
+                                    (Identifier
+                                        { name = "sdgsghj"
+                                        , qualifiers =
+                                            [ "asfasf"
+                                            ]
+                                        }
+                                    )
                                 )
                             )
                     , state = State_BlockStart
                     }
                 , Err
                     { error = Error_InvalidToken Expecting_Block
-                    , item = Just (Located { end = { col = 2, row = 17 }, start = { col = 1, row = 17 } } (Sigil (Bracket Round Open)))
+                    , item = Just (Located { end = { col = 2, row = 17 }, start = { col = 1, row = 17 } } (Token (Sigil (Bracket Round Open))))
                     , state = State_BlockStart
                     }
                 , Err
                     { error = Error_InvalidToken Expecting_Block
-                    , item = Just (Located { end = { col = 2, row = 19 }, start = { col = 1, row = 19 } } (Sigil (Bracket Round Open)))
+                    , item = Just (Located { end = { col = 2, row = 19 }, start = { col = 1, row = 19 } } (Token (Sigil (Bracket Round Open))))
                     , state = State_BlockStart
                     }
                 , Err
                     { error = Error_InvalidToken (Expecting_Sigil Assign)
-                    , item = Just (Located { end = { col = 8, row = 21 }, start = { col = 7, row = 21 } } (Sigil (Bracket Round Open)))
+                    , item = Just (Located { end = { col = 8, row = 21 }, start = { col = 7, row = 21 } } (Token (Sigil (Bracket Round Open))))
                     , state = State_BlockValueDeclaration (BlockValueDeclaration_Named { args = Stack [], name = Located { end = { col = 7, row = 21 }, start = { col = 1, row = 21 } } "sfhsdf" })
                     }
                 , Err
                     { error = Error_MisplacedKeyword Case
-                    , item = Just (Located { end = { col = 5, row = 23 }, start = { col = 1, row = 23 } } (Keyword Case))
+                    , item = Just (Located { end = { col = 5, row = 23 }, start = { col = 1, row = 23 } } (Token (Keyword Case)))
                     , state = State_BlockStart
                     }
                 , Err
@@ -3905,183 +3941,223 @@ Hi. case"""
                     , item =
                         Just
                             (Located { end = { col = 8, row = 25 }, start = { col = 1, row = 25 } }
-                                (Identifier
-                                    { name = "case"
-                                    , qualifiers =
-                                        [ "Hi"
-                                        ]
-                                    }
+                                (Token
+                                    (Identifier
+                                        { name = "case"
+                                        , qualifiers =
+                                            [ "Hi"
+                                            ]
+                                        }
+                                    )
                                 )
                             )
                     , state = State_BlockStart
                     }
                 , Err
                     { error = Error_MisplacedKeyword Case
-                    , item = Just (Located { end = { col = 5, row = 27 }, start = { col = 1, row = 27 } } (Keyword Case))
+                    , item = Just (Located { end = { col = 5, row = 27 }, start = { col = 1, row = 27 } } (Token (Keyword Case)))
                     , state = State_BlockStart
                     }
                 , Err
-                    { error = Error_InvalidToken Expecting_Block
-                    , item = Just (Located { end = { col = 4, row = 29 }, start = { col = 1, row = 29 } } (IdentifierWithTrailingDot { name = "Hi", qualifiers = [] }))
+                    { error = Error_InvalidToken Expecting_Unknown
+                    , item = Just (Located { end = { col = 4, row = 29 }, start = { col = 1, row = 29 } } (Invalid (IdentifierWithTrailingDot { name = "Hi", qualifiers = [] })))
                     , state = State_BlockStart
                     }
                 ]
       , lexed =
             Ok
-                [ Located { end = { col = 5, row = 1 }, start = { col = 1, row = 1 } } (IdentifierWithTrailingDot { name = "Foo", qualifiers = [] })
+                [ Located { end = { col = 5, row = 1 }, start = { col = 1, row = 1 } } (Invalid (IdentifierWithTrailingDot { name = "Foo", qualifiers = [] }))
                 , Located { end = { col = 1, row = 3 }, start = { col = 5, row = 1 } }
-                    (Newlines
-                        [ 0
-                        ]
-                        0
+                    (Token
+                        (Newlines
+                            [ 0
+                            ]
+                            0
+                        )
                     )
                 , Located { end = { col = 8, row = 3 }, start = { col = 1, row = 3 } }
-                    (Identifier
-                        { name = "Bar"
-                        , qualifiers =
-                            [ "Foo"
-                            ]
-                        }
+                    (Token
+                        (Identifier
+                            { name = "Bar"
+                            , qualifiers =
+                                [ "Foo"
+                                ]
+                            }
+                        )
                     )
                 , Located { end = { col = 1, row = 5 }, start = { col = 8, row = 3 } }
-                    (Newlines
-                        [ 0
-                        ]
-                        0
+                    (Token
+                        (Newlines
+                            [ 0
+                            ]
+                            0
+                        )
                     )
                 , Located { end = { col = 12, row = 5 }, start = { col = 1, row = 5 } }
-                    (Identifier
-                        { name = "baz"
-                        , qualifiers =
-                            [ "Foo"
-                            , "Bar"
-                            ]
-                        }
+                    (Token
+                        (Identifier
+                            { name = "baz"
+                            , qualifiers =
+                                [ "Foo"
+                                , "Bar"
+                                ]
+                            }
+                        )
                     )
                 , Located { end = { col = 1, row = 7 }, start = { col = 12, row = 5 } }
-                    (Newlines
-                        [ 0
-                        ]
-                        0
+                    (Token
+                        (Newlines
+                            [ 0
+                            ]
+                            0
+                        )
                     )
                 , Located { end = { col = 11, row = 7 }, start = { col = 1, row = 7 } }
-                    (IdentifierWithTrailingDot
-                        { name = "Bing"
-                        , qualifiers =
-                            [ "Boor"
-                            ]
-                        }
+                    (Invalid
+                        (IdentifierWithTrailingDot
+                            { name = "Bing"
+                            , qualifiers =
+                                [ "Boor"
+                                ]
+                            }
+                        )
                     )
                 , Located { end = { col = 1, row = 9 }, start = { col = 11, row = 7 } }
-                    (Newlines
-                        [ 0
-                        ]
-                        0
+                    (Token
+                        (Newlines
+                            [ 0
+                            ]
+                            0
+                        )
                     )
-                , Located { end = { col = 5, row = 9 }, start = { col = 1, row = 9 } } (IdentifierWithTrailingDot { name = "Bor", qualifiers = [] })
-                , Located { end = { col = 6, row = 9 }, start = { col = 5, row = 9 } } (Whitespace 1)
-                , Located { end = { col = 10, row = 9 }, start = { col = 6, row = 9 } } (IdentifierWithTrailingDot { name = "Big", qualifiers = [] })
+                , Located { end = { col = 5, row = 9 }, start = { col = 1, row = 9 } } (Invalid (IdentifierWithTrailingDot { name = "Bor", qualifiers = [] }))
+                , Located { end = { col = 6, row = 9 }, start = { col = 5, row = 9 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 10, row = 9 }, start = { col = 6, row = 9 } } (Invalid (IdentifierWithTrailingDot { name = "Big", qualifiers = [] }))
                 , Located { end = { col = 1, row = 11 }, start = { col = 10, row = 9 } }
-                    (Newlines
-                        [ 0
-                        ]
-                        0
+                    (Token
+                        (Newlines
+                            [ 0
+                            ]
+                            0
+                        )
                     )
-                , Located { end = { col = 4, row = 11 }, start = { col = 1, row = 11 } } (RecordAccessorFunction "sf")
+                , Located { end = { col = 4, row = 11 }, start = { col = 1, row = 11 } } (Token (RecordAccessorFunction "sf"))
                 , Located { end = { col = 1, row = 13 }, start = { col = 4, row = 11 } }
-                    (Newlines
-                        [ 0
-                        ]
-                        0
+                    (Token
+                        (Newlines
+                            [ 0
+                            ]
+                            0
+                        )
                     )
-                , Located { end = { col = 6, row = 13 }, start = { col = 1, row = 13 } } (Identifier { name = "sfsdf", qualifiers = [] })
-                , Located { end = { col = 7, row = 13 }, start = { col = 6, row = 13 } } (Whitespace 1)
-                , Located { end = { col = 13, row = 13 }, start = { col = 7, row = 13 } } (RecordAccessorFunction "sdfsd")
+                , Located { end = { col = 6, row = 13 }, start = { col = 1, row = 13 } } (Token (Identifier { name = "sfsdf", qualifiers = [] }))
+                , Located { end = { col = 7, row = 13 }, start = { col = 6, row = 13 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 13, row = 13 }, start = { col = 7, row = 13 } } (Token (RecordAccessorFunction "sdfsd"))
                 , Located { end = { col = 1, row = 15 }, start = { col = 13, row = 13 } }
-                    (Newlines
-                        [ 0
-                        ]
-                        0
+                    (Token
+                        (Newlines
+                            [ 0
+                            ]
+                            0
+                        )
                     )
                 , Located { end = { col = 15, row = 15 }, start = { col = 1, row = 15 } }
-                    (Identifier
-                        { name = "sdgsghj"
-                        , qualifiers =
-                            [ "asfasf"
-                            ]
-                        }
+                    (Token
+                        (Identifier
+                            { name = "sdgsghj"
+                            , qualifiers =
+                                [ "asfasf"
+                                ]
+                            }
+                        )
                     )
                 , Located { end = { col = 1, row = 17 }, start = { col = 15, row = 15 } }
-                    (Newlines
-                        [ 0
-                        ]
-                        0
+                    (Token
+                        (Newlines
+                            [ 0
+                            ]
+                            0
+                        )
                     )
-                , Located { end = { col = 2, row = 17 }, start = { col = 1, row = 17 } } (Sigil (Bracket Round Open))
-                , Located { end = { col = 6, row = 17 }, start = { col = 2, row = 17 } } (Identifier { name = "shdf", qualifiers = [] })
-                , Located { end = { col = 7, row = 17 }, start = { col = 6, row = 17 } } (Sigil (Bracket Round Close))
-                , Located { end = { col = 20, row = 17 }, start = { col = 7, row = 17 } } (RecordAccessorLiteral "helloLiteral")
+                , Located { end = { col = 2, row = 17 }, start = { col = 1, row = 17 } } (Token (Sigil (Bracket Round Open)))
+                , Located { end = { col = 6, row = 17 }, start = { col = 2, row = 17 } } (Token (Identifier { name = "shdf", qualifiers = [] }))
+                , Located { end = { col = 7, row = 17 }, start = { col = 6, row = 17 } } (Token (Sigil (Bracket Round Close)))
+                , Located { end = { col = 20, row = 17 }, start = { col = 7, row = 17 } } (Token (RecordAccessorLiteral "helloLiteral"))
                 , Located { end = { col = 1, row = 19 }, start = { col = 20, row = 17 } }
-                    (Newlines
-                        [ 0
-                        ]
-                        0
+                    (Token
+                        (Newlines
+                            [ 0
+                            ]
+                            0
+                        )
                     )
-                , Located { end = { col = 2, row = 19 }, start = { col = 1, row = 19 } } (Sigil (Bracket Round Open))
-                , Located { end = { col = 7, row = 19 }, start = { col = 2, row = 19 } } (Identifier { name = "sjhsf", qualifiers = [] })
-                , Located { end = { col = 8, row = 19 }, start = { col = 7, row = 19 } } (Sigil (Bracket Round Close))
-                , Located { end = { col = 9, row = 19 }, start = { col = 8, row = 19 } } (Whitespace 1)
-                , Located { end = { col = 23, row = 19 }, start = { col = 9, row = 19 } } (RecordAccessorFunction "helloFunction")
+                , Located { end = { col = 2, row = 19 }, start = { col = 1, row = 19 } } (Token (Sigil (Bracket Round Open)))
+                , Located { end = { col = 7, row = 19 }, start = { col = 2, row = 19 } } (Token (Identifier { name = "sjhsf", qualifiers = [] }))
+                , Located { end = { col = 8, row = 19 }, start = { col = 7, row = 19 } } (Token (Sigil (Bracket Round Close)))
+                , Located { end = { col = 9, row = 19 }, start = { col = 8, row = 19 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 23, row = 19 }, start = { col = 9, row = 19 } } (Token (RecordAccessorFunction "helloFunction"))
                 , Located { end = { col = 1, row = 21 }, start = { col = 23, row = 19 } }
-                    (Newlines
-                        [ 0
-                        ]
-                        0
+                    (Token
+                        (Newlines
+                            [ 0
+                            ]
+                            0
+                        )
                     )
-                , Located { end = { col = 7, row = 21 }, start = { col = 1, row = 21 } } (Identifier { name = "sfhsdf", qualifiers = [] })
-                , Located { end = { col = 8, row = 21 }, start = { col = 7, row = 21 } } (Sigil (Bracket Round Open))
-                , Located { end = { col = 22, row = 21 }, start = { col = 8, row = 21 } } (RecordAccessorFunction "helloFunction")
-                , Located { end = { col = 23, row = 21 }, start = { col = 22, row = 21 } } (Sigil (Bracket Round Close))
+                , Located { end = { col = 7, row = 21 }, start = { col = 1, row = 21 } } (Token (Identifier { name = "sfhsdf", qualifiers = [] }))
+                , Located { end = { col = 8, row = 21 }, start = { col = 7, row = 21 } } (Token (Sigil (Bracket Round Open)))
+                , Located { end = { col = 22, row = 21 }, start = { col = 8, row = 21 } } (Token (RecordAccessorFunction "helloFunction"))
+                , Located { end = { col = 23, row = 21 }, start = { col = 22, row = 21 } } (Token (Sigil (Bracket Round Close)))
                 , Located { end = { col = 1, row = 23 }, start = { col = 23, row = 21 } }
-                    (Newlines
-                        [ 0
-                        ]
-                        0
+                    (Token
+                        (Newlines
+                            [ 0
+                            ]
+                            0
+                        )
                     )
-                , Located { end = { col = 5, row = 23 }, start = { col = 1, row = 23 } } (Keyword Case)
-                , Located { end = { col = 8, row = 23 }, start = { col = 5, row = 23 } } (RecordAccessorFunction "hi")
+                , Located { end = { col = 5, row = 23 }, start = { col = 1, row = 23 } } (Token (Keyword Case))
+                , Located { end = { col = 8, row = 23 }, start = { col = 5, row = 23 } } (Token (RecordAccessorFunction "hi"))
                 , Located { end = { col = 1, row = 25 }, start = { col = 8, row = 23 } }
-                    (Newlines
-                        [ 0
-                        ]
-                        0
+                    (Token
+                        (Newlines
+                            [ 0
+                            ]
+                            0
+                        )
                     )
                 , Located { end = { col = 8, row = 25 }, start = { col = 1, row = 25 } }
-                    (Identifier
-                        { name = "case"
-                        , qualifiers =
-                            [ "Hi"
-                            ]
-                        }
+                    (Token
+                        (Identifier
+                            { name = "case"
+                            , qualifiers =
+                                [ "Hi"
+                                ]
+                            }
+                        )
                     )
                 , Located { end = { col = 1, row = 27 }, start = { col = 8, row = 25 } }
-                    (Newlines
-                        [ 0
-                        ]
-                        0
+                    (Token
+                        (Newlines
+                            [ 0
+                            ]
+                            0
+                        )
                     )
-                , Located { end = { col = 5, row = 27 }, start = { col = 1, row = 27 } } (Keyword Case)
-                , Located { end = { col = 6, row = 27 }, start = { col = 5, row = 27 } } (Whitespace 1)
-                , Located { end = { col = 9, row = 27 }, start = { col = 6, row = 27 } } (RecordAccessorFunction "hi")
+                , Located { end = { col = 5, row = 27 }, start = { col = 1, row = 27 } } (Token (Keyword Case))
+                , Located { end = { col = 6, row = 27 }, start = { col = 5, row = 27 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 9, row = 27 }, start = { col = 6, row = 27 } } (Token (RecordAccessorFunction "hi"))
                 , Located { end = { col = 1, row = 29 }, start = { col = 9, row = 27 } }
-                    (Newlines
-                        [ 0
-                        ]
-                        0
+                    (Token
+                        (Newlines
+                            [ 0
+                            ]
+                            0
+                        )
                     )
-                , Located { end = { col = 4, row = 29 }, start = { col = 1, row = 29 } } (IdentifierWithTrailingDot { name = "Hi", qualifiers = [] })
-                , Located { end = { col = 5, row = 29 }, start = { col = 4, row = 29 } } (Whitespace 1)
-                , Located { end = { col = 9, row = 29 }, start = { col = 5, row = 29 } } (Keyword Case)
+                , Located { end = { col = 4, row = 29 }, start = { col = 1, row = 29 } } (Invalid (IdentifierWithTrailingDot { name = "Hi", qualifiers = [] }))
+                , Located { end = { col = 5, row = 29 }, start = { col = 4, row = 29 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 9, row = 29 }, start = { col = 5, row = 29 } } (Token (Keyword Case))
                 ]
       }
     , { name = "type-alias-function-nested-missing-return"
@@ -4104,7 +4180,7 @@ type alias Function3 = (Int, () ->, ())
             Just
                 [ Err
                     { error = Error_MissingFunctionReturnType
-                    , item = Just (Located { end = { col = 31, row = 1 }, start = { col = 30, row = 1 } } (Sigil (Bracket Round Close)))
+                    , item = Just (Located { end = { col = 31, row = 1 }, start = { col = 30, row = 1 } } (Token (Sigil (Bracket Round Close))))
                     , state =
                         State_BlockTypeAlias
                             (BlockTypeAlias_Completish "Function"
@@ -4118,7 +4194,7 @@ type alias Function3 = (Int, () ->, ())
                     }
                 , Err
                     { error = Error_MissingFunctionReturnType
-                    , item = Just (Located { end = { col = 37, row = 3 }, start = { col = 36, row = 3 } } (Sigil (Bracket Curly Close)))
+                    , item = Just (Located { end = { col = 37, row = 3 }, start = { col = 36, row = 3 } } (Token (Sigil (Bracket Curly Close))))
                     , state =
                         State_BlockTypeAlias
                             (BlockTypeAlias_Completish "Function2"
@@ -4132,7 +4208,7 @@ type alias Function3 = (Int, () ->, ())
                     }
                 , Err
                     { error = Error_InvalidToken Expecting_Unknown
-                    , item = Just (Located { end = { col = 32, row = 5 }, start = { col = 31, row = 5 } } (Sigil Comma))
+                    , item = Just (Located { end = { col = 32, row = 5 }, start = { col = 31, row = 5 } } (Token (Sigil Comma)))
                     , state =
                         State_BlockTypeAlias
                             (BlockTypeAlias_Completish "Function3"
@@ -4146,7 +4222,7 @@ type alias Function3 = (Int, () ->, ())
                     }
                 , Err
                     { error = Error_InvalidToken Expecting_Unknown
-                    , item = Just (Located { end = { col = 36, row = 7 }, start = { col = 35, row = 7 } } (Sigil Comma))
+                    , item = Just (Located { end = { col = 36, row = 7 }, start = { col = 35, row = 7 } } (Token (Sigil Comma)))
                     , state =
                         State_BlockTypeAlias
                             (BlockTypeAlias_Completish "Function3"
@@ -4165,99 +4241,105 @@ type alias Function3 = (Int, () ->, ())
                 ]
       , lexed =
             Ok
-                [ Located { end = { col = 5, row = 1 }, start = { col = 1, row = 1 } } (Keyword Type)
-                , Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 11, row = 1 }, start = { col = 6, row = 1 } } (Keyword Alias)
-                , Located { end = { col = 12, row = 1 }, start = { col = 11, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 20, row = 1 }, start = { col = 12, row = 1 } } (Identifier { name = "Function", qualifiers = [] })
-                , Located { end = { col = 21, row = 1 }, start = { col = 20, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 22, row = 1 }, start = { col = 21, row = 1 } } (Sigil Assign)
-                , Located { end = { col = 23, row = 1 }, start = { col = 22, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 24, row = 1 }, start = { col = 23, row = 1 } } (Sigil (Bracket Round Open))
-                , Located { end = { col = 25, row = 1 }, start = { col = 24, row = 1 } } (Sigil (Bracket Round Open))
-                , Located { end = { col = 26, row = 1 }, start = { col = 25, row = 1 } } (Sigil (Bracket Round Close))
-                , Located { end = { col = 27, row = 1 }, start = { col = 26, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 29, row = 1 }, start = { col = 27, row = 1 } } (Sigil ThinArrow)
-                , Located { end = { col = 30, row = 1 }, start = { col = 29, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 31, row = 1 }, start = { col = 30, row = 1 } } (Sigil (Bracket Round Close))
+                [ Located { end = { col = 5, row = 1 }, start = { col = 1, row = 1 } } (Token (Keyword Type))
+                , Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 11, row = 1 }, start = { col = 6, row = 1 } } (Token (Keyword Alias))
+                , Located { end = { col = 12, row = 1 }, start = { col = 11, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 20, row = 1 }, start = { col = 12, row = 1 } } (Token (Identifier { name = "Function", qualifiers = [] }))
+                , Located { end = { col = 21, row = 1 }, start = { col = 20, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 22, row = 1 }, start = { col = 21, row = 1 } } (Token (Sigil Assign))
+                , Located { end = { col = 23, row = 1 }, start = { col = 22, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 24, row = 1 }, start = { col = 23, row = 1 } } (Token (Sigil (Bracket Round Open)))
+                , Located { end = { col = 25, row = 1 }, start = { col = 24, row = 1 } } (Token (Sigil (Bracket Round Open)))
+                , Located { end = { col = 26, row = 1 }, start = { col = 25, row = 1 } } (Token (Sigil (Bracket Round Close)))
+                , Located { end = { col = 27, row = 1 }, start = { col = 26, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 29, row = 1 }, start = { col = 27, row = 1 } } (Token (Sigil ThinArrow))
+                , Located { end = { col = 30, row = 1 }, start = { col = 29, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 31, row = 1 }, start = { col = 30, row = 1 } } (Token (Sigil (Bracket Round Close)))
                 , Located { end = { col = 1, row = 3 }, start = { col = 31, row = 1 } }
-                    (Newlines
-                        [ 0
-                        ]
-                        0
+                    (Token
+                        (Newlines
+                            [ 0
+                            ]
+                            0
+                        )
                     )
-                , Located { end = { col = 5, row = 3 }, start = { col = 1, row = 3 } } (Keyword Type)
-                , Located { end = { col = 6, row = 3 }, start = { col = 5, row = 3 } } (Whitespace 1)
-                , Located { end = { col = 11, row = 3 }, start = { col = 6, row = 3 } } (Keyword Alias)
-                , Located { end = { col = 12, row = 3 }, start = { col = 11, row = 3 } } (Whitespace 1)
-                , Located { end = { col = 21, row = 3 }, start = { col = 12, row = 3 } } (Identifier { name = "Function2", qualifiers = [] })
-                , Located { end = { col = 22, row = 3 }, start = { col = 21, row = 3 } } (Whitespace 1)
-                , Located { end = { col = 23, row = 3 }, start = { col = 22, row = 3 } } (Sigil Assign)
-                , Located { end = { col = 24, row = 3 }, start = { col = 23, row = 3 } } (Whitespace 1)
-                , Located { end = { col = 25, row = 3 }, start = { col = 24, row = 3 } } (Sigil (Bracket Curly Open))
-                , Located { end = { col = 26, row = 3 }, start = { col = 25, row = 3 } } (Whitespace 1)
-                , Located { end = { col = 27, row = 3 }, start = { col = 26, row = 3 } } (Identifier { name = "a", qualifiers = [] })
-                , Located { end = { col = 28, row = 3 }, start = { col = 27, row = 3 } } (Sigil Colon)
-                , Located { end = { col = 29, row = 3 }, start = { col = 28, row = 3 } } (Whitespace 1)
-                , Located { end = { col = 30, row = 3 }, start = { col = 29, row = 3 } } (Sigil (Bracket Round Open))
-                , Located { end = { col = 31, row = 3 }, start = { col = 30, row = 3 } } (Sigil (Bracket Round Close))
-                , Located { end = { col = 32, row = 3 }, start = { col = 31, row = 3 } } (Whitespace 1)
-                , Located { end = { col = 34, row = 3 }, start = { col = 32, row = 3 } } (Sigil ThinArrow)
-                , Located { end = { col = 36, row = 3 }, start = { col = 34, row = 3 } } (Whitespace 2)
-                , Located { end = { col = 37, row = 3 }, start = { col = 36, row = 3 } } (Sigil (Bracket Curly Close))
+                , Located { end = { col = 5, row = 3 }, start = { col = 1, row = 3 } } (Token (Keyword Type))
+                , Located { end = { col = 6, row = 3 }, start = { col = 5, row = 3 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 11, row = 3 }, start = { col = 6, row = 3 } } (Token (Keyword Alias))
+                , Located { end = { col = 12, row = 3 }, start = { col = 11, row = 3 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 21, row = 3 }, start = { col = 12, row = 3 } } (Token (Identifier { name = "Function2", qualifiers = [] }))
+                , Located { end = { col = 22, row = 3 }, start = { col = 21, row = 3 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 23, row = 3 }, start = { col = 22, row = 3 } } (Token (Sigil Assign))
+                , Located { end = { col = 24, row = 3 }, start = { col = 23, row = 3 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 25, row = 3 }, start = { col = 24, row = 3 } } (Token (Sigil (Bracket Curly Open)))
+                , Located { end = { col = 26, row = 3 }, start = { col = 25, row = 3 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 27, row = 3 }, start = { col = 26, row = 3 } } (Token (Identifier { name = "a", qualifiers = [] }))
+                , Located { end = { col = 28, row = 3 }, start = { col = 27, row = 3 } } (Token (Sigil Colon))
+                , Located { end = { col = 29, row = 3 }, start = { col = 28, row = 3 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 30, row = 3 }, start = { col = 29, row = 3 } } (Token (Sigil (Bracket Round Open)))
+                , Located { end = { col = 31, row = 3 }, start = { col = 30, row = 3 } } (Token (Sigil (Bracket Round Close)))
+                , Located { end = { col = 32, row = 3 }, start = { col = 31, row = 3 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 34, row = 3 }, start = { col = 32, row = 3 } } (Token (Sigil ThinArrow))
+                , Located { end = { col = 36, row = 3 }, start = { col = 34, row = 3 } } (Ignorable (Whitespace 2))
+                , Located { end = { col = 37, row = 3 }, start = { col = 36, row = 3 } } (Token (Sigil (Bracket Curly Close)))
                 , Located { end = { col = 1, row = 5 }, start = { col = 37, row = 3 } }
-                    (Newlines
-                        [ 0
-                        ]
-                        0
+                    (Token
+                        (Newlines
+                            [ 0
+                            ]
+                            0
+                        )
                     )
-                , Located { end = { col = 5, row = 5 }, start = { col = 1, row = 5 } } (Keyword Type)
-                , Located { end = { col = 6, row = 5 }, start = { col = 5, row = 5 } } (Whitespace 1)
-                , Located { end = { col = 11, row = 5 }, start = { col = 6, row = 5 } } (Keyword Alias)
-                , Located { end = { col = 12, row = 5 }, start = { col = 11, row = 5 } } (Whitespace 1)
-                , Located { end = { col = 21, row = 5 }, start = { col = 12, row = 5 } } (Identifier { name = "Function3", qualifiers = [] })
-                , Located { end = { col = 22, row = 5 }, start = { col = 21, row = 5 } } (Whitespace 1)
-                , Located { end = { col = 23, row = 5 }, start = { col = 22, row = 5 } } (Sigil Assign)
-                , Located { end = { col = 24, row = 5 }, start = { col = 23, row = 5 } } (Whitespace 1)
-                , Located { end = { col = 25, row = 5 }, start = { col = 24, row = 5 } } (Sigil (Bracket Round Open))
-                , Located { end = { col = 26, row = 5 }, start = { col = 25, row = 5 } } (Sigil (Bracket Round Open))
-                , Located { end = { col = 27, row = 5 }, start = { col = 26, row = 5 } } (Sigil (Bracket Round Close))
-                , Located { end = { col = 28, row = 5 }, start = { col = 27, row = 5 } } (Whitespace 1)
-                , Located { end = { col = 30, row = 5 }, start = { col = 28, row = 5 } } (Sigil ThinArrow)
-                , Located { end = { col = 31, row = 5 }, start = { col = 30, row = 5 } } (Whitespace 1)
-                , Located { end = { col = 32, row = 5 }, start = { col = 31, row = 5 } } (Sigil Comma)
-                , Located { end = { col = 33, row = 5 }, start = { col = 32, row = 5 } } (Whitespace 1)
-                , Located { end = { col = 34, row = 5 }, start = { col = 33, row = 5 } } (Sigil (Bracket Round Open))
-                , Located { end = { col = 35, row = 5 }, start = { col = 34, row = 5 } } (Sigil (Bracket Round Close))
-                , Located { end = { col = 36, row = 5 }, start = { col = 35, row = 5 } } (Sigil (Bracket Round Close))
+                , Located { end = { col = 5, row = 5 }, start = { col = 1, row = 5 } } (Token (Keyword Type))
+                , Located { end = { col = 6, row = 5 }, start = { col = 5, row = 5 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 11, row = 5 }, start = { col = 6, row = 5 } } (Token (Keyword Alias))
+                , Located { end = { col = 12, row = 5 }, start = { col = 11, row = 5 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 21, row = 5 }, start = { col = 12, row = 5 } } (Token (Identifier { name = "Function3", qualifiers = [] }))
+                , Located { end = { col = 22, row = 5 }, start = { col = 21, row = 5 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 23, row = 5 }, start = { col = 22, row = 5 } } (Token (Sigil Assign))
+                , Located { end = { col = 24, row = 5 }, start = { col = 23, row = 5 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 25, row = 5 }, start = { col = 24, row = 5 } } (Token (Sigil (Bracket Round Open)))
+                , Located { end = { col = 26, row = 5 }, start = { col = 25, row = 5 } } (Token (Sigil (Bracket Round Open)))
+                , Located { end = { col = 27, row = 5 }, start = { col = 26, row = 5 } } (Token (Sigil (Bracket Round Close)))
+                , Located { end = { col = 28, row = 5 }, start = { col = 27, row = 5 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 30, row = 5 }, start = { col = 28, row = 5 } } (Token (Sigil ThinArrow))
+                , Located { end = { col = 31, row = 5 }, start = { col = 30, row = 5 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 32, row = 5 }, start = { col = 31, row = 5 } } (Token (Sigil Comma))
+                , Located { end = { col = 33, row = 5 }, start = { col = 32, row = 5 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 34, row = 5 }, start = { col = 33, row = 5 } } (Token (Sigil (Bracket Round Open)))
+                , Located { end = { col = 35, row = 5 }, start = { col = 34, row = 5 } } (Token (Sigil (Bracket Round Close)))
+                , Located { end = { col = 36, row = 5 }, start = { col = 35, row = 5 } } (Token (Sigil (Bracket Round Close)))
                 , Located { end = { col = 1, row = 7 }, start = { col = 36, row = 5 } }
-                    (Newlines
-                        [ 0
-                        ]
-                        0
+                    (Token
+                        (Newlines
+                            [ 0
+                            ]
+                            0
+                        )
                     )
-                , Located { end = { col = 5, row = 7 }, start = { col = 1, row = 7 } } (Keyword Type)
-                , Located { end = { col = 6, row = 7 }, start = { col = 5, row = 7 } } (Whitespace 1)
-                , Located { end = { col = 11, row = 7 }, start = { col = 6, row = 7 } } (Keyword Alias)
-                , Located { end = { col = 12, row = 7 }, start = { col = 11, row = 7 } } (Whitespace 1)
-                , Located { end = { col = 21, row = 7 }, start = { col = 12, row = 7 } } (Identifier { name = "Function3", qualifiers = [] })
-                , Located { end = { col = 22, row = 7 }, start = { col = 21, row = 7 } } (Whitespace 1)
-                , Located { end = { col = 23, row = 7 }, start = { col = 22, row = 7 } } (Sigil Assign)
-                , Located { end = { col = 24, row = 7 }, start = { col = 23, row = 7 } } (Whitespace 1)
-                , Located { end = { col = 25, row = 7 }, start = { col = 24, row = 7 } } (Sigil (Bracket Round Open))
-                , Located { end = { col = 28, row = 7 }, start = { col = 25, row = 7 } } (Identifier { name = "Int", qualifiers = [] })
-                , Located { end = { col = 29, row = 7 }, start = { col = 28, row = 7 } } (Sigil Comma)
-                , Located { end = { col = 30, row = 7 }, start = { col = 29, row = 7 } } (Whitespace 1)
-                , Located { end = { col = 31, row = 7 }, start = { col = 30, row = 7 } } (Sigil (Bracket Round Open))
-                , Located { end = { col = 32, row = 7 }, start = { col = 31, row = 7 } } (Sigil (Bracket Round Close))
-                , Located { end = { col = 33, row = 7 }, start = { col = 32, row = 7 } } (Whitespace 1)
-                , Located { end = { col = 35, row = 7 }, start = { col = 33, row = 7 } } (Sigil ThinArrow)
-                , Located { end = { col = 36, row = 7 }, start = { col = 35, row = 7 } } (Sigil Comma)
-                , Located { end = { col = 37, row = 7 }, start = { col = 36, row = 7 } } (Whitespace 1)
-                , Located { end = { col = 38, row = 7 }, start = { col = 37, row = 7 } } (Sigil (Bracket Round Open))
-                , Located { end = { col = 39, row = 7 }, start = { col = 38, row = 7 } } (Sigil (Bracket Round Close))
-                , Located { end = { col = 40, row = 7 }, start = { col = 39, row = 7 } } (Sigil (Bracket Round Close))
-                , Located { end = { col = 1, row = 8 }, start = { col = 40, row = 7 } } (Newlines [] 0)
+                , Located { end = { col = 5, row = 7 }, start = { col = 1, row = 7 } } (Token (Keyword Type))
+                , Located { end = { col = 6, row = 7 }, start = { col = 5, row = 7 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 11, row = 7 }, start = { col = 6, row = 7 } } (Token (Keyword Alias))
+                , Located { end = { col = 12, row = 7 }, start = { col = 11, row = 7 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 21, row = 7 }, start = { col = 12, row = 7 } } (Token (Identifier { name = "Function3", qualifiers = [] }))
+                , Located { end = { col = 22, row = 7 }, start = { col = 21, row = 7 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 23, row = 7 }, start = { col = 22, row = 7 } } (Token (Sigil Assign))
+                , Located { end = { col = 24, row = 7 }, start = { col = 23, row = 7 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 25, row = 7 }, start = { col = 24, row = 7 } } (Token (Sigil (Bracket Round Open)))
+                , Located { end = { col = 28, row = 7 }, start = { col = 25, row = 7 } } (Token (Identifier { name = "Int", qualifiers = [] }))
+                , Located { end = { col = 29, row = 7 }, start = { col = 28, row = 7 } } (Token (Sigil Comma))
+                , Located { end = { col = 30, row = 7 }, start = { col = 29, row = 7 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 31, row = 7 }, start = { col = 30, row = 7 } } (Token (Sigil (Bracket Round Open)))
+                , Located { end = { col = 32, row = 7 }, start = { col = 31, row = 7 } } (Token (Sigil (Bracket Round Close)))
+                , Located { end = { col = 33, row = 7 }, start = { col = 32, row = 7 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 35, row = 7 }, start = { col = 33, row = 7 } } (Token (Sigil ThinArrow))
+                , Located { end = { col = 36, row = 7 }, start = { col = 35, row = 7 } } (Token (Sigil Comma))
+                , Located { end = { col = 37, row = 7 }, start = { col = 36, row = 7 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 38, row = 7 }, start = { col = 37, row = 7 } } (Token (Sigil (Bracket Round Open)))
+                , Located { end = { col = 39, row = 7 }, start = { col = 38, row = 7 } } (Token (Sigil (Bracket Round Close)))
+                , Located { end = { col = 40, row = 7 }, start = { col = 39, row = 7 } } (Token (Sigil (Bracket Round Close)))
+                , Located { end = { col = 1, row = 8 }, start = { col = 40, row = 7 } } (Token (Newlines [] 0))
                 ]
       }
     , { name = "type-alias-invalid-multiple-brackets"
@@ -4270,27 +4352,27 @@ type alias Function3 = (Int, () ->, ())
             Just
                 [ Err
                     { error = Error_TypeDoesNotTakeArgs2 (TypeExpression_Bracketed (TypeExpression_NamedType { args = Stack [], name = "Int" }))
-                    , item = Just (Located { end = { col = 24, row = 1 }, start = { col = 23, row = 1 } } (Sigil (Bracket Round Open)))
+                    , item = Just (Located { end = { col = 24, row = 1 }, start = { col = 23, row = 1 } } (Token (Sigil (Bracket Round Open))))
                     , state = State_BlockTypeAlias (BlockTypeAlias_Completish "Hi" [] { nesting = NestingLeafType_Expr (TypeExpression_Bracketed (TypeExpression_NamedType { args = Stack [], name = "Int" })), parents = [] })
                     }
                 ]
       , lexed =
             Ok
-                [ Located { end = { col = 5, row = 1 }, start = { col = 1, row = 1 } } (Keyword Type)
-                , Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 11, row = 1 }, start = { col = 6, row = 1 } } (Keyword Alias)
-                , Located { end = { col = 12, row = 1 }, start = { col = 11, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 14, row = 1 }, start = { col = 12, row = 1 } } (Identifier { name = "Hi", qualifiers = [] })
-                , Located { end = { col = 15, row = 1 }, start = { col = 14, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 16, row = 1 }, start = { col = 15, row = 1 } } (Sigil Assign)
-                , Located { end = { col = 17, row = 1 }, start = { col = 16, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 18, row = 1 }, start = { col = 17, row = 1 } } (Sigil (Bracket Round Open))
-                , Located { end = { col = 21, row = 1 }, start = { col = 18, row = 1 } } (Identifier { name = "Int", qualifiers = [] })
-                , Located { end = { col = 22, row = 1 }, start = { col = 21, row = 1 } } (Sigil (Bracket Round Close))
-                , Located { end = { col = 23, row = 1 }, start = { col = 22, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 24, row = 1 }, start = { col = 23, row = 1 } } (Sigil (Bracket Round Open))
-                , Located { end = { col = 25, row = 1 }, start = { col = 24, row = 1 } } (Sigil (Bracket Round Close))
-                , Located { end = { col = 1, row = 2 }, start = { col = 25, row = 1 } } (Newlines [] 0)
+                [ Located { end = { col = 5, row = 1 }, start = { col = 1, row = 1 } } (Token (Keyword Type))
+                , Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 11, row = 1 }, start = { col = 6, row = 1 } } (Token (Keyword Alias))
+                , Located { end = { col = 12, row = 1 }, start = { col = 11, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 14, row = 1 }, start = { col = 12, row = 1 } } (Token (Identifier { name = "Hi", qualifiers = [] }))
+                , Located { end = { col = 15, row = 1 }, start = { col = 14, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 16, row = 1 }, start = { col = 15, row = 1 } } (Token (Sigil Assign))
+                , Located { end = { col = 17, row = 1 }, start = { col = 16, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 18, row = 1 }, start = { col = 17, row = 1 } } (Token (Sigil (Bracket Round Open)))
+                , Located { end = { col = 21, row = 1 }, start = { col = 18, row = 1 } } (Token (Identifier { name = "Int", qualifiers = [] }))
+                , Located { end = { col = 22, row = 1 }, start = { col = 21, row = 1 } } (Token (Sigil (Bracket Round Close)))
+                , Located { end = { col = 23, row = 1 }, start = { col = 22, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 24, row = 1 }, start = { col = 23, row = 1 } } (Token (Sigil (Bracket Round Open)))
+                , Located { end = { col = 25, row = 1 }, start = { col = 24, row = 1 } } (Token (Sigil (Bracket Round Close)))
+                , Located { end = { col = 1, row = 2 }, start = { col = 25, row = 1 } } (Token (Newlines [] 0))
                 ]
       }
     , { name = "type-alias-invalid-multiple-brackets-2"
@@ -4303,26 +4385,26 @@ type alias Function3 = (Int, () ->, ())
             Just
                 [ Err
                     { error = Error_TypeDoesNotTakeArgs2 TypeExpression_Unit
-                    , item = Just (Located { end = { col = 21, row = 1 }, start = { col = 20, row = 1 } } (Sigil (Bracket Round Open)))
+                    , item = Just (Located { end = { col = 21, row = 1 }, start = { col = 20, row = 1 } } (Token (Sigil (Bracket Round Open))))
                     , state = State_BlockTypeAlias (BlockTypeAlias_Completish "Hi" [] { nesting = NestingLeafType_Expr TypeExpression_Unit, parents = [] })
                     }
                 ]
       , lexed =
             Ok
-                [ Located { end = { col = 5, row = 1 }, start = { col = 1, row = 1 } } (Keyword Type)
-                , Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 11, row = 1 }, start = { col = 6, row = 1 } } (Keyword Alias)
-                , Located { end = { col = 12, row = 1 }, start = { col = 11, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 14, row = 1 }, start = { col = 12, row = 1 } } (Identifier { name = "Hi", qualifiers = [] })
-                , Located { end = { col = 15, row = 1 }, start = { col = 14, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 16, row = 1 }, start = { col = 15, row = 1 } } (Sigil Assign)
-                , Located { end = { col = 17, row = 1 }, start = { col = 16, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 18, row = 1 }, start = { col = 17, row = 1 } } (Sigil (Bracket Round Open))
-                , Located { end = { col = 19, row = 1 }, start = { col = 18, row = 1 } } (Sigil (Bracket Round Close))
-                , Located { end = { col = 20, row = 1 }, start = { col = 19, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 21, row = 1 }, start = { col = 20, row = 1 } } (Sigil (Bracket Round Open))
-                , Located { end = { col = 22, row = 1 }, start = { col = 21, row = 1 } } (Sigil (Bracket Round Close))
-                , Located { end = { col = 1, row = 2 }, start = { col = 22, row = 1 } } (Newlines [] 0)
+                [ Located { end = { col = 5, row = 1 }, start = { col = 1, row = 1 } } (Token (Keyword Type))
+                , Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 11, row = 1 }, start = { col = 6, row = 1 } } (Token (Keyword Alias))
+                , Located { end = { col = 12, row = 1 }, start = { col = 11, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 14, row = 1 }, start = { col = 12, row = 1 } } (Token (Identifier { name = "Hi", qualifiers = [] }))
+                , Located { end = { col = 15, row = 1 }, start = { col = 14, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 16, row = 1 }, start = { col = 15, row = 1 } } (Token (Sigil Assign))
+                , Located { end = { col = 17, row = 1 }, start = { col = 16, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 18, row = 1 }, start = { col = 17, row = 1 } } (Token (Sigil (Bracket Round Open)))
+                , Located { end = { col = 19, row = 1 }, start = { col = 18, row = 1 } } (Token (Sigil (Bracket Round Close)))
+                , Located { end = { col = 20, row = 1 }, start = { col = 19, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 21, row = 1 }, start = { col = 20, row = 1 } } (Token (Sigil (Bracket Round Open)))
+                , Located { end = { col = 22, row = 1 }, start = { col = 21, row = 1 } } (Token (Sigil (Bracket Round Close)))
+                , Located { end = { col = 1, row = 2 }, start = { col = 22, row = 1 } } (Token (Newlines [] 0))
                 ]
       }
     , { name = "type-alias-invalid-multiple-brackets-3"
@@ -4335,27 +4417,27 @@ type alias Function3 = (Int, () ->, ())
             Just
                 [ Err
                     { error = Error_TypeDoesNotTakeArgs2 TypeExpression_Unit
-                    , item = Just (Located { end = { col = 21, row = 1 }, start = { col = 20, row = 1 } } (Sigil (Bracket Round Open)))
+                    , item = Just (Located { end = { col = 21, row = 1 }, start = { col = 20, row = 1 } } (Token (Sigil (Bracket Round Open))))
                     , state = State_BlockTypeAlias (BlockTypeAlias_Completish "Hi" [] { nesting = NestingLeafType_Expr TypeExpression_Unit, parents = [] })
                     }
                 ]
       , lexed =
             Ok
-                [ Located { end = { col = 5, row = 1 }, start = { col = 1, row = 1 } } (Keyword Type)
-                , Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 11, row = 1 }, start = { col = 6, row = 1 } } (Keyword Alias)
-                , Located { end = { col = 12, row = 1 }, start = { col = 11, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 14, row = 1 }, start = { col = 12, row = 1 } } (Identifier { name = "Hi", qualifiers = [] })
-                , Located { end = { col = 15, row = 1 }, start = { col = 14, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 16, row = 1 }, start = { col = 15, row = 1 } } (Sigil Assign)
-                , Located { end = { col = 17, row = 1 }, start = { col = 16, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 18, row = 1 }, start = { col = 17, row = 1 } } (Sigil (Bracket Round Open))
-                , Located { end = { col = 19, row = 1 }, start = { col = 18, row = 1 } } (Sigil (Bracket Round Close))
-                , Located { end = { col = 20, row = 1 }, start = { col = 19, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 21, row = 1 }, start = { col = 20, row = 1 } } (Sigil (Bracket Round Open))
-                , Located { end = { col = 24, row = 1 }, start = { col = 21, row = 1 } } (Identifier { name = "Int", qualifiers = [] })
-                , Located { end = { col = 25, row = 1 }, start = { col = 24, row = 1 } } (Sigil (Bracket Round Close))
-                , Located { end = { col = 1, row = 2 }, start = { col = 25, row = 1 } } (Newlines [] 0)
+                [ Located { end = { col = 5, row = 1 }, start = { col = 1, row = 1 } } (Token (Keyword Type))
+                , Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 11, row = 1 }, start = { col = 6, row = 1 } } (Token (Keyword Alias))
+                , Located { end = { col = 12, row = 1 }, start = { col = 11, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 14, row = 1 }, start = { col = 12, row = 1 } } (Token (Identifier { name = "Hi", qualifiers = [] }))
+                , Located { end = { col = 15, row = 1 }, start = { col = 14, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 16, row = 1 }, start = { col = 15, row = 1 } } (Token (Sigil Assign))
+                , Located { end = { col = 17, row = 1 }, start = { col = 16, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 18, row = 1 }, start = { col = 17, row = 1 } } (Token (Sigil (Bracket Round Open)))
+                , Located { end = { col = 19, row = 1 }, start = { col = 18, row = 1 } } (Token (Sigil (Bracket Round Close)))
+                , Located { end = { col = 20, row = 1 }, start = { col = 19, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 21, row = 1 }, start = { col = 20, row = 1 } } (Token (Sigil (Bracket Round Open)))
+                , Located { end = { col = 24, row = 1 }, start = { col = 21, row = 1 } } (Token (Identifier { name = "Int", qualifiers = [] }))
+                , Located { end = { col = 25, row = 1 }, start = { col = 24, row = 1 } } (Token (Sigil (Bracket Round Close)))
+                , Located { end = { col = 1, row = 2 }, start = { col = 25, row = 1 } } (Token (Newlines [] 0))
                 ]
       }
     , { name = "type-alias-multiline-missing-indentation"
@@ -4371,12 +4453,12 @@ List Int
             Just
                 [ Err
                     { error = Error_PartwayThroughTypeAlias
-                    , item = Just (Located { end = { col = 1, row = 2 }, start = { col = 19, row = 1 } } (Newlines [] 0))
+                    , item = Just (Located { end = { col = 1, row = 2 }, start = { col = 19, row = 1 } } (Token (Newlines [] 0)))
                     , state = State_BlockTypeAlias (BlockTypeAlias_NamedAssigns "Model" [])
                     }
                 , Err
                     { error = Error_PartwayThroughTypeAlias
-                    , item = Just (Located { end = { col = 1, row = 3 }, start = { col = 9, row = 2 } } (Newlines [] 0))
+                    , item = Just (Located { end = { col = 1, row = 3 }, start = { col = 9, row = 2 } } (Token (Newlines [] 0)))
                     , state =
                         State_BlockValueDeclaration
                             (BlockValueDeclaration_Named
@@ -4391,18 +4473,18 @@ List Int
                 ]
       , lexed =
             Ok
-                [ Located { end = { col = 5, row = 1 }, start = { col = 1, row = 1 } } (Keyword Type)
-                , Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 11, row = 1 }, start = { col = 6, row = 1 } } (Keyword Alias)
-                , Located { end = { col = 12, row = 1 }, start = { col = 11, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 17, row = 1 }, start = { col = 12, row = 1 } } (Identifier { name = "Model", qualifiers = [] })
-                , Located { end = { col = 18, row = 1 }, start = { col = 17, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 19, row = 1 }, start = { col = 18, row = 1 } } (Sigil Assign)
-                , Located { end = { col = 1, row = 2 }, start = { col = 19, row = 1 } } (Newlines [] 0)
-                , Located { end = { col = 5, row = 2 }, start = { col = 1, row = 2 } } (Identifier { name = "List", qualifiers = [] })
-                , Located { end = { col = 6, row = 2 }, start = { col = 5, row = 2 } } (Whitespace 1)
-                , Located { end = { col = 9, row = 2 }, start = { col = 6, row = 2 } } (Identifier { name = "Int", qualifiers = [] })
-                , Located { end = { col = 1, row = 3 }, start = { col = 9, row = 2 } } (Newlines [] 0)
+                [ Located { end = { col = 5, row = 1 }, start = { col = 1, row = 1 } } (Token (Keyword Type))
+                , Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 11, row = 1 }, start = { col = 6, row = 1 } } (Token (Keyword Alias))
+                , Located { end = { col = 12, row = 1 }, start = { col = 11, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 17, row = 1 }, start = { col = 12, row = 1 } } (Token (Identifier { name = "Model", qualifiers = [] }))
+                , Located { end = { col = 18, row = 1 }, start = { col = 17, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 19, row = 1 }, start = { col = 18, row = 1 } } (Token (Sigil Assign))
+                , Located { end = { col = 1, row = 2 }, start = { col = 19, row = 1 } } (Token (Newlines [] 0))
+                , Located { end = { col = 5, row = 2 }, start = { col = 1, row = 2 } } (Token (Identifier { name = "List", qualifiers = [] }))
+                , Located { end = { col = 6, row = 2 }, start = { col = 5, row = 2 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 9, row = 2 }, start = { col = 6, row = 2 } } (Token (Identifier { name = "Int", qualifiers = [] }))
+                , Located { end = { col = 1, row = 3 }, start = { col = 9, row = 2 } } (Token (Newlines [] 0))
                 ]
       }
     , { name = "type-alias-partial"
@@ -4415,16 +4497,16 @@ List Int
             Just
                 [ Err
                     { error = Error_PartwayThroughTypeAlias
-                    , item = Just (Located { end = { col = 1, row = 2 }, start = { col = 11, row = 1 } } (Newlines [] 0))
+                    , item = Just (Located { end = { col = 1, row = 2 }, start = { col = 11, row = 1 } } (Token (Newlines [] 0)))
                     , state = State_BlockTypeAlias BlockTypeAlias_Keywords
                     }
                 ]
       , lexed =
             Ok
-                [ Located { end = { col = 5, row = 1 }, start = { col = 1, row = 1 } } (Keyword Type)
-                , Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 11, row = 1 }, start = { col = 6, row = 1 } } (Keyword Alias)
-                , Located { end = { col = 1, row = 2 }, start = { col = 11, row = 1 } } (Newlines [] 0)
+                [ Located { end = { col = 5, row = 1 }, start = { col = 1, row = 1 } } (Token (Keyword Type))
+                , Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 11, row = 1 }, start = { col = 6, row = 1 } } (Token (Keyword Alias))
+                , Located { end = { col = 1, row = 2 }, start = { col = 11, row = 1 } } (Token (Newlines [] 0))
                 ]
       }
     , { name = "type-alias-partial-2"
@@ -4437,18 +4519,18 @@ List Int
             Just
                 [ Err
                     { error = Error_PartwayThroughTypeAlias
-                    , item = Just (Located { end = { col = 1, row = 2 }, start = { col = 14, row = 1 } } (Newlines [] 0))
+                    , item = Just (Located { end = { col = 1, row = 2 }, start = { col = 14, row = 1 } } (Token (Newlines [] 0)))
                     , state = State_BlockTypeAlias (BlockTypeAlias_Named "Hi" (Stack []))
                     }
                 ]
       , lexed =
             Ok
-                [ Located { end = { col = 5, row = 1 }, start = { col = 1, row = 1 } } (Keyword Type)
-                , Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 11, row = 1 }, start = { col = 6, row = 1 } } (Keyword Alias)
-                , Located { end = { col = 12, row = 1 }, start = { col = 11, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 14, row = 1 }, start = { col = 12, row = 1 } } (Identifier { name = "Hi", qualifiers = [] })
-                , Located { end = { col = 1, row = 2 }, start = { col = 14, row = 1 } } (Newlines [] 0)
+                [ Located { end = { col = 5, row = 1 }, start = { col = 1, row = 1 } } (Token (Keyword Type))
+                , Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 11, row = 1 }, start = { col = 6, row = 1 } } (Token (Keyword Alias))
+                , Located { end = { col = 12, row = 1 }, start = { col = 11, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 14, row = 1 }, start = { col = 12, row = 1 } } (Token (Identifier { name = "Hi", qualifiers = [] }))
+                , Located { end = { col = 1, row = 2 }, start = { col = 14, row = 1 } } (Token (Newlines [] 0))
                 ]
       }
     , { name = "type-alias-partial-3"
@@ -4461,20 +4543,20 @@ List Int
             Just
                 [ Err
                     { error = Error_PartwayThroughTypeAlias
-                    , item = Just (Located { end = { col = 1, row = 2 }, start = { col = 16, row = 1 } } (Newlines [] 0))
+                    , item = Just (Located { end = { col = 1, row = 2 }, start = { col = 16, row = 1 } } (Token (Newlines [] 0)))
                     , state = State_BlockTypeAlias (BlockTypeAlias_NamedAssigns "Hi" [])
                     }
                 ]
       , lexed =
             Ok
-                [ Located { end = { col = 5, row = 1 }, start = { col = 1, row = 1 } } (Keyword Type)
-                , Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 11, row = 1 }, start = { col = 6, row = 1 } } (Keyword Alias)
-                , Located { end = { col = 12, row = 1 }, start = { col = 11, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 14, row = 1 }, start = { col = 12, row = 1 } } (Identifier { name = "Hi", qualifiers = [] })
-                , Located { end = { col = 15, row = 1 }, start = { col = 14, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 16, row = 1 }, start = { col = 15, row = 1 } } (Sigil Assign)
-                , Located { end = { col = 1, row = 2 }, start = { col = 16, row = 1 } } (Newlines [] 0)
+                [ Located { end = { col = 5, row = 1 }, start = { col = 1, row = 1 } } (Token (Keyword Type))
+                , Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 11, row = 1 }, start = { col = 6, row = 1 } } (Token (Keyword Alias))
+                , Located { end = { col = 12, row = 1 }, start = { col = 11, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 14, row = 1 }, start = { col = 12, row = 1 } } (Token (Identifier { name = "Hi", qualifiers = [] }))
+                , Located { end = { col = 15, row = 1 }, start = { col = 14, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 16, row = 1 }, start = { col = 15, row = 1 } } (Token (Sigil Assign))
+                , Located { end = { col = 1, row = 2 }, start = { col = 16, row = 1 } } (Token (Newlines [] 0))
                 ]
       }
     , { name = "type-alias-partial-with-bracket"
@@ -4487,22 +4569,22 @@ List Int
             Just
                 [ Err
                     { error = Error_PartwayThroughTypeAlias
-                    , item = Just (Located { end = { col = 1, row = 2 }, start = { col = 18, row = 1 } } (Newlines [] 0))
+                    , item = Just (Located { end = { col = 1, row = 2 }, start = { col = 18, row = 1 } } (Token (Newlines [] 0)))
                     , state = State_BlockTypeAlias (BlockTypeAlias_Completish "Hi" [] { nesting = NestingLeafType_Bracket (Stack []) Nothing, parents = [] })
                     }
                 ]
       , lexed =
             Ok
-                [ Located { end = { col = 5, row = 1 }, start = { col = 1, row = 1 } } (Keyword Type)
-                , Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 11, row = 1 }, start = { col = 6, row = 1 } } (Keyword Alias)
-                , Located { end = { col = 12, row = 1 }, start = { col = 11, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 14, row = 1 }, start = { col = 12, row = 1 } } (Identifier { name = "Hi", qualifiers = [] })
-                , Located { end = { col = 15, row = 1 }, start = { col = 14, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 16, row = 1 }, start = { col = 15, row = 1 } } (Sigil Assign)
-                , Located { end = { col = 17, row = 1 }, start = { col = 16, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 18, row = 1 }, start = { col = 17, row = 1 } } (Sigil (Bracket Round Open))
-                , Located { end = { col = 1, row = 2 }, start = { col = 18, row = 1 } } (Newlines [] 0)
+                [ Located { end = { col = 5, row = 1 }, start = { col = 1, row = 1 } } (Token (Keyword Type))
+                , Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 11, row = 1 }, start = { col = 6, row = 1 } } (Token (Keyword Alias))
+                , Located { end = { col = 12, row = 1 }, start = { col = 11, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 14, row = 1 }, start = { col = 12, row = 1 } } (Token (Identifier { name = "Hi", qualifiers = [] }))
+                , Located { end = { col = 15, row = 1 }, start = { col = 14, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 16, row = 1 }, start = { col = 15, row = 1 } } (Token (Sigil Assign))
+                , Located { end = { col = 17, row = 1 }, start = { col = 16, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 18, row = 1 }, start = { col = 17, row = 1 } } (Token (Sigil (Bracket Round Open)))
+                , Located { end = { col = 1, row = 2 }, start = { col = 18, row = 1 } } (Token (Newlines [] 0))
                 ]
       }
     , { name = "type-alias-partial-with-bracket-2"
@@ -4516,7 +4598,7 @@ List Int
             Just
                 [ Err
                     { error = Error_PartwayThroughTypeAlias
-                    , item = Just (Located { end = { col = 1, row = 3 }, start = { col = 12, row = 2 } } (Newlines [] 0))
+                    , item = Just (Located { end = { col = 1, row = 3 }, start = { col = 12, row = 2 } } (Token (Newlines [] 0)))
                     , state =
                         State_BlockTypeAlias
                             (BlockTypeAlias_Completish "Hi"
@@ -4531,18 +4613,18 @@ List Int
                 ]
       , lexed =
             Ok
-                [ Located { end = { col = 5, row = 1 }, start = { col = 1, row = 1 } } (Keyword Type)
-                , Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 11, row = 1 }, start = { col = 6, row = 1 } } (Keyword Alias)
-                , Located { end = { col = 12, row = 1 }, start = { col = 11, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 14, row = 1 }, start = { col = 12, row = 1 } } (Identifier { name = "Hi", qualifiers = [] })
-                , Located { end = { col = 15, row = 1 }, start = { col = 14, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 16, row = 1 }, start = { col = 15, row = 1 } } (Sigil Assign)
-                , Located { end = { col = 17, row = 1 }, start = { col = 16, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 18, row = 1 }, start = { col = 17, row = 1 } } (Sigil (Bracket Round Open))
-                , Located { end = { col = 9, row = 2 }, start = { col = 18, row = 1 } } (Newlines [] 8)
-                , Located { end = { col = 12, row = 2 }, start = { col = 9, row = 2 } } (Identifier { name = "Int", qualifiers = [] })
-                , Located { end = { col = 1, row = 3 }, start = { col = 12, row = 2 } } (Newlines [] 0)
+                [ Located { end = { col = 5, row = 1 }, start = { col = 1, row = 1 } } (Token (Keyword Type))
+                , Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 11, row = 1 }, start = { col = 6, row = 1 } } (Token (Keyword Alias))
+                , Located { end = { col = 12, row = 1 }, start = { col = 11, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 14, row = 1 }, start = { col = 12, row = 1 } } (Token (Identifier { name = "Hi", qualifiers = [] }))
+                , Located { end = { col = 15, row = 1 }, start = { col = 14, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 16, row = 1 }, start = { col = 15, row = 1 } } (Token (Sigil Assign))
+                , Located { end = { col = 17, row = 1 }, start = { col = 16, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 18, row = 1 }, start = { col = 17, row = 1 } } (Token (Sigil (Bracket Round Open)))
+                , Located { end = { col = 9, row = 2 }, start = { col = 18, row = 1 } } (Token (Newlines [] 8))
+                , Located { end = { col = 12, row = 2 }, start = { col = 9, row = 2 } } (Token (Identifier { name = "Int", qualifiers = [] }))
+                , Located { end = { col = 1, row = 3 }, start = { col = 12, row = 2 } } (Token (Newlines [] 0))
                 ]
       }
     , { name = "type-alias-record-half-empty"
@@ -4555,22 +4637,22 @@ List Int
             Just
                 [ Err
                     { error = Error_PartwayThroughTypeAlias
-                    , item = Just (Located { end = { col = 1, row = 2 }, start = { col = 18, row = 1 } } (Newlines [] 0))
+                    , item = Just (Located { end = { col = 1, row = 2 }, start = { col = 18, row = 1 } } (Token (Newlines [] 0)))
                     , state = State_BlockTypeAlias (BlockTypeAlias_Completish "Ty" [] { nesting = NestingLeafType_PartialRecord { firstEntries = Stack [], lastEntry = LastEntryOfRecord_Empty }, parents = [] })
                     }
                 ]
       , lexed =
             Ok
-                [ Located { end = { col = 5, row = 1 }, start = { col = 1, row = 1 } } (Keyword Type)
-                , Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 11, row = 1 }, start = { col = 6, row = 1 } } (Keyword Alias)
-                , Located { end = { col = 12, row = 1 }, start = { col = 11, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 14, row = 1 }, start = { col = 12, row = 1 } } (Identifier { name = "Ty", qualifiers = [] })
-                , Located { end = { col = 15, row = 1 }, start = { col = 14, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 16, row = 1 }, start = { col = 15, row = 1 } } (Sigil Assign)
-                , Located { end = { col = 17, row = 1 }, start = { col = 16, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 18, row = 1 }, start = { col = 17, row = 1 } } (Sigil (Bracket Curly Open))
-                , Located { end = { col = 1, row = 2 }, start = { col = 18, row = 1 } } (Newlines [] 0)
+                [ Located { end = { col = 5, row = 1 }, start = { col = 1, row = 1 } } (Token (Keyword Type))
+                , Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 11, row = 1 }, start = { col = 6, row = 1 } } (Token (Keyword Alias))
+                , Located { end = { col = 12, row = 1 }, start = { col = 11, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 14, row = 1 }, start = { col = 12, row = 1 } } (Token (Identifier { name = "Ty", qualifiers = [] }))
+                , Located { end = { col = 15, row = 1 }, start = { col = 14, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 16, row = 1 }, start = { col = 15, row = 1 } } (Token (Sigil Assign))
+                , Located { end = { col = 17, row = 1 }, start = { col = 16, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 18, row = 1 }, start = { col = 17, row = 1 } } (Token (Sigil (Bracket Curly Open)))
+                , Located { end = { col = 1, row = 2 }, start = { col = 18, row = 1 } } (Token (Newlines [] 0))
                 ]
       }
     , { name = "type-alias-record-missing-colon"
@@ -4583,28 +4665,28 @@ List Int
             Just
                 [ Err
                     { error = Error_ExpectedColonWhilstParsingRecord
-                    , item = Just (Located { end = { col = 24, row = 1 }, start = { col = 22, row = 1 } } (Identifier { name = "j7", qualifiers = [] }))
+                    , item = Just (Located { end = { col = 24, row = 1 }, start = { col = 22, row = 1 } } (Token (Identifier { name = "j7", qualifiers = [] })))
                     , state = State_BlockTypeAlias (BlockTypeAlias_Completish "Ty" [] { nesting = NestingLeafType_PartialRecord { firstEntries = Stack [], lastEntry = LastEntryOfRecord_Key "hi" }, parents = [] })
                     }
                 ]
       , lexed =
             Ok
-                [ Located { end = { col = 5, row = 1 }, start = { col = 1, row = 1 } } (Keyword Type)
-                , Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 11, row = 1 }, start = { col = 6, row = 1 } } (Keyword Alias)
-                , Located { end = { col = 12, row = 1 }, start = { col = 11, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 14, row = 1 }, start = { col = 12, row = 1 } } (Identifier { name = "Ty", qualifiers = [] })
-                , Located { end = { col = 15, row = 1 }, start = { col = 14, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 16, row = 1 }, start = { col = 15, row = 1 } } (Sigil Assign)
-                , Located { end = { col = 17, row = 1 }, start = { col = 16, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 18, row = 1 }, start = { col = 17, row = 1 } } (Sigil (Bracket Curly Open))
-                , Located { end = { col = 19, row = 1 }, start = { col = 18, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 21, row = 1 }, start = { col = 19, row = 1 } } (Identifier { name = "hi", qualifiers = [] })
-                , Located { end = { col = 22, row = 1 }, start = { col = 21, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 24, row = 1 }, start = { col = 22, row = 1 } } (Identifier { name = "j7", qualifiers = [] })
-                , Located { end = { col = 25, row = 1 }, start = { col = 24, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 26, row = 1 }, start = { col = 25, row = 1 } } (Sigil (Bracket Curly Close))
-                , Located { end = { col = 1, row = 2 }, start = { col = 26, row = 1 } } (Newlines [] 0)
+                [ Located { end = { col = 5, row = 1 }, start = { col = 1, row = 1 } } (Token (Keyword Type))
+                , Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 11, row = 1 }, start = { col = 6, row = 1 } } (Token (Keyword Alias))
+                , Located { end = { col = 12, row = 1 }, start = { col = 11, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 14, row = 1 }, start = { col = 12, row = 1 } } (Token (Identifier { name = "Ty", qualifiers = [] }))
+                , Located { end = { col = 15, row = 1 }, start = { col = 14, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 16, row = 1 }, start = { col = 15, row = 1 } } (Token (Sigil Assign))
+                , Located { end = { col = 17, row = 1 }, start = { col = 16, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 18, row = 1 }, start = { col = 17, row = 1 } } (Token (Sigil (Bracket Curly Open)))
+                , Located { end = { col = 19, row = 1 }, start = { col = 18, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 21, row = 1 }, start = { col = 19, row = 1 } } (Token (Identifier { name = "hi", qualifiers = [] }))
+                , Located { end = { col = 22, row = 1 }, start = { col = 21, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 24, row = 1 }, start = { col = 22, row = 1 } } (Token (Identifier { name = "j7", qualifiers = [] }))
+                , Located { end = { col = 25, row = 1 }, start = { col = 24, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 26, row = 1 }, start = { col = 25, row = 1 } } (Token (Sigil (Bracket Curly Close)))
+                , Located { end = { col = 1, row = 2 }, start = { col = 26, row = 1 } } (Token (Newlines [] 0))
                 ]
       }
     , { name = "type-alias-with-quadruple"
@@ -4651,7 +4733,7 @@ type alias Hi = (A Int, C D E F, H I (J K), L M () O P)
                                 , qualifiedness = PossiblyQualified Nothing
                                 }
                             ]
-                    , item = Just (Located { end = { col = 1, row = 2 }, start = { col = 34, row = 1 } } (Newlines [] 0))
+                    , item = Just (Located { end = { col = 1, row = 2 }, start = { col = 34, row = 1 } } (Token (Newlines [] 0)))
                     , state =
                         State_BlockTypeAlias
                             (BlockTypeAlias_Completish "Hi"
@@ -4753,7 +4835,7 @@ type alias Hi = (A Int, C D E F, H I (J K), L M () O P)
                                 }
                             )
                             []
-                    , item = Just (Located { end = { col = 1, row = 3 }, start = { col = 56, row = 2 } } (Newlines [] 0))
+                    , item = Just (Located { end = { col = 1, row = 3 }, start = { col = 56, row = 2 } } (Token (Newlines [] 0)))
                     , state =
                         State_BlockTypeAlias
                             (BlockTypeAlias_Completish "Hi"
@@ -4814,76 +4896,76 @@ type alias Hi = (A Int, C D E F, H I (J K), L M () O P)
                 ]
       , lexed =
             Ok
-                [ Located { end = { col = 5, row = 1 }, start = { col = 1, row = 1 } } (Keyword Type)
-                , Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 11, row = 1 }, start = { col = 6, row = 1 } } (Keyword Alias)
-                , Located { end = { col = 12, row = 1 }, start = { col = 11, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 14, row = 1 }, start = { col = 12, row = 1 } } (Identifier { name = "Hi", qualifiers = [] })
-                , Located { end = { col = 15, row = 1 }, start = { col = 14, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 16, row = 1 }, start = { col = 15, row = 1 } } (Sigil Assign)
-                , Located { end = { col = 17, row = 1 }, start = { col = 16, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 18, row = 1 }, start = { col = 17, row = 1 } } (Sigil (Bracket Round Open))
-                , Located { end = { col = 21, row = 1 }, start = { col = 18, row = 1 } } (Identifier { name = "Int", qualifiers = [] })
-                , Located { end = { col = 22, row = 1 }, start = { col = 21, row = 1 } } (Sigil Comma)
-                , Located { end = { col = 23, row = 1 }, start = { col = 22, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 24, row = 1 }, start = { col = 23, row = 1 } } (Identifier { name = "A", qualifiers = [] })
-                , Located { end = { col = 25, row = 1 }, start = { col = 24, row = 1 } } (Sigil Comma)
-                , Located { end = { col = 26, row = 1 }, start = { col = 25, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 27, row = 1 }, start = { col = 26, row = 1 } } (Identifier { name = "B", qualifiers = [] })
-                , Located { end = { col = 28, row = 1 }, start = { col = 27, row = 1 } } (Sigil Comma)
-                , Located { end = { col = 29, row = 1 }, start = { col = 28, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 30, row = 1 }, start = { col = 29, row = 1 } } (Identifier { name = "C", qualifiers = [] })
-                , Located { end = { col = 31, row = 1 }, start = { col = 30, row = 1 } } (Sigil Comma)
-                , Located { end = { col = 32, row = 1 }, start = { col = 31, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 33, row = 1 }, start = { col = 32, row = 1 } } (Identifier { name = "D", qualifiers = [] })
-                , Located { end = { col = 34, row = 1 }, start = { col = 33, row = 1 } } (Sigil (Bracket Round Close))
-                , Located { end = { col = 1, row = 2 }, start = { col = 34, row = 1 } } (Newlines [] 0)
-                , Located { end = { col = 5, row = 2 }, start = { col = 1, row = 2 } } (Keyword Type)
-                , Located { end = { col = 6, row = 2 }, start = { col = 5, row = 2 } } (Whitespace 1)
-                , Located { end = { col = 11, row = 2 }, start = { col = 6, row = 2 } } (Keyword Alias)
-                , Located { end = { col = 12, row = 2 }, start = { col = 11, row = 2 } } (Whitespace 1)
-                , Located { end = { col = 14, row = 2 }, start = { col = 12, row = 2 } } (Identifier { name = "Hi", qualifiers = [] })
-                , Located { end = { col = 15, row = 2 }, start = { col = 14, row = 2 } } (Whitespace 1)
-                , Located { end = { col = 16, row = 2 }, start = { col = 15, row = 2 } } (Sigil Assign)
-                , Located { end = { col = 17, row = 2 }, start = { col = 16, row = 2 } } (Whitespace 1)
-                , Located { end = { col = 18, row = 2 }, start = { col = 17, row = 2 } } (Sigil (Bracket Round Open))
-                , Located { end = { col = 19, row = 2 }, start = { col = 18, row = 2 } } (Identifier { name = "A", qualifiers = [] })
-                , Located { end = { col = 20, row = 2 }, start = { col = 19, row = 2 } } (Whitespace 1)
-                , Located { end = { col = 23, row = 2 }, start = { col = 20, row = 2 } } (Identifier { name = "Int", qualifiers = [] })
-                , Located { end = { col = 24, row = 2 }, start = { col = 23, row = 2 } } (Sigil Comma)
-                , Located { end = { col = 25, row = 2 }, start = { col = 24, row = 2 } } (Whitespace 1)
-                , Located { end = { col = 26, row = 2 }, start = { col = 25, row = 2 } } (Identifier { name = "C", qualifiers = [] })
-                , Located { end = { col = 27, row = 2 }, start = { col = 26, row = 2 } } (Whitespace 1)
-                , Located { end = { col = 28, row = 2 }, start = { col = 27, row = 2 } } (Identifier { name = "D", qualifiers = [] })
-                , Located { end = { col = 29, row = 2 }, start = { col = 28, row = 2 } } (Whitespace 1)
-                , Located { end = { col = 30, row = 2 }, start = { col = 29, row = 2 } } (Identifier { name = "E", qualifiers = [] })
-                , Located { end = { col = 31, row = 2 }, start = { col = 30, row = 2 } } (Whitespace 1)
-                , Located { end = { col = 32, row = 2 }, start = { col = 31, row = 2 } } (Identifier { name = "F", qualifiers = [] })
-                , Located { end = { col = 33, row = 2 }, start = { col = 32, row = 2 } } (Sigil Comma)
-                , Located { end = { col = 34, row = 2 }, start = { col = 33, row = 2 } } (Whitespace 1)
-                , Located { end = { col = 35, row = 2 }, start = { col = 34, row = 2 } } (Identifier { name = "H", qualifiers = [] })
-                , Located { end = { col = 36, row = 2 }, start = { col = 35, row = 2 } } (Whitespace 1)
-                , Located { end = { col = 37, row = 2 }, start = { col = 36, row = 2 } } (Identifier { name = "I", qualifiers = [] })
-                , Located { end = { col = 38, row = 2 }, start = { col = 37, row = 2 } } (Whitespace 1)
-                , Located { end = { col = 39, row = 2 }, start = { col = 38, row = 2 } } (Sigil (Bracket Round Open))
-                , Located { end = { col = 40, row = 2 }, start = { col = 39, row = 2 } } (Identifier { name = "J", qualifiers = [] })
-                , Located { end = { col = 41, row = 2 }, start = { col = 40, row = 2 } } (Whitespace 1)
-                , Located { end = { col = 42, row = 2 }, start = { col = 41, row = 2 } } (Identifier { name = "K", qualifiers = [] })
-                , Located { end = { col = 43, row = 2 }, start = { col = 42, row = 2 } } (Sigil (Bracket Round Close))
-                , Located { end = { col = 44, row = 2 }, start = { col = 43, row = 2 } } (Sigil Comma)
-                , Located { end = { col = 45, row = 2 }, start = { col = 44, row = 2 } } (Whitespace 1)
-                , Located { end = { col = 46, row = 2 }, start = { col = 45, row = 2 } } (Identifier { name = "L", qualifiers = [] })
-                , Located { end = { col = 47, row = 2 }, start = { col = 46, row = 2 } } (Whitespace 1)
-                , Located { end = { col = 48, row = 2 }, start = { col = 47, row = 2 } } (Identifier { name = "M", qualifiers = [] })
-                , Located { end = { col = 49, row = 2 }, start = { col = 48, row = 2 } } (Whitespace 1)
-                , Located { end = { col = 50, row = 2 }, start = { col = 49, row = 2 } } (Sigil (Bracket Round Open))
-                , Located { end = { col = 51, row = 2 }, start = { col = 50, row = 2 } } (Sigil (Bracket Round Close))
-                , Located { end = { col = 52, row = 2 }, start = { col = 51, row = 2 } } (Whitespace 1)
-                , Located { end = { col = 53, row = 2 }, start = { col = 52, row = 2 } } (Identifier { name = "O", qualifiers = [] })
-                , Located { end = { col = 54, row = 2 }, start = { col = 53, row = 2 } } (Whitespace 1)
-                , Located { end = { col = 55, row = 2 }, start = { col = 54, row = 2 } } (Identifier { name = "P", qualifiers = [] })
-                , Located { end = { col = 56, row = 2 }, start = { col = 55, row = 2 } } (Sigil (Bracket Round Close))
-                , Located { end = { col = 1, row = 3 }, start = { col = 56, row = 2 } } (Newlines [] 0)
+                [ Located { end = { col = 5, row = 1 }, start = { col = 1, row = 1 } } (Token (Keyword Type))
+                , Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 11, row = 1 }, start = { col = 6, row = 1 } } (Token (Keyword Alias))
+                , Located { end = { col = 12, row = 1 }, start = { col = 11, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 14, row = 1 }, start = { col = 12, row = 1 } } (Token (Identifier { name = "Hi", qualifiers = [] }))
+                , Located { end = { col = 15, row = 1 }, start = { col = 14, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 16, row = 1 }, start = { col = 15, row = 1 } } (Token (Sigil Assign))
+                , Located { end = { col = 17, row = 1 }, start = { col = 16, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 18, row = 1 }, start = { col = 17, row = 1 } } (Token (Sigil (Bracket Round Open)))
+                , Located { end = { col = 21, row = 1 }, start = { col = 18, row = 1 } } (Token (Identifier { name = "Int", qualifiers = [] }))
+                , Located { end = { col = 22, row = 1 }, start = { col = 21, row = 1 } } (Token (Sigil Comma))
+                , Located { end = { col = 23, row = 1 }, start = { col = 22, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 24, row = 1 }, start = { col = 23, row = 1 } } (Token (Identifier { name = "A", qualifiers = [] }))
+                , Located { end = { col = 25, row = 1 }, start = { col = 24, row = 1 } } (Token (Sigil Comma))
+                , Located { end = { col = 26, row = 1 }, start = { col = 25, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 27, row = 1 }, start = { col = 26, row = 1 } } (Token (Identifier { name = "B", qualifiers = [] }))
+                , Located { end = { col = 28, row = 1 }, start = { col = 27, row = 1 } } (Token (Sigil Comma))
+                , Located { end = { col = 29, row = 1 }, start = { col = 28, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 30, row = 1 }, start = { col = 29, row = 1 } } (Token (Identifier { name = "C", qualifiers = [] }))
+                , Located { end = { col = 31, row = 1 }, start = { col = 30, row = 1 } } (Token (Sigil Comma))
+                , Located { end = { col = 32, row = 1 }, start = { col = 31, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 33, row = 1 }, start = { col = 32, row = 1 } } (Token (Identifier { name = "D", qualifiers = [] }))
+                , Located { end = { col = 34, row = 1 }, start = { col = 33, row = 1 } } (Token (Sigil (Bracket Round Close)))
+                , Located { end = { col = 1, row = 2 }, start = { col = 34, row = 1 } } (Token (Newlines [] 0))
+                , Located { end = { col = 5, row = 2 }, start = { col = 1, row = 2 } } (Token (Keyword Type))
+                , Located { end = { col = 6, row = 2 }, start = { col = 5, row = 2 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 11, row = 2 }, start = { col = 6, row = 2 } } (Token (Keyword Alias))
+                , Located { end = { col = 12, row = 2 }, start = { col = 11, row = 2 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 14, row = 2 }, start = { col = 12, row = 2 } } (Token (Identifier { name = "Hi", qualifiers = [] }))
+                , Located { end = { col = 15, row = 2 }, start = { col = 14, row = 2 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 16, row = 2 }, start = { col = 15, row = 2 } } (Token (Sigil Assign))
+                , Located { end = { col = 17, row = 2 }, start = { col = 16, row = 2 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 18, row = 2 }, start = { col = 17, row = 2 } } (Token (Sigil (Bracket Round Open)))
+                , Located { end = { col = 19, row = 2 }, start = { col = 18, row = 2 } } (Token (Identifier { name = "A", qualifiers = [] }))
+                , Located { end = { col = 20, row = 2 }, start = { col = 19, row = 2 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 23, row = 2 }, start = { col = 20, row = 2 } } (Token (Identifier { name = "Int", qualifiers = [] }))
+                , Located { end = { col = 24, row = 2 }, start = { col = 23, row = 2 } } (Token (Sigil Comma))
+                , Located { end = { col = 25, row = 2 }, start = { col = 24, row = 2 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 26, row = 2 }, start = { col = 25, row = 2 } } (Token (Identifier { name = "C", qualifiers = [] }))
+                , Located { end = { col = 27, row = 2 }, start = { col = 26, row = 2 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 28, row = 2 }, start = { col = 27, row = 2 } } (Token (Identifier { name = "D", qualifiers = [] }))
+                , Located { end = { col = 29, row = 2 }, start = { col = 28, row = 2 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 30, row = 2 }, start = { col = 29, row = 2 } } (Token (Identifier { name = "E", qualifiers = [] }))
+                , Located { end = { col = 31, row = 2 }, start = { col = 30, row = 2 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 32, row = 2 }, start = { col = 31, row = 2 } } (Token (Identifier { name = "F", qualifiers = [] }))
+                , Located { end = { col = 33, row = 2 }, start = { col = 32, row = 2 } } (Token (Sigil Comma))
+                , Located { end = { col = 34, row = 2 }, start = { col = 33, row = 2 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 35, row = 2 }, start = { col = 34, row = 2 } } (Token (Identifier { name = "H", qualifiers = [] }))
+                , Located { end = { col = 36, row = 2 }, start = { col = 35, row = 2 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 37, row = 2 }, start = { col = 36, row = 2 } } (Token (Identifier { name = "I", qualifiers = [] }))
+                , Located { end = { col = 38, row = 2 }, start = { col = 37, row = 2 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 39, row = 2 }, start = { col = 38, row = 2 } } (Token (Sigil (Bracket Round Open)))
+                , Located { end = { col = 40, row = 2 }, start = { col = 39, row = 2 } } (Token (Identifier { name = "J", qualifiers = [] }))
+                , Located { end = { col = 41, row = 2 }, start = { col = 40, row = 2 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 42, row = 2 }, start = { col = 41, row = 2 } } (Token (Identifier { name = "K", qualifiers = [] }))
+                , Located { end = { col = 43, row = 2 }, start = { col = 42, row = 2 } } (Token (Sigil (Bracket Round Close)))
+                , Located { end = { col = 44, row = 2 }, start = { col = 43, row = 2 } } (Token (Sigil Comma))
+                , Located { end = { col = 45, row = 2 }, start = { col = 44, row = 2 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 46, row = 2 }, start = { col = 45, row = 2 } } (Token (Identifier { name = "L", qualifiers = [] }))
+                , Located { end = { col = 47, row = 2 }, start = { col = 46, row = 2 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 48, row = 2 }, start = { col = 47, row = 2 } } (Token (Identifier { name = "M", qualifiers = [] }))
+                , Located { end = { col = 49, row = 2 }, start = { col = 48, row = 2 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 50, row = 2 }, start = { col = 49, row = 2 } } (Token (Sigil (Bracket Round Open)))
+                , Located { end = { col = 51, row = 2 }, start = { col = 50, row = 2 } } (Token (Sigil (Bracket Round Close)))
+                , Located { end = { col = 52, row = 2 }, start = { col = 51, row = 2 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 53, row = 2 }, start = { col = 52, row = 2 } } (Token (Identifier { name = "O", qualifiers = [] }))
+                , Located { end = { col = 54, row = 2 }, start = { col = 53, row = 2 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 55, row = 2 }, start = { col = 54, row = 2 } } (Token (Identifier { name = "P", qualifiers = [] }))
+                , Located { end = { col = 56, row = 2 }, start = { col = 55, row = 2 } } (Token (Sigil (Bracket Round Close)))
+                , Located { end = { col = 1, row = 3 }, start = { col = 56, row = 2 } } (Token (Newlines [] 0))
                 ]
       }
     , { name = "type-alias-with-tuple-double-comma"
@@ -4896,7 +4978,7 @@ type alias Hi = (A Int, C D E F, H I (J K), L M () O P)
             Just
                 [ Err
                     { error = Error_InvalidToken Expecting_Unknown
-                    , item = Just (Located { end = { col = 24, row = 1 }, start = { col = 23, row = 1 } } (Sigil Comma))
+                    , item = Just (Located { end = { col = 24, row = 1 }, start = { col = 23, row = 1 } } (Token (Sigil Comma)))
                     , state =
                         State_BlockTypeAlias
                             (BlockTypeAlias_Completish "Hi"
@@ -4915,23 +4997,23 @@ type alias Hi = (A Int, C D E F, H I (J K), L M () O P)
                 ]
       , lexed =
             Ok
-                [ Located { end = { col = 5, row = 1 }, start = { col = 1, row = 1 } } (Keyword Type)
-                , Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 11, row = 1 }, start = { col = 6, row = 1 } } (Keyword Alias)
-                , Located { end = { col = 12, row = 1 }, start = { col = 11, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 14, row = 1 }, start = { col = 12, row = 1 } } (Identifier { name = "Hi", qualifiers = [] })
-                , Located { end = { col = 15, row = 1 }, start = { col = 14, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 16, row = 1 }, start = { col = 15, row = 1 } } (Sigil Assign)
-                , Located { end = { col = 17, row = 1 }, start = { col = 16, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 18, row = 1 }, start = { col = 17, row = 1 } } (Sigil (Bracket Round Open))
-                , Located { end = { col = 21, row = 1 }, start = { col = 18, row = 1 } } (Identifier { name = "Int", qualifiers = [] })
-                , Located { end = { col = 22, row = 1 }, start = { col = 21, row = 1 } } (Sigil Comma)
-                , Located { end = { col = 23, row = 1 }, start = { col = 22, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 24, row = 1 }, start = { col = 23, row = 1 } } (Sigil Comma)
-                , Located { end = { col = 25, row = 1 }, start = { col = 24, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 26, row = 1 }, start = { col = 25, row = 1 } } (Identifier { name = "A", qualifiers = [] })
-                , Located { end = { col = 27, row = 1 }, start = { col = 26, row = 1 } } (Sigil (Bracket Round Close))
-                , Located { end = { col = 1, row = 2 }, start = { col = 27, row = 1 } } (Newlines [] 0)
+                [ Located { end = { col = 5, row = 1 }, start = { col = 1, row = 1 } } (Token (Keyword Type))
+                , Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 11, row = 1 }, start = { col = 6, row = 1 } } (Token (Keyword Alias))
+                , Located { end = { col = 12, row = 1 }, start = { col = 11, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 14, row = 1 }, start = { col = 12, row = 1 } } (Token (Identifier { name = "Hi", qualifiers = [] }))
+                , Located { end = { col = 15, row = 1 }, start = { col = 14, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 16, row = 1 }, start = { col = 15, row = 1 } } (Token (Sigil Assign))
+                , Located { end = { col = 17, row = 1 }, start = { col = 16, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 18, row = 1 }, start = { col = 17, row = 1 } } (Token (Sigil (Bracket Round Open)))
+                , Located { end = { col = 21, row = 1 }, start = { col = 18, row = 1 } } (Token (Identifier { name = "Int", qualifiers = [] }))
+                , Located { end = { col = 22, row = 1 }, start = { col = 21, row = 1 } } (Token (Sigil Comma))
+                , Located { end = { col = 23, row = 1 }, start = { col = 22, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 24, row = 1 }, start = { col = 23, row = 1 } } (Token (Sigil Comma))
+                , Located { end = { col = 25, row = 1 }, start = { col = 24, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 26, row = 1 }, start = { col = 25, row = 1 } } (Token (Identifier { name = "A", qualifiers = [] }))
+                , Located { end = { col = 27, row = 1 }, start = { col = 26, row = 1 } } (Token (Sigil (Bracket Round Close)))
+                , Located { end = { col = 1, row = 2 }, start = { col = 27, row = 1 } } (Token (Newlines [] 0))
                 ]
       }
     , { name = "type-alias-with-tuple-not-closed"
@@ -4950,12 +5032,14 @@ type alias Hi = (A Int, C D E F, H I (J K), L M () O P)
                     , item =
                         Just
                             (Located { end = { col = 1, row = 5 }, start = { col = 22, row = 1 } }
-                                (Newlines
-                                    [ 0
-                                    , 0
-                                    , 0
-                                    ]
-                                    0
+                                (Token
+                                    (Newlines
+                                        [ 0
+                                        , 0
+                                        , 0
+                                        ]
+                                        0
+                                    )
                                 )
                             )
                     , state =
@@ -4976,24 +5060,26 @@ type alias Hi = (A Int, C D E F, H I (J K), L M () O P)
                 ]
       , lexed =
             Ok
-                [ Located { end = { col = 5, row = 1 }, start = { col = 1, row = 1 } } (Keyword Type)
-                , Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 11, row = 1 }, start = { col = 6, row = 1 } } (Keyword Alias)
-                , Located { end = { col = 12, row = 1 }, start = { col = 11, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 14, row = 1 }, start = { col = 12, row = 1 } } (Identifier { name = "Hi", qualifiers = [] })
-                , Located { end = { col = 15, row = 1 }, start = { col = 14, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 16, row = 1 }, start = { col = 15, row = 1 } } (Sigil Assign)
-                , Located { end = { col = 17, row = 1 }, start = { col = 16, row = 1 } } (Whitespace 1)
-                , Located { end = { col = 18, row = 1 }, start = { col = 17, row = 1 } } (Sigil (Bracket Round Open))
-                , Located { end = { col = 21, row = 1 }, start = { col = 18, row = 1 } } (Identifier { name = "Int", qualifiers = [] })
-                , Located { end = { col = 22, row = 1 }, start = { col = 21, row = 1 } } (Sigil Comma)
+                [ Located { end = { col = 5, row = 1 }, start = { col = 1, row = 1 } } (Token (Keyword Type))
+                , Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 11, row = 1 }, start = { col = 6, row = 1 } } (Token (Keyword Alias))
+                , Located { end = { col = 12, row = 1 }, start = { col = 11, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 14, row = 1 }, start = { col = 12, row = 1 } } (Token (Identifier { name = "Hi", qualifiers = [] }))
+                , Located { end = { col = 15, row = 1 }, start = { col = 14, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 16, row = 1 }, start = { col = 15, row = 1 } } (Token (Sigil Assign))
+                , Located { end = { col = 17, row = 1 }, start = { col = 16, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 18, row = 1 }, start = { col = 17, row = 1 } } (Token (Sigil (Bracket Round Open)))
+                , Located { end = { col = 21, row = 1 }, start = { col = 18, row = 1 } } (Token (Identifier { name = "Int", qualifiers = [] }))
+                , Located { end = { col = 22, row = 1 }, start = { col = 21, row = 1 } } (Token (Sigil Comma))
                 , Located { end = { col = 1, row = 5 }, start = { col = 22, row = 1 } }
-                    (Newlines
-                        [ 0
-                        , 0
-                        , 0
-                        ]
-                        0
+                    (Token
+                        (Newlines
+                            [ 0
+                            , 0
+                            , 0
+                            ]
+                            0
+                        )
                     )
                 ]
       }
@@ -5007,14 +5093,14 @@ type alias Hi = (A Int, C D E F, H I (J K), L M () O P)
             Just
                 [ Err
                     { error = Error_PartwayThroughTypeAlias
-                    , item = Just (Located { end = { col = 1, row = 2 }, start = { col = 5, row = 1 } } (Newlines [] 0))
+                    , item = Just (Located { end = { col = 1, row = 2 }, start = { col = 5, row = 1 } } (Token (Newlines [] 0)))
                     , state = State_BlockFirstItem BlockFirstItem_Type
                     }
                 ]
       , lexed =
             Ok
-                [ Located { end = { col = 5, row = 1 }, start = { col = 1, row = 1 } } (Keyword Type)
-                , Located { end = { col = 1, row = 2 }, start = { col = 5, row = 1 } } (Newlines [] 0)
+                [ Located { end = { col = 5, row = 1 }, start = { col = 1, row = 1 } } (Token (Keyword Type))
+                , Located { end = { col = 1, row = 2 }, start = { col = 5, row = 1 } } (Token (Newlines [] 0))
                 ]
       }
     ]
