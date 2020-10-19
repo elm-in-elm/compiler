@@ -148,19 +148,19 @@ type BlockValueDeclaration
     though :().
 
 -}
-type PartialTypeExpression
+type TypeExpression
     = TypeExpression_NamedType
         { name : String
-        , args : Stack PartialTypeExpression
+        , args : Stack TypeExpression
         }
     | TypeExpression_Unit
-    | TypeExpression_Bracketed PartialTypeExpression
-    | TypeExpression_Tuple PartialTypeExpression PartialTypeExpression (List PartialTypeExpression)
-    | TypeExpression_Record (List ( String, PartialTypeExpression ))
+    | TypeExpression_Bracketed TypeExpression
+    | TypeExpression_Tuple TypeExpression TypeExpression (List TypeExpression)
+    | TypeExpression_Record (List ( String, TypeExpression ))
     | TypeExpression_Function
-        { firstInput : PartialTypeExpression
-        , otherInputs : List PartialTypeExpression
-        , output : PartialTypeExpression
+        { firstInput : TypeExpression
+        , otherInputs : List TypeExpression
+        , output : TypeExpression
         }
 
 
@@ -168,44 +168,44 @@ type LastEntryOfRecord
     = LastEntryOfRecord_Empty
     | LastEntryOfRecord_Key String
     | LastEntryOfRecord_KeyColon String
-    | LastEntryOfRecord_KeyValue String PartialTypeExpression
+    | LastEntryOfRecord_KeyValue String TypeExpression
 
 
 type alias PartialRecord =
-    { firstEntries : Stack ( String, PartialTypeExpression )
+    { firstEntries : Stack ( String, TypeExpression )
     , lastEntry : LastEntryOfRecord
     }
 
 
 type NestingParentType
-    = NestingParentType_Bracket (Stack PartialTypeExpression)
+    = NestingParentType_Bracket (Stack TypeExpression)
     | NestingParentType_PartialRecord
-        { firstEntries : Stack ( String, PartialTypeExpression )
+        { firstEntries : Stack ( String, TypeExpression )
         , lastEntryName : String
         }
     | NestingParentType_TypeWithArgs
         { name : String
-        , args : Stack PartialTypeExpression
+        , args : Stack TypeExpression
         }
     | NestingParentType_Function
-        { firstInput : PartialTypeExpression
-        , otherInputs : Stack PartialTypeExpression
+        { firstInput : TypeExpression
+        , otherInputs : Stack TypeExpression
         }
 
 
 type NestingLeafType
-    = NestingLeafType_Bracket (Stack PartialTypeExpression) (Maybe PartialTypeExpression)
+    = NestingLeafType_Bracket (Stack TypeExpression) (Maybe TypeExpression)
     | NestingLeafType_PartialRecord PartialRecord
     | NestingLeafType_TypeWithArgs
         { name : String
-        , args : Stack PartialTypeExpression
+        , args : Stack TypeExpression
         }
     | NestingLeafType_Function
-        { firstInput : PartialTypeExpression
-        , otherInputs : Stack PartialTypeExpression
-        , output : Maybe PartialTypeExpression
+        { firstInput : TypeExpression
+        , otherInputs : Stack TypeExpression
+        , output : Maybe TypeExpression
         }
-    | NestingLeafType_Expr PartialTypeExpression
+    | NestingLeafType_Expr TypeExpression
 
 
 type alias PartialTypeExpressionLeaf =
@@ -220,7 +220,7 @@ type PartialResult progress done
 
 
 type alias TypeExpressionResult =
-    PartialResult PartialTypeExpressionLeaf PartialTypeExpression
+    PartialResult PartialTypeExpressionLeaf TypeExpression
 
 
 
@@ -267,10 +267,10 @@ type Error
     | Error_MissingFunctionReturnType
     | Error_ExpectedColonWhilstParsingRecord
     | Error_ExpectedKeyWhilstParsingRecord
-    | Error_TypeDoesNotTakeArgs PartialTypeExpression PartialTypeExpression
-    | Error_TypeDoesNotTakeArgs2 PartialTypeExpression
+    | Error_TypeDoesNotTakeArgs TypeExpression TypeExpression
+    | Error_TypeDoesNotTakeArgs2 TypeExpression
     | Error_ValueDoesNotTakeArgs Frontend.LocatedExpr
-    | Error_ExtraItemAfterBlock PartialTypeExpression Lexer.LexItem
+    | Error_ExtraItemAfterBlock TypeExpression Lexer.LexItem
     | Error_TooManyTupleArgs
         --
         (ConcreteType PossiblyQualified)
@@ -1124,7 +1124,7 @@ leafToParents { parents, nesting } =
             (\n -> n :: parents)
 
 
-parentsToLeafWith : PartialTypeExpression -> List NestingParentType -> PartialTypeExpressionLeaf
+parentsToLeafWith : TypeExpression -> List NestingParentType -> PartialTypeExpressionLeaf
 parentsToLeafWith expr parents =
     case parents of
         nesting :: grandparents ->
@@ -1316,8 +1316,8 @@ appendColonTo prevExpr =
 
 
 closeBracket :
-    Stack PartialTypeExpression
-    -> Maybe PartialTypeExpression
+    Stack TypeExpression
+    -> Maybe TypeExpression
     -> List NestingParentType
     -> Result Error PartialTypeExpressionLeaf
 closeBracket argStack mLastExpression parents =
@@ -1705,7 +1705,7 @@ type ToConcreteTypeError
 
 {-| TODO(harry): custom error message here
 -}
-partialTypeExpressionToConcreteType : PartialTypeExpression -> Result ToConcreteTypeError (ConcreteType PossiblyQualified)
+partialTypeExpressionToConcreteType : TypeExpression -> Result ToConcreteTypeError (ConcreteType PossiblyQualified)
 partialTypeExpressionToConcreteType pte =
     case pte of
         TypeExpression_NamedType { name, args } ->
