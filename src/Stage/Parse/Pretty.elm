@@ -123,7 +123,7 @@ block b =
 
         TypeAlias record ->
             Many
-                [ Atom "ValueDeclaration"
+                [ Atom "TypeAlias"
                 , Many
                     [ Atom "ty"
                     , Atom record.ty

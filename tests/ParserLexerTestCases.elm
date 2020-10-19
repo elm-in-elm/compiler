@@ -1033,7 +1033,7 @@ b = 78 + 5 + 2 - 4 + 5
 """
       , pretty = """
         ( ( Ok
-          , ( ValueDeclaration
+          , ( TypeAlias
             , ( ty, Model )
             , ( genericArgs, () )
             , ( expr
@@ -1102,7 +1102,7 @@ expr hi = 77
 """
       , pretty = """
         ( ( Ok
-          , ( ValueDeclaration
+          , ( TypeAlias
             , ( ty, Model )
             , ( genericArgs, () )
             , ( expr
@@ -1203,7 +1203,7 @@ expr hi = 77
 """
       , pretty = """
         ( ( Ok
-          , ( ValueDeclaration
+          , ( TypeAlias
             , ( ty, Ty )
             , ( genericArgs, () )
             , ( expr
@@ -1272,7 +1272,7 @@ expr hi = 77
 """
       , pretty = """
         ( ( Ok
-          , ( ValueDeclaration
+          , ( TypeAlias
             , ( ty, Function )
             , ( genericArgs, () )
             , ( expr
@@ -1404,7 +1404,7 @@ type alias Function = A -> B -> C -> D
 """
       , pretty = """
         ( ( Ok
-          , ( ValueDeclaration
+          , ( TypeAlias
             , ( ty, Function )
             , ( genericArgs, () )
             , ( expr
@@ -1450,7 +1450,7 @@ type alias Function = A -> B -> C -> D
             )
           )
         , ( Ok
-          , ( ValueDeclaration
+          , ( TypeAlias
             , ( ty, Function )
             , ( genericArgs, () )
             , ( expr
@@ -1633,7 +1633,7 @@ type alias Function = A -> B -> C -> D
 """
       , pretty = """
         ( ( Ok
-          , ( ValueDeclaration
+          , ( TypeAlias
             , ( ty, Function )
             , ( genericArgs
               , ( a )
@@ -1776,7 +1776,7 @@ type alias Function3 = (Int, () -> (Int, String), ())
 """
       , pretty = """
         ( ( Ok
-          , ( ValueDeclaration
+          , ( TypeAlias
             , ( ty, Function )
             , ( genericArgs, () )
             , ( expr
@@ -1809,7 +1809,7 @@ type alias Function3 = (Int, () -> (Int, String), ())
             )
           )
         , ( Ok
-          , ( ValueDeclaration
+          , ( TypeAlias
             , ( ty, Function2 )
             , ( genericArgs, () )
             , ( expr
@@ -1846,7 +1846,7 @@ type alias Function3 = (Int, () -> (Int, String), ())
             )
           )
         , ( Ok
-          , ( ValueDeclaration
+          , ( TypeAlias
             , ( ty, Function3 )
             , ( genericArgs, () )
             , ( expr
@@ -1883,7 +1883,7 @@ type alias Function3 = (Int, () -> (Int, String), ())
             )
           )
         , ( Ok
-          , ( ValueDeclaration
+          , ( TypeAlias
             , ( ty, Function3 )
             , ( genericArgs, () )
             , ( expr
@@ -2174,7 +2174,7 @@ type alias Function3 = (Int, () -> (Int, String), ())
 """
       , pretty = """
         ( ( Ok
-          , ( ValueDeclaration
+          , ( TypeAlias
             , ( ty, Function )
             , ( genericArgs, () )
             , ( expr
@@ -2298,7 +2298,7 @@ type alias Function3 = (Int, () -> (Int, String), ())
 """
       , pretty = """
         ( ( Ok
-          , ( ValueDeclaration
+          , ( TypeAlias
             , ( ty, Function )
             , ( genericArgs, () )
             , ( expr
@@ -2388,7 +2388,7 @@ type alias Function3 = (Int, () -> (Int, String), ())
 """
       , pretty = """
         ( ( Ok
-          , ( ValueDeclaration
+          , ( TypeAlias
             , ( ty, Model )
             , ( genericArgs, () )
             , ( expr
@@ -2457,7 +2457,7 @@ type alias Function3 = (Int, () -> (Int, String), ())
 """
       , pretty = """
         ( ( Ok
-          , ( ValueDeclaration
+          , ( TypeAlias
             , ( ty, Model )
             , ( genericArgs, () )
             , ( expr
@@ -2524,7 +2524,7 @@ type alias Function3 = (Int, () -> (Int, String), ())
 """
       , pretty = """
         ( ( Ok
-          , ( ValueDeclaration
+          , ( TypeAlias
             , ( ty, Ty )
             , ( genericArgs, () )
             , ( expr
@@ -2638,7 +2638,7 @@ type alias Function3 = (Int, () -> (Int, String), ())
 """
       , pretty = """
         ( ( Ok
-          , ( ValueDeclaration
+          , ( TypeAlias
             , ( ty, Ty )
             , ( genericArgs, () )
             , ( expr
@@ -2674,7 +2674,7 @@ type alias Function3 = (Int, () -> (Int, String), ())
 """
       , pretty = """
         ( ( Ok
-          , ( ValueDeclaration
+          , ( TypeAlias
             , ( ty, Ty )
             , ( genericArgs, () )
             , ( expr
@@ -2714,7 +2714,7 @@ type alias Function3 = (Int, () -> (Int, String), ())
 """
       , pretty = """
         ( ( Ok
-          , ( ValueDeclaration
+          , ( TypeAlias
             , ( ty, Ty )
             , ( genericArgs, () )
             , ( expr
@@ -2786,7 +2786,7 @@ type alias Function3 = (Int, () -> (Int, String), ())
 """
       , pretty = """
         ( ( Ok
-          , ( ValueDeclaration
+          , ( TypeAlias
             , ( ty, Ty )
             , ( genericArgs, () )
             , ( expr
@@ -3018,7 +3018,7 @@ type alias Function3 = (Int, () -> (Int, String), ())
 """
       , pretty = """
         ( ( Ok
-          , ( ValueDeclaration
+          , ( TypeAlias
             , ( ty, Ty )
             , ( genericArgs, () )
             , ( expr
@@ -3085,7 +3085,7 @@ type alias Function3 = (Int, () -> (Int, String), ())
 """
       , pretty = """
         ( ( Ok
-          , ( ValueDeclaration
+          , ( TypeAlias
             , ( ty, Ty )
             , ( genericArgs, () )
             , ( expr
@@ -3162,7 +3162,7 @@ type alias Function3 = (Int, () -> (Int, String), ())
 """
       , pretty = """
         ( ( Ok
-          , ( ValueDeclaration
+          , ( TypeAlias
             , ( ty, Hi )
             , ( genericArgs, () )
             , ( expr, Unit )
@@ -3193,7 +3193,7 @@ type alias Function3 = (Int, () -> (Int, String), ())
 """
       , pretty = """
         ( ( Ok
-          , ( ValueDeclaration
+          , ( TypeAlias
             , ( ty, Hi )
             , ( genericArgs, () )
             , ( expr
@@ -3245,7 +3245,7 @@ type alias Function3 = (Int, () -> (Int, String), ())
 """
       , pretty = """
         ( ( Ok
-          , ( ValueDeclaration
+          , ( TypeAlias
             , ( ty, Hi )
             , ( genericArgs, () )
             , ( expr
@@ -3315,7 +3315,7 @@ type alias Hi = (Int)
 """
       , pretty = """
         ( ( Ok
-          , ( ValueDeclaration
+          , ( TypeAlias
             , ( ty, Hi )
             , ( genericArgs, () )
             , ( expr
@@ -3351,7 +3351,7 @@ type alias Hi = (Int)
             )
           )
         , ( Ok
-          , ( ValueDeclaration
+          , ( TypeAlias
             , ( ty, Hi )
             , ( genericArgs, () )
             , ( expr
@@ -3448,7 +3448,7 @@ type alias Hi = ((), (), ())
 """
       , pretty = """
         ( ( Ok
-          , ( ValueDeclaration
+          , ( TypeAlias
             , ( ty, Hi )
             , ( genericArgs, () )
             , ( expr
@@ -3483,7 +3483,7 @@ type alias Hi = ((), (), ())
             )
           )
         , ( Ok
-          , ( ValueDeclaration
+          , ( TypeAlias
             , ( ty, Hi )
             , ( genericArgs, () )
             , ( expr
@@ -3579,7 +3579,7 @@ type alias Hi = ((), (), ())
 """
       , pretty = """
         ( ( Ok
-          , ( ValueDeclaration
+          , ( TypeAlias
             , ( ty, Hi )
             , ( genericArgs, () )
             , ( expr
