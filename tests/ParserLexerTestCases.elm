@@ -3741,11 +3741,11 @@ sfsdf .sdfsd
 
 asfasf.sdgsghj
 
-(shdf).hellp
+(shdf).helloLiteral
 
-(sjhsf) .hello
+(sjhsf) .helloFunction
 
-sfhsdf(.hello)
+sfhsdf(.helloFunction)
 
 case.hi
 
@@ -3845,12 +3845,12 @@ Hi. case"""
                     }
                 , Err
                     { error = Error_InvalidToken Expecting_Block
-                    , item = Just (Located { end = { col = 2, row = 11 }, start = { col = 1, row = 11 } } (Sigil SingleDot))
+                    , item = Just (Located { end = { col = 4, row = 11 }, start = { col = 1, row = 11 } } (RecordAccessorFunction "sf"))
                     , state = State_BlockStart
                     }
                 , Err
                     { error = Error_InvalidToken (Expecting_Sigil Assign)
-                    , item = Just (Located { end = { col = 8, row = 13 }, start = { col = 7, row = 13 } } (Sigil SingleDot))
+                    , item = Just (Located { end = { col = 13, row = 13 }, start = { col = 7, row = 13 } } (RecordAccessorFunction "sdfsd"))
                     , state = State_BlockValueDeclaration (BlockValueDeclaration_Named { args = Stack [], name = Located { end = { col = 6, row = 13 }, start = { col = 1, row = 13 } } "sfsdf" })
                     }
                 , Err
@@ -3987,8 +3987,7 @@ Hi. case"""
                         ]
                         0
                     )
-                , Located { end = { col = 2, row = 11 }, start = { col = 1, row = 11 } } (Sigil SingleDot)
-                , Located { end = { col = 4, row = 11 }, start = { col = 2, row = 11 } } (Identifier { name = "sf", qualifiers = [] })
+                , Located { end = { col = 4, row = 11 }, start = { col = 1, row = 11 } } (RecordAccessorFunction "sf")
                 , Located { end = { col = 1, row = 13 }, start = { col = 4, row = 11 } }
                     (Newlines
                         [ 0
@@ -3997,8 +3996,7 @@ Hi. case"""
                     )
                 , Located { end = { col = 6, row = 13 }, start = { col = 1, row = 13 } } (Identifier { name = "sfsdf", qualifiers = [] })
                 , Located { end = { col = 7, row = 13 }, start = { col = 6, row = 13 } } (Whitespace 1)
-                , Located { end = { col = 8, row = 13 }, start = { col = 7, row = 13 } } (Sigil SingleDot)
-                , Located { end = { col = 13, row = 13 }, start = { col = 8, row = 13 } } (Identifier { name = "sdfsd", qualifiers = [] })
+                , Located { end = { col = 13, row = 13 }, start = { col = 7, row = 13 } } (RecordAccessorFunction "sdfsd")
                 , Located { end = { col = 1, row = 15 }, start = { col = 13, row = 13 } }
                     (Newlines
                         [ 0
@@ -4022,9 +4020,8 @@ Hi. case"""
                 , Located { end = { col = 2, row = 17 }, start = { col = 1, row = 17 } } (Sigil (Bracket Round Open))
                 , Located { end = { col = 6, row = 17 }, start = { col = 2, row = 17 } } (Identifier { name = "shdf", qualifiers = [] })
                 , Located { end = { col = 7, row = 17 }, start = { col = 6, row = 17 } } (Sigil (Bracket Round Close))
-                , Located { end = { col = 8, row = 17 }, start = { col = 7, row = 17 } } (Sigil SingleDot)
-                , Located { end = { col = 13, row = 17 }, start = { col = 8, row = 17 } } (Identifier { name = "hellp", qualifiers = [] })
-                , Located { end = { col = 1, row = 19 }, start = { col = 13, row = 17 } }
+                , Located { end = { col = 20, row = 17 }, start = { col = 7, row = 17 } } (RecordAccessorLiteral "helloLiteral")
+                , Located { end = { col = 1, row = 19 }, start = { col = 20, row = 17 } }
                     (Newlines
                         [ 0
                         ]
@@ -4034,9 +4031,8 @@ Hi. case"""
                 , Located { end = { col = 7, row = 19 }, start = { col = 2, row = 19 } } (Identifier { name = "sjhsf", qualifiers = [] })
                 , Located { end = { col = 8, row = 19 }, start = { col = 7, row = 19 } } (Sigil (Bracket Round Close))
                 , Located { end = { col = 9, row = 19 }, start = { col = 8, row = 19 } } (Whitespace 1)
-                , Located { end = { col = 10, row = 19 }, start = { col = 9, row = 19 } } (Sigil SingleDot)
-                , Located { end = { col = 15, row = 19 }, start = { col = 10, row = 19 } } (Identifier { name = "hello", qualifiers = [] })
-                , Located { end = { col = 1, row = 21 }, start = { col = 15, row = 19 } }
+                , Located { end = { col = 23, row = 19 }, start = { col = 9, row = 19 } } (RecordAccessorFunction "helloFunction")
+                , Located { end = { col = 1, row = 21 }, start = { col = 23, row = 19 } }
                     (Newlines
                         [ 0
                         ]
@@ -4044,18 +4040,16 @@ Hi. case"""
                     )
                 , Located { end = { col = 7, row = 21 }, start = { col = 1, row = 21 } } (Identifier { name = "sfhsdf", qualifiers = [] })
                 , Located { end = { col = 8, row = 21 }, start = { col = 7, row = 21 } } (Sigil (Bracket Round Open))
-                , Located { end = { col = 9, row = 21 }, start = { col = 8, row = 21 } } (Sigil SingleDot)
-                , Located { end = { col = 14, row = 21 }, start = { col = 9, row = 21 } } (Identifier { name = "hello", qualifiers = [] })
-                , Located { end = { col = 15, row = 21 }, start = { col = 14, row = 21 } } (Sigil (Bracket Round Close))
-                , Located { end = { col = 1, row = 23 }, start = { col = 15, row = 21 } }
+                , Located { end = { col = 22, row = 21 }, start = { col = 8, row = 21 } } (RecordAccessorFunction "helloFunction")
+                , Located { end = { col = 23, row = 21 }, start = { col = 22, row = 21 } } (Sigil (Bracket Round Close))
+                , Located { end = { col = 1, row = 23 }, start = { col = 23, row = 21 } }
                     (Newlines
                         [ 0
                         ]
                         0
                     )
                 , Located { end = { col = 5, row = 23 }, start = { col = 1, row = 23 } } (Keyword Case)
-                , Located { end = { col = 6, row = 23 }, start = { col = 5, row = 23 } } (Sigil SingleDot)
-                , Located { end = { col = 8, row = 23 }, start = { col = 6, row = 23 } } (Identifier { name = "hi", qualifiers = [] })
+                , Located { end = { col = 8, row = 23 }, start = { col = 5, row = 23 } } (RecordAccessorFunction "hi")
                 , Located { end = { col = 1, row = 25 }, start = { col = 8, row = 23 } }
                     (Newlines
                         [ 0
@@ -4078,8 +4072,7 @@ Hi. case"""
                     )
                 , Located { end = { col = 5, row = 27 }, start = { col = 1, row = 27 } } (Keyword Case)
                 , Located { end = { col = 6, row = 27 }, start = { col = 5, row = 27 } } (Whitespace 1)
-                , Located { end = { col = 7, row = 27 }, start = { col = 6, row = 27 } } (Sigil SingleDot)
-                , Located { end = { col = 9, row = 27 }, start = { col = 7, row = 27 } } (Identifier { name = "hi", qualifiers = [] })
+                , Located { end = { col = 9, row = 27 }, start = { col = 6, row = 27 } } (RecordAccessorFunction "hi")
                 , Located { end = { col = 1, row = 29 }, start = { col = 9, row = 27 } }
                     (Newlines
                         [ 0

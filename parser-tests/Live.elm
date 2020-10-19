@@ -91,7 +91,8 @@ view model =
                                                 ++ String.padLeft 3 '0' (String.fromInt end.col)
                                                 ++ "): \""
                                                 ++ (item |> Located.unwrap |> Lexer.toString |> String.replace " " "·")
-                                                ++ "\""
+                                                ++ "\" "
+                                                ++ (item |> Located.unwrap |> Debug.toString)
                                             )
                                         ]
                                 )

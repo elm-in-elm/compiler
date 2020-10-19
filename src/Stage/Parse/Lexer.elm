@@ -13,6 +13,8 @@ type LexItem
         { qualifiers : List String
         , name : String
         }
+    | RecordAccessorLiteral String
+    | RecordAccessorFunction String
     | Keyword Token.Keyword
     | NumericLiteral String
     | TextLiteral LexLiteralType String
@@ -31,8 +33,6 @@ type LexSigil
     | Assign
     | Pipe
     | Comma
-      -- TODO(harry): remove and replace by property-accessor etc.
-    | SingleDot
     | DoubleDot
     | ThinArrow
     | Backslash
@@ -118,9 +118,6 @@ toString item =
         Sigil Comma ->
             ","
 
-        Sigil SingleDot ->
-            "."
-
         Sigil DoubleDot ->
             ".."
 
@@ -142,6 +139,12 @@ toString item =
         Identifier { qualifiers, name } ->
             (qualifiers ++ [ name ])
                 |> String.join "."
+
+        RecordAccessorLiteral name ->
+            "." ++ name
+
+        RecordAccessorFunction name ->
+            "." ++ name
 
         Keyword k ->
             Token.keywordToString k
@@ -202,9 +205,16 @@ parser =
         (\reversed ->
             P.oneOf
                 [ P.oneOf
-                    ([ -- commentParser must come before sigil parser as the sigil
-                       -- parser will try to interpret "--" as two "-" sigils.
-                       identifierParser
+                    ([ -- 1. commentParser must come before sigil parser as the sigil
+                       --    parser will try to interpret "--" as two "-" sigils.
+                       -- 2. sigilParser must come before recordAccessorLiteralParser so that ".." is parsed as the
+                       --    DoubleDot sigil.
+                       commentParser
+                        |> P.map (\( ty, commentBody ) -> Comment ty commentBody)
+                     , sigilParser
+                        |> P.map Sigil
+                     , identifierParser
+                     , recordAccessorParser (List.head reversed |> Maybe.map Located.unwrap)
                      , numericLiteralParser
                         |> P.map NumericLiteral
                      , textLiteralParser
@@ -216,10 +226,6 @@ parser =
                                 else
                                     Invalid (delimiterFor ty ++ literalBody)
                             )
-                     , commentParser
-                        |> P.map (\( ty, commentBody ) -> Comment ty commentBody)
-                     , sigilParser
-                        |> P.map Sigil
                      , P.symbol (P.Token " " ExpectingWhitespace)
                         |> P.andThen (\() -> chompSpacesAndCount)
                         |> P.map (\count -> Whitespace (count + 1))
@@ -236,17 +242,19 @@ parser =
         )
 
 
+word : Parser_ String
+word =
+    P.variable
+        { start = Char.isAlpha
+        , inner = \c -> Char.isAlphaNum c || c == '_'
+        , reserved = Set.empty
+        , expecting = ExpectingToken
+        }
+
+
 identifierParser : Parser_ LexItem
 identifierParser =
     let
-        word =
-            P.variable
-                { start = Char.isAlpha
-                , inner = \c -> Char.isAlphaNum c || c == '_'
-                , reserved = Set.empty
-                , expecting = ExpectingToken
-                }
-
         loopHelp { reversedQualifiers, name } =
             P.oneOf
                 [ P.succeed (\x -> x)
@@ -297,6 +305,30 @@ identifierParser =
         , word
             |> P.andThen (\first -> P.loop { reversedQualifiers = [], name = first } loopHelp)
         ]
+
+
+recordAccessorParser : Maybe LexItem -> Parser_ LexItem
+recordAccessorParser previous =
+    P.succeed (\x -> x)
+        |. P.symbol (P.Token "." ExpectingSigil)
+        |= P.oneOf
+            [ word
+                |> P.map
+                    (case previous of
+                        Just (Sigil (Bracket Round Close)) ->
+                            RecordAccessorLiteral
+
+                        Just (Sigil (Bracket Curly Close)) ->
+                            RecordAccessorLiteral
+
+                        Just (Identifier _) ->
+                            \_ -> Debug.todo "impossible state: add ICE here"
+
+                        _ ->
+                            RecordAccessorFunction
+                    )
+            , P.succeed (Invalid ".")
+            ]
 
 
 newlinesParser : Parser_ ( List Int, Int )
@@ -489,8 +521,6 @@ sigilParser =
             |> P.map (\() -> Colon)
         , P.symbol (P.Token "," ExpectingSigil)
             |> P.map (\() -> Comma)
-        , P.symbol (P.Token "." ExpectingSigil)
-            |> P.map (\() -> SingleDot)
         , P.symbol (P.Token "|" ExpectingSigil)
             |> P.map (\() -> Pipe)
         ]

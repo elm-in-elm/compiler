@@ -449,9 +449,6 @@ expr =
                 , ( "Zero - exhibit 2"
                   , "0e5"
                   )
-                , ( "starting with dot disallowed"
-                  , ".123"
-                  )
                 , ( "ending with dot disallowed"
                   , "123."
                   )
