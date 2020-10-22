@@ -4060,6 +4060,17 @@ Hi. case"""
         , ( Err, todo )
         , ( Err, todo )
         , ( Err, todo )
+        , ( Err, todo )
+        , ( Err, todo )
+        , ( Err, todo )
+        , ( Err, todo )
+        , ( Err, todo )
+        , ( Err, todo )
+        , ( Err, todo )
+        , ( Err, todo )
+        , ( Err, todo )
+        , ( Err, todo )
+        , ( Err, todo )
         )
 """
       , contextualized =
@@ -4067,6 +4078,54 @@ Hi. case"""
                 [ Err
                     { error = Error_InvalidToken Expecting_Unknown
                     , item = Just (Located { end = { col = 5, row = 1 }, start = { col = 1, row = 1 } } (Invalid (IdentifierWithTrailingDot { name = UpperCase "Foo", qualifiers = [] })))
+                    , state = State_BlockStart
+                    }
+                , Err
+                    { error =
+                        Error_BlockStartsWithQualifiedName
+                            { name = TokenUpperCase (UpperCase "Bar")
+                            , qualifiers =
+                                [ UpperCase "Foo"
+                                ]
+                            }
+                    , item =
+                        Just
+                            (Located { end = { col = 8, row = 3 }, start = { col = 1, row = 3 } }
+                                (Token
+                                    (Identifier
+                                        { name = TokenUpperCase (UpperCase "Bar")
+                                        , qualifiers =
+                                            [ UpperCase "Foo"
+                                            ]
+                                        }
+                                    )
+                                )
+                            )
+                    , state = State_BlockStart
+                    }
+                , Err
+                    { error =
+                        Error_BlockStartsWithQualifiedName
+                            { name = TokenLowerCase (LowerCase "baz")
+                            , qualifiers =
+                                [ UpperCase "Foo"
+                                , UpperCase "Bar"
+                                ]
+                            }
+                    , item =
+                        Just
+                            (Located { end = { col = 12, row = 5 }, start = { col = 1, row = 5 } }
+                                (Token
+                                    (Identifier
+                                        { name = TokenLowerCase (LowerCase "baz")
+                                        , qualifiers =
+                                            [ UpperCase "Foo"
+                                            , UpperCase "Bar"
+                                            ]
+                                        }
+                                    )
+                                )
+                            )
                     , state = State_BlockStart
                     }
                 , Err
@@ -4084,12 +4143,12 @@ Hi. case"""
                                     )
                                 )
                             )
-                    , state = State_Error_Recovery
+                    , state = State_BlockStart
                     }
                 , Err
                     { error = Error_InvalidToken Expecting_Unknown
                     , item = Just (Located { end = { col = 5, row = 9 }, start = { col = 1, row = 9 } } (Invalid (IdentifierWithTrailingDot { name = UpperCase "Bor", qualifiers = [] })))
-                    , state = State_Error_Recovery
+                    , state = State_BlockStart
                     }
                 , Err
                     { error = Error_InvalidToken Expecting_Unknown
@@ -4097,9 +4156,72 @@ Hi. case"""
                     , state = State_Error_Recovery
                     }
                 , Err
+                    { error = Error_InvalidToken Expecting_Block
+                    , item = Just (Located { end = { col = 4, row = 11 }, start = { col = 1, row = 11 } } (Token (RecordAccessorFunction (LowerCase "sf"))))
+                    , state = State_BlockStart
+                    }
+                , Err
+                    { error = Error_InvalidToken (Expecting_Sigil Assign)
+                    , item = Just (Located { end = { col = 13, row = 13 }, start = { col = 7, row = 13 } } (Token (RecordAccessorFunction (LowerCase "sdfsd"))))
+                    , state = State_BlockValueDeclaration (BlockValueDeclaration_Named { args = Stack [], name = Located { end = { col = 6, row = 13 }, start = { col = 1, row = 13 } } (LowerCase "sfsdf") })
+                    }
+                , Err
+                    { error = Error_InvalidToken (Expecting_Sigil Assign)
+                    , item = Just (Located { end = { col = 15, row = 15 }, start = { col = 7, row = 15 } } (Token (RecordAccessorLiteral (LowerCase "sdgsghj"))))
+                    , state = State_BlockValueDeclaration (BlockValueDeclaration_Named { args = Stack [], name = Located { end = { col = 7, row = 15 }, start = { col = 1, row = 15 } } (LowerCase "asfasf") })
+                    }
+                , Err
+                    { error = Error_InvalidToken Expecting_Block
+                    , item = Just (Located { end = { col = 2, row = 17 }, start = { col = 1, row = 17 } } (Token (Sigil (Bracket Round Open))))
+                    , state = State_BlockStart
+                    }
+                , Err
+                    { error = Error_InvalidToken Expecting_Block
+                    , item = Just (Located { end = { col = 2, row = 19 }, start = { col = 1, row = 19 } } (Token (Sigil (Bracket Round Open))))
+                    , state = State_BlockStart
+                    }
+                , Err
+                    { error = Error_InvalidToken (Expecting_Sigil Assign)
+                    , item = Just (Located { end = { col = 8, row = 21 }, start = { col = 7, row = 21 } } (Token (Sigil (Bracket Round Open))))
+                    , state = State_BlockValueDeclaration (BlockValueDeclaration_Named { args = Stack [], name = Located { end = { col = 7, row = 21 }, start = { col = 1, row = 21 } } (LowerCase "sfhsdf") })
+                    }
+                , Err
+                    { error = Error_MisplacedKeyword Case
+                    , item = Just (Located { end = { col = 5, row = 23 }, start = { col = 1, row = 23 } } (Token (Keyword Case)))
+                    , state = State_BlockStart
+                    }
+                , Err
+                    { error =
+                        Error_BlockStartsWithQualifiedName
+                            { name = TokenLowerCase (LowerCase "case")
+                            , qualifiers =
+                                [ UpperCase "Hi"
+                                ]
+                            }
+                    , item =
+                        Just
+                            (Located { end = { col = 8, row = 25 }, start = { col = 1, row = 25 } }
+                                (Token
+                                    (Identifier
+                                        { name = TokenLowerCase (LowerCase "case")
+                                        , qualifiers =
+                                            [ UpperCase "Hi"
+                                            ]
+                                        }
+                                    )
+                                )
+                            )
+                    , state = State_BlockStart
+                    }
+                , Err
+                    { error = Error_MisplacedKeyword Case
+                    , item = Just (Located { end = { col = 5, row = 27 }, start = { col = 1, row = 27 } } (Token (Keyword Case)))
+                    , state = State_BlockStart
+                    }
+                , Err
                     { error = Error_InvalidToken Expecting_Unknown
                     , item = Just (Located { end = { col = 4, row = 29 }, start = { col = 1, row = 29 } } (Invalid (IdentifierWithTrailingDot { name = UpperCase "Hi", qualifiers = [] })))
-                    , state = State_Error_Recovery
+                    , state = State_BlockStart
                     }
                 ]
       , lexed =
@@ -4272,7 +4394,11 @@ type alias Function3 = (() -> , ())
 type alias Function3 = (Int, () ->, ())
 """
       , pretty = """
-        ( ( Err, todo ) )
+        ( ( Err, todo )
+        , ( Err, todo )
+        , ( Err, todo )
+        , ( Err, todo )
+        )
 """
       , contextualized =
             Just
@@ -4280,6 +4406,41 @@ type alias Function3 = (Int, () ->, ())
                     { error = Error_MissingFunctionReturnType
                     , item = Just (Located { end = { col = 31, row = 1 }, start = { col = 30, row = 1 } } (Token (Sigil (Bracket Round Close))))
                     , state = State_BlockTypeAlias (BlockTypeAlias_Completish (UpperCase "Function") [] (TypeExpressionNestingLeaf_Function { firstInput = TypeExpression_Unit, otherInputs = Stack [], output = Nothing, parent = Just (NestingParentType_Bracket { expressions = Stack [], parent = Nothing }) }))
+                    }
+                , Err
+                    { error = Error_MissingFunctionReturnType
+                    , item = Just (Located { end = { col = 37, row = 3 }, start = { col = 36, row = 3 } } (Token (Sigil (Bracket Curly Close))))
+                    , state = State_BlockTypeAlias (BlockTypeAlias_Completish (UpperCase "Function2") [] (TypeExpressionNestingLeaf_Function { firstInput = TypeExpression_Unit, otherInputs = Stack [], output = Nothing, parent = Just (NestingParentType_PartialRecord { firstEntries = Stack [], lastEntryName = LowerCase "a", parent = Nothing }) }))
+                    }
+                , Err
+                    { error = Error_InvalidToken Expecting_Unknown
+                    , item = Just (Located { end = { col = 32, row = 5 }, start = { col = 31, row = 5 } } (Token (Sigil Comma)))
+                    , state = State_BlockTypeAlias (BlockTypeAlias_Completish (UpperCase "Function3") [] (TypeExpressionNestingLeaf_Function { firstInput = TypeExpression_Unit, otherInputs = Stack [], output = Nothing, parent = Just (NestingParentType_Bracket { expressions = Stack [], parent = Nothing }) }))
+                    }
+                , Err
+                    { error = Error_InvalidToken Expecting_Unknown
+                    , item = Just (Located { end = { col = 36, row = 7 }, start = { col = 35, row = 7 } } (Token (Sigil Comma)))
+                    , state =
+                        State_BlockTypeAlias
+                            (BlockTypeAlias_Completish (UpperCase "Function3")
+                                []
+                                (TypeExpressionNestingLeaf_Function
+                                    { firstInput = TypeExpression_Unit
+                                    , otherInputs = Stack []
+                                    , output = Nothing
+                                    , parent =
+                                        Just
+                                            (NestingParentType_Bracket
+                                                { expressions =
+                                                    Stack
+                                                        [ TypeExpression_NamedType { args = Stack [], name = UpperCase "Int", qualifiers = [] }
+                                                        ]
+                                                , parent = Nothing
+                                                }
+                                            )
+                                    }
+                                )
+                            )
                     }
                 ]
       , lexed =
@@ -4487,7 +4648,12 @@ type alias C = list A
 type alias D a = a -> B.c
 type alias E a = B.c -> a"""
       , pretty = """
-        ( ( Err, todo ) )
+        ( ( Err, todo )
+        , ( Err, todo )
+        , ( Err, todo )
+        , ( Err, todo )
+        , ( Err, todo )
+        )
 """
       , contextualized =
             Just
@@ -4515,6 +4681,91 @@ type alias E a = B.c -> a"""
                                 )
                             )
                     , state = State_BlockTypeAlias (BlockTypeAlias_NamedAssigns (UpperCase "A") [])
+                    }
+                , Err
+                    { error =
+                        Error_LowerCasedTypename
+                            { name = LowerCase "d"
+                            , qualifiers =
+                                [ UpperCase "A"
+                                ]
+                            }
+                    , item =
+                        Just
+                            (Located { end = { col = 24, row = 3 }, start = { col = 21, row = 3 } }
+                                (Token
+                                    (Identifier
+                                        { name = TokenLowerCase (LowerCase "d")
+                                        , qualifiers =
+                                            [ UpperCase "A"
+                                            ]
+                                        }
+                                    )
+                                )
+                            )
+                    , state = State_BlockTypeAlias (BlockTypeAlias_Completish (UpperCase "B") [] (TypeExpressionNestingLeaf_TypeWithArgs { args = Stack [], name = UpperCase "List", parent = Nothing, qualifiers = [] }))
+                    }
+                , Err
+                    { error = Error_TypeDoesNotTakeArgs (TypeExpression_GenericType (LowerCase "list")) (TypeExpression_NamedType { args = Stack [], name = UpperCase "A", qualifiers = [] })
+                    , item = Just (Located { end = { col = 22, row = 5 }, start = { col = 21, row = 5 } } (Token (Identifier { name = TokenUpperCase (UpperCase "A"), qualifiers = [] })))
+                    , state = State_BlockTypeAlias (BlockTypeAlias_Completish (UpperCase "C") [] (TypeExpressionNestingLeaf_Expr (TypeExpression_GenericType (LowerCase "list"))))
+                    }
+                , Err
+                    { error =
+                        Error_LowerCasedTypename
+                            { name = LowerCase "c"
+                            , qualifiers =
+                                [ UpperCase "B"
+                                ]
+                            }
+                    , item =
+                        Just
+                            (Located { end = { col = 26, row = 7 }, start = { col = 23, row = 7 } }
+                                (Token
+                                    (Identifier
+                                        { name = TokenLowerCase (LowerCase "c")
+                                        , qualifiers =
+                                            [ UpperCase "B"
+                                            ]
+                                        }
+                                    )
+                                )
+                            )
+                    , state =
+                        State_BlockTypeAlias
+                            (BlockTypeAlias_Completish (UpperCase "D")
+                                [ LowerCase "a"
+                                ]
+                                (TypeExpressionNestingLeaf_Function { firstInput = TypeExpression_GenericType (LowerCase "a"), otherInputs = Stack [], output = Nothing, parent = Nothing })
+                            )
+                    }
+                , Err
+                    { error =
+                        Error_LowerCasedTypename
+                            { name = LowerCase "c"
+                            , qualifiers =
+                                [ UpperCase "B"
+                                ]
+                            }
+                    , item =
+                        Just
+                            (Located { end = { col = 21, row = 8 }, start = { col = 18, row = 8 } }
+                                (Token
+                                    (Identifier
+                                        { name = TokenLowerCase (LowerCase "c")
+                                        , qualifiers =
+                                            [ UpperCase "B"
+                                            ]
+                                        }
+                                    )
+                                )
+                            )
+                    , state =
+                        State_BlockTypeAlias
+                            (BlockTypeAlias_NamedAssigns (UpperCase "E")
+                                [ LowerCase "a"
+                                ]
+                            )
                     }
                 ]
       , lexed =

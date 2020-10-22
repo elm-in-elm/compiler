@@ -484,7 +484,7 @@ parseAnything state item =
         Lexer.Newlines _ 0 ->
             case state of
                 State_Error_Recovery ->
-                    State_Error_Recovery
+                    State_BlockStart
                         |> ParseResult_Ok
 
                 State_BlockStart ->
@@ -1257,30 +1257,31 @@ exprAppend currentLeaf token =
                         }
                         |> Err
 
-                doesNotTakeArgsError expr =
+                genericType =
                     if token.qualifiers == [] then
-                        Error_TypeDoesNotTakeArgs expr
-                            (TypeExpression_GenericType lower)
-                            |> Err
+                        TypeExpression_GenericType lower
+                            |> Ok
 
                     else
                         lowerCaseTypeError
+
+                doesNotTakeArgsError expr =
+                    Result.andThen (Error_TypeDoesNotTakeArgs expr >> Err) genericType
             in
             case currentLeaf of
                 -- We are within a nested bracket.
                 TypeExpressionNestingLeaf_Bracket { firstExpressions, trailingExpression, parent } ->
                     case trailingExpression of
                         Nothing ->
-                            if token.qualifiers == [] then
-                                TypeExpressionNestingLeaf_Bracket
-                                    { firstExpressions = firstExpressions
-                                    , trailingExpression = Just (TypeExpression_GenericType lower)
-                                    , parent = parent
-                                    }
-                                    |> Ok
-
-                            else
-                                lowerCaseTypeError
+                            genericType
+                                |> Result.map
+                                    (\ty ->
+                                        TypeExpressionNestingLeaf_Bracket
+                                            { firstExpressions = firstExpressions
+                                            , trailingExpression = Just ty
+                                            , parent = parent
+                                            }
+                                    )
 
                         Just existingRoot ->
                             doesNotTakeArgsError existingRoot
@@ -1307,16 +1308,22 @@ exprAppend currentLeaf token =
                                     |> Err
 
                         _ ->
-                            leafToParent currentLeaf
-                                |> Result.map (Just >> parentsToLeafWith (TypeExpression_GenericType lower))
+                            Result.map2
+                                (\newParent gt -> parentsToLeafWith gt (Just newParent))
+                                (leafToParent currentLeaf)
+                                genericType
 
                 TypeExpressionNestingLeaf_TypeWithArgs _ ->
-                    leafToParent currentLeaf
-                        |> Result.map (Just >> parentsToLeafWith (TypeExpression_GenericType lower))
+                    Result.map2
+                        (\newParent gt -> parentsToLeafWith gt (Just newParent))
+                        (leafToParent currentLeaf)
+                        genericType
 
                 TypeExpressionNestingLeaf_Function _ ->
-                    leafToParent currentLeaf
-                        |> Result.map (Just >> parentsToLeafWith (TypeExpression_GenericType lower))
+                    Result.map2
+                        (\newParent gt -> parentsToLeafWith gt (Just newParent))
+                        (leafToParent currentLeaf)
+                        genericType
 
         Token.TokenUpperCase upper ->
             let
