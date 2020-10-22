@@ -1,0 +1,8 @@
+type alias A = B.C.d
+
+type alias B = List A.d
+
+type alias C = list A
+
+type alias D a = a -> B.c
+type alias E a = B.c -> a

@@ -105,14 +105,12 @@ block b =
                 [ Atom "ValueDeclaration"
                 , Many
                     [ Atom "name"
-                    , Atom (Located.unwrap record.name)
+                    , record.name |> Located.unwrap |> Token.TokenLowerCase |> Token.tokenToString |> Atom
                     ]
                 , Many
                     [ Atom "args"
                     , listWith
-                        (\locatedArg ->
-                            Atom (Located.unwrap locatedArg)
-                        )
+                        (Located.unwrap >> Token.TokenLowerCase >> Token.tokenToString >> Atom)
                         record.args
                     ]
                 , Many
@@ -126,13 +124,13 @@ block b =
                 [ Atom "TypeAlias"
                 , Many
                     [ Atom "ty"
-                    , Atom record.ty
+                    , record.ty |> Token.TokenUpperCase |> Token.tokenToString |> Atom
                     ]
                 , Many
                     [ Atom "genericArgs"
                     , Many
                         (record.genericArgs
-                            |> List.map Atom
+                            |> List.map (Token.TokenLowerCase >> Token.tokenToString >> Atom)
                         )
                     ]
                 , Many
@@ -164,8 +162,8 @@ state s =
             pair "State_BlockTypeAlias"
                 (Many
                     [ Atom "BlockTypeAlias_Named"
-                    , Atom name
-                    , listWith Atom (Contextualize.toList (\x -> x) genericArgs)
+                    , name |> Token.TokenUpperCase |> Token.tokenToString |> Atom
+                    , listWith Atom (Contextualize.toList (Token.TokenLowerCase >> Token.tokenToString) genericArgs)
                     ]
                 )
 
@@ -173,8 +171,8 @@ state s =
             pair "State_BlockTypeAlias"
                 (Many
                     [ Atom "BlockTypeAlias_NamedAssigns"
-                    , Atom name
-                    , listWith Atom genericArgs
+                    , name |> Token.TokenUpperCase |> Token.tokenToString |> Atom
+                    , listWith (Token.TokenLowerCase >> Token.tokenToString >> Atom) genericArgs
                     ]
                 )
 
@@ -182,8 +180,8 @@ state s =
             pair "State_BlockTypeAlias"
                 (Many
                     [ Atom "BlockTypeAlias_Completish"
-                    , Atom name
-                    , listWith Atom genericArgs
+                    , name |> Token.TokenUpperCase |> Token.tokenToString |> Atom
+                    , listWith (Token.TokenLowerCase >> Token.tokenToString >> Atom) genericArgs
                     , typeExpressionNestingLeaf typeExpr_
                     ]
                 )

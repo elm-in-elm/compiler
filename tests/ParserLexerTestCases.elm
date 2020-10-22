@@ -8,7 +8,7 @@ import Elm.Data.Qualifiedness exposing (PossiblyQualified(..))
 import Elm.Data.Type.Concrete exposing (ConcreteType(..))
 import Stage.Parse.Contextualize as Contextualize exposing (..)
 import Stage.Parse.Lexer exposing (..)
-import Stage.Parse.Token exposing (Keyword(..), TypeOrConstructor(..), ValueOrFunctionOrGenericType(..))
+import Stage.Parse.Token exposing (Keyword(..), LowerCase(..), Token(..), UpperCase(..))
 
 
 
@@ -55,12 +55,12 @@ b = 78
 """
       , contextualized =
             Just
-                [ Ok (ValueDeclaration { args = [], name = Located { end = { col = 2, row = 1 }, start = { col = 1, row = 1 } } "a", valueExpr__ = Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Frontend.Int 5) })
-                , Ok (ValueDeclaration { args = [], name = Located { end = { col = 2, row = 3 }, start = { col = 1, row = 3 } } "b", valueExpr__ = Located { end = { col = 7, row = 3 }, start = { col = 5, row = 3 } } (Frontend.Int 78) })
+                [ Ok (ValueDeclaration { args = [], name = Located { end = { col = 2, row = 1 }, start = { col = 1, row = 1 } } (LowerCase "a"), valueExpr__ = Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Frontend.Int 5) })
+                , Ok (ValueDeclaration { args = [], name = Located { end = { col = 2, row = 3 }, start = { col = 1, row = 3 } } (LowerCase "b"), valueExpr__ = Located { end = { col = 7, row = 3 }, start = { col = 5, row = 3 } } (Frontend.Int 78) })
                 ]
       , lexed =
             Ok
-                [ Located { end = { col = 2, row = 1 }, start = { col = 1, row = 1 } } (Token (Identifier { name = "a", qualifiers = [] }))
+                [ Located { end = { col = 2, row = 1 }, start = { col = 1, row = 1 } } (Token (Identifier { name = TokenLowerCase (LowerCase "a"), qualifiers = [] }))
                 , Located { end = { col = 3, row = 1 }, start = { col = 2, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 4, row = 1 }, start = { col = 3, row = 1 } } (Token (Sigil Assign))
                 , Located { end = { col = 5, row = 1 }, start = { col = 4, row = 1 } } (Ignorable (Whitespace 1))
@@ -71,7 +71,7 @@ b = 78
                         ]
                         0
                     )
-                , Located { end = { col = 2, row = 3 }, start = { col = 1, row = 3 } } (Token (Identifier { name = "b", qualifiers = [] }))
+                , Located { end = { col = 2, row = 3 }, start = { col = 1, row = 3 } } (Token (Identifier { name = TokenLowerCase (LowerCase "b"), qualifiers = [] }))
                 , Located { end = { col = 3, row = 3 }, start = { col = 2, row = 3 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 4, row = 3 }, start = { col = 3, row = 3 } } (Token (Sigil Assign))
                 , Located { end = { col = 5, row = 3 }, start = { col = 4, row = 3 } } (Ignorable (Whitespace 1))
@@ -143,12 +143,12 @@ b = 78 + 5 + 2+ 4
 """
       , contextualized =
             Just
-                [ Ok (ValueDeclaration { args = [], name = Located { end = { col = 2, row = 1 }, start = { col = 1, row = 1 } } "a", valueExpr__ = Located { end = { col = 10, row = 1 }, start = { col = 5, row = 1 } } (Frontend.Operator (Located { end = { col = 8, row = 1 }, start = { col = 7, row = 1 } } Add) (Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Frontend.Int 5)) (Located { end = { col = 10, row = 1 }, start = { col = 9, row = 1 } } (Frontend.Int 5))) })
-                , Ok (ValueDeclaration { args = [], name = Located { end = { col = 2, row = 3 }, start = { col = 1, row = 3 } } "b", valueExpr__ = Located { end = { col = 18, row = 3 }, start = { col = 5, row = 3 } } (Frontend.Operator (Located { end = { col = 16, row = 3 }, start = { col = 15, row = 3 } } Add) (Located { end = { col = 15, row = 3 }, start = { col = 5, row = 3 } } (Frontend.Operator (Located { end = { col = 13, row = 3 }, start = { col = 12, row = 3 } } Add) (Located { end = { col = 11, row = 3 }, start = { col = 5, row = 3 } } (Frontend.Operator (Located { end = { col = 9, row = 3 }, start = { col = 8, row = 3 } } Add) (Located { end = { col = 7, row = 3 }, start = { col = 5, row = 3 } } (Frontend.Int 78)) (Located { end = { col = 11, row = 3 }, start = { col = 10, row = 3 } } (Frontend.Int 5)))) (Located { end = { col = 15, row = 3 }, start = { col = 14, row = 3 } } (Frontend.Int 2)))) (Located { end = { col = 18, row = 3 }, start = { col = 17, row = 3 } } (Frontend.Int 4))) })
+                [ Ok (ValueDeclaration { args = [], name = Located { end = { col = 2, row = 1 }, start = { col = 1, row = 1 } } (LowerCase "a"), valueExpr__ = Located { end = { col = 10, row = 1 }, start = { col = 5, row = 1 } } (Frontend.Operator (Located { end = { col = 8, row = 1 }, start = { col = 7, row = 1 } } Add) (Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Frontend.Int 5)) (Located { end = { col = 10, row = 1 }, start = { col = 9, row = 1 } } (Frontend.Int 5))) })
+                , Ok (ValueDeclaration { args = [], name = Located { end = { col = 2, row = 3 }, start = { col = 1, row = 3 } } (LowerCase "b"), valueExpr__ = Located { end = { col = 18, row = 3 }, start = { col = 5, row = 3 } } (Frontend.Operator (Located { end = { col = 16, row = 3 }, start = { col = 15, row = 3 } } Add) (Located { end = { col = 15, row = 3 }, start = { col = 5, row = 3 } } (Frontend.Operator (Located { end = { col = 13, row = 3 }, start = { col = 12, row = 3 } } Add) (Located { end = { col = 11, row = 3 }, start = { col = 5, row = 3 } } (Frontend.Operator (Located { end = { col = 9, row = 3 }, start = { col = 8, row = 3 } } Add) (Located { end = { col = 7, row = 3 }, start = { col = 5, row = 3 } } (Frontend.Int 78)) (Located { end = { col = 11, row = 3 }, start = { col = 10, row = 3 } } (Frontend.Int 5)))) (Located { end = { col = 15, row = 3 }, start = { col = 14, row = 3 } } (Frontend.Int 2)))) (Located { end = { col = 18, row = 3 }, start = { col = 17, row = 3 } } (Frontend.Int 4))) })
                 ]
       , lexed =
             Ok
-                [ Located { end = { col = 2, row = 1 }, start = { col = 1, row = 1 } } (Token (Identifier { name = "a", qualifiers = [] }))
+                [ Located { end = { col = 2, row = 1 }, start = { col = 1, row = 1 } } (Token (Identifier { name = TokenLowerCase (LowerCase "a"), qualifiers = [] }))
                 , Located { end = { col = 3, row = 1 }, start = { col = 2, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 4, row = 1 }, start = { col = 3, row = 1 } } (Token (Sigil Assign))
                 , Located { end = { col = 5, row = 1 }, start = { col = 4, row = 1 } } (Ignorable (Whitespace 1))
@@ -163,7 +163,7 @@ b = 78 + 5 + 2+ 4
                         ]
                         0
                     )
-                , Located { end = { col = 2, row = 3 }, start = { col = 1, row = 3 } } (Token (Identifier { name = "b", qualifiers = [] }))
+                , Located { end = { col = 2, row = 3 }, start = { col = 1, row = 3 } } (Token (Identifier { name = TokenLowerCase (LowerCase "b"), qualifiers = [] }))
                 , Located { end = { col = 3, row = 3 }, start = { col = 2, row = 3 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 4, row = 3 }, start = { col = 3, row = 3 } } (Token (Sigil Assign))
                 , Located { end = { col = 5, row = 3 }, start = { col = 4, row = 3 } } (Ignorable (Whitespace 1))
@@ -255,12 +255,12 @@ b = 78 * 5 * 2 / 4 * 5
 """
       , contextualized =
             Just
-                [ Ok (ValueDeclaration { args = [], name = Located { end = { col = 2, row = 1 }, start = { col = 1, row = 1 } } "a", valueExpr__ = Located { end = { col = 10, row = 1 }, start = { col = 5, row = 1 } } (Frontend.Operator (Located { end = { col = 8, row = 1 }, start = { col = 7, row = 1 } } Multiply) (Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Frontend.Int 5)) (Located { end = { col = 10, row = 1 }, start = { col = 9, row = 1 } } (Frontend.Int 5))) })
-                , Ok (ValueDeclaration { args = [], name = Located { end = { col = 2, row = 3 }, start = { col = 1, row = 3 } } "b", valueExpr__ = Located { end = { col = 23, row = 3 }, start = { col = 5, row = 3 } } (Frontend.Operator (Located { end = { col = 21, row = 3 }, start = { col = 20, row = 3 } } Multiply) (Located { end = { col = 19, row = 3 }, start = { col = 5, row = 3 } } (Frontend.Operator (Located { end = { col = 17, row = 3 }, start = { col = 16, row = 3 } } Divide) (Located { end = { col = 15, row = 3 }, start = { col = 5, row = 3 } } (Frontend.Operator (Located { end = { col = 13, row = 3 }, start = { col = 12, row = 3 } } Multiply) (Located { end = { col = 11, row = 3 }, start = { col = 5, row = 3 } } (Frontend.Operator (Located { end = { col = 9, row = 3 }, start = { col = 8, row = 3 } } Multiply) (Located { end = { col = 7, row = 3 }, start = { col = 5, row = 3 } } (Frontend.Int 78)) (Located { end = { col = 11, row = 3 }, start = { col = 10, row = 3 } } (Frontend.Int 5)))) (Located { end = { col = 15, row = 3 }, start = { col = 14, row = 3 } } (Frontend.Int 2)))) (Located { end = { col = 19, row = 3 }, start = { col = 18, row = 3 } } (Frontend.Int 4)))) (Located { end = { col = 23, row = 3 }, start = { col = 22, row = 3 } } (Frontend.Int 5))) })
+                [ Ok (ValueDeclaration { args = [], name = Located { end = { col = 2, row = 1 }, start = { col = 1, row = 1 } } (LowerCase "a"), valueExpr__ = Located { end = { col = 10, row = 1 }, start = { col = 5, row = 1 } } (Frontend.Operator (Located { end = { col = 8, row = 1 }, start = { col = 7, row = 1 } } Multiply) (Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Frontend.Int 5)) (Located { end = { col = 10, row = 1 }, start = { col = 9, row = 1 } } (Frontend.Int 5))) })
+                , Ok (ValueDeclaration { args = [], name = Located { end = { col = 2, row = 3 }, start = { col = 1, row = 3 } } (LowerCase "b"), valueExpr__ = Located { end = { col = 23, row = 3 }, start = { col = 5, row = 3 } } (Frontend.Operator (Located { end = { col = 21, row = 3 }, start = { col = 20, row = 3 } } Multiply) (Located { end = { col = 19, row = 3 }, start = { col = 5, row = 3 } } (Frontend.Operator (Located { end = { col = 17, row = 3 }, start = { col = 16, row = 3 } } Divide) (Located { end = { col = 15, row = 3 }, start = { col = 5, row = 3 } } (Frontend.Operator (Located { end = { col = 13, row = 3 }, start = { col = 12, row = 3 } } Multiply) (Located { end = { col = 11, row = 3 }, start = { col = 5, row = 3 } } (Frontend.Operator (Located { end = { col = 9, row = 3 }, start = { col = 8, row = 3 } } Multiply) (Located { end = { col = 7, row = 3 }, start = { col = 5, row = 3 } } (Frontend.Int 78)) (Located { end = { col = 11, row = 3 }, start = { col = 10, row = 3 } } (Frontend.Int 5)))) (Located { end = { col = 15, row = 3 }, start = { col = 14, row = 3 } } (Frontend.Int 2)))) (Located { end = { col = 19, row = 3 }, start = { col = 18, row = 3 } } (Frontend.Int 4)))) (Located { end = { col = 23, row = 3 }, start = { col = 22, row = 3 } } (Frontend.Int 5))) })
                 ]
       , lexed =
             Ok
-                [ Located { end = { col = 2, row = 1 }, start = { col = 1, row = 1 } } (Token (Identifier { name = "a", qualifiers = [] }))
+                [ Located { end = { col = 2, row = 1 }, start = { col = 1, row = 1 } } (Token (Identifier { name = TokenLowerCase (LowerCase "a"), qualifiers = [] }))
                 , Located { end = { col = 3, row = 1 }, start = { col = 2, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 4, row = 1 }, start = { col = 3, row = 1 } } (Token (Sigil Assign))
                 , Located { end = { col = 5, row = 1 }, start = { col = 4, row = 1 } } (Ignorable (Whitespace 1))
@@ -275,7 +275,7 @@ b = 78 * 5 * 2 / 4 * 5
                         ]
                         0
                     )
-                , Located { end = { col = 2, row = 3 }, start = { col = 1, row = 3 } } (Token (Identifier { name = "b", qualifiers = [] }))
+                , Located { end = { col = 2, row = 3 }, start = { col = 1, row = 3 } } (Token (Identifier { name = TokenLowerCase (LowerCase "b"), qualifiers = [] }))
                 , Located { end = { col = 3, row = 3 }, start = { col = 2, row = 3 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 4, row = 3 }, start = { col = 3, row = 3 } } (Token (Sigil Assign))
                 , Located { end = { col = 5, row = 3 }, start = { col = 4, row = 3 } } (Ignorable (Whitespace 1))
@@ -697,20 +697,20 @@ b4 = 78 / 5 / 2 / 4 + 5
 """
       , contextualized =
             Just
-                [ Ok (ValueDeclaration { args = [], name = Located { end = { col = 2, row = 1 }, start = { col = 1, row = 1 } } "a", valueExpr__ = Located { end = { col = 14, row = 1 }, start = { col = 5, row = 1 } } (Frontend.Operator (Located { end = { col = 12, row = 1 }, start = { col = 11, row = 1 } } Add) (Located { end = { col = 10, row = 1 }, start = { col = 5, row = 1 } } (Frontend.Operator (Located { end = { col = 8, row = 1 }, start = { col = 7, row = 1 } } Multiply) (Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Frontend.Int 5)) (Located { end = { col = 10, row = 1 }, start = { col = 9, row = 1 } } (Frontend.Int 5)))) (Located { end = { col = 14, row = 1 }, start = { col = 13, row = 1 } } (Frontend.Int 6))) })
-                , Ok (ValueDeclaration { args = [], name = Located { end = { col = 3, row = 2 }, start = { col = 1, row = 2 } } "a1", valueExpr__ = Located { end = { col = 16, row = 2 }, start = { col = 7, row = 2 } } (Frontend.Operator (Located { end = { col = 10, row = 2 }, start = { col = 9, row = 2 } } Add) (Located { end = { col = 8, row = 2 }, start = { col = 7, row = 2 } } (Frontend.Int 7)) (Located { end = { col = 16, row = 2 }, start = { col = 11, row = 2 } } (Frontend.Operator (Located { end = { col = 14, row = 2 }, start = { col = 13, row = 2 } } Multiply) (Located { end = { col = 12, row = 2 }, start = { col = 11, row = 2 } } (Frontend.Int 5)) (Located { end = { col = 16, row = 2 }, start = { col = 15, row = 2 } } (Frontend.Int 5))))) })
-                , Ok (ValueDeclaration { args = [], name = Located { end = { col = 4, row = 3 }, start = { col = 1, row = 3 } } "a11", valueExpr__ = Located { end = { col = 21, row = 3 }, start = { col = 8, row = 3 } } (Frontend.Operator (Located { end = { col = 11, row = 3 }, start = { col = 10, row = 3 } } Add) (Located { end = { col = 9, row = 3 }, start = { col = 8, row = 3 } } (Frontend.Int 7)) (Located { end = { col = 21, row = 3 }, start = { col = 12, row = 3 } } (Frontend.Operator (Located { end = { col = 19, row = 3 }, start = { col = 18, row = 3 } } Add) (Located { end = { col = 17, row = 3 }, start = { col = 12, row = 3 } } (Frontend.Operator (Located { end = { col = 15, row = 3 }, start = { col = 14, row = 3 } } Multiply) (Located { end = { col = 13, row = 3 }, start = { col = 12, row = 3 } } (Frontend.Int 5)) (Located { end = { col = 17, row = 3 }, start = { col = 16, row = 3 } } (Frontend.Int 5)))) (Located { end = { col = 21, row = 3 }, start = { col = 20, row = 3 } } (Frontend.Int 6))))) })
-                , Ok (ValueDeclaration { args = [], name = Located { end = { col = 3, row = 4 }, start = { col = 1, row = 4 } } "a2", valueExpr__ = Located { end = { col = 18, row = 4 }, start = { col = 6, row = 4 } } (Frontend.Operator (Located { end = { col = 12, row = 4 }, start = { col = 11, row = 4 } } Add) (Located { end = { col = 9, row = 4 }, start = { col = 6, row = 4 } } (Frontend.Int 100)) (Located { end = { col = 18, row = 4 }, start = { col = 13, row = 4 } } (Frontend.Operator (Located { end = { col = 16, row = 4 }, start = { col = 15, row = 4 } } Multiply) (Located { end = { col = 14, row = 4 }, start = { col = 13, row = 4 } } (Frontend.Int 5)) (Located { end = { col = 18, row = 4 }, start = { col = 17, row = 4 } } (Frontend.Int 5))))) })
-                , Ok (ValueDeclaration { args = [], name = Located { end = { col = 3, row = 5 }, start = { col = 1, row = 5 } } "a3", valueExpr__ = Located { end = { col = 30, row = 5 }, start = { col = 6, row = 5 } } (Frontend.Operator (Located { end = { col = 18, row = 5 }, start = { col = 17, row = 5 } } Add) (Located { end = { col = 16, row = 5 }, start = { col = 6, row = 5 } } (Frontend.Operator (Located { end = { col = 11, row = 5 }, start = { col = 10, row = 5 } } Multiply) (Located { end = { col = 9, row = 5 }, start = { col = 6, row = 5 } } (Frontend.Int 345)) (Located { end = { col = 16, row = 5 }, start = { col = 12, row = 5 } } (Frontend.Int 2234)))) (Located { end = { col = 30, row = 5 }, start = { col = 19, row = 5 } } (Frontend.Operator (Located { end = { col = 25, row = 5 }, start = { col = 24, row = 5 } } Multiply) (Located { end = { col = 23, row = 5 }, start = { col = 19, row = 5 } } (Frontend.Int 2342)) (Located { end = { col = 30, row = 5 }, start = { col = 26, row = 5 } } (Frontend.Int 1010))))) })
-                , Ok (ValueDeclaration { args = [], name = Located { end = { col = 2, row = 8 }, start = { col = 1, row = 8 } } "b", valueExpr__ = Located { end = { col = 23, row = 8 }, start = { col = 5, row = 8 } } (Frontend.Operator (Located { end = { col = 9, row = 8 }, start = { col = 8, row = 8 } } Add) (Located { end = { col = 7, row = 8 }, start = { col = 5, row = 8 } } (Frontend.Int 78)) (Located { end = { col = 23, row = 8 }, start = { col = 10, row = 8 } } (Frontend.Operator (Located { end = { col = 21, row = 8 }, start = { col = 20, row = 8 } } Multiply) (Located { end = { col = 19, row = 8 }, start = { col = 10, row = 8 } } (Frontend.Operator (Located { end = { col = 17, row = 8 }, start = { col = 16, row = 8 } } Divide) (Located { end = { col = 15, row = 8 }, start = { col = 10, row = 8 } } (Frontend.Operator (Located { end = { col = 13, row = 8 }, start = { col = 12, row = 8 } } Multiply) (Located { end = { col = 11, row = 8 }, start = { col = 10, row = 8 } } (Frontend.Int 5)) (Located { end = { col = 15, row = 8 }, start = { col = 14, row = 8 } } (Frontend.Int 2)))) (Located { end = { col = 19, row = 8 }, start = { col = 18, row = 8 } } (Frontend.Int 4)))) (Located { end = { col = 23, row = 8 }, start = { col = 22, row = 8 } } (Frontend.Int 5))))) })
-                , Ok (ValueDeclaration { args = [], name = Located { end = { col = 3, row = 9 }, start = { col = 1, row = 9 } } "b1", valueExpr__ = Located { end = { col = 24, row = 9 }, start = { col = 6, row = 9 } } (Frontend.Operator (Located { end = { col = 22, row = 9 }, start = { col = 21, row = 9 } } Subtract) (Located { end = { col = 20, row = 9 }, start = { col = 6, row = 9 } } (Frontend.Operator (Located { end = { col = 18, row = 9 }, start = { col = 17, row = 9 } } Divide) (Located { end = { col = 16, row = 9 }, start = { col = 6, row = 9 } } (Frontend.Operator (Located { end = { col = 14, row = 9 }, start = { col = 13, row = 9 } } Multiply) (Located { end = { col = 12, row = 9 }, start = { col = 6, row = 9 } } (Frontend.Operator (Located { end = { col = 10, row = 9 }, start = { col = 9, row = 9 } } Multiply) (Located { end = { col = 8, row = 9 }, start = { col = 6, row = 9 } } (Frontend.Int 78)) (Located { end = { col = 12, row = 9 }, start = { col = 11, row = 9 } } (Frontend.Int 5)))) (Located { end = { col = 16, row = 9 }, start = { col = 15, row = 9 } } (Frontend.Int 2)))) (Located { end = { col = 20, row = 9 }, start = { col = 19, row = 9 } } (Frontend.Int 4)))) (Located { end = { col = 24, row = 9 }, start = { col = 23, row = 9 } } (Frontend.Int 5))) })
-                , Ok (ValueDeclaration { args = [], name = Located { end = { col = 3, row = 10 }, start = { col = 1, row = 10 } } "b2", valueExpr__ = Located { end = { col = 24, row = 10 }, start = { col = 6, row = 10 } } (Frontend.Operator (Located { end = { col = 14, row = 10 }, start = { col = 13, row = 10 } } Subtract) (Located { end = { col = 12, row = 10 }, start = { col = 6, row = 10 } } (Frontend.Operator (Located { end = { col = 10, row = 10 }, start = { col = 9, row = 10 } } Multiply) (Located { end = { col = 8, row = 10 }, start = { col = 6, row = 10 } } (Frontend.Int 78)) (Located { end = { col = 12, row = 10 }, start = { col = 11, row = 10 } } (Frontend.Int 5)))) (Located { end = { col = 24, row = 10 }, start = { col = 15, row = 10 } } (Frontend.Operator (Located { end = { col = 22, row = 10 }, start = { col = 21, row = 10 } } Multiply) (Located { end = { col = 20, row = 10 }, start = { col = 15, row = 10 } } (Frontend.Operator (Located { end = { col = 18, row = 10 }, start = { col = 17, row = 10 } } Divide) (Located { end = { col = 16, row = 10 }, start = { col = 15, row = 10 } } (Frontend.Int 2)) (Located { end = { col = 20, row = 10 }, start = { col = 19, row = 10 } } (Frontend.Int 4)))) (Located { end = { col = 24, row = 10 }, start = { col = 23, row = 10 } } (Frontend.Int 5))))) })
-                , Ok (ValueDeclaration { args = [], name = Located { end = { col = 3, row = 11 }, start = { col = 1, row = 11 } } "b3", valueExpr__ = Located { end = { col = 24, row = 11 }, start = { col = 6, row = 11 } } (Frontend.Operator (Located { end = { col = 14, row = 11 }, start = { col = 13, row = 11 } } Add) (Located { end = { col = 12, row = 11 }, start = { col = 6, row = 11 } } (Frontend.Operator (Located { end = { col = 10, row = 11 }, start = { col = 9, row = 11 } } Subtract) (Located { end = { col = 8, row = 11 }, start = { col = 6, row = 11 } } (Frontend.Int 78)) (Located { end = { col = 12, row = 11 }, start = { col = 11, row = 11 } } (Frontend.Int 5)))) (Located { end = { col = 24, row = 11 }, start = { col = 15, row = 11 } } (Frontend.Operator (Located { end = { col = 22, row = 11 }, start = { col = 21, row = 11 } } Multiply) (Located { end = { col = 20, row = 11 }, start = { col = 15, row = 11 } } (Frontend.Operator (Located { end = { col = 18, row = 11 }, start = { col = 17, row = 11 } } Divide) (Located { end = { col = 16, row = 11 }, start = { col = 15, row = 11 } } (Frontend.Int 2)) (Located { end = { col = 20, row = 11 }, start = { col = 19, row = 11 } } (Frontend.Int 4)))) (Located { end = { col = 24, row = 11 }, start = { col = 23, row = 11 } } (Frontend.Int 5))))) })
-                , Ok (ValueDeclaration { args = [], name = Located { end = { col = 3, row = 12 }, start = { col = 1, row = 12 } } "b4", valueExpr__ = Located { end = { col = 24, row = 12 }, start = { col = 6, row = 12 } } (Frontend.Operator (Located { end = { col = 22, row = 12 }, start = { col = 21, row = 12 } } Add) (Located { end = { col = 20, row = 12 }, start = { col = 6, row = 12 } } (Frontend.Operator (Located { end = { col = 18, row = 12 }, start = { col = 17, row = 12 } } Divide) (Located { end = { col = 16, row = 12 }, start = { col = 6, row = 12 } } (Frontend.Operator (Located { end = { col = 14, row = 12 }, start = { col = 13, row = 12 } } Divide) (Located { end = { col = 12, row = 12 }, start = { col = 6, row = 12 } } (Frontend.Operator (Located { end = { col = 10, row = 12 }, start = { col = 9, row = 12 } } Divide) (Located { end = { col = 8, row = 12 }, start = { col = 6, row = 12 } } (Frontend.Int 78)) (Located { end = { col = 12, row = 12 }, start = { col = 11, row = 12 } } (Frontend.Int 5)))) (Located { end = { col = 16, row = 12 }, start = { col = 15, row = 12 } } (Frontend.Int 2)))) (Located { end = { col = 20, row = 12 }, start = { col = 19, row = 12 } } (Frontend.Int 4)))) (Located { end = { col = 24, row = 12 }, start = { col = 23, row = 12 } } (Frontend.Int 5))) })
+                [ Ok (ValueDeclaration { args = [], name = Located { end = { col = 2, row = 1 }, start = { col = 1, row = 1 } } (LowerCase "a"), valueExpr__ = Located { end = { col = 14, row = 1 }, start = { col = 5, row = 1 } } (Frontend.Operator (Located { end = { col = 12, row = 1 }, start = { col = 11, row = 1 } } Add) (Located { end = { col = 10, row = 1 }, start = { col = 5, row = 1 } } (Frontend.Operator (Located { end = { col = 8, row = 1 }, start = { col = 7, row = 1 } } Multiply) (Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Frontend.Int 5)) (Located { end = { col = 10, row = 1 }, start = { col = 9, row = 1 } } (Frontend.Int 5)))) (Located { end = { col = 14, row = 1 }, start = { col = 13, row = 1 } } (Frontend.Int 6))) })
+                , Ok (ValueDeclaration { args = [], name = Located { end = { col = 3, row = 2 }, start = { col = 1, row = 2 } } (LowerCase "a1"), valueExpr__ = Located { end = { col = 16, row = 2 }, start = { col = 7, row = 2 } } (Frontend.Operator (Located { end = { col = 10, row = 2 }, start = { col = 9, row = 2 } } Add) (Located { end = { col = 8, row = 2 }, start = { col = 7, row = 2 } } (Frontend.Int 7)) (Located { end = { col = 16, row = 2 }, start = { col = 11, row = 2 } } (Frontend.Operator (Located { end = { col = 14, row = 2 }, start = { col = 13, row = 2 } } Multiply) (Located { end = { col = 12, row = 2 }, start = { col = 11, row = 2 } } (Frontend.Int 5)) (Located { end = { col = 16, row = 2 }, start = { col = 15, row = 2 } } (Frontend.Int 5))))) })
+                , Ok (ValueDeclaration { args = [], name = Located { end = { col = 4, row = 3 }, start = { col = 1, row = 3 } } (LowerCase "a11"), valueExpr__ = Located { end = { col = 21, row = 3 }, start = { col = 8, row = 3 } } (Frontend.Operator (Located { end = { col = 11, row = 3 }, start = { col = 10, row = 3 } } Add) (Located { end = { col = 9, row = 3 }, start = { col = 8, row = 3 } } (Frontend.Int 7)) (Located { end = { col = 21, row = 3 }, start = { col = 12, row = 3 } } (Frontend.Operator (Located { end = { col = 19, row = 3 }, start = { col = 18, row = 3 } } Add) (Located { end = { col = 17, row = 3 }, start = { col = 12, row = 3 } } (Frontend.Operator (Located { end = { col = 15, row = 3 }, start = { col = 14, row = 3 } } Multiply) (Located { end = { col = 13, row = 3 }, start = { col = 12, row = 3 } } (Frontend.Int 5)) (Located { end = { col = 17, row = 3 }, start = { col = 16, row = 3 } } (Frontend.Int 5)))) (Located { end = { col = 21, row = 3 }, start = { col = 20, row = 3 } } (Frontend.Int 6))))) })
+                , Ok (ValueDeclaration { args = [], name = Located { end = { col = 3, row = 4 }, start = { col = 1, row = 4 } } (LowerCase "a2"), valueExpr__ = Located { end = { col = 18, row = 4 }, start = { col = 6, row = 4 } } (Frontend.Operator (Located { end = { col = 12, row = 4 }, start = { col = 11, row = 4 } } Add) (Located { end = { col = 9, row = 4 }, start = { col = 6, row = 4 } } (Frontend.Int 100)) (Located { end = { col = 18, row = 4 }, start = { col = 13, row = 4 } } (Frontend.Operator (Located { end = { col = 16, row = 4 }, start = { col = 15, row = 4 } } Multiply) (Located { end = { col = 14, row = 4 }, start = { col = 13, row = 4 } } (Frontend.Int 5)) (Located { end = { col = 18, row = 4 }, start = { col = 17, row = 4 } } (Frontend.Int 5))))) })
+                , Ok (ValueDeclaration { args = [], name = Located { end = { col = 3, row = 5 }, start = { col = 1, row = 5 } } (LowerCase "a3"), valueExpr__ = Located { end = { col = 30, row = 5 }, start = { col = 6, row = 5 } } (Frontend.Operator (Located { end = { col = 18, row = 5 }, start = { col = 17, row = 5 } } Add) (Located { end = { col = 16, row = 5 }, start = { col = 6, row = 5 } } (Frontend.Operator (Located { end = { col = 11, row = 5 }, start = { col = 10, row = 5 } } Multiply) (Located { end = { col = 9, row = 5 }, start = { col = 6, row = 5 } } (Frontend.Int 345)) (Located { end = { col = 16, row = 5 }, start = { col = 12, row = 5 } } (Frontend.Int 2234)))) (Located { end = { col = 30, row = 5 }, start = { col = 19, row = 5 } } (Frontend.Operator (Located { end = { col = 25, row = 5 }, start = { col = 24, row = 5 } } Multiply) (Located { end = { col = 23, row = 5 }, start = { col = 19, row = 5 } } (Frontend.Int 2342)) (Located { end = { col = 30, row = 5 }, start = { col = 26, row = 5 } } (Frontend.Int 1010))))) })
+                , Ok (ValueDeclaration { args = [], name = Located { end = { col = 2, row = 8 }, start = { col = 1, row = 8 } } (LowerCase "b"), valueExpr__ = Located { end = { col = 23, row = 8 }, start = { col = 5, row = 8 } } (Frontend.Operator (Located { end = { col = 9, row = 8 }, start = { col = 8, row = 8 } } Add) (Located { end = { col = 7, row = 8 }, start = { col = 5, row = 8 } } (Frontend.Int 78)) (Located { end = { col = 23, row = 8 }, start = { col = 10, row = 8 } } (Frontend.Operator (Located { end = { col = 21, row = 8 }, start = { col = 20, row = 8 } } Multiply) (Located { end = { col = 19, row = 8 }, start = { col = 10, row = 8 } } (Frontend.Operator (Located { end = { col = 17, row = 8 }, start = { col = 16, row = 8 } } Divide) (Located { end = { col = 15, row = 8 }, start = { col = 10, row = 8 } } (Frontend.Operator (Located { end = { col = 13, row = 8 }, start = { col = 12, row = 8 } } Multiply) (Located { end = { col = 11, row = 8 }, start = { col = 10, row = 8 } } (Frontend.Int 5)) (Located { end = { col = 15, row = 8 }, start = { col = 14, row = 8 } } (Frontend.Int 2)))) (Located { end = { col = 19, row = 8 }, start = { col = 18, row = 8 } } (Frontend.Int 4)))) (Located { end = { col = 23, row = 8 }, start = { col = 22, row = 8 } } (Frontend.Int 5))))) })
+                , Ok (ValueDeclaration { args = [], name = Located { end = { col = 3, row = 9 }, start = { col = 1, row = 9 } } (LowerCase "b1"), valueExpr__ = Located { end = { col = 24, row = 9 }, start = { col = 6, row = 9 } } (Frontend.Operator (Located { end = { col = 22, row = 9 }, start = { col = 21, row = 9 } } Subtract) (Located { end = { col = 20, row = 9 }, start = { col = 6, row = 9 } } (Frontend.Operator (Located { end = { col = 18, row = 9 }, start = { col = 17, row = 9 } } Divide) (Located { end = { col = 16, row = 9 }, start = { col = 6, row = 9 } } (Frontend.Operator (Located { end = { col = 14, row = 9 }, start = { col = 13, row = 9 } } Multiply) (Located { end = { col = 12, row = 9 }, start = { col = 6, row = 9 } } (Frontend.Operator (Located { end = { col = 10, row = 9 }, start = { col = 9, row = 9 } } Multiply) (Located { end = { col = 8, row = 9 }, start = { col = 6, row = 9 } } (Frontend.Int 78)) (Located { end = { col = 12, row = 9 }, start = { col = 11, row = 9 } } (Frontend.Int 5)))) (Located { end = { col = 16, row = 9 }, start = { col = 15, row = 9 } } (Frontend.Int 2)))) (Located { end = { col = 20, row = 9 }, start = { col = 19, row = 9 } } (Frontend.Int 4)))) (Located { end = { col = 24, row = 9 }, start = { col = 23, row = 9 } } (Frontend.Int 5))) })
+                , Ok (ValueDeclaration { args = [], name = Located { end = { col = 3, row = 10 }, start = { col = 1, row = 10 } } (LowerCase "b2"), valueExpr__ = Located { end = { col = 24, row = 10 }, start = { col = 6, row = 10 } } (Frontend.Operator (Located { end = { col = 14, row = 10 }, start = { col = 13, row = 10 } } Subtract) (Located { end = { col = 12, row = 10 }, start = { col = 6, row = 10 } } (Frontend.Operator (Located { end = { col = 10, row = 10 }, start = { col = 9, row = 10 } } Multiply) (Located { end = { col = 8, row = 10 }, start = { col = 6, row = 10 } } (Frontend.Int 78)) (Located { end = { col = 12, row = 10 }, start = { col = 11, row = 10 } } (Frontend.Int 5)))) (Located { end = { col = 24, row = 10 }, start = { col = 15, row = 10 } } (Frontend.Operator (Located { end = { col = 22, row = 10 }, start = { col = 21, row = 10 } } Multiply) (Located { end = { col = 20, row = 10 }, start = { col = 15, row = 10 } } (Frontend.Operator (Located { end = { col = 18, row = 10 }, start = { col = 17, row = 10 } } Divide) (Located { end = { col = 16, row = 10 }, start = { col = 15, row = 10 } } (Frontend.Int 2)) (Located { end = { col = 20, row = 10 }, start = { col = 19, row = 10 } } (Frontend.Int 4)))) (Located { end = { col = 24, row = 10 }, start = { col = 23, row = 10 } } (Frontend.Int 5))))) })
+                , Ok (ValueDeclaration { args = [], name = Located { end = { col = 3, row = 11 }, start = { col = 1, row = 11 } } (LowerCase "b3"), valueExpr__ = Located { end = { col = 24, row = 11 }, start = { col = 6, row = 11 } } (Frontend.Operator (Located { end = { col = 14, row = 11 }, start = { col = 13, row = 11 } } Add) (Located { end = { col = 12, row = 11 }, start = { col = 6, row = 11 } } (Frontend.Operator (Located { end = { col = 10, row = 11 }, start = { col = 9, row = 11 } } Subtract) (Located { end = { col = 8, row = 11 }, start = { col = 6, row = 11 } } (Frontend.Int 78)) (Located { end = { col = 12, row = 11 }, start = { col = 11, row = 11 } } (Frontend.Int 5)))) (Located { end = { col = 24, row = 11 }, start = { col = 15, row = 11 } } (Frontend.Operator (Located { end = { col = 22, row = 11 }, start = { col = 21, row = 11 } } Multiply) (Located { end = { col = 20, row = 11 }, start = { col = 15, row = 11 } } (Frontend.Operator (Located { end = { col = 18, row = 11 }, start = { col = 17, row = 11 } } Divide) (Located { end = { col = 16, row = 11 }, start = { col = 15, row = 11 } } (Frontend.Int 2)) (Located { end = { col = 20, row = 11 }, start = { col = 19, row = 11 } } (Frontend.Int 4)))) (Located { end = { col = 24, row = 11 }, start = { col = 23, row = 11 } } (Frontend.Int 5))))) })
+                , Ok (ValueDeclaration { args = [], name = Located { end = { col = 3, row = 12 }, start = { col = 1, row = 12 } } (LowerCase "b4"), valueExpr__ = Located { end = { col = 24, row = 12 }, start = { col = 6, row = 12 } } (Frontend.Operator (Located { end = { col = 22, row = 12 }, start = { col = 21, row = 12 } } Add) (Located { end = { col = 20, row = 12 }, start = { col = 6, row = 12 } } (Frontend.Operator (Located { end = { col = 18, row = 12 }, start = { col = 17, row = 12 } } Divide) (Located { end = { col = 16, row = 12 }, start = { col = 6, row = 12 } } (Frontend.Operator (Located { end = { col = 14, row = 12 }, start = { col = 13, row = 12 } } Divide) (Located { end = { col = 12, row = 12 }, start = { col = 6, row = 12 } } (Frontend.Operator (Located { end = { col = 10, row = 12 }, start = { col = 9, row = 12 } } Divide) (Located { end = { col = 8, row = 12 }, start = { col = 6, row = 12 } } (Frontend.Int 78)) (Located { end = { col = 12, row = 12 }, start = { col = 11, row = 12 } } (Frontend.Int 5)))) (Located { end = { col = 16, row = 12 }, start = { col = 15, row = 12 } } (Frontend.Int 2)))) (Located { end = { col = 20, row = 12 }, start = { col = 19, row = 12 } } (Frontend.Int 4)))) (Located { end = { col = 24, row = 12 }, start = { col = 23, row = 12 } } (Frontend.Int 5))) })
                 ]
       , lexed =
             Ok
-                [ Located { end = { col = 2, row = 1 }, start = { col = 1, row = 1 } } (Token (Identifier { name = "a", qualifiers = [] }))
+                [ Located { end = { col = 2, row = 1 }, start = { col = 1, row = 1 } } (Token (Identifier { name = TokenLowerCase (LowerCase "a"), qualifiers = [] }))
                 , Located { end = { col = 3, row = 1 }, start = { col = 2, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 4, row = 1 }, start = { col = 3, row = 1 } } (Token (Sigil Assign))
                 , Located { end = { col = 5, row = 1 }, start = { col = 4, row = 1 } } (Ignorable (Whitespace 1))
@@ -724,7 +724,7 @@ b4 = 78 / 5 / 2 / 4 + 5
                 , Located { end = { col = 13, row = 1 }, start = { col = 12, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 14, row = 1 }, start = { col = 13, row = 1 } } (Token (NumericLiteral "6"))
                 , Located { end = { col = 1, row = 2 }, start = { col = 14, row = 1 } } (Newlines [] 0)
-                , Located { end = { col = 3, row = 2 }, start = { col = 1, row = 2 } } (Token (Identifier { name = "a1", qualifiers = [] }))
+                , Located { end = { col = 3, row = 2 }, start = { col = 1, row = 2 } } (Token (Identifier { name = TokenLowerCase (LowerCase "a1"), qualifiers = [] }))
                 , Located { end = { col = 4, row = 2 }, start = { col = 3, row = 2 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 5, row = 2 }, start = { col = 4, row = 2 } } (Token (Sigil Assign))
                 , Located { end = { col = 7, row = 2 }, start = { col = 5, row = 2 } } (Ignorable (Whitespace 2))
@@ -738,7 +738,7 @@ b4 = 78 / 5 / 2 / 4 + 5
                 , Located { end = { col = 15, row = 2 }, start = { col = 14, row = 2 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 16, row = 2 }, start = { col = 15, row = 2 } } (Token (NumericLiteral "5"))
                 , Located { end = { col = 1, row = 3 }, start = { col = 16, row = 2 } } (Newlines [] 0)
-                , Located { end = { col = 4, row = 3 }, start = { col = 1, row = 3 } } (Token (Identifier { name = "a11", qualifiers = [] }))
+                , Located { end = { col = 4, row = 3 }, start = { col = 1, row = 3 } } (Token (Identifier { name = TokenLowerCase (LowerCase "a11"), qualifiers = [] }))
                 , Located { end = { col = 5, row = 3 }, start = { col = 4, row = 3 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 6, row = 3 }, start = { col = 5, row = 3 } } (Token (Sigil Assign))
                 , Located { end = { col = 8, row = 3 }, start = { col = 6, row = 3 } } (Ignorable (Whitespace 2))
@@ -756,7 +756,7 @@ b4 = 78 / 5 / 2 / 4 + 5
                 , Located { end = { col = 20, row = 3 }, start = { col = 19, row = 3 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 21, row = 3 }, start = { col = 20, row = 3 } } (Token (NumericLiteral "6"))
                 , Located { end = { col = 1, row = 4 }, start = { col = 21, row = 3 } } (Newlines [] 0)
-                , Located { end = { col = 3, row = 4 }, start = { col = 1, row = 4 } } (Token (Identifier { name = "a2", qualifiers = [] }))
+                , Located { end = { col = 3, row = 4 }, start = { col = 1, row = 4 } } (Token (Identifier { name = TokenLowerCase (LowerCase "a2"), qualifiers = [] }))
                 , Located { end = { col = 4, row = 4 }, start = { col = 3, row = 4 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 5, row = 4 }, start = { col = 4, row = 4 } } (Token (Sigil Assign))
                 , Located { end = { col = 6, row = 4 }, start = { col = 5, row = 4 } } (Ignorable (Whitespace 1))
@@ -770,7 +770,7 @@ b4 = 78 / 5 / 2 / 4 + 5
                 , Located { end = { col = 17, row = 4 }, start = { col = 16, row = 4 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 18, row = 4 }, start = { col = 17, row = 4 } } (Token (NumericLiteral "5"))
                 , Located { end = { col = 1, row = 5 }, start = { col = 18, row = 4 } } (Newlines [] 0)
-                , Located { end = { col = 3, row = 5 }, start = { col = 1, row = 5 } } (Token (Identifier { name = "a3", qualifiers = [] }))
+                , Located { end = { col = 3, row = 5 }, start = { col = 1, row = 5 } } (Token (Identifier { name = TokenLowerCase (LowerCase "a3"), qualifiers = [] }))
                 , Located { end = { col = 4, row = 5 }, start = { col = 3, row = 5 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 5, row = 5 }, start = { col = 4, row = 5 } } (Token (Sigil Assign))
                 , Located { end = { col = 6, row = 5 }, start = { col = 5, row = 5 } } (Ignorable (Whitespace 1))
@@ -794,7 +794,7 @@ b4 = 78 / 5 / 2 / 4 + 5
                         ]
                         0
                     )
-                , Located { end = { col = 2, row = 8 }, start = { col = 1, row = 8 } } (Token (Identifier { name = "b", qualifiers = [] }))
+                , Located { end = { col = 2, row = 8 }, start = { col = 1, row = 8 } } (Token (Identifier { name = TokenLowerCase (LowerCase "b"), qualifiers = [] }))
                 , Located { end = { col = 3, row = 8 }, start = { col = 2, row = 8 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 4, row = 8 }, start = { col = 3, row = 8 } } (Token (Sigil Assign))
                 , Located { end = { col = 5, row = 8 }, start = { col = 4, row = 8 } } (Ignorable (Whitespace 1))
@@ -816,7 +816,7 @@ b4 = 78 / 5 / 2 / 4 + 5
                 , Located { end = { col = 22, row = 8 }, start = { col = 21, row = 8 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 23, row = 8 }, start = { col = 22, row = 8 } } (Token (NumericLiteral "5"))
                 , Located { end = { col = 1, row = 9 }, start = { col = 23, row = 8 } } (Newlines [] 0)
-                , Located { end = { col = 3, row = 9 }, start = { col = 1, row = 9 } } (Token (Identifier { name = "b1", qualifiers = [] }))
+                , Located { end = { col = 3, row = 9 }, start = { col = 1, row = 9 } } (Token (Identifier { name = TokenLowerCase (LowerCase "b1"), qualifiers = [] }))
                 , Located { end = { col = 4, row = 9 }, start = { col = 3, row = 9 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 5, row = 9 }, start = { col = 4, row = 9 } } (Token (Sigil Assign))
                 , Located { end = { col = 6, row = 9 }, start = { col = 5, row = 9 } } (Ignorable (Whitespace 1))
@@ -838,7 +838,7 @@ b4 = 78 / 5 / 2 / 4 + 5
                 , Located { end = { col = 23, row = 9 }, start = { col = 22, row = 9 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 24, row = 9 }, start = { col = 23, row = 9 } } (Token (NumericLiteral "5"))
                 , Located { end = { col = 1, row = 10 }, start = { col = 24, row = 9 } } (Newlines [] 0)
-                , Located { end = { col = 3, row = 10 }, start = { col = 1, row = 10 } } (Token (Identifier { name = "b2", qualifiers = [] }))
+                , Located { end = { col = 3, row = 10 }, start = { col = 1, row = 10 } } (Token (Identifier { name = TokenLowerCase (LowerCase "b2"), qualifiers = [] }))
                 , Located { end = { col = 4, row = 10 }, start = { col = 3, row = 10 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 5, row = 10 }, start = { col = 4, row = 10 } } (Token (Sigil Assign))
                 , Located { end = { col = 6, row = 10 }, start = { col = 5, row = 10 } } (Ignorable (Whitespace 1))
@@ -860,7 +860,7 @@ b4 = 78 / 5 / 2 / 4 + 5
                 , Located { end = { col = 23, row = 10 }, start = { col = 22, row = 10 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 24, row = 10 }, start = { col = 23, row = 10 } } (Token (NumericLiteral "5"))
                 , Located { end = { col = 1, row = 11 }, start = { col = 24, row = 10 } } (Newlines [] 0)
-                , Located { end = { col = 3, row = 11 }, start = { col = 1, row = 11 } } (Token (Identifier { name = "b3", qualifiers = [] }))
+                , Located { end = { col = 3, row = 11 }, start = { col = 1, row = 11 } } (Token (Identifier { name = TokenLowerCase (LowerCase "b3"), qualifiers = [] }))
                 , Located { end = { col = 4, row = 11 }, start = { col = 3, row = 11 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 5, row = 11 }, start = { col = 4, row = 11 } } (Token (Sigil Assign))
                 , Located { end = { col = 6, row = 11 }, start = { col = 5, row = 11 } } (Ignorable (Whitespace 1))
@@ -882,7 +882,7 @@ b4 = 78 / 5 / 2 / 4 + 5
                 , Located { end = { col = 23, row = 11 }, start = { col = 22, row = 11 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 24, row = 11 }, start = { col = 23, row = 11 } } (Token (NumericLiteral "5"))
                 , Located { end = { col = 1, row = 12 }, start = { col = 24, row = 11 } } (Newlines [] 0)
-                , Located { end = { col = 3, row = 12 }, start = { col = 1, row = 12 } } (Token (Identifier { name = "b4", qualifiers = [] }))
+                , Located { end = { col = 3, row = 12 }, start = { col = 1, row = 12 } } (Token (Identifier { name = TokenLowerCase (LowerCase "b4"), qualifiers = [] }))
                 , Located { end = { col = 4, row = 12 }, start = { col = 3, row = 12 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 5, row = 12 }, start = { col = 4, row = 12 } } (Token (Sigil Assign))
                 , Located { end = { col = 6, row = 12 }, start = { col = 5, row = 12 } } (Ignorable (Whitespace 1))
@@ -984,12 +984,12 @@ b = 78 + 5 + 2 - 4 + 5
 """
       , contextualized =
             Just
-                [ Ok (ValueDeclaration { args = [], name = Located { end = { col = 2, row = 1 }, start = { col = 1, row = 1 } } "a", valueExpr__ = Located { end = { col = 10, row = 1 }, start = { col = 5, row = 1 } } (Frontend.Operator (Located { end = { col = 8, row = 1 }, start = { col = 7, row = 1 } } Subtract) (Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Frontend.Int 5)) (Located { end = { col = 10, row = 1 }, start = { col = 9, row = 1 } } (Frontend.Int 5))) })
-                , Ok (ValueDeclaration { args = [], name = Located { end = { col = 2, row = 3 }, start = { col = 1, row = 3 } } "b", valueExpr__ = Located { end = { col = 23, row = 3 }, start = { col = 5, row = 3 } } (Frontend.Operator (Located { end = { col = 21, row = 3 }, start = { col = 20, row = 3 } } Add) (Located { end = { col = 19, row = 3 }, start = { col = 5, row = 3 } } (Frontend.Operator (Located { end = { col = 17, row = 3 }, start = { col = 16, row = 3 } } Subtract) (Located { end = { col = 15, row = 3 }, start = { col = 5, row = 3 } } (Frontend.Operator (Located { end = { col = 13, row = 3 }, start = { col = 12, row = 3 } } Add) (Located { end = { col = 11, row = 3 }, start = { col = 5, row = 3 } } (Frontend.Operator (Located { end = { col = 9, row = 3 }, start = { col = 8, row = 3 } } Add) (Located { end = { col = 7, row = 3 }, start = { col = 5, row = 3 } } (Frontend.Int 78)) (Located { end = { col = 11, row = 3 }, start = { col = 10, row = 3 } } (Frontend.Int 5)))) (Located { end = { col = 15, row = 3 }, start = { col = 14, row = 3 } } (Frontend.Int 2)))) (Located { end = { col = 19, row = 3 }, start = { col = 18, row = 3 } } (Frontend.Int 4)))) (Located { end = { col = 23, row = 3 }, start = { col = 22, row = 3 } } (Frontend.Int 5))) })
+                [ Ok (ValueDeclaration { args = [], name = Located { end = { col = 2, row = 1 }, start = { col = 1, row = 1 } } (LowerCase "a"), valueExpr__ = Located { end = { col = 10, row = 1 }, start = { col = 5, row = 1 } } (Frontend.Operator (Located { end = { col = 8, row = 1 }, start = { col = 7, row = 1 } } Subtract) (Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Frontend.Int 5)) (Located { end = { col = 10, row = 1 }, start = { col = 9, row = 1 } } (Frontend.Int 5))) })
+                , Ok (ValueDeclaration { args = [], name = Located { end = { col = 2, row = 3 }, start = { col = 1, row = 3 } } (LowerCase "b"), valueExpr__ = Located { end = { col = 23, row = 3 }, start = { col = 5, row = 3 } } (Frontend.Operator (Located { end = { col = 21, row = 3 }, start = { col = 20, row = 3 } } Add) (Located { end = { col = 19, row = 3 }, start = { col = 5, row = 3 } } (Frontend.Operator (Located { end = { col = 17, row = 3 }, start = { col = 16, row = 3 } } Subtract) (Located { end = { col = 15, row = 3 }, start = { col = 5, row = 3 } } (Frontend.Operator (Located { end = { col = 13, row = 3 }, start = { col = 12, row = 3 } } Add) (Located { end = { col = 11, row = 3 }, start = { col = 5, row = 3 } } (Frontend.Operator (Located { end = { col = 9, row = 3 }, start = { col = 8, row = 3 } } Add) (Located { end = { col = 7, row = 3 }, start = { col = 5, row = 3 } } (Frontend.Int 78)) (Located { end = { col = 11, row = 3 }, start = { col = 10, row = 3 } } (Frontend.Int 5)))) (Located { end = { col = 15, row = 3 }, start = { col = 14, row = 3 } } (Frontend.Int 2)))) (Located { end = { col = 19, row = 3 }, start = { col = 18, row = 3 } } (Frontend.Int 4)))) (Located { end = { col = 23, row = 3 }, start = { col = 22, row = 3 } } (Frontend.Int 5))) })
                 ]
       , lexed =
             Ok
-                [ Located { end = { col = 2, row = 1 }, start = { col = 1, row = 1 } } (Token (Identifier { name = "a", qualifiers = [] }))
+                [ Located { end = { col = 2, row = 1 }, start = { col = 1, row = 1 } } (Token (Identifier { name = TokenLowerCase (LowerCase "a"), qualifiers = [] }))
                 , Located { end = { col = 3, row = 1 }, start = { col = 2, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 4, row = 1 }, start = { col = 3, row = 1 } } (Token (Sigil Assign))
                 , Located { end = { col = 5, row = 1 }, start = { col = 4, row = 1 } } (Ignorable (Whitespace 1))
@@ -1004,7 +1004,7 @@ b = 78 + 5 + 2 - 4 + 5
                         ]
                         0
                     )
-                , Located { end = { col = 2, row = 3 }, start = { col = 1, row = 3 } } (Token (Identifier { name = "b", qualifiers = [] }))
+                , Located { end = { col = 2, row = 3 }, start = { col = 1, row = 3 } } (Token (Identifier { name = TokenLowerCase (LowerCase "b"), qualifiers = [] }))
                 , Located { end = { col = 3, row = 3 }, start = { col = 2, row = 3 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 4, row = 3 }, start = { col = 3, row = 3 } } (Token (Sigil Assign))
                 , Located { end = { col = 5, row = 3 }, start = { col = 4, row = 3 } } (Ignorable (Whitespace 1))
@@ -1075,7 +1075,7 @@ b = 78 + 5 + 2 - 4 + 5
                                 , qualifiedness = PossiblyQualified Nothing
                                 }
                         , genericArgs = []
-                        , ty = "Model"
+                        , ty = UpperCase "Model"
                         }
                     )
                 ]
@@ -1085,13 +1085,13 @@ b = 78 + 5 + 2 - 4 + 5
                 , Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 11, row = 1 }, start = { col = 6, row = 1 } } (Token (Keyword Alias))
                 , Located { end = { col = 12, row = 1 }, start = { col = 11, row = 1 } } (Ignorable (Whitespace 1))
-                , Located { end = { col = 17, row = 1 }, start = { col = 12, row = 1 } } (Token (Identifier { name = "Model", qualifiers = [] }))
+                , Located { end = { col = 17, row = 1 }, start = { col = 12, row = 1 } } (Token (Identifier { name = TokenUpperCase (UpperCase "Model"), qualifiers = [] }))
                 , Located { end = { col = 18, row = 1 }, start = { col = 17, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 19, row = 1 }, start = { col = 18, row = 1 } } (Token (Sigil Assign))
                 , Located { end = { col = 20, row = 1 }, start = { col = 19, row = 1 } } (Ignorable (Whitespace 1))
-                , Located { end = { col = 24, row = 1 }, start = { col = 20, row = 1 } } (Token (Identifier { name = "List", qualifiers = [] }))
+                , Located { end = { col = 24, row = 1 }, start = { col = 20, row = 1 } } (Token (Identifier { name = TokenUpperCase (UpperCase "List"), qualifiers = [] }))
                 , Located { end = { col = 25, row = 1 }, start = { col = 24, row = 1 } } (Ignorable (Whitespace 1))
-                , Located { end = { col = 28, row = 1 }, start = { col = 25, row = 1 } } (Token (Identifier { name = "Int", qualifiers = [] }))
+                , Located { end = { col = 28, row = 1 }, start = { col = 25, row = 1 } } (Token (Identifier { name = TokenUpperCase (UpperCase "Int"), qualifiers = [] }))
                 , Located { end = { col = 1, row = 2 }, start = { col = 28, row = 1 } } (Newlines [] 0)
                 ]
       }
@@ -1156,15 +1156,15 @@ expr hi = 77
                                 , qualifiedness = PossiblyQualified Nothing
                                 }
                         , genericArgs = []
-                        , ty = "Model"
+                        , ty = UpperCase "Model"
                         }
                     )
                 , Ok
                     (ValueDeclaration
                         { args =
-                            [ Located { end = { col = 8, row = 3 }, start = { col = 6, row = 3 } } "hi"
+                            [ Located { end = { col = 8, row = 3 }, start = { col = 6, row = 3 } } (LowerCase "hi")
                             ]
-                        , name = Located { end = { col = 5, row = 3 }, start = { col = 1, row = 3 } } "expr"
+                        , name = Located { end = { col = 5, row = 3 }, start = { col = 1, row = 3 } } (LowerCase "expr")
                         , valueExpr__ = Located { end = { col = 13, row = 3 }, start = { col = 11, row = 3 } } (Frontend.Int 77)
                         }
                     )
@@ -1175,22 +1175,22 @@ expr hi = 77
                 , Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 11, row = 1 }, start = { col = 6, row = 1 } } (Token (Keyword Alias))
                 , Located { end = { col = 12, row = 1 }, start = { col = 11, row = 1 } } (Ignorable (Whitespace 1))
-                , Located { end = { col = 17, row = 1 }, start = { col = 12, row = 1 } } (Token (Identifier { name = "Model", qualifiers = [] }))
+                , Located { end = { col = 17, row = 1 }, start = { col = 12, row = 1 } } (Token (Identifier { name = TokenUpperCase (UpperCase "Model"), qualifiers = [] }))
                 , Located { end = { col = 18, row = 1 }, start = { col = 17, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 19, row = 1 }, start = { col = 18, row = 1 } } (Token (Sigil Assign))
                 , Located { end = { col = 20, row = 1 }, start = { col = 19, row = 1 } } (Ignorable (Whitespace 1))
-                , Located { end = { col = 24, row = 1 }, start = { col = 20, row = 1 } } (Token (Identifier { name = "List", qualifiers = [] }))
+                , Located { end = { col = 24, row = 1 }, start = { col = 20, row = 1 } } (Token (Identifier { name = TokenUpperCase (UpperCase "List"), qualifiers = [] }))
                 , Located { end = { col = 25, row = 1 }, start = { col = 24, row = 1 } } (Ignorable (Whitespace 1))
-                , Located { end = { col = 28, row = 1 }, start = { col = 25, row = 1 } } (Token (Identifier { name = "Int", qualifiers = [] }))
+                , Located { end = { col = 28, row = 1 }, start = { col = 25, row = 1 } } (Token (Identifier { name = TokenUpperCase (UpperCase "Int"), qualifiers = [] }))
                 , Located { end = { col = 1, row = 3 }, start = { col = 28, row = 1 } }
                     (Newlines
                         [ 0
                         ]
                         0
                     )
-                , Located { end = { col = 5, row = 3 }, start = { col = 1, row = 3 } } (Token (Identifier { name = "expr", qualifiers = [] }))
+                , Located { end = { col = 5, row = 3 }, start = { col = 1, row = 3 } } (Token (Identifier { name = TokenLowerCase (LowerCase "expr"), qualifiers = [] }))
                 , Located { end = { col = 6, row = 3 }, start = { col = 5, row = 3 } } (Ignorable (Whitespace 1))
-                , Located { end = { col = 8, row = 3 }, start = { col = 6, row = 3 } } (Token (Identifier { name = "hi", qualifiers = [] }))
+                , Located { end = { col = 8, row = 3 }, start = { col = 6, row = 3 } } (Token (Identifier { name = TokenLowerCase (LowerCase "hi"), qualifiers = [] }))
                 , Located { end = { col = 9, row = 3 }, start = { col = 8, row = 3 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 10, row = 3 }, start = { col = 9, row = 3 } } (Token (Sigil Assign))
                 , Located { end = { col = 11, row = 3 }, start = { col = 10, row = 3 } } (Ignorable (Whitespace 1))
@@ -1240,7 +1240,7 @@ expr hi = 77
                                     ]
                                 )
                         , genericArgs = []
-                        , ty = "Ty"
+                        , ty = UpperCase "Ty"
                         }
                     )
                 ]
@@ -1250,17 +1250,17 @@ expr hi = 77
                 , Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 11, row = 1 }, start = { col = 6, row = 1 } } (Token (Keyword Alias))
                 , Located { end = { col = 12, row = 1 }, start = { col = 11, row = 1 } } (Ignorable (Whitespace 1))
-                , Located { end = { col = 14, row = 1 }, start = { col = 12, row = 1 } } (Token (Identifier { name = "Ty", qualifiers = [] }))
+                , Located { end = { col = 14, row = 1 }, start = { col = 12, row = 1 } } (Token (Identifier { name = TokenUpperCase (UpperCase "Ty"), qualifiers = [] }))
                 , Located { end = { col = 15, row = 1 }, start = { col = 14, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 16, row = 1 }, start = { col = 15, row = 1 } } (Token (Sigil Assign))
                 , Located { end = { col = 17, row = 1 }, start = { col = 16, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 18, row = 1 }, start = { col = 17, row = 1 } } (Token (Sigil (Bracket Curly Open)))
                 , Located { end = { col = 19, row = 1 }, start = { col = 18, row = 1 } } (Ignorable (Whitespace 1))
-                , Located { end = { col = 21, row = 1 }, start = { col = 19, row = 1 } } (Token (Identifier { name = "hi", qualifiers = [] }))
+                , Located { end = { col = 21, row = 1 }, start = { col = 19, row = 1 } } (Token (Identifier { name = TokenLowerCase (LowerCase "hi"), qualifiers = [] }))
                 , Located { end = { col = 22, row = 1 }, start = { col = 21, row = 1 } } (Token (Sigil Colon))
                 , Located { end = { col = 23, row = 1 }, start = { col = 22, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 24, row = 1 }, start = { col = 23, row = 1 } } (Token (Sigil (Bracket Round Open)))
-                , Located { end = { col = 27, row = 1 }, start = { col = 24, row = 1 } } (Token (Identifier { name = "Int", qualifiers = [] }))
+                , Located { end = { col = 27, row = 1 }, start = { col = 24, row = 1 } } (Token (Identifier { name = TokenUpperCase (UpperCase "Int"), qualifiers = [] }))
                 , Located { end = { col = 28, row = 1 }, start = { col = 27, row = 1 } } (Token (Sigil (Bracket Round Close)))
                 , Located { end = { col = 29, row = 1 }, start = { col = 28, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 30, row = 1 }, start = { col = 29, row = 1 } } (Token (Sigil (Bracket Curly Close)))
@@ -1368,7 +1368,7 @@ expr hi = 77
                                         }
                                 }
                         , genericArgs = []
-                        , ty = "Function"
+                        , ty = UpperCase "Function"
                         }
                     )
                 ]
@@ -1378,22 +1378,22 @@ expr hi = 77
                 , Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 11, row = 1 }, start = { col = 6, row = 1 } } (Token (Keyword Alias))
                 , Located { end = { col = 12, row = 1 }, start = { col = 11, row = 1 } } (Ignorable (Whitespace 1))
-                , Located { end = { col = 20, row = 1 }, start = { col = 12, row = 1 } } (Token (Identifier { name = "Function", qualifiers = [] }))
+                , Located { end = { col = 20, row = 1 }, start = { col = 12, row = 1 } } (Token (Identifier { name = TokenUpperCase (UpperCase "Function"), qualifiers = [] }))
                 , Located { end = { col = 21, row = 1 }, start = { col = 20, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 22, row = 1 }, start = { col = 21, row = 1 } } (Token (Sigil Assign))
                 , Located { end = { col = 23, row = 1 }, start = { col = 22, row = 1 } } (Ignorable (Whitespace 1))
-                , Located { end = { col = 27, row = 1 }, start = { col = 23, row = 1 } } (Token (Identifier { name = "List", qualifiers = [] }))
+                , Located { end = { col = 27, row = 1 }, start = { col = 23, row = 1 } } (Token (Identifier { name = TokenUpperCase (UpperCase "List"), qualifiers = [] }))
                 , Located { end = { col = 28, row = 1 }, start = { col = 27, row = 1 } } (Ignorable (Whitespace 1))
-                , Located { end = { col = 31, row = 1 }, start = { col = 28, row = 1 } } (Token (Identifier { name = "Int", qualifiers = [] }))
+                , Located { end = { col = 31, row = 1 }, start = { col = 28, row = 1 } } (Token (Identifier { name = TokenUpperCase (UpperCase "Int"), qualifiers = [] }))
                 , Located { end = { col = 32, row = 1 }, start = { col = 31, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 34, row = 1 }, start = { col = 32, row = 1 } } (Token (Sigil ThinArrow))
                 , Located { end = { col = 35, row = 1 }, start = { col = 34, row = 1 } } (Ignorable (Whitespace 1))
-                , Located { end = { col = 39, row = 1 }, start = { col = 35, row = 1 } } (Token (Identifier { name = "List", qualifiers = [] }))
+                , Located { end = { col = 39, row = 1 }, start = { col = 35, row = 1 } } (Token (Identifier { name = TokenUpperCase (UpperCase "List"), qualifiers = [] }))
                 , Located { end = { col = 40, row = 1 }, start = { col = 39, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 41, row = 1 }, start = { col = 40, row = 1 } } (Token (Sigil (Bracket Round Open)))
-                , Located { end = { col = 45, row = 1 }, start = { col = 41, row = 1 } } (Token (Identifier { name = "List", qualifiers = [] }))
+                , Located { end = { col = 45, row = 1 }, start = { col = 41, row = 1 } } (Token (Identifier { name = TokenUpperCase (UpperCase "List"), qualifiers = [] }))
                 , Located { end = { col = 46, row = 1 }, start = { col = 45, row = 1 } } (Ignorable (Whitespace 1))
-                , Located { end = { col = 49, row = 1 }, start = { col = 46, row = 1 } } (Token (Identifier { name = "Int", qualifiers = [] }))
+                , Located { end = { col = 49, row = 1 }, start = { col = 46, row = 1 } } (Token (Identifier { name = TokenUpperCase (UpperCase "Int"), qualifiers = [] }))
                 , Located { end = { col = 50, row = 1 }, start = { col = 49, row = 1 } } (Token (Sigil (Bracket Round Close)))
                 , Located { end = { col = 1, row = 2 }, start = { col = 50, row = 1 } } (Newlines [] 0)
                 ]
@@ -1541,7 +1541,7 @@ type alias Function = A -> B -> C -> D
                                         }
                                 }
                         , genericArgs = []
-                        , ty = "Function"
+                        , ty = UpperCase "Function"
                         }
                     )
                 , Ok
@@ -1580,7 +1580,7 @@ type alias Function = A -> B -> C -> D
                                         }
                                 }
                         , genericArgs = []
-                        , ty = "Function"
+                        , ty = UpperCase "Function"
                         }
                     )
                 ]
@@ -1590,47 +1590,48 @@ type alias Function = A -> B -> C -> D
                 , Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 11, row = 1 }, start = { col = 6, row = 1 } } (Token (Keyword Alias))
                 , Located { end = { col = 12, row = 1 }, start = { col = 11, row = 1 } } (Ignorable (Whitespace 1))
-                , Located { end = { col = 20, row = 1 }, start = { col = 12, row = 1 } } (Token (Identifier { name = "Function", qualifiers = [] }))
+                , Located { end = { col = 20, row = 1 }, start = { col = 12, row = 1 } } (Token (Identifier { name = TokenUpperCase (UpperCase "Function"), qualifiers = [] }))
                 , Located { end = { col = 21, row = 1 }, start = { col = 20, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 22, row = 1 }, start = { col = 21, row = 1 } } (Token (Sigil Assign))
                 , Located { end = { col = 23, row = 1 }, start = { col = 22, row = 1 } } (Ignorable (Whitespace 1))
-                , Located { end = { col = 24, row = 1 }, start = { col = 23, row = 1 } } (Token (Identifier { name = "A", qualifiers = [] }))
+                , Located { end = { col = 24, row = 1 }, start = { col = 23, row = 1 } } (Token (Identifier { name = TokenUpperCase (UpperCase "A"), qualifiers = [] }))
                 , Located { end = { col = 25, row = 1 }, start = { col = 24, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 27, row = 1 }, start = { col = 25, row = 1 } } (Token (Sigil ThinArrow))
                 , Located { end = { col = 28, row = 1 }, start = { col = 27, row = 1 } } (Ignorable (Whitespace 1))
-                , Located { end = { col = 29, row = 1 }, start = { col = 28, row = 1 } } (Token (Identifier { name = "B", qualifiers = [] }))
+                , Located { end = { col = 29, row = 1 }, start = { col = 28, row = 1 } } (Token (Identifier { name = TokenUpperCase (UpperCase "B"), qualifiers = [] }))
                 , Located { end = { col = 30, row = 1 }, start = { col = 29, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 32, row = 1 }, start = { col = 30, row = 1 } } (Token (Sigil ThinArrow))
                 , Located { end = { col = 33, row = 1 }, start = { col = 32, row = 1 } } (Ignorable (Whitespace 1))
-                , Located { end = { col = 34, row = 1 }, start = { col = 33, row = 1 } } (Token (Identifier { name = "C", qualifiers = [] }))
+                , Located { end = { col = 34, row = 1 }, start = { col = 33, row = 1 } } (Token (Identifier { name = TokenUpperCase (UpperCase "C"), qualifiers = [] }))
                 , Located { end = { col = 1, row = 2 }, start = { col = 34, row = 1 } } (Newlines [] 0)
                 , Located { end = { col = 5, row = 2 }, start = { col = 1, row = 2 } } (Token (Keyword Type))
                 , Located { end = { col = 6, row = 2 }, start = { col = 5, row = 2 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 11, row = 2 }, start = { col = 6, row = 2 } } (Token (Keyword Alias))
                 , Located { end = { col = 12, row = 2 }, start = { col = 11, row = 2 } } (Ignorable (Whitespace 1))
-                , Located { end = { col = 20, row = 2 }, start = { col = 12, row = 2 } } (Token (Identifier { name = "Function", qualifiers = [] }))
+                , Located { end = { col = 20, row = 2 }, start = { col = 12, row = 2 } } (Token (Identifier { name = TokenUpperCase (UpperCase "Function"), qualifiers = [] }))
                 , Located { end = { col = 21, row = 2 }, start = { col = 20, row = 2 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 22, row = 2 }, start = { col = 21, row = 2 } } (Token (Sigil Assign))
                 , Located { end = { col = 23, row = 2 }, start = { col = 22, row = 2 } } (Ignorable (Whitespace 1))
-                , Located { end = { col = 24, row = 2 }, start = { col = 23, row = 2 } } (Token (Identifier { name = "A", qualifiers = [] }))
+                , Located { end = { col = 24, row = 2 }, start = { col = 23, row = 2 } } (Token (Identifier { name = TokenUpperCase (UpperCase "A"), qualifiers = [] }))
                 , Located { end = { col = 25, row = 2 }, start = { col = 24, row = 2 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 27, row = 2 }, start = { col = 25, row = 2 } } (Token (Sigil ThinArrow))
                 , Located { end = { col = 28, row = 2 }, start = { col = 27, row = 2 } } (Ignorable (Whitespace 1))
-                , Located { end = { col = 29, row = 2 }, start = { col = 28, row = 2 } } (Token (Identifier { name = "B", qualifiers = [] }))
+                , Located { end = { col = 29, row = 2 }, start = { col = 28, row = 2 } } (Token (Identifier { name = TokenUpperCase (UpperCase "B"), qualifiers = [] }))
                 , Located { end = { col = 30, row = 2 }, start = { col = 29, row = 2 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 32, row = 2 }, start = { col = 30, row = 2 } } (Token (Sigil ThinArrow))
                 , Located { end = { col = 33, row = 2 }, start = { col = 32, row = 2 } } (Ignorable (Whitespace 1))
-                , Located { end = { col = 34, row = 2 }, start = { col = 33, row = 2 } } (Token (Identifier { name = "C", qualifiers = [] }))
+                , Located { end = { col = 34, row = 2 }, start = { col = 33, row = 2 } } (Token (Identifier { name = TokenUpperCase (UpperCase "C"), qualifiers = [] }))
                 , Located { end = { col = 35, row = 2 }, start = { col = 34, row = 2 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 37, row = 2 }, start = { col = 35, row = 2 } } (Token (Sigil ThinArrow))
                 , Located { end = { col = 38, row = 2 }, start = { col = 37, row = 2 } } (Ignorable (Whitespace 1))
-                , Located { end = { col = 39, row = 2 }, start = { col = 38, row = 2 } } (Token (Identifier { name = "D", qualifiers = [] }))
+                , Located { end = { col = 39, row = 2 }, start = { col = 38, row = 2 } } (Token (Identifier { name = TokenUpperCase (UpperCase "D"), qualifiers = [] }))
                 , Located { end = { col = 1, row = 3 }, start = { col = 39, row = 2 } } (Newlines [] 0)
                 ]
       }
     , { name = "type-alias-function-generic"
       , source = """type alias Function a = List Int -> List (List a)
-"""
+
+type alias Function b c = b -> c"""
       , pretty = """
         ( ( Ok
           , ( TypeAlias
@@ -1691,7 +1692,41 @@ type alias Function = A -> B -> C -> D
                 )
               )
             )
-          ) )
+          )
+        , ( Ok
+          , ( TypeAlias
+            , ( ty, Function )
+            , ( genericArgs
+              , ( b, c )
+              )
+            , ( expr
+              , ( Function
+                , ( ( from
+                    , ( UserDefinedType
+                      , ( ( qualifiedness
+                          , ( PossiblyQualified, Nothing )
+                          )
+                        , ( name, b )
+                        , ( args, () )
+                        )
+                      )
+                    )
+                  , ( to
+                    , ( UserDefinedType
+                      , ( ( qualifiedness
+                          , ( PossiblyQualified, Nothing )
+                          )
+                        , ( name, c )
+                        , ( args, () )
+                        )
+                      )
+                    )
+                  )
+                )
+              )
+            )
+          )
+        )
 """
       , contextualized =
             Just
@@ -1731,9 +1766,33 @@ type alias Function = A -> B -> C -> D
                                         }
                                 }
                         , genericArgs =
-                            [ "a"
+                            [ LowerCase "a"
                             ]
-                        , ty = "Function"
+                        , ty = UpperCase "Function"
+                        }
+                    )
+                , Ok
+                    (TypeAlias
+                        { expr =
+                            Function
+                                { from =
+                                    UserDefinedType
+                                        { args = []
+                                        , name = "b"
+                                        , qualifiedness = PossiblyQualified Nothing
+                                        }
+                                , to =
+                                    UserDefinedType
+                                        { args = []
+                                        , name = "c"
+                                        , qualifiedness = PossiblyQualified Nothing
+                                        }
+                                }
+                        , genericArgs =
+                            [ LowerCase "b"
+                            , LowerCase "c"
+                            ]
+                        , ty = UpperCase "Function"
                         }
                     )
                 ]
@@ -1743,26 +1802,48 @@ type alias Function = A -> B -> C -> D
                 , Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 11, row = 1 }, start = { col = 6, row = 1 } } (Token (Keyword Alias))
                 , Located { end = { col = 12, row = 1 }, start = { col = 11, row = 1 } } (Ignorable (Whitespace 1))
-                , Located { end = { col = 20, row = 1 }, start = { col = 12, row = 1 } } (Token (Identifier { name = "Function", qualifiers = [] }))
+                , Located { end = { col = 20, row = 1 }, start = { col = 12, row = 1 } } (Token (Identifier { name = TokenUpperCase (UpperCase "Function"), qualifiers = [] }))
                 , Located { end = { col = 21, row = 1 }, start = { col = 20, row = 1 } } (Ignorable (Whitespace 1))
-                , Located { end = { col = 22, row = 1 }, start = { col = 21, row = 1 } } (Token (Identifier { name = "a", qualifiers = [] }))
+                , Located { end = { col = 22, row = 1 }, start = { col = 21, row = 1 } } (Token (Identifier { name = TokenLowerCase (LowerCase "a"), qualifiers = [] }))
                 , Located { end = { col = 23, row = 1 }, start = { col = 22, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 24, row = 1 }, start = { col = 23, row = 1 } } (Token (Sigil Assign))
                 , Located { end = { col = 25, row = 1 }, start = { col = 24, row = 1 } } (Ignorable (Whitespace 1))
-                , Located { end = { col = 29, row = 1 }, start = { col = 25, row = 1 } } (Token (Identifier { name = "List", qualifiers = [] }))
+                , Located { end = { col = 29, row = 1 }, start = { col = 25, row = 1 } } (Token (Identifier { name = TokenUpperCase (UpperCase "List"), qualifiers = [] }))
                 , Located { end = { col = 30, row = 1 }, start = { col = 29, row = 1 } } (Ignorable (Whitespace 1))
-                , Located { end = { col = 33, row = 1 }, start = { col = 30, row = 1 } } (Token (Identifier { name = "Int", qualifiers = [] }))
+                , Located { end = { col = 33, row = 1 }, start = { col = 30, row = 1 } } (Token (Identifier { name = TokenUpperCase (UpperCase "Int"), qualifiers = [] }))
                 , Located { end = { col = 34, row = 1 }, start = { col = 33, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 36, row = 1 }, start = { col = 34, row = 1 } } (Token (Sigil ThinArrow))
                 , Located { end = { col = 37, row = 1 }, start = { col = 36, row = 1 } } (Ignorable (Whitespace 1))
-                , Located { end = { col = 41, row = 1 }, start = { col = 37, row = 1 } } (Token (Identifier { name = "List", qualifiers = [] }))
+                , Located { end = { col = 41, row = 1 }, start = { col = 37, row = 1 } } (Token (Identifier { name = TokenUpperCase (UpperCase "List"), qualifiers = [] }))
                 , Located { end = { col = 42, row = 1 }, start = { col = 41, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 43, row = 1 }, start = { col = 42, row = 1 } } (Token (Sigil (Bracket Round Open)))
-                , Located { end = { col = 47, row = 1 }, start = { col = 43, row = 1 } } (Token (Identifier { name = "List", qualifiers = [] }))
+                , Located { end = { col = 47, row = 1 }, start = { col = 43, row = 1 } } (Token (Identifier { name = TokenUpperCase (UpperCase "List"), qualifiers = [] }))
                 , Located { end = { col = 48, row = 1 }, start = { col = 47, row = 1 } } (Ignorable (Whitespace 1))
-                , Located { end = { col = 49, row = 1 }, start = { col = 48, row = 1 } } (Token (Identifier { name = "a", qualifiers = [] }))
+                , Located { end = { col = 49, row = 1 }, start = { col = 48, row = 1 } } (Token (Identifier { name = TokenLowerCase (LowerCase "a"), qualifiers = [] }))
                 , Located { end = { col = 50, row = 1 }, start = { col = 49, row = 1 } } (Token (Sigil (Bracket Round Close)))
-                , Located { end = { col = 1, row = 2 }, start = { col = 50, row = 1 } } (Newlines [] 0)
+                , Located { end = { col = 1, row = 3 }, start = { col = 50, row = 1 } }
+                    (Newlines
+                        [ 0
+                        ]
+                        0
+                    )
+                , Located { end = { col = 5, row = 3 }, start = { col = 1, row = 3 } } (Token (Keyword Type))
+                , Located { end = { col = 6, row = 3 }, start = { col = 5, row = 3 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 11, row = 3 }, start = { col = 6, row = 3 } } (Token (Keyword Alias))
+                , Located { end = { col = 12, row = 3 }, start = { col = 11, row = 3 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 20, row = 3 }, start = { col = 12, row = 3 } } (Token (Identifier { name = TokenUpperCase (UpperCase "Function"), qualifiers = [] }))
+                , Located { end = { col = 21, row = 3 }, start = { col = 20, row = 3 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 22, row = 3 }, start = { col = 21, row = 3 } } (Token (Identifier { name = TokenLowerCase (LowerCase "b"), qualifiers = [] }))
+                , Located { end = { col = 23, row = 3 }, start = { col = 22, row = 3 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 24, row = 3 }, start = { col = 23, row = 3 } } (Token (Identifier { name = TokenLowerCase (LowerCase "c"), qualifiers = [] }))
+                , Located { end = { col = 25, row = 3 }, start = { col = 24, row = 3 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 26, row = 3 }, start = { col = 25, row = 3 } } (Token (Sigil Assign))
+                , Located { end = { col = 27, row = 3 }, start = { col = 26, row = 3 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 28, row = 3 }, start = { col = 27, row = 3 } } (Token (Identifier { name = TokenLowerCase (LowerCase "b"), qualifiers = [] }))
+                , Located { end = { col = 29, row = 3 }, start = { col = 28, row = 3 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 31, row = 3 }, start = { col = 29, row = 3 } } (Token (Sigil ThinArrow))
+                , Located { end = { col = 32, row = 3 }, start = { col = 31, row = 3 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 33, row = 3 }, start = { col = 32, row = 3 } } (Token (Identifier { name = TokenLowerCase (LowerCase "c"), qualifiers = [] }))
                 ]
       }
     , { name = "type-alias-function-nested"
@@ -1952,7 +2033,7 @@ type alias Function3 = (Int, () -> (Int, String), ())
                                         )
                                 }
                         , genericArgs = []
-                        , ty = "Function"
+                        , ty = UpperCase "Function"
                         }
                     )
                 , Ok
@@ -1982,7 +2063,7 @@ type alias Function3 = (Int, () -> (Int, String), ())
                                     ]
                                 )
                         , genericArgs = []
-                        , ty = "Function2"
+                        , ty = UpperCase "Function2"
                         }
                     )
                 , Ok
@@ -2009,7 +2090,7 @@ type alias Function3 = (Int, () -> (Int, String), ())
                                 )
                                 Unit
                         , genericArgs = []
-                        , ty = "Function3"
+                        , ty = UpperCase "Function3"
                         }
                     )
                 , Ok
@@ -2042,7 +2123,7 @@ type alias Function3 = (Int, () -> (Int, String), ())
                                 )
                                 Unit
                         , genericArgs = []
-                        , ty = "Function3"
+                        , ty = UpperCase "Function3"
                         }
                     )
                 ]
@@ -2052,7 +2133,7 @@ type alias Function3 = (Int, () -> (Int, String), ())
                 , Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 11, row = 1 }, start = { col = 6, row = 1 } } (Token (Keyword Alias))
                 , Located { end = { col = 12, row = 1 }, start = { col = 11, row = 1 } } (Ignorable (Whitespace 1))
-                , Located { end = { col = 20, row = 1 }, start = { col = 12, row = 1 } } (Token (Identifier { name = "Function", qualifiers = [] }))
+                , Located { end = { col = 20, row = 1 }, start = { col = 12, row = 1 } } (Token (Identifier { name = TokenUpperCase (UpperCase "Function"), qualifiers = [] }))
                 , Located { end = { col = 21, row = 1 }, start = { col = 20, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 22, row = 1 }, start = { col = 21, row = 1 } } (Token (Sigil Assign))
                 , Located { end = { col = 23, row = 1 }, start = { col = 22, row = 1 } } (Ignorable (Whitespace 1))
@@ -2063,10 +2144,10 @@ type alias Function3 = (Int, () -> (Int, String), ())
                 , Located { end = { col = 29, row = 1 }, start = { col = 27, row = 1 } } (Token (Sigil ThinArrow))
                 , Located { end = { col = 30, row = 1 }, start = { col = 29, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 31, row = 1 }, start = { col = 30, row = 1 } } (Token (Sigil (Bracket Round Open)))
-                , Located { end = { col = 34, row = 1 }, start = { col = 31, row = 1 } } (Token (Identifier { name = "Int", qualifiers = [] }))
+                , Located { end = { col = 34, row = 1 }, start = { col = 31, row = 1 } } (Token (Identifier { name = TokenUpperCase (UpperCase "Int"), qualifiers = [] }))
                 , Located { end = { col = 35, row = 1 }, start = { col = 34, row = 1 } } (Token (Sigil Comma))
                 , Located { end = { col = 36, row = 1 }, start = { col = 35, row = 1 } } (Ignorable (Whitespace 1))
-                , Located { end = { col = 42, row = 1 }, start = { col = 36, row = 1 } } (Token (Identifier { name = "String", qualifiers = [] }))
+                , Located { end = { col = 42, row = 1 }, start = { col = 36, row = 1 } } (Token (Identifier { name = TokenUpperCase (UpperCase "String"), qualifiers = [] }))
                 , Located { end = { col = 43, row = 1 }, start = { col = 42, row = 1 } } (Token (Sigil (Bracket Round Close)))
                 , Located { end = { col = 44, row = 1 }, start = { col = 43, row = 1 } } (Token (Sigil (Bracket Round Close)))
                 , Located { end = { col = 1, row = 3 }, start = { col = 44, row = 1 } }
@@ -2079,13 +2160,13 @@ type alias Function3 = (Int, () -> (Int, String), ())
                 , Located { end = { col = 6, row = 3 }, start = { col = 5, row = 3 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 11, row = 3 }, start = { col = 6, row = 3 } } (Token (Keyword Alias))
                 , Located { end = { col = 12, row = 3 }, start = { col = 11, row = 3 } } (Ignorable (Whitespace 1))
-                , Located { end = { col = 21, row = 3 }, start = { col = 12, row = 3 } } (Token (Identifier { name = "Function2", qualifiers = [] }))
+                , Located { end = { col = 21, row = 3 }, start = { col = 12, row = 3 } } (Token (Identifier { name = TokenUpperCase (UpperCase "Function2"), qualifiers = [] }))
                 , Located { end = { col = 22, row = 3 }, start = { col = 21, row = 3 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 23, row = 3 }, start = { col = 22, row = 3 } } (Token (Sigil Assign))
                 , Located { end = { col = 24, row = 3 }, start = { col = 23, row = 3 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 25, row = 3 }, start = { col = 24, row = 3 } } (Token (Sigil (Bracket Curly Open)))
                 , Located { end = { col = 26, row = 3 }, start = { col = 25, row = 3 } } (Ignorable (Whitespace 1))
-                , Located { end = { col = 27, row = 3 }, start = { col = 26, row = 3 } } (Token (Identifier { name = "a", qualifiers = [] }))
+                , Located { end = { col = 27, row = 3 }, start = { col = 26, row = 3 } } (Token (Identifier { name = TokenLowerCase (LowerCase "a"), qualifiers = [] }))
                 , Located { end = { col = 28, row = 3 }, start = { col = 27, row = 3 } } (Token (Sigil Colon))
                 , Located { end = { col = 29, row = 3 }, start = { col = 28, row = 3 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 30, row = 3 }, start = { col = 29, row = 3 } } (Token (Sigil (Bracket Round Open)))
@@ -2094,10 +2175,10 @@ type alias Function3 = (Int, () -> (Int, String), ())
                 , Located { end = { col = 34, row = 3 }, start = { col = 32, row = 3 } } (Token (Sigil ThinArrow))
                 , Located { end = { col = 35, row = 3 }, start = { col = 34, row = 3 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 36, row = 3 }, start = { col = 35, row = 3 } } (Token (Sigil (Bracket Round Open)))
-                , Located { end = { col = 39, row = 3 }, start = { col = 36, row = 3 } } (Token (Identifier { name = "Int", qualifiers = [] }))
+                , Located { end = { col = 39, row = 3 }, start = { col = 36, row = 3 } } (Token (Identifier { name = TokenUpperCase (UpperCase "Int"), qualifiers = [] }))
                 , Located { end = { col = 40, row = 3 }, start = { col = 39, row = 3 } } (Token (Sigil Comma))
                 , Located { end = { col = 41, row = 3 }, start = { col = 40, row = 3 } } (Ignorable (Whitespace 1))
-                , Located { end = { col = 47, row = 3 }, start = { col = 41, row = 3 } } (Token (Identifier { name = "String", qualifiers = [] }))
+                , Located { end = { col = 47, row = 3 }, start = { col = 41, row = 3 } } (Token (Identifier { name = TokenUpperCase (UpperCase "String"), qualifiers = [] }))
                 , Located { end = { col = 48, row = 3 }, start = { col = 47, row = 3 } } (Token (Sigil (Bracket Round Close)))
                 , Located { end = { col = 49, row = 3 }, start = { col = 48, row = 3 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 50, row = 3 }, start = { col = 49, row = 3 } } (Token (Sigil (Bracket Curly Close)))
@@ -2111,7 +2192,7 @@ type alias Function3 = (Int, () -> (Int, String), ())
                 , Located { end = { col = 6, row = 5 }, start = { col = 5, row = 5 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 11, row = 5 }, start = { col = 6, row = 5 } } (Token (Keyword Alias))
                 , Located { end = { col = 12, row = 5 }, start = { col = 11, row = 5 } } (Ignorable (Whitespace 1))
-                , Located { end = { col = 21, row = 5 }, start = { col = 12, row = 5 } } (Token (Identifier { name = "Function3", qualifiers = [] }))
+                , Located { end = { col = 21, row = 5 }, start = { col = 12, row = 5 } } (Token (Identifier { name = TokenUpperCase (UpperCase "Function3"), qualifiers = [] }))
                 , Located { end = { col = 22, row = 5 }, start = { col = 21, row = 5 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 23, row = 5 }, start = { col = 22, row = 5 } } (Token (Sigil Assign))
                 , Located { end = { col = 24, row = 5 }, start = { col = 23, row = 5 } } (Ignorable (Whitespace 1))
@@ -2122,10 +2203,10 @@ type alias Function3 = (Int, () -> (Int, String), ())
                 , Located { end = { col = 30, row = 5 }, start = { col = 28, row = 5 } } (Token (Sigil ThinArrow))
                 , Located { end = { col = 31, row = 5 }, start = { col = 30, row = 5 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 32, row = 5 }, start = { col = 31, row = 5 } } (Token (Sigil (Bracket Round Open)))
-                , Located { end = { col = 35, row = 5 }, start = { col = 32, row = 5 } } (Token (Identifier { name = "Int", qualifiers = [] }))
+                , Located { end = { col = 35, row = 5 }, start = { col = 32, row = 5 } } (Token (Identifier { name = TokenUpperCase (UpperCase "Int"), qualifiers = [] }))
                 , Located { end = { col = 36, row = 5 }, start = { col = 35, row = 5 } } (Token (Sigil Comma))
                 , Located { end = { col = 37, row = 5 }, start = { col = 36, row = 5 } } (Ignorable (Whitespace 1))
-                , Located { end = { col = 43, row = 5 }, start = { col = 37, row = 5 } } (Token (Identifier { name = "String", qualifiers = [] }))
+                , Located { end = { col = 43, row = 5 }, start = { col = 37, row = 5 } } (Token (Identifier { name = TokenUpperCase (UpperCase "String"), qualifiers = [] }))
                 , Located { end = { col = 44, row = 5 }, start = { col = 43, row = 5 } } (Token (Sigil (Bracket Round Close)))
                 , Located { end = { col = 45, row = 5 }, start = { col = 44, row = 5 } } (Token (Sigil Comma))
                 , Located { end = { col = 46, row = 5 }, start = { col = 45, row = 5 } } (Ignorable (Whitespace 1))
@@ -2142,12 +2223,12 @@ type alias Function3 = (Int, () -> (Int, String), ())
                 , Located { end = { col = 6, row = 7 }, start = { col = 5, row = 7 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 11, row = 7 }, start = { col = 6, row = 7 } } (Token (Keyword Alias))
                 , Located { end = { col = 12, row = 7 }, start = { col = 11, row = 7 } } (Ignorable (Whitespace 1))
-                , Located { end = { col = 21, row = 7 }, start = { col = 12, row = 7 } } (Token (Identifier { name = "Function3", qualifiers = [] }))
+                , Located { end = { col = 21, row = 7 }, start = { col = 12, row = 7 } } (Token (Identifier { name = TokenUpperCase (UpperCase "Function3"), qualifiers = [] }))
                 , Located { end = { col = 22, row = 7 }, start = { col = 21, row = 7 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 23, row = 7 }, start = { col = 22, row = 7 } } (Token (Sigil Assign))
                 , Located { end = { col = 24, row = 7 }, start = { col = 23, row = 7 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 25, row = 7 }, start = { col = 24, row = 7 } } (Token (Sigil (Bracket Round Open)))
-                , Located { end = { col = 28, row = 7 }, start = { col = 25, row = 7 } } (Token (Identifier { name = "Int", qualifiers = [] }))
+                , Located { end = { col = 28, row = 7 }, start = { col = 25, row = 7 } } (Token (Identifier { name = TokenUpperCase (UpperCase "Int"), qualifiers = [] }))
                 , Located { end = { col = 29, row = 7 }, start = { col = 28, row = 7 } } (Token (Sigil Comma))
                 , Located { end = { col = 30, row = 7 }, start = { col = 29, row = 7 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 31, row = 7 }, start = { col = 30, row = 7 } } (Token (Sigil (Bracket Round Open)))
@@ -2156,10 +2237,10 @@ type alias Function3 = (Int, () -> (Int, String), ())
                 , Located { end = { col = 35, row = 7 }, start = { col = 33, row = 7 } } (Token (Sigil ThinArrow))
                 , Located { end = { col = 36, row = 7 }, start = { col = 35, row = 7 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 37, row = 7 }, start = { col = 36, row = 7 } } (Token (Sigil (Bracket Round Open)))
-                , Located { end = { col = 40, row = 7 }, start = { col = 37, row = 7 } } (Token (Identifier { name = "Int", qualifiers = [] }))
+                , Located { end = { col = 40, row = 7 }, start = { col = 37, row = 7 } } (Token (Identifier { name = TokenUpperCase (UpperCase "Int"), qualifiers = [] }))
                 , Located { end = { col = 41, row = 7 }, start = { col = 40, row = 7 } } (Token (Sigil Comma))
                 , Located { end = { col = 42, row = 7 }, start = { col = 41, row = 7 } } (Ignorable (Whitespace 1))
-                , Located { end = { col = 48, row = 7 }, start = { col = 42, row = 7 } } (Token (Identifier { name = "String", qualifiers = [] }))
+                , Located { end = { col = 48, row = 7 }, start = { col = 42, row = 7 } } (Token (Identifier { name = TokenUpperCase (UpperCase "String"), qualifiers = [] }))
                 , Located { end = { col = 49, row = 7 }, start = { col = 48, row = 7 } } (Token (Sigil (Bracket Round Close)))
                 , Located { end = { col = 50, row = 7 }, start = { col = 49, row = 7 } } (Token (Sigil Comma))
                 , Located { end = { col = 51, row = 7 }, start = { col = 50, row = 7 } } (Ignorable (Whitespace 1))
@@ -2251,7 +2332,7 @@ type alias Function3 = (Int, () -> (Int, String), ())
                                 , to = Record (Dict.fromList [])
                                 }
                         , genericArgs = []
-                        , ty = "Function"
+                        , ty = UpperCase "Function"
                         }
                     )
                 ]
@@ -2261,28 +2342,28 @@ type alias Function3 = (Int, () -> (Int, String), ())
                 , Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 11, row = 1 }, start = { col = 6, row = 1 } } (Token (Keyword Alias))
                 , Located { end = { col = 12, row = 1 }, start = { col = 11, row = 1 } } (Ignorable (Whitespace 1))
-                , Located { end = { col = 20, row = 1 }, start = { col = 12, row = 1 } } (Token (Identifier { name = "Function", qualifiers = [] }))
+                , Located { end = { col = 20, row = 1 }, start = { col = 12, row = 1 } } (Token (Identifier { name = TokenUpperCase (UpperCase "Function"), qualifiers = [] }))
                 , Located { end = { col = 21, row = 1 }, start = { col = 20, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 22, row = 1 }, start = { col = 21, row = 1 } } (Token (Sigil Assign))
                 , Located { end = { col = 23, row = 1 }, start = { col = 22, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 24, row = 1 }, start = { col = 23, row = 1 } } (Token (Sigil (Bracket Curly Open)))
                 , Located { end = { col = 25, row = 1 }, start = { col = 24, row = 1 } } (Ignorable (Whitespace 1))
-                , Located { end = { col = 26, row = 1 }, start = { col = 25, row = 1 } } (Token (Identifier { name = "a", qualifiers = [] }))
+                , Located { end = { col = 26, row = 1 }, start = { col = 25, row = 1 } } (Token (Identifier { name = TokenLowerCase (LowerCase "a"), qualifiers = [] }))
                 , Located { end = { col = 27, row = 1 }, start = { col = 26, row = 1 } } (Token (Sigil Colon))
                 , Located { end = { col = 28, row = 1 }, start = { col = 27, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 29, row = 1 }, start = { col = 28, row = 1 } } (Token (Sigil (Bracket Curly Open)))
                 , Located { end = { col = 30, row = 1 }, start = { col = 29, row = 1 } } (Ignorable (Whitespace 1))
-                , Located { end = { col = 31, row = 1 }, start = { col = 30, row = 1 } } (Token (Identifier { name = "b", qualifiers = [] }))
+                , Located { end = { col = 31, row = 1 }, start = { col = 30, row = 1 } } (Token (Identifier { name = TokenLowerCase (LowerCase "b"), qualifiers = [] }))
                 , Located { end = { col = 32, row = 1 }, start = { col = 31, row = 1 } } (Token (Sigil Colon))
                 , Located { end = { col = 33, row = 1 }, start = { col = 32, row = 1 } } (Ignorable (Whitespace 1))
-                , Located { end = { col = 34, row = 1 }, start = { col = 33, row = 1 } } (Token (Identifier { name = "C", qualifiers = [] }))
+                , Located { end = { col = 34, row = 1 }, start = { col = 33, row = 1 } } (Token (Identifier { name = TokenUpperCase (UpperCase "C"), qualifiers = [] }))
                 , Located { end = { col = 35, row = 1 }, start = { col = 34, row = 1 } } (Token (Sigil (Bracket Curly Close)))
                 , Located { end = { col = 36, row = 1 }, start = { col = 35, row = 1 } } (Token (Sigil Comma))
                 , Located { end = { col = 37, row = 1 }, start = { col = 36, row = 1 } } (Ignorable (Whitespace 1))
-                , Located { end = { col = 38, row = 1 }, start = { col = 37, row = 1 } } (Token (Identifier { name = "d", qualifiers = [] }))
+                , Located { end = { col = 38, row = 1 }, start = { col = 37, row = 1 } } (Token (Identifier { name = TokenLowerCase (LowerCase "d"), qualifiers = [] }))
                 , Located { end = { col = 39, row = 1 }, start = { col = 38, row = 1 } } (Token (Sigil Colon))
                 , Located { end = { col = 40, row = 1 }, start = { col = 39, row = 1 } } (Ignorable (Whitespace 1))
-                , Located { end = { col = 41, row = 1 }, start = { col = 40, row = 1 } } (Token (Identifier { name = "E", qualifiers = [] }))
+                , Located { end = { col = 41, row = 1 }, start = { col = 40, row = 1 } } (Token (Identifier { name = TokenUpperCase (UpperCase "E"), qualifiers = [] }))
                 , Located { end = { col = 42, row = 1 }, start = { col = 41, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 43, row = 1 }, start = { col = 42, row = 1 } } (Token (Sigil (Bracket Curly Close)))
                 , Located { end = { col = 44, row = 1 }, start = { col = 43, row = 1 } } (Ignorable (Whitespace 1))
@@ -2354,7 +2435,7 @@ type alias Function3 = (Int, () -> (Int, String), ())
                                         )
                                 }
                         , genericArgs = []
-                        , ty = "Function"
+                        , ty = UpperCase "Function"
                         }
                     )
                 ]
@@ -2364,7 +2445,7 @@ type alias Function3 = (Int, () -> (Int, String), ())
                 , Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 11, row = 1 }, start = { col = 6, row = 1 } } (Token (Keyword Alias))
                 , Located { end = { col = 12, row = 1 }, start = { col = 11, row = 1 } } (Ignorable (Whitespace 1))
-                , Located { end = { col = 20, row = 1 }, start = { col = 12, row = 1 } } (Token (Identifier { name = "Function", qualifiers = [] }))
+                , Located { end = { col = 20, row = 1 }, start = { col = 12, row = 1 } } (Token (Identifier { name = TokenUpperCase (UpperCase "Function"), qualifiers = [] }))
                 , Located { end = { col = 21, row = 1 }, start = { col = 20, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 22, row = 1 }, start = { col = 21, row = 1 } } (Token (Sigil Assign))
                 , Located { end = { col = 23, row = 1 }, start = { col = 22, row = 1 } } (Ignorable (Whitespace 1))
@@ -2374,10 +2455,10 @@ type alias Function3 = (Int, () -> (Int, String), ())
                 , Located { end = { col = 28, row = 1 }, start = { col = 26, row = 1 } } (Token (Sigil ThinArrow))
                 , Located { end = { col = 29, row = 1 }, start = { col = 28, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 30, row = 1 }, start = { col = 29, row = 1 } } (Token (Sigil (Bracket Round Open)))
-                , Located { end = { col = 33, row = 1 }, start = { col = 30, row = 1 } } (Token (Identifier { name = "Int", qualifiers = [] }))
+                , Located { end = { col = 33, row = 1 }, start = { col = 30, row = 1 } } (Token (Identifier { name = TokenUpperCase (UpperCase "Int"), qualifiers = [] }))
                 , Located { end = { col = 34, row = 1 }, start = { col = 33, row = 1 } } (Token (Sigil Comma))
                 , Located { end = { col = 35, row = 1 }, start = { col = 34, row = 1 } } (Ignorable (Whitespace 1))
-                , Located { end = { col = 41, row = 1 }, start = { col = 35, row = 1 } } (Token (Identifier { name = "String", qualifiers = [] }))
+                , Located { end = { col = 41, row = 1 }, start = { col = 35, row = 1 } } (Token (Identifier { name = TokenUpperCase (UpperCase "String"), qualifiers = [] }))
                 , Located { end = { col = 42, row = 1 }, start = { col = 41, row = 1 } } (Token (Sigil (Bracket Round Close)))
                 , Located { end = { col = 1, row = 2 }, start = { col = 42, row = 1 } } (Newlines [] 0)
                 ]
@@ -2561,7 +2642,7 @@ type alias Function3 = (Int, () -> (Int, String), ())
                                         }
                                 }
                         , genericArgs = []
-                        , ty = "Function"
+                        , ty = UpperCase "Function"
                         }
                     )
                 ]
@@ -2571,33 +2652,33 @@ type alias Function3 = (Int, () -> (Int, String), ())
                 , Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 11, row = 1 }, start = { col = 6, row = 1 } } (Token (Keyword Alias))
                 , Located { end = { col = 12, row = 1 }, start = { col = 11, row = 1 } } (Ignorable (Whitespace 1))
-                , Located { end = { col = 20, row = 1 }, start = { col = 12, row = 1 } } (Token (Identifier { name = "Function", qualifiers = [] }))
+                , Located { end = { col = 20, row = 1 }, start = { col = 12, row = 1 } } (Token (Identifier { name = TokenUpperCase (UpperCase "Function"), qualifiers = [] }))
                 , Located { end = { col = 21, row = 1 }, start = { col = 20, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 22, row = 1 }, start = { col = 21, row = 1 } } (Token (Sigil Assign))
                 , Located { end = { col = 23, row = 1 }, start = { col = 22, row = 1 } } (Ignorable (Whitespace 1))
-                , Located { end = { col = 27, row = 1 }, start = { col = 23, row = 1 } } (Token (Identifier { name = "List", qualifiers = [] }))
+                , Located { end = { col = 27, row = 1 }, start = { col = 23, row = 1 } } (Token (Identifier { name = TokenUpperCase (UpperCase "List"), qualifiers = [] }))
                 , Located { end = { col = 28, row = 1 }, start = { col = 27, row = 1 } } (Ignorable (Whitespace 1))
-                , Located { end = { col = 29, row = 1 }, start = { col = 28, row = 1 } } (Token (Identifier { name = "A", qualifiers = [] }))
+                , Located { end = { col = 29, row = 1 }, start = { col = 28, row = 1 } } (Token (Identifier { name = TokenUpperCase (UpperCase "A"), qualifiers = [] }))
                 , Located { end = { col = 30, row = 1 }, start = { col = 29, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 32, row = 1 }, start = { col = 30, row = 1 } } (Token (Sigil ThinArrow))
                 , Located { end = { col = 33, row = 1 }, start = { col = 32, row = 1 } } (Ignorable (Whitespace 1))
-                , Located { end = { col = 37, row = 1 }, start = { col = 33, row = 1 } } (Token (Identifier { name = "List", qualifiers = [] }))
+                , Located { end = { col = 37, row = 1 }, start = { col = 33, row = 1 } } (Token (Identifier { name = TokenUpperCase (UpperCase "List"), qualifiers = [] }))
                 , Located { end = { col = 38, row = 1 }, start = { col = 37, row = 1 } } (Ignorable (Whitespace 1))
-                , Located { end = { col = 39, row = 1 }, start = { col = 38, row = 1 } } (Token (Identifier { name = "B", qualifiers = [] }))
+                , Located { end = { col = 39, row = 1 }, start = { col = 38, row = 1 } } (Token (Identifier { name = TokenUpperCase (UpperCase "B"), qualifiers = [] }))
                 , Located { end = { col = 40, row = 1 }, start = { col = 39, row = 1 } } (Ignorable (Whitespace 1))
-                , Located { end = { col = 41, row = 1 }, start = { col = 40, row = 1 } } (Token (Identifier { name = "C", qualifiers = [] }))
+                , Located { end = { col = 41, row = 1 }, start = { col = 40, row = 1 } } (Token (Identifier { name = TokenUpperCase (UpperCase "C"), qualifiers = [] }))
                 , Located { end = { col = 42, row = 1 }, start = { col = 41, row = 1 } } (Ignorable (Whitespace 1))
-                , Located { end = { col = 43, row = 1 }, start = { col = 42, row = 1 } } (Token (Identifier { name = "D", qualifiers = [] }))
+                , Located { end = { col = 43, row = 1 }, start = { col = 42, row = 1 } } (Token (Identifier { name = TokenUpperCase (UpperCase "D"), qualifiers = [] }))
                 , Located { end = { col = 44, row = 1 }, start = { col = 43, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 46, row = 1 }, start = { col = 44, row = 1 } } (Token (Sigil ThinArrow))
                 , Located { end = { col = 47, row = 1 }, start = { col = 46, row = 1 } } (Ignorable (Whitespace 1))
-                , Located { end = { col = 51, row = 1 }, start = { col = 47, row = 1 } } (Token (Identifier { name = "List", qualifiers = [] }))
+                , Located { end = { col = 51, row = 1 }, start = { col = 47, row = 1 } } (Token (Identifier { name = TokenUpperCase (UpperCase "List"), qualifiers = [] }))
                 , Located { end = { col = 52, row = 1 }, start = { col = 51, row = 1 } } (Ignorable (Whitespace 1))
-                , Located { end = { col = 53, row = 1 }, start = { col = 52, row = 1 } } (Token (Identifier { name = "D", qualifiers = [] }))
+                , Located { end = { col = 53, row = 1 }, start = { col = 52, row = 1 } } (Token (Identifier { name = TokenUpperCase (UpperCase "D"), qualifiers = [] }))
                 , Located { end = { col = 54, row = 1 }, start = { col = 53, row = 1 } } (Ignorable (Whitespace 1))
-                , Located { end = { col = 55, row = 1 }, start = { col = 54, row = 1 } } (Token (Identifier { name = "E", qualifiers = [] }))
+                , Located { end = { col = 55, row = 1 }, start = { col = 54, row = 1 } } (Token (Identifier { name = TokenUpperCase (UpperCase "E"), qualifiers = [] }))
                 , Located { end = { col = 56, row = 1 }, start = { col = 55, row = 1 } } (Ignorable (Whitespace 1))
-                , Located { end = { col = 57, row = 1 }, start = { col = 56, row = 1 } } (Token (Identifier { name = "F", qualifiers = [] }))
+                , Located { end = { col = 57, row = 1 }, start = { col = 56, row = 1 } } (Token (Identifier { name = TokenUpperCase (UpperCase "F"), qualifiers = [] }))
                 , Located { end = { col = 1, row = 2 }, start = { col = 57, row = 1 } } (Newlines [] 0)
                 ]
       }
@@ -2649,7 +2730,7 @@ type alias Function3 = (Int, () -> (Int, String), ())
                                 , qualifiedness = PossiblyQualified Nothing
                                 }
                         , genericArgs = []
-                        , ty = "Model"
+                        , ty = UpperCase "Model"
                         }
                     )
                 ]
@@ -2659,13 +2740,13 @@ type alias Function3 = (Int, () -> (Int, String), ())
                 , Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 11, row = 1 }, start = { col = 6, row = 1 } } (Token (Keyword Alias))
                 , Located { end = { col = 5, row = 2 }, start = { col = 11, row = 1 } } (Newlines [] 4)
-                , Located { end = { col = 10, row = 2 }, start = { col = 5, row = 2 } } (Token (Identifier { name = "Model", qualifiers = [] }))
+                , Located { end = { col = 10, row = 2 }, start = { col = 5, row = 2 } } (Token (Identifier { name = TokenUpperCase (UpperCase "Model"), qualifiers = [] }))
                 , Located { end = { col = 11, row = 2 }, start = { col = 10, row = 2 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 12, row = 2 }, start = { col = 11, row = 2 } } (Token (Sigil Assign))
                 , Located { end = { col = 13, row = 2 }, start = { col = 12, row = 2 } } (Ignorable (Whitespace 1))
-                , Located { end = { col = 17, row = 2 }, start = { col = 13, row = 2 } } (Token (Identifier { name = "List", qualifiers = [] }))
+                , Located { end = { col = 17, row = 2 }, start = { col = 13, row = 2 } } (Token (Identifier { name = TokenUpperCase (UpperCase "List"), qualifiers = [] }))
                 , Located { end = { col = 18, row = 2 }, start = { col = 17, row = 2 } } (Ignorable (Whitespace 1))
-                , Located { end = { col = 21, row = 2 }, start = { col = 18, row = 2 } } (Token (Identifier { name = "Int", qualifiers = [] }))
+                , Located { end = { col = 21, row = 2 }, start = { col = 18, row = 2 } } (Token (Identifier { name = TokenUpperCase (UpperCase "Int"), qualifiers = [] }))
                 , Located { end = { col = 1, row = 3 }, start = { col = 21, row = 2 } } (Newlines [] 0)
                 ]
       }
@@ -2718,7 +2799,7 @@ type alias Function3 = (Int, () -> (Int, String), ())
                                 , qualifiedness = PossiblyQualified Nothing
                                 }
                         , genericArgs = []
-                        , ty = "Model"
+                        , ty = UpperCase "Model"
                         }
                     )
                 ]
@@ -2728,13 +2809,13 @@ type alias Function3 = (Int, () -> (Int, String), ())
                 , Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 11, row = 1 }, start = { col = 6, row = 1 } } (Token (Keyword Alias))
                 , Located { end = { col = 5, row = 2 }, start = { col = 11, row = 1 } } (Newlines [] 4)
-                , Located { end = { col = 10, row = 2 }, start = { col = 5, row = 2 } } (Token (Identifier { name = "Model", qualifiers = [] }))
+                , Located { end = { col = 10, row = 2 }, start = { col = 5, row = 2 } } (Token (Identifier { name = TokenUpperCase (UpperCase "Model"), qualifiers = [] }))
                 , Located { end = { col = 11, row = 2 }, start = { col = 10, row = 2 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 12, row = 2 }, start = { col = 11, row = 2 } } (Token (Sigil Assign))
                 , Located { end = { col = 2, row = 3 }, start = { col = 12, row = 2 } } (Newlines [] 1)
-                , Located { end = { col = 6, row = 3 }, start = { col = 2, row = 3 } } (Token (Identifier { name = "List", qualifiers = [] }))
+                , Located { end = { col = 6, row = 3 }, start = { col = 2, row = 3 } } (Token (Identifier { name = TokenUpperCase (UpperCase "List"), qualifiers = [] }))
                 , Located { end = { col = 7, row = 3 }, start = { col = 6, row = 3 } } (Ignorable (Whitespace 1))
-                , Located { end = { col = 10, row = 3 }, start = { col = 7, row = 3 } } (Token (Identifier { name = "Int", qualifiers = [] }))
+                , Located { end = { col = 10, row = 3 }, start = { col = 7, row = 3 } } (Token (Identifier { name = TokenUpperCase (UpperCase "Int"), qualifiers = [] }))
                 , Located { end = { col = 1, row = 4 }, start = { col = 10, row = 3 } } (Newlines [] 0)
                 ]
       }
@@ -2815,7 +2896,7 @@ type alias Function3 = (Int, () -> (Int, String), ())
                                     ]
                                 )
                         , genericArgs = []
-                        , ty = "Ty"
+                        , ty = UpperCase "Ty"
                         }
                     )
                 ]
@@ -2825,28 +2906,28 @@ type alias Function3 = (Int, () -> (Int, String), ())
                 , Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 11, row = 1 }, start = { col = 6, row = 1 } } (Token (Keyword Alias))
                 , Located { end = { col = 12, row = 1 }, start = { col = 11, row = 1 } } (Ignorable (Whitespace 1))
-                , Located { end = { col = 14, row = 1 }, start = { col = 12, row = 1 } } (Token (Identifier { name = "Ty", qualifiers = [] }))
+                , Located { end = { col = 14, row = 1 }, start = { col = 12, row = 1 } } (Token (Identifier { name = TokenUpperCase (UpperCase "Ty"), qualifiers = [] }))
                 , Located { end = { col = 15, row = 1 }, start = { col = 14, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 16, row = 1 }, start = { col = 15, row = 1 } } (Token (Sigil Assign))
                 , Located { end = { col = 17, row = 1 }, start = { col = 16, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 18, row = 1 }, start = { col = 17, row = 1 } } (Token (Sigil (Bracket Curly Open)))
                 , Located { end = { col = 19, row = 1 }, start = { col = 18, row = 1 } } (Ignorable (Whitespace 1))
-                , Located { end = { col = 20, row = 1 }, start = { col = 19, row = 1 } } (Token (Identifier { name = "a", qualifiers = [] }))
+                , Located { end = { col = 20, row = 1 }, start = { col = 19, row = 1 } } (Token (Identifier { name = TokenLowerCase (LowerCase "a"), qualifiers = [] }))
                 , Located { end = { col = 21, row = 1 }, start = { col = 20, row = 1 } } (Token (Sigil Colon))
                 , Located { end = { col = 22, row = 1 }, start = { col = 21, row = 1 } } (Ignorable (Whitespace 1))
-                , Located { end = { col = 23, row = 1 }, start = { col = 22, row = 1 } } (Token (Identifier { name = "A", qualifiers = [] }))
+                , Located { end = { col = 23, row = 1 }, start = { col = 22, row = 1 } } (Token (Identifier { name = TokenUpperCase (UpperCase "A"), qualifiers = [] }))
                 , Located { end = { col = 24, row = 1 }, start = { col = 23, row = 1 } } (Token (Sigil Comma))
                 , Located { end = { col = 25, row = 1 }, start = { col = 24, row = 1 } } (Ignorable (Whitespace 1))
-                , Located { end = { col = 26, row = 1 }, start = { col = 25, row = 1 } } (Token (Identifier { name = "b", qualifiers = [] }))
+                , Located { end = { col = 26, row = 1 }, start = { col = 25, row = 1 } } (Token (Identifier { name = TokenLowerCase (LowerCase "b"), qualifiers = [] }))
                 , Located { end = { col = 27, row = 1 }, start = { col = 26, row = 1 } } (Token (Sigil Colon))
                 , Located { end = { col = 28, row = 1 }, start = { col = 27, row = 1 } } (Ignorable (Whitespace 1))
-                , Located { end = { col = 29, row = 1 }, start = { col = 28, row = 1 } } (Token (Identifier { name = "B", qualifiers = [] }))
+                , Located { end = { col = 29, row = 1 }, start = { col = 28, row = 1 } } (Token (Identifier { name = TokenUpperCase (UpperCase "B"), qualifiers = [] }))
                 , Located { end = { col = 30, row = 1 }, start = { col = 29, row = 1 } } (Token (Sigil Comma))
                 , Located { end = { col = 31, row = 1 }, start = { col = 30, row = 1 } } (Ignorable (Whitespace 1))
-                , Located { end = { col = 32, row = 1 }, start = { col = 31, row = 1 } } (Token (Identifier { name = "c", qualifiers = [] }))
+                , Located { end = { col = 32, row = 1 }, start = { col = 31, row = 1 } } (Token (Identifier { name = TokenLowerCase (LowerCase "c"), qualifiers = [] }))
                 , Located { end = { col = 33, row = 1 }, start = { col = 32, row = 1 } } (Token (Sigil Colon))
                 , Located { end = { col = 34, row = 1 }, start = { col = 33, row = 1 } } (Ignorable (Whitespace 1))
-                , Located { end = { col = 35, row = 1 }, start = { col = 34, row = 1 } } (Token (Identifier { name = "C", qualifiers = [] }))
+                , Located { end = { col = 35, row = 1 }, start = { col = 34, row = 1 } } (Token (Identifier { name = TokenUpperCase (UpperCase "C"), qualifiers = [] }))
                 , Located { end = { col = 36, row = 1 }, start = { col = 35, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 37, row = 1 }, start = { col = 36, row = 1 } } (Token (Sigil (Bracket Curly Close)))
                 , Located { end = { col = 1, row = 2 }, start = { col = 37, row = 1 } } (Newlines [] 0)
@@ -2868,7 +2949,7 @@ type alias Function3 = (Int, () -> (Int, String), ())
 """
       , contextualized =
             Just
-                [ Ok (TypeAlias { expr = Record (Dict.fromList []), genericArgs = [], ty = "Ty" })
+                [ Ok (TypeAlias { expr = Record (Dict.fromList []), genericArgs = [], ty = UpperCase "Ty" })
                 ]
       , lexed =
             Ok
@@ -2876,7 +2957,7 @@ type alias Function3 = (Int, () -> (Int, String), ())
                 , Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 11, row = 1 }, start = { col = 6, row = 1 } } (Token (Keyword Alias))
                 , Located { end = { col = 12, row = 1 }, start = { col = 11, row = 1 } } (Ignorable (Whitespace 1))
-                , Located { end = { col = 14, row = 1 }, start = { col = 12, row = 1 } } (Token (Identifier { name = "Ty", qualifiers = [] }))
+                , Located { end = { col = 14, row = 1 }, start = { col = 12, row = 1 } } (Token (Identifier { name = TokenUpperCase (UpperCase "Ty"), qualifiers = [] }))
                 , Located { end = { col = 15, row = 1 }, start = { col = 14, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 16, row = 1 }, start = { col = 15, row = 1 } } (Token (Sigil Assign))
                 , Located { end = { col = 17, row = 1 }, start = { col = 16, row = 1 } } (Ignorable (Whitespace 1))
@@ -2904,7 +2985,7 @@ type alias Function3 = (Int, () -> (Int, String), ())
 """
       , contextualized =
             Just
-                [ Ok (TypeAlias { expr = Record (Dict.fromList []), genericArgs = [], ty = "Ty" })
+                [ Ok (TypeAlias { expr = Record (Dict.fromList []), genericArgs = [], ty = UpperCase "Ty" })
                 ]
       , lexed =
             Ok
@@ -2912,7 +2993,7 @@ type alias Function3 = (Int, () -> (Int, String), ())
                 , Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 11, row = 1 }, start = { col = 6, row = 1 } } (Token (Keyword Alias))
                 , Located { end = { col = 12, row = 1 }, start = { col = 11, row = 1 } } (Ignorable (Whitespace 1))
-                , Located { end = { col = 14, row = 1 }, start = { col = 12, row = 1 } } (Token (Identifier { name = "Ty", qualifiers = [] }))
+                , Located { end = { col = 14, row = 1 }, start = { col = 12, row = 1 } } (Token (Identifier { name = TokenUpperCase (UpperCase "Ty"), qualifiers = [] }))
                 , Located { end = { col = 15, row = 1 }, start = { col = 14, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 16, row = 1 }, start = { col = 15, row = 1 } } (Token (Sigil Assign))
                 , Located { end = { col = 17, row = 1 }, start = { col = 16, row = 1 } } (Ignorable (Whitespace 1))
@@ -2970,7 +3051,7 @@ type alias Function3 = (Int, () -> (Int, String), ())
                                     ]
                                 )
                         , genericArgs = []
-                        , ty = "Ty"
+                        , ty = UpperCase "Ty"
                         }
                     )
                 ]
@@ -2980,17 +3061,17 @@ type alias Function3 = (Int, () -> (Int, String), ())
                 , Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 11, row = 1 }, start = { col = 6, row = 1 } } (Token (Keyword Alias))
                 , Located { end = { col = 12, row = 1 }, start = { col = 11, row = 1 } } (Ignorable (Whitespace 1))
-                , Located { end = { col = 14, row = 1 }, start = { col = 12, row = 1 } } (Token (Identifier { name = "Ty", qualifiers = [] }))
+                , Located { end = { col = 14, row = 1 }, start = { col = 12, row = 1 } } (Token (Identifier { name = TokenUpperCase (UpperCase "Ty"), qualifiers = [] }))
                 , Located { end = { col = 15, row = 1 }, start = { col = 14, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 16, row = 1 }, start = { col = 15, row = 1 } } (Token (Sigil Assign))
                 , Located { end = { col = 17, row = 1 }, start = { col = 16, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 18, row = 1 }, start = { col = 17, row = 1 } } (Token (Sigil (Bracket Round Open)))
                 , Located { end = { col = 19, row = 1 }, start = { col = 18, row = 1 } } (Token (Sigil (Bracket Curly Open)))
                 , Located { end = { col = 20, row = 1 }, start = { col = 19, row = 1 } } (Ignorable (Whitespace 1))
-                , Located { end = { col = 22, row = 1 }, start = { col = 20, row = 1 } } (Token (Identifier { name = "hi", qualifiers = [] }))
+                , Located { end = { col = 22, row = 1 }, start = { col = 20, row = 1 } } (Token (Identifier { name = TokenLowerCase (LowerCase "hi"), qualifiers = [] }))
                 , Located { end = { col = 23, row = 1 }, start = { col = 22, row = 1 } } (Token (Sigil Colon))
                 , Located { end = { col = 24, row = 1 }, start = { col = 23, row = 1 } } (Ignorable (Whitespace 1))
-                , Located { end = { col = 27, row = 1 }, start = { col = 24, row = 1 } } (Token (Identifier { name = "Int", qualifiers = [] }))
+                , Located { end = { col = 27, row = 1 }, start = { col = 24, row = 1 } } (Token (Identifier { name = TokenUpperCase (UpperCase "Int"), qualifiers = [] }))
                 , Located { end = { col = 28, row = 1 }, start = { col = 27, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 29, row = 1 }, start = { col = 28, row = 1 } } (Token (Sigil (Bracket Curly Close)))
                 , Located { end = { col = 30, row = 1 }, start = { col = 29, row = 1 } } (Token (Sigil (Bracket Round Close)))
@@ -3173,7 +3254,7 @@ type alias Function3 = (Int, () -> (Int, String), ())
                                     ]
                                 )
                         , genericArgs = []
-                        , ty = "Ty"
+                        , ty = UpperCase "Ty"
                         }
                     )
                 ]
@@ -3183,49 +3264,49 @@ type alias Function3 = (Int, () -> (Int, String), ())
                 , Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 11, row = 1 }, start = { col = 6, row = 1 } } (Token (Keyword Alias))
                 , Located { end = { col = 12, row = 1 }, start = { col = 11, row = 1 } } (Ignorable (Whitespace 1))
-                , Located { end = { col = 14, row = 1 }, start = { col = 12, row = 1 } } (Token (Identifier { name = "Ty", qualifiers = [] }))
+                , Located { end = { col = 14, row = 1 }, start = { col = 12, row = 1 } } (Token (Identifier { name = TokenUpperCase (UpperCase "Ty"), qualifiers = [] }))
                 , Located { end = { col = 15, row = 1 }, start = { col = 14, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 16, row = 1 }, start = { col = 15, row = 1 } } (Token (Sigil Assign))
                 , Located { end = { col = 5, row = 2 }, start = { col = 16, row = 1 } } (Newlines [] 4)
                 , Located { end = { col = 6, row = 2 }, start = { col = 5, row = 2 } } (Token (Sigil (Bracket Curly Open)))
                 , Located { end = { col = 7, row = 2 }, start = { col = 6, row = 2 } } (Ignorable (Whitespace 1))
-                , Located { end = { col = 9, row = 2 }, start = { col = 7, row = 2 } } (Token (Identifier { name = "hi", qualifiers = [] }))
+                , Located { end = { col = 9, row = 2 }, start = { col = 7, row = 2 } } (Token (Identifier { name = TokenLowerCase (LowerCase "hi"), qualifiers = [] }))
                 , Located { end = { col = 10, row = 2 }, start = { col = 9, row = 2 } } (Token (Sigil Colon))
                 , Located { end = { col = 12, row = 2 }, start = { col = 10, row = 2 } } (Ignorable (Whitespace 2))
                 , Located { end = { col = 13, row = 2 }, start = { col = 12, row = 2 } } (Token (Sigil (Bracket Curly Open)))
                 , Located { end = { col = 14, row = 2 }, start = { col = 13, row = 2 } } (Ignorable (Whitespace 1))
-                , Located { end = { col = 15, row = 2 }, start = { col = 14, row = 2 } } (Token (Identifier { name = "a", qualifiers = [] }))
+                , Located { end = { col = 15, row = 2 }, start = { col = 14, row = 2 } } (Token (Identifier { name = TokenLowerCase (LowerCase "a"), qualifiers = [] }))
                 , Located { end = { col = 16, row = 2 }, start = { col = 15, row = 2 } } (Token (Sigil Colon))
                 , Located { end = { col = 17, row = 2 }, start = { col = 16, row = 2 } } (Ignorable (Whitespace 1))
-                , Located { end = { col = 20, row = 2 }, start = { col = 17, row = 2 } } (Token (Identifier { name = "Int", qualifiers = [] }))
+                , Located { end = { col = 20, row = 2 }, start = { col = 17, row = 2 } } (Token (Identifier { name = TokenUpperCase (UpperCase "Int"), qualifiers = [] }))
                 , Located { end = { col = 21, row = 2 }, start = { col = 20, row = 2 } } (Token (Sigil Comma))
                 , Located { end = { col = 22, row = 2 }, start = { col = 21, row = 2 } } (Ignorable (Whitespace 1))
-                , Located { end = { col = 23, row = 2 }, start = { col = 22, row = 2 } } (Token (Identifier { name = "b", qualifiers = [] }))
+                , Located { end = { col = 23, row = 2 }, start = { col = 22, row = 2 } } (Token (Identifier { name = TokenLowerCase (LowerCase "b"), qualifiers = [] }))
                 , Located { end = { col = 24, row = 2 }, start = { col = 23, row = 2 } } (Token (Sigil Colon))
                 , Located { end = { col = 25, row = 2 }, start = { col = 24, row = 2 } } (Ignorable (Whitespace 1))
-                , Located { end = { col = 29, row = 2 }, start = { col = 25, row = 2 } } (Token (Identifier { name = "List", qualifiers = [] }))
+                , Located { end = { col = 29, row = 2 }, start = { col = 25, row = 2 } } (Token (Identifier { name = TokenUpperCase (UpperCase "List"), qualifiers = [] }))
                 , Located { end = { col = 30, row = 2 }, start = { col = 29, row = 2 } } (Ignorable (Whitespace 1))
-                , Located { end = { col = 36, row = 2 }, start = { col = 30, row = 2 } } (Token (Identifier { name = "String", qualifiers = [] }))
+                , Located { end = { col = 36, row = 2 }, start = { col = 30, row = 2 } } (Token (Identifier { name = TokenUpperCase (UpperCase "String"), qualifiers = [] }))
                 , Located { end = { col = 37, row = 2 }, start = { col = 36, row = 2 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 38, row = 2 }, start = { col = 37, row = 2 } } (Token (Sigil (Bracket Curly Close)))
                 , Located { end = { col = 5, row = 3 }, start = { col = 38, row = 2 } } (Newlines [] 4)
                 , Located { end = { col = 6, row = 3 }, start = { col = 5, row = 3 } } (Token (Sigil Comma))
                 , Located { end = { col = 7, row = 3 }, start = { col = 6, row = 3 } } (Ignorable (Whitespace 1))
-                , Located { end = { col = 9, row = 3 }, start = { col = 7, row = 3 } } (Token (Identifier { name = "ih", qualifiers = [] }))
+                , Located { end = { col = 9, row = 3 }, start = { col = 7, row = 3 } } (Token (Identifier { name = TokenLowerCase (LowerCase "ih"), qualifiers = [] }))
                 , Located { end = { col = 10, row = 3 }, start = { col = 9, row = 3 } } (Token (Sigil Colon))
                 , Located { end = { col = 11, row = 3 }, start = { col = 10, row = 3 } } (Ignorable (Whitespace 1))
-                , Located { end = { col = 21, row = 3 }, start = { col = 11, row = 3 } } (Token (Identifier { name = "CustomType", qualifiers = [] }))
+                , Located { end = { col = 21, row = 3 }, start = { col = 11, row = 3 } } (Token (Identifier { name = TokenUpperCase (UpperCase "CustomType"), qualifiers = [] }))
                 , Located { end = { col = 22, row = 3 }, start = { col = 21, row = 3 } } (Ignorable (Whitespace 1))
-                , Located { end = { col = 23, row = 3 }, start = { col = 22, row = 3 } } (Token (Identifier { name = "A", qualifiers = [] }))
+                , Located { end = { col = 23, row = 3 }, start = { col = 22, row = 3 } } (Token (Identifier { name = TokenUpperCase (UpperCase "A"), qualifiers = [] }))
                 , Located { end = { col = 24, row = 3 }, start = { col = 23, row = 3 } } (Ignorable (Whitespace 1))
-                , Located { end = { col = 25, row = 3 }, start = { col = 24, row = 3 } } (Token (Identifier { name = "B", qualifiers = [] }))
+                , Located { end = { col = 25, row = 3 }, start = { col = 24, row = 3 } } (Token (Identifier { name = TokenUpperCase (UpperCase "B"), qualifiers = [] }))
                 , Located { end = { col = 26, row = 3 }, start = { col = 25, row = 3 } } (Ignorable (Whitespace 1))
-                , Located { end = { col = 27, row = 3 }, start = { col = 26, row = 3 } } (Token (Identifier { name = "C", qualifiers = [] }))
+                , Located { end = { col = 27, row = 3 }, start = { col = 26, row = 3 } } (Token (Identifier { name = TokenUpperCase (UpperCase "C"), qualifiers = [] }))
                 , Located { end = { col = 28, row = 3 }, start = { col = 27, row = 3 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 29, row = 3 }, start = { col = 28, row = 3 } } (Token (Sigil (Bracket Round Open)))
-                , Located { end = { col = 30, row = 3 }, start = { col = 29, row = 3 } } (Token (Identifier { name = "D", qualifiers = [] }))
+                , Located { end = { col = 30, row = 3 }, start = { col = 29, row = 3 } } (Token (Identifier { name = TokenUpperCase (UpperCase "D"), qualifiers = [] }))
                 , Located { end = { col = 31, row = 3 }, start = { col = 30, row = 3 } } (Ignorable (Whitespace 1))
-                , Located { end = { col = 32, row = 3 }, start = { col = 31, row = 3 } } (Token (Identifier { name = "E", qualifiers = [] }))
+                , Located { end = { col = 32, row = 3 }, start = { col = 31, row = 3 } } (Token (Identifier { name = TokenUpperCase (UpperCase "E"), qualifiers = [] }))
                 , Located { end = { col = 33, row = 3 }, start = { col = 32, row = 3 } } (Token (Sigil (Bracket Round Close)))
                 , Located { end = { col = 5, row = 4 }, start = { col = 33, row = 3 } } (Newlines [] 4)
                 , Located { end = { col = 6, row = 4 }, start = { col = 5, row = 4 } } (Token (Sigil (Bracket Curly Close)))
@@ -3274,7 +3355,7 @@ type alias Function3 = (Int, () -> (Int, String), ())
                                     ]
                                 )
                         , genericArgs = []
-                        , ty = "Ty"
+                        , ty = UpperCase "Ty"
                         }
                     )
                 ]
@@ -3284,16 +3365,16 @@ type alias Function3 = (Int, () -> (Int, String), ())
                 , Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 11, row = 1 }, start = { col = 6, row = 1 } } (Token (Keyword Alias))
                 , Located { end = { col = 12, row = 1 }, start = { col = 11, row = 1 } } (Ignorable (Whitespace 1))
-                , Located { end = { col = 14, row = 1 }, start = { col = 12, row = 1 } } (Token (Identifier { name = "Ty", qualifiers = [] }))
+                , Located { end = { col = 14, row = 1 }, start = { col = 12, row = 1 } } (Token (Identifier { name = TokenUpperCase (UpperCase "Ty"), qualifiers = [] }))
                 , Located { end = { col = 15, row = 1 }, start = { col = 14, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 16, row = 1 }, start = { col = 15, row = 1 } } (Token (Sigil Assign))
                 , Located { end = { col = 17, row = 1 }, start = { col = 16, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 18, row = 1 }, start = { col = 17, row = 1 } } (Token (Sigil (Bracket Curly Open)))
                 , Located { end = { col = 19, row = 1 }, start = { col = 18, row = 1 } } (Ignorable (Whitespace 1))
-                , Located { end = { col = 21, row = 1 }, start = { col = 19, row = 1 } } (Token (Identifier { name = "hi", qualifiers = [] }))
+                , Located { end = { col = 21, row = 1 }, start = { col = 19, row = 1 } } (Token (Identifier { name = TokenLowerCase (LowerCase "hi"), qualifiers = [] }))
                 , Located { end = { col = 22, row = 1 }, start = { col = 21, row = 1 } } (Token (Sigil Colon))
                 , Located { end = { col = 23, row = 1 }, start = { col = 22, row = 1 } } (Ignorable (Whitespace 1))
-                , Located { end = { col = 26, row = 1 }, start = { col = 23, row = 1 } } (Token (Identifier { name = "Int", qualifiers = [] }))
+                , Located { end = { col = 26, row = 1 }, start = { col = 23, row = 1 } } (Token (Identifier { name = TokenUpperCase (UpperCase "Int"), qualifiers = [] }))
                 , Located { end = { col = 27, row = 1 }, start = { col = 26, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 28, row = 1 }, start = { col = 27, row = 1 } } (Token (Sigil (Bracket Curly Close)))
                 , Located { end = { col = 1, row = 2 }, start = { col = 28, row = 1 } } (Newlines [] 0)
@@ -3344,7 +3425,7 @@ type alias Function3 = (Int, () -> (Int, String), ())
                                     ]
                                 )
                         , genericArgs = []
-                        , ty = "Ty"
+                        , ty = UpperCase "Ty"
                         }
                     )
                 ]
@@ -3354,23 +3435,23 @@ type alias Function3 = (Int, () -> (Int, String), ())
                 , Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 11, row = 1 }, start = { col = 6, row = 1 } } (Token (Keyword Alias))
                 , Located { end = { col = 12, row = 1 }, start = { col = 11, row = 1 } } (Ignorable (Whitespace 1))
-                , Located { end = { col = 14, row = 1 }, start = { col = 12, row = 1 } } (Token (Identifier { name = "Ty", qualifiers = [] }))
+                , Located { end = { col = 14, row = 1 }, start = { col = 12, row = 1 } } (Token (Identifier { name = TokenUpperCase (UpperCase "Ty"), qualifiers = [] }))
                 , Located { end = { col = 15, row = 1 }, start = { col = 14, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 16, row = 1 }, start = { col = 15, row = 1 } } (Token (Sigil Assign))
                 , Located { end = { col = 17, row = 1 }, start = { col = 16, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 18, row = 1 }, start = { col = 17, row = 1 } } (Token (Sigil (Bracket Curly Open)))
                 , Located { end = { col = 19, row = 1 }, start = { col = 18, row = 1 } } (Ignorable (Whitespace 1))
-                , Located { end = { col = 21, row = 1 }, start = { col = 19, row = 1 } } (Token (Identifier { name = "hi", qualifiers = [] }))
+                , Located { end = { col = 21, row = 1 }, start = { col = 19, row = 1 } } (Token (Identifier { name = TokenLowerCase (LowerCase "hi"), qualifiers = [] }))
                 , Located { end = { col = 22, row = 1 }, start = { col = 21, row = 1 } } (Token (Sigil Colon))
                 , Located { end = { col = 23, row = 1 }, start = { col = 22, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 24, row = 1 }, start = { col = 23, row = 1 } } (Token (Sigil (Bracket Round Open)))
                 , Located { end = { col = 25, row = 1 }, start = { col = 24, row = 1 } } (Token (Sigil (Bracket Round Close)))
                 , Located { end = { col = 26, row = 1 }, start = { col = 25, row = 1 } } (Token (Sigil Comma))
                 , Located { end = { col = 27, row = 1 }, start = { col = 26, row = 1 } } (Ignorable (Whitespace 1))
-                , Located { end = { col = 30, row = 1 }, start = { col = 27, row = 1 } } (Token (Identifier { name = "buy", qualifiers = [] }))
+                , Located { end = { col = 30, row = 1 }, start = { col = 27, row = 1 } } (Token (Identifier { name = TokenLowerCase (LowerCase "buy"), qualifiers = [] }))
                 , Located { end = { col = 31, row = 1 }, start = { col = 30, row = 1 } } (Token (Sigil Colon))
                 , Located { end = { col = 32, row = 1 }, start = { col = 31, row = 1 } } (Ignorable (Whitespace 1))
-                , Located { end = { col = 38, row = 1 }, start = { col = 32, row = 1 } } (Token (Identifier { name = "String", qualifiers = [] }))
+                , Located { end = { col = 38, row = 1 }, start = { col = 32, row = 1 } } (Token (Identifier { name = TokenUpperCase (UpperCase "String"), qualifiers = [] }))
                 , Located { end = { col = 39, row = 1 }, start = { col = 38, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 40, row = 1 }, start = { col = 39, row = 1 } } (Token (Sigil (Bracket Curly Close)))
                 , Located { end = { col = 1, row = 2 }, start = { col = 40, row = 1 } } (Newlines [] 0)
@@ -3390,7 +3471,7 @@ type alias Function3 = (Int, () -> (Int, String), ())
 """
       , contextualized =
             Just
-                [ Ok (TypeAlias { expr = Unit, genericArgs = [], ty = "Hi" })
+                [ Ok (TypeAlias { expr = Unit, genericArgs = [], ty = UpperCase "Hi" })
                 ]
       , lexed =
             Ok
@@ -3398,7 +3479,7 @@ type alias Function3 = (Int, () -> (Int, String), ())
                 , Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 11, row = 1 }, start = { col = 6, row = 1 } } (Token (Keyword Alias))
                 , Located { end = { col = 12, row = 1 }, start = { col = 11, row = 1 } } (Ignorable (Whitespace 1))
-                , Located { end = { col = 14, row = 1 }, start = { col = 12, row = 1 } } (Token (Identifier { name = "Hi", qualifiers = [] }))
+                , Located { end = { col = 14, row = 1 }, start = { col = 12, row = 1 } } (Token (Identifier { name = TokenUpperCase (UpperCase "Hi"), qualifiers = [] }))
                 , Located { end = { col = 15, row = 1 }, start = { col = 14, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 16, row = 1 }, start = { col = 15, row = 1 } } (Token (Sigil Assign))
                 , Located { end = { col = 17, row = 1 }, start = { col = 16, row = 1 } } (Ignorable (Whitespace 1))
@@ -3439,7 +3520,7 @@ type alias Function3 = (Int, () -> (Int, String), ())
                                 , qualifiedness = PossiblyQualified Nothing
                                 }
                         , genericArgs = []
-                        , ty = "Hi"
+                        , ty = UpperCase "Hi"
                         }
                     )
                 ]
@@ -3449,12 +3530,12 @@ type alias Function3 = (Int, () -> (Int, String), ())
                 , Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 11, row = 1 }, start = { col = 6, row = 1 } } (Token (Keyword Alias))
                 , Located { end = { col = 12, row = 1 }, start = { col = 11, row = 1 } } (Ignorable (Whitespace 1))
-                , Located { end = { col = 14, row = 1 }, start = { col = 12, row = 1 } } (Token (Identifier { name = "Hi", qualifiers = [] }))
+                , Located { end = { col = 14, row = 1 }, start = { col = 12, row = 1 } } (Token (Identifier { name = TokenUpperCase (UpperCase "Hi"), qualifiers = [] }))
                 , Located { end = { col = 15, row = 1 }, start = { col = 14, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 16, row = 1 }, start = { col = 15, row = 1 } } (Token (Sigil Assign))
                 , Located { end = { col = 17, row = 1 }, start = { col = 16, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 18, row = 1 }, start = { col = 17, row = 1 } } (Token (Sigil (Bracket Round Open)))
-                , Located { end = { col = 21, row = 1 }, start = { col = 18, row = 1 } } (Token (Identifier { name = "Int", qualifiers = [] }))
+                , Located { end = { col = 21, row = 1 }, start = { col = 18, row = 1 } } (Token (Identifier { name = TokenUpperCase (UpperCase "Int"), qualifiers = [] }))
                 , Located { end = { col = 22, row = 1 }, start = { col = 21, row = 1 } } (Token (Sigil (Bracket Round Close)))
                 , Located { end = { col = 1, row = 2 }, start = { col = 22, row = 1 } } (Newlines [] 0)
                 ]
@@ -3506,7 +3587,7 @@ type alias Function3 = (Int, () -> (Int, String), ())
                                 , qualifiedness = PossiblyQualified Nothing
                                 }
                         , genericArgs = []
-                        , ty = "Hi"
+                        , ty = UpperCase "Hi"
                         }
                     )
                 ]
@@ -3516,14 +3597,14 @@ type alias Function3 = (Int, () -> (Int, String), ())
                 , Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 11, row = 1 }, start = { col = 6, row = 1 } } (Token (Keyword Alias))
                 , Located { end = { col = 12, row = 1 }, start = { col = 11, row = 1 } } (Ignorable (Whitespace 1))
-                , Located { end = { col = 14, row = 1 }, start = { col = 12, row = 1 } } (Token (Identifier { name = "Hi", qualifiers = [] }))
+                , Located { end = { col = 14, row = 1 }, start = { col = 12, row = 1 } } (Token (Identifier { name = TokenUpperCase (UpperCase "Hi"), qualifiers = [] }))
                 , Located { end = { col = 15, row = 1 }, start = { col = 14, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 16, row = 1 }, start = { col = 15, row = 1 } } (Token (Sigil Assign))
                 , Located { end = { col = 17, row = 1 }, start = { col = 16, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 18, row = 1 }, start = { col = 17, row = 1 } } (Token (Sigil (Bracket Round Open)))
-                , Located { end = { col = 22, row = 1 }, start = { col = 18, row = 1 } } (Token (Identifier { name = "List", qualifiers = [] }))
+                , Located { end = { col = 22, row = 1 }, start = { col = 18, row = 1 } } (Token (Identifier { name = TokenUpperCase (UpperCase "List"), qualifiers = [] }))
                 , Located { end = { col = 23, row = 1 }, start = { col = 22, row = 1 } } (Ignorable (Whitespace 1))
-                , Located { end = { col = 26, row = 1 }, start = { col = 23, row = 1 } } (Token (Identifier { name = "Int", qualifiers = [] }))
+                , Located { end = { col = 26, row = 1 }, start = { col = 23, row = 1 } } (Token (Identifier { name = TokenUpperCase (UpperCase "Int"), qualifiers = [] }))
                 , Located { end = { col = 27, row = 1 }, start = { col = 26, row = 1 } } (Token (Sigil (Bracket Round Close)))
                 , Located { end = { col = 1, row = 2 }, start = { col = 27, row = 1 } } (Newlines [] 0)
                 ]
@@ -3612,7 +3693,7 @@ type alias Hi = (Int)
                                     }
                                 )
                         , genericArgs = []
-                        , ty = "Hi"
+                        , ty = UpperCase "Hi"
                         }
                     )
                 , Ok
@@ -3624,7 +3705,7 @@ type alias Hi = (Int)
                                 , qualifiedness = PossiblyQualified Nothing
                                 }
                         , genericArgs = []
-                        , ty = "Hi"
+                        , ty = UpperCase "Hi"
                         }
                     )
                 ]
@@ -3634,29 +3715,29 @@ type alias Hi = (Int)
                 , Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 11, row = 1 }, start = { col = 6, row = 1 } } (Token (Keyword Alias))
                 , Located { end = { col = 12, row = 1 }, start = { col = 11, row = 1 } } (Ignorable (Whitespace 1))
-                , Located { end = { col = 14, row = 1 }, start = { col = 12, row = 1 } } (Token (Identifier { name = "Hi", qualifiers = [] }))
+                , Located { end = { col = 14, row = 1 }, start = { col = 12, row = 1 } } (Token (Identifier { name = TokenUpperCase (UpperCase "Hi"), qualifiers = [] }))
                 , Located { end = { col = 15, row = 1 }, start = { col = 14, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 16, row = 1 }, start = { col = 15, row = 1 } } (Token (Sigil Assign))
                 , Located { end = { col = 17, row = 1 }, start = { col = 16, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 18, row = 1 }, start = { col = 17, row = 1 } } (Token (Sigil (Bracket Round Open)))
-                , Located { end = { col = 21, row = 1 }, start = { col = 18, row = 1 } } (Token (Identifier { name = "Int", qualifiers = [] }))
+                , Located { end = { col = 21, row = 1 }, start = { col = 18, row = 1 } } (Token (Identifier { name = TokenUpperCase (UpperCase "Int"), qualifiers = [] }))
                 , Located { end = { col = 22, row = 1 }, start = { col = 21, row = 1 } } (Token (Sigil Comma))
                 , Located { end = { col = 23, row = 1 }, start = { col = 22, row = 1 } } (Ignorable (Whitespace 1))
-                , Located { end = { col = 27, row = 1 }, start = { col = 23, row = 1 } } (Token (Identifier { name = "List", qualifiers = [] }))
+                , Located { end = { col = 27, row = 1 }, start = { col = 23, row = 1 } } (Token (Identifier { name = TokenUpperCase (UpperCase "List"), qualifiers = [] }))
                 , Located { end = { col = 28, row = 1 }, start = { col = 27, row = 1 } } (Ignorable (Whitespace 1))
-                , Located { end = { col = 34, row = 1 }, start = { col = 28, row = 1 } } (Token (Identifier { name = "String", qualifiers = [] }))
+                , Located { end = { col = 34, row = 1 }, start = { col = 28, row = 1 } } (Token (Identifier { name = TokenUpperCase (UpperCase "String"), qualifiers = [] }))
                 , Located { end = { col = 35, row = 1 }, start = { col = 34, row = 1 } } (Token (Sigil (Bracket Round Close)))
                 , Located { end = { col = 1, row = 2 }, start = { col = 35, row = 1 } } (Newlines [] 0)
                 , Located { end = { col = 5, row = 2 }, start = { col = 1, row = 2 } } (Token (Keyword Type))
                 , Located { end = { col = 6, row = 2 }, start = { col = 5, row = 2 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 11, row = 2 }, start = { col = 6, row = 2 } } (Token (Keyword Alias))
                 , Located { end = { col = 12, row = 2 }, start = { col = 11, row = 2 } } (Ignorable (Whitespace 1))
-                , Located { end = { col = 14, row = 2 }, start = { col = 12, row = 2 } } (Token (Identifier { name = "Hi", qualifiers = [] }))
+                , Located { end = { col = 14, row = 2 }, start = { col = 12, row = 2 } } (Token (Identifier { name = TokenUpperCase (UpperCase "Hi"), qualifiers = [] }))
                 , Located { end = { col = 15, row = 2 }, start = { col = 14, row = 2 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 16, row = 2 }, start = { col = 15, row = 2 } } (Token (Sigil Assign))
                 , Located { end = { col = 17, row = 2 }, start = { col = 16, row = 2 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 18, row = 2 }, start = { col = 17, row = 2 } } (Token (Sigil (Bracket Round Open)))
-                , Located { end = { col = 21, row = 2 }, start = { col = 18, row = 2 } } (Token (Identifier { name = "Int", qualifiers = [] }))
+                , Located { end = { col = 21, row = 2 }, start = { col = 18, row = 2 } } (Token (Identifier { name = TokenUpperCase (UpperCase "Int"), qualifiers = [] }))
                 , Located { end = { col = 22, row = 2 }, start = { col = 21, row = 2 } } (Token (Sigil (Bracket Round Close)))
                 , Located { end = { col = 1, row = 3 }, start = { col = 22, row = 2 } } (Newlines [] 0)
                 ]
@@ -3742,10 +3823,10 @@ type alias Hi = ((), (), ())
                                     }
                                 )
                         , genericArgs = []
-                        , ty = "Hi"
+                        , ty = UpperCase "Hi"
                         }
                     )
-                , Ok (TypeAlias { expr = Tuple3 Unit Unit Unit, genericArgs = [], ty = "Hi" })
+                , Ok (TypeAlias { expr = Tuple3 Unit Unit Unit, genericArgs = [], ty = UpperCase "Hi" })
                 ]
       , lexed =
             Ok
@@ -3753,25 +3834,25 @@ type alias Hi = ((), (), ())
                 , Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 11, row = 1 }, start = { col = 6, row = 1 } } (Token (Keyword Alias))
                 , Located { end = { col = 12, row = 1 }, start = { col = 11, row = 1 } } (Ignorable (Whitespace 1))
-                , Located { end = { col = 14, row = 1 }, start = { col = 12, row = 1 } } (Token (Identifier { name = "Hi", qualifiers = [] }))
+                , Located { end = { col = 14, row = 1 }, start = { col = 12, row = 1 } } (Token (Identifier { name = TokenUpperCase (UpperCase "Hi"), qualifiers = [] }))
                 , Located { end = { col = 15, row = 1 }, start = { col = 14, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 16, row = 1 }, start = { col = 15, row = 1 } } (Token (Sigil Assign))
                 , Located { end = { col = 17, row = 1 }, start = { col = 16, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 18, row = 1 }, start = { col = 17, row = 1 } } (Token (Sigil (Bracket Round Open)))
-                , Located { end = { col = 21, row = 1 }, start = { col = 18, row = 1 } } (Token (Identifier { name = "Int", qualifiers = [] }))
+                , Located { end = { col = 21, row = 1 }, start = { col = 18, row = 1 } } (Token (Identifier { name = TokenUpperCase (UpperCase "Int"), qualifiers = [] }))
                 , Located { end = { col = 22, row = 1 }, start = { col = 21, row = 1 } } (Token (Sigil Comma))
                 , Located { end = { col = 23, row = 1 }, start = { col = 22, row = 1 } } (Ignorable (Whitespace 1))
-                , Located { end = { col = 26, row = 1 }, start = { col = 23, row = 1 } } (Token (Identifier { name = "Two", qualifiers = [] }))
+                , Located { end = { col = 26, row = 1 }, start = { col = 23, row = 1 } } (Token (Identifier { name = TokenUpperCase (UpperCase "Two"), qualifiers = [] }))
                 , Located { end = { col = 27, row = 1 }, start = { col = 26, row = 1 } } (Token (Sigil Comma))
                 , Located { end = { col = 28, row = 1 }, start = { col = 27, row = 1 } } (Ignorable (Whitespace 1))
-                , Located { end = { col = 33, row = 1 }, start = { col = 28, row = 1 } } (Token (Identifier { name = "Three", qualifiers = [] }))
+                , Located { end = { col = 33, row = 1 }, start = { col = 28, row = 1 } } (Token (Identifier { name = TokenUpperCase (UpperCase "Three"), qualifiers = [] }))
                 , Located { end = { col = 34, row = 1 }, start = { col = 33, row = 1 } } (Token (Sigil (Bracket Round Close)))
                 , Located { end = { col = 1, row = 2 }, start = { col = 34, row = 1 } } (Newlines [] 0)
                 , Located { end = { col = 5, row = 2 }, start = { col = 1, row = 2 } } (Token (Keyword Type))
                 , Located { end = { col = 6, row = 2 }, start = { col = 5, row = 2 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 11, row = 2 }, start = { col = 6, row = 2 } } (Token (Keyword Alias))
                 , Located { end = { col = 12, row = 2 }, start = { col = 11, row = 2 } } (Ignorable (Whitespace 1))
-                , Located { end = { col = 14, row = 2 }, start = { col = 12, row = 2 } } (Token (Identifier { name = "Hi", qualifiers = [] }))
+                , Located { end = { col = 14, row = 2 }, start = { col = 12, row = 2 } } (Token (Identifier { name = TokenUpperCase (UpperCase "Hi"), qualifiers = [] }))
                 , Located { end = { col = 15, row = 2 }, start = { col = 14, row = 2 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 16, row = 2 }, start = { col = 15, row = 2 } } (Token (Sigil Assign))
                 , Located { end = { col = 17, row = 2 }, start = { col = 16, row = 2 } } (Ignorable (Whitespace 1))
@@ -3881,7 +3962,7 @@ type alias Hi = ((), (), ())
                                     ]
                                 )
                         , genericArgs = []
-                        , ty = "Hi"
+                        , ty = UpperCase "Hi"
                         }
                     )
                 ]
@@ -3891,34 +3972,34 @@ type alias Hi = ((), (), ())
                 , Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 11, row = 1 }, start = { col = 6, row = 1 } } (Token (Keyword Alias))
                 , Located { end = { col = 12, row = 1 }, start = { col = 11, row = 1 } } (Ignorable (Whitespace 1))
-                , Located { end = { col = 14, row = 1 }, start = { col = 12, row = 1 } } (Token (Identifier { name = "Hi", qualifiers = [] }))
+                , Located { end = { col = 14, row = 1 }, start = { col = 12, row = 1 } } (Token (Identifier { name = TokenUpperCase (UpperCase "Hi"), qualifiers = [] }))
                 , Located { end = { col = 15, row = 1 }, start = { col = 14, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 16, row = 1 }, start = { col = 15, row = 1 } } (Token (Sigil Assign))
                 , Located { end = { col = 5, row = 2 }, start = { col = 16, row = 1 } } (Newlines [] 4)
                 , Located { end = { col = 6, row = 2 }, start = { col = 5, row = 2 } } (Token (Sigil (Bracket Curly Open)))
                 , Located { end = { col = 7, row = 2 }, start = { col = 6, row = 2 } } (Ignorable (Whitespace 1))
-                , Located { end = { col = 8, row = 2 }, start = { col = 7, row = 2 } } (Token (Identifier { name = "a", qualifiers = [] }))
+                , Located { end = { col = 8, row = 2 }, start = { col = 7, row = 2 } } (Token (Identifier { name = TokenLowerCase (LowerCase "a"), qualifiers = [] }))
                 , Located { end = { col = 9, row = 2 }, start = { col = 8, row = 2 } } (Token (Sigil Colon))
                 , Located { end = { col = 10, row = 2 }, start = { col = 9, row = 2 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 11, row = 2 }, start = { col = 10, row = 2 } } (Token (Sigil (Bracket Round Open)))
-                , Located { end = { col = 14, row = 2 }, start = { col = 11, row = 2 } } (Token (Identifier { name = "Int", qualifiers = [] }))
+                , Located { end = { col = 14, row = 2 }, start = { col = 11, row = 2 } } (Token (Identifier { name = TokenUpperCase (UpperCase "Int"), qualifiers = [] }))
                 , Located { end = { col = 15, row = 2 }, start = { col = 14, row = 2 } } (Token (Sigil Comma))
                 , Located { end = { col = 16, row = 2 }, start = { col = 15, row = 2 } } (Ignorable (Whitespace 1))
-                , Located { end = { col = 19, row = 2 }, start = { col = 16, row = 2 } } (Token (Identifier { name = "Int", qualifiers = [] }))
+                , Located { end = { col = 19, row = 2 }, start = { col = 16, row = 2 } } (Token (Identifier { name = TokenUpperCase (UpperCase "Int"), qualifiers = [] }))
                 , Located { end = { col = 20, row = 2 }, start = { col = 19, row = 2 } } (Token (Sigil Comma))
                 , Located { end = { col = 21, row = 2 }, start = { col = 20, row = 2 } } (Ignorable (Whitespace 1))
-                , Located { end = { col = 24, row = 2 }, start = { col = 21, row = 2 } } (Token (Identifier { name = "Int", qualifiers = [] }))
+                , Located { end = { col = 24, row = 2 }, start = { col = 21, row = 2 } } (Token (Identifier { name = TokenUpperCase (UpperCase "Int"), qualifiers = [] }))
                 , Located { end = { col = 25, row = 2 }, start = { col = 24, row = 2 } } (Token (Sigil (Bracket Round Close)))
                 , Located { end = { col = 5, row = 3 }, start = { col = 25, row = 2 } } (Newlines [] 4)
                 , Located { end = { col = 6, row = 3 }, start = { col = 5, row = 3 } } (Token (Sigil Comma))
                 , Located { end = { col = 7, row = 3 }, start = { col = 6, row = 3 } } (Ignorable (Whitespace 1))
-                , Located { end = { col = 8, row = 3 }, start = { col = 7, row = 3 } } (Token (Identifier { name = "b", qualifiers = [] }))
+                , Located { end = { col = 8, row = 3 }, start = { col = 7, row = 3 } } (Token (Identifier { name = TokenLowerCase (LowerCase "b"), qualifiers = [] }))
                 , Located { end = { col = 9, row = 3 }, start = { col = 8, row = 3 } } (Token (Sigil Colon))
                 , Located { end = { col = 10, row = 3 }, start = { col = 9, row = 3 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 11, row = 3 }, start = { col = 10, row = 3 } } (Token (Sigil (Bracket Round Open)))
                 , Located { end = { col = 12, row = 3 }, start = { col = 11, row = 3 } } (Token (Sigil (Bracket Curly Open)))
                 , Located { end = { col = 13, row = 3 }, start = { col = 12, row = 3 } } (Ignorable (Whitespace 1))
-                , Located { end = { col = 21, row = 3 }, start = { col = 13, row = 3 } } (Token (Identifier { name = "good_bye", qualifiers = [] }))
+                , Located { end = { col = 21, row = 3 }, start = { col = 13, row = 3 } } (Token (Identifier { name = TokenLowerCase (LowerCase "good_bye"), qualifiers = [] }))
                 , Located { end = { col = 22, row = 3 }, start = { col = 21, row = 3 } } (Token (Sigil Colon))
                 , Located { end = { col = 23, row = 3 }, start = { col = 22, row = 3 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 24, row = 3 }, start = { col = 23, row = 3 } } (Token (Sigil (Bracket Round Open)))
@@ -3985,7 +4066,7 @@ Hi. case"""
             Just
                 [ Err
                     { error = Error_InvalidToken Expecting_Unknown
-                    , item = Just (Located { end = { col = 5, row = 1 }, start = { col = 1, row = 1 } } (Invalid (IdentifierWithTrailingDot { name = "Foo", qualifiers = [] })))
+                    , item = Just (Located { end = { col = 5, row = 1 }, start = { col = 1, row = 1 } } (Invalid (IdentifierWithTrailingDot { name = UpperCase "Foo", qualifiers = [] })))
                     , state = State_BlockStart
                     }
                 , Err
@@ -3995,9 +4076,9 @@ Hi. case"""
                             (Located { end = { col = 11, row = 7 }, start = { col = 1, row = 7 } }
                                 (Invalid
                                     (IdentifierWithTrailingDot
-                                        { name = "Bing"
+                                        { name = UpperCase "Bing"
                                         , qualifiers =
-                                            [ "Boor"
+                                            [ UpperCase "Boor"
                                             ]
                                         }
                                     )
@@ -4007,23 +4088,23 @@ Hi. case"""
                     }
                 , Err
                     { error = Error_InvalidToken Expecting_Unknown
-                    , item = Just (Located { end = { col = 5, row = 9 }, start = { col = 1, row = 9 } } (Invalid (IdentifierWithTrailingDot { name = "Bor", qualifiers = [] })))
+                    , item = Just (Located { end = { col = 5, row = 9 }, start = { col = 1, row = 9 } } (Invalid (IdentifierWithTrailingDot { name = UpperCase "Bor", qualifiers = [] })))
                     , state = State_Error_Recovery
                     }
                 , Err
                     { error = Error_InvalidToken Expecting_Unknown
-                    , item = Just (Located { end = { col = 10, row = 9 }, start = { col = 6, row = 9 } } (Invalid (IdentifierWithTrailingDot { name = "Big", qualifiers = [] })))
+                    , item = Just (Located { end = { col = 10, row = 9 }, start = { col = 6, row = 9 } } (Invalid (IdentifierWithTrailingDot { name = UpperCase "Big", qualifiers = [] })))
                     , state = State_Error_Recovery
                     }
                 , Err
                     { error = Error_InvalidToken Expecting_Unknown
-                    , item = Just (Located { end = { col = 4, row = 29 }, start = { col = 1, row = 29 } } (Invalid (IdentifierWithTrailingDot { name = "Hi", qualifiers = [] })))
+                    , item = Just (Located { end = { col = 4, row = 29 }, start = { col = 1, row = 29 } } (Invalid (IdentifierWithTrailingDot { name = UpperCase "Hi", qualifiers = [] })))
                     , state = State_Error_Recovery
                     }
                 ]
       , lexed =
             Ok
-                [ Located { end = { col = 5, row = 1 }, start = { col = 1, row = 1 } } (Invalid (IdentifierWithTrailingDot { name = "Foo", qualifiers = [] }))
+                [ Located { end = { col = 5, row = 1 }, start = { col = 1, row = 1 } } (Invalid (IdentifierWithTrailingDot { name = UpperCase "Foo", qualifiers = [] }))
                 , Located { end = { col = 1, row = 3 }, start = { col = 5, row = 1 } }
                     (Newlines
                         [ 0
@@ -4033,9 +4114,9 @@ Hi. case"""
                 , Located { end = { col = 8, row = 3 }, start = { col = 1, row = 3 } }
                     (Token
                         (Identifier
-                            { name = "Bar"
+                            { name = TokenUpperCase (UpperCase "Bar")
                             , qualifiers =
-                                [ "Foo"
+                                [ UpperCase "Foo"
                                 ]
                             }
                         )
@@ -4049,10 +4130,10 @@ Hi. case"""
                 , Located { end = { col = 12, row = 5 }, start = { col = 1, row = 5 } }
                     (Token
                         (Identifier
-                            { name = "baz"
+                            { name = TokenLowerCase (LowerCase "baz")
                             , qualifiers =
-                                [ "Foo"
-                                , "Bar"
+                                [ UpperCase "Foo"
+                                , UpperCase "Bar"
                                 ]
                             }
                         )
@@ -4066,9 +4147,9 @@ Hi. case"""
                 , Located { end = { col = 11, row = 7 }, start = { col = 1, row = 7 } }
                     (Invalid
                         (IdentifierWithTrailingDot
-                            { name = "Bing"
+                            { name = UpperCase "Bing"
                             , qualifiers =
-                                [ "Boor"
+                                [ UpperCase "Boor"
                                 ]
                             }
                         )
@@ -4079,41 +4160,33 @@ Hi. case"""
                         ]
                         0
                     )
-                , Located { end = { col = 5, row = 9 }, start = { col = 1, row = 9 } } (Invalid (IdentifierWithTrailingDot { name = "Bor", qualifiers = [] }))
+                , Located { end = { col = 5, row = 9 }, start = { col = 1, row = 9 } } (Invalid (IdentifierWithTrailingDot { name = UpperCase "Bor", qualifiers = [] }))
                 , Located { end = { col = 6, row = 9 }, start = { col = 5, row = 9 } } (Ignorable (Whitespace 1))
-                , Located { end = { col = 10, row = 9 }, start = { col = 6, row = 9 } } (Invalid (IdentifierWithTrailingDot { name = "Big", qualifiers = [] }))
+                , Located { end = { col = 10, row = 9 }, start = { col = 6, row = 9 } } (Invalid (IdentifierWithTrailingDot { name = UpperCase "Big", qualifiers = [] }))
                 , Located { end = { col = 1, row = 11 }, start = { col = 10, row = 9 } }
                     (Newlines
                         [ 0
                         ]
                         0
                     )
-                , Located { end = { col = 4, row = 11 }, start = { col = 1, row = 11 } } (Token (RecordAccessorFunction "sf"))
+                , Located { end = { col = 4, row = 11 }, start = { col = 1, row = 11 } } (Token (RecordAccessorFunction (LowerCase "sf")))
                 , Located { end = { col = 1, row = 13 }, start = { col = 4, row = 11 } }
                     (Newlines
                         [ 0
                         ]
                         0
                     )
-                , Located { end = { col = 6, row = 13 }, start = { col = 1, row = 13 } } (Token (Identifier { name = "sfsdf", qualifiers = [] }))
+                , Located { end = { col = 6, row = 13 }, start = { col = 1, row = 13 } } (Token (Identifier { name = TokenLowerCase (LowerCase "sfsdf"), qualifiers = [] }))
                 , Located { end = { col = 7, row = 13 }, start = { col = 6, row = 13 } } (Ignorable (Whitespace 1))
-                , Located { end = { col = 13, row = 13 }, start = { col = 7, row = 13 } } (Token (RecordAccessorFunction "sdfsd"))
+                , Located { end = { col = 13, row = 13 }, start = { col = 7, row = 13 } } (Token (RecordAccessorFunction (LowerCase "sdfsd")))
                 , Located { end = { col = 1, row = 15 }, start = { col = 13, row = 13 } }
                     (Newlines
                         [ 0
                         ]
                         0
                     )
-                , Located { end = { col = 15, row = 15 }, start = { col = 1, row = 15 } }
-                    (Token
-                        (Identifier
-                            { name = "sdgsghj"
-                            , qualifiers =
-                                [ "asfasf"
-                                ]
-                            }
-                        )
-                    )
+                , Located { end = { col = 7, row = 15 }, start = { col = 1, row = 15 } } (Token (Identifier { name = TokenLowerCase (LowerCase "asfasf"), qualifiers = [] }))
+                , Located { end = { col = 15, row = 15 }, start = { col = 7, row = 15 } } (Token (RecordAccessorLiteral (LowerCase "sdgsghj")))
                 , Located { end = { col = 1, row = 17 }, start = { col = 15, row = 15 } }
                     (Newlines
                         [ 0
@@ -4121,9 +4194,9 @@ Hi. case"""
                         0
                     )
                 , Located { end = { col = 2, row = 17 }, start = { col = 1, row = 17 } } (Token (Sigil (Bracket Round Open)))
-                , Located { end = { col = 6, row = 17 }, start = { col = 2, row = 17 } } (Token (Identifier { name = "shdf", qualifiers = [] }))
+                , Located { end = { col = 6, row = 17 }, start = { col = 2, row = 17 } } (Token (Identifier { name = TokenLowerCase (LowerCase "shdf"), qualifiers = [] }))
                 , Located { end = { col = 7, row = 17 }, start = { col = 6, row = 17 } } (Token (Sigil (Bracket Round Close)))
-                , Located { end = { col = 20, row = 17 }, start = { col = 7, row = 17 } } (Token (RecordAccessorLiteral "helloLiteral"))
+                , Located { end = { col = 20, row = 17 }, start = { col = 7, row = 17 } } (Token (RecordAccessorLiteral (LowerCase "helloLiteral")))
                 , Located { end = { col = 1, row = 19 }, start = { col = 20, row = 17 } }
                     (Newlines
                         [ 0
@@ -4131,19 +4204,19 @@ Hi. case"""
                         0
                     )
                 , Located { end = { col = 2, row = 19 }, start = { col = 1, row = 19 } } (Token (Sigil (Bracket Round Open)))
-                , Located { end = { col = 7, row = 19 }, start = { col = 2, row = 19 } } (Token (Identifier { name = "sjhsf", qualifiers = [] }))
+                , Located { end = { col = 7, row = 19 }, start = { col = 2, row = 19 } } (Token (Identifier { name = TokenLowerCase (LowerCase "sjhsf"), qualifiers = [] }))
                 , Located { end = { col = 8, row = 19 }, start = { col = 7, row = 19 } } (Token (Sigil (Bracket Round Close)))
                 , Located { end = { col = 9, row = 19 }, start = { col = 8, row = 19 } } (Ignorable (Whitespace 1))
-                , Located { end = { col = 23, row = 19 }, start = { col = 9, row = 19 } } (Token (RecordAccessorFunction "helloFunction"))
+                , Located { end = { col = 23, row = 19 }, start = { col = 9, row = 19 } } (Token (RecordAccessorFunction (LowerCase "helloFunction")))
                 , Located { end = { col = 1, row = 21 }, start = { col = 23, row = 19 } }
                     (Newlines
                         [ 0
                         ]
                         0
                     )
-                , Located { end = { col = 7, row = 21 }, start = { col = 1, row = 21 } } (Token (Identifier { name = "sfhsdf", qualifiers = [] }))
+                , Located { end = { col = 7, row = 21 }, start = { col = 1, row = 21 } } (Token (Identifier { name = TokenLowerCase (LowerCase "sfhsdf"), qualifiers = [] }))
                 , Located { end = { col = 8, row = 21 }, start = { col = 7, row = 21 } } (Token (Sigil (Bracket Round Open)))
-                , Located { end = { col = 22, row = 21 }, start = { col = 8, row = 21 } } (Token (RecordAccessorFunction "helloFunction"))
+                , Located { end = { col = 22, row = 21 }, start = { col = 8, row = 21 } } (Token (RecordAccessorFunction (LowerCase "helloFunction")))
                 , Located { end = { col = 23, row = 21 }, start = { col = 22, row = 21 } } (Token (Sigil (Bracket Round Close)))
                 , Located { end = { col = 1, row = 23 }, start = { col = 23, row = 21 } }
                     (Newlines
@@ -4152,7 +4225,7 @@ Hi. case"""
                         0
                     )
                 , Located { end = { col = 5, row = 23 }, start = { col = 1, row = 23 } } (Token (Keyword Case))
-                , Located { end = { col = 8, row = 23 }, start = { col = 5, row = 23 } } (Token (RecordAccessorFunction "hi"))
+                , Located { end = { col = 8, row = 23 }, start = { col = 5, row = 23 } } (Token (RecordAccessorFunction (LowerCase "hi")))
                 , Located { end = { col = 1, row = 25 }, start = { col = 8, row = 23 } }
                     (Newlines
                         [ 0
@@ -4162,9 +4235,9 @@ Hi. case"""
                 , Located { end = { col = 8, row = 25 }, start = { col = 1, row = 25 } }
                     (Token
                         (Identifier
-                            { name = "case"
+                            { name = TokenLowerCase (LowerCase "case")
                             , qualifiers =
-                                [ "Hi"
+                                [ UpperCase "Hi"
                                 ]
                             }
                         )
@@ -4177,14 +4250,14 @@ Hi. case"""
                     )
                 , Located { end = { col = 5, row = 27 }, start = { col = 1, row = 27 } } (Token (Keyword Case))
                 , Located { end = { col = 6, row = 27 }, start = { col = 5, row = 27 } } (Ignorable (Whitespace 1))
-                , Located { end = { col = 9, row = 27 }, start = { col = 6, row = 27 } } (Token (RecordAccessorFunction "hi"))
+                , Located { end = { col = 9, row = 27 }, start = { col = 6, row = 27 } } (Token (RecordAccessorFunction (LowerCase "hi")))
                 , Located { end = { col = 1, row = 29 }, start = { col = 9, row = 27 } }
                     (Newlines
                         [ 0
                         ]
                         0
                     )
-                , Located { end = { col = 4, row = 29 }, start = { col = 1, row = 29 } } (Invalid (IdentifierWithTrailingDot { name = "Hi", qualifiers = [] }))
+                , Located { end = { col = 4, row = 29 }, start = { col = 1, row = 29 } } (Invalid (IdentifierWithTrailingDot { name = UpperCase "Hi", qualifiers = [] }))
                 , Located { end = { col = 5, row = 29 }, start = { col = 4, row = 29 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 9, row = 29 }, start = { col = 5, row = 29 } } (Token (Keyword Case))
                 ]
@@ -4206,7 +4279,7 @@ type alias Function3 = (Int, () ->, ())
                 [ Err
                     { error = Error_MissingFunctionReturnType
                     , item = Just (Located { end = { col = 31, row = 1 }, start = { col = 30, row = 1 } } (Token (Sigil (Bracket Round Close))))
-                    , state = State_BlockTypeAlias (BlockTypeAlias_Completish "Function" [] (TypeExpressionNestingLeaf_Function { firstInput = TypeExpression_Unit, otherInputs = Stack [], output = Nothing, parent = Just (NestingParentType_Bracket { expressions = Stack [], parent = Nothing }) }))
+                    , state = State_BlockTypeAlias (BlockTypeAlias_Completish (UpperCase "Function") [] (TypeExpressionNestingLeaf_Function { firstInput = TypeExpression_Unit, otherInputs = Stack [], output = Nothing, parent = Just (NestingParentType_Bracket { expressions = Stack [], parent = Nothing }) }))
                     }
                 ]
       , lexed =
@@ -4215,7 +4288,7 @@ type alias Function3 = (Int, () ->, ())
                 , Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 11, row = 1 }, start = { col = 6, row = 1 } } (Token (Keyword Alias))
                 , Located { end = { col = 12, row = 1 }, start = { col = 11, row = 1 } } (Ignorable (Whitespace 1))
-                , Located { end = { col = 20, row = 1 }, start = { col = 12, row = 1 } } (Token (Identifier { name = "Function", qualifiers = [] }))
+                , Located { end = { col = 20, row = 1 }, start = { col = 12, row = 1 } } (Token (Identifier { name = TokenUpperCase (UpperCase "Function"), qualifiers = [] }))
                 , Located { end = { col = 21, row = 1 }, start = { col = 20, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 22, row = 1 }, start = { col = 21, row = 1 } } (Token (Sigil Assign))
                 , Located { end = { col = 23, row = 1 }, start = { col = 22, row = 1 } } (Ignorable (Whitespace 1))
@@ -4236,13 +4309,13 @@ type alias Function3 = (Int, () ->, ())
                 , Located { end = { col = 6, row = 3 }, start = { col = 5, row = 3 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 11, row = 3 }, start = { col = 6, row = 3 } } (Token (Keyword Alias))
                 , Located { end = { col = 12, row = 3 }, start = { col = 11, row = 3 } } (Ignorable (Whitespace 1))
-                , Located { end = { col = 21, row = 3 }, start = { col = 12, row = 3 } } (Token (Identifier { name = "Function2", qualifiers = [] }))
+                , Located { end = { col = 21, row = 3 }, start = { col = 12, row = 3 } } (Token (Identifier { name = TokenUpperCase (UpperCase "Function2"), qualifiers = [] }))
                 , Located { end = { col = 22, row = 3 }, start = { col = 21, row = 3 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 23, row = 3 }, start = { col = 22, row = 3 } } (Token (Sigil Assign))
                 , Located { end = { col = 24, row = 3 }, start = { col = 23, row = 3 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 25, row = 3 }, start = { col = 24, row = 3 } } (Token (Sigil (Bracket Curly Open)))
                 , Located { end = { col = 26, row = 3 }, start = { col = 25, row = 3 } } (Ignorable (Whitespace 1))
-                , Located { end = { col = 27, row = 3 }, start = { col = 26, row = 3 } } (Token (Identifier { name = "a", qualifiers = [] }))
+                , Located { end = { col = 27, row = 3 }, start = { col = 26, row = 3 } } (Token (Identifier { name = TokenLowerCase (LowerCase "a"), qualifiers = [] }))
                 , Located { end = { col = 28, row = 3 }, start = { col = 27, row = 3 } } (Token (Sigil Colon))
                 , Located { end = { col = 29, row = 3 }, start = { col = 28, row = 3 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 30, row = 3 }, start = { col = 29, row = 3 } } (Token (Sigil (Bracket Round Open)))
@@ -4261,7 +4334,7 @@ type alias Function3 = (Int, () ->, ())
                 , Located { end = { col = 6, row = 5 }, start = { col = 5, row = 5 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 11, row = 5 }, start = { col = 6, row = 5 } } (Token (Keyword Alias))
                 , Located { end = { col = 12, row = 5 }, start = { col = 11, row = 5 } } (Ignorable (Whitespace 1))
-                , Located { end = { col = 21, row = 5 }, start = { col = 12, row = 5 } } (Token (Identifier { name = "Function3", qualifiers = [] }))
+                , Located { end = { col = 21, row = 5 }, start = { col = 12, row = 5 } } (Token (Identifier { name = TokenUpperCase (UpperCase "Function3"), qualifiers = [] }))
                 , Located { end = { col = 22, row = 5 }, start = { col = 21, row = 5 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 23, row = 5 }, start = { col = 22, row = 5 } } (Token (Sigil Assign))
                 , Located { end = { col = 24, row = 5 }, start = { col = 23, row = 5 } } (Ignorable (Whitespace 1))
@@ -4286,12 +4359,12 @@ type alias Function3 = (Int, () ->, ())
                 , Located { end = { col = 6, row = 7 }, start = { col = 5, row = 7 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 11, row = 7 }, start = { col = 6, row = 7 } } (Token (Keyword Alias))
                 , Located { end = { col = 12, row = 7 }, start = { col = 11, row = 7 } } (Ignorable (Whitespace 1))
-                , Located { end = { col = 21, row = 7 }, start = { col = 12, row = 7 } } (Token (Identifier { name = "Function3", qualifiers = [] }))
+                , Located { end = { col = 21, row = 7 }, start = { col = 12, row = 7 } } (Token (Identifier { name = TokenUpperCase (UpperCase "Function3"), qualifiers = [] }))
                 , Located { end = { col = 22, row = 7 }, start = { col = 21, row = 7 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 23, row = 7 }, start = { col = 22, row = 7 } } (Token (Sigil Assign))
                 , Located { end = { col = 24, row = 7 }, start = { col = 23, row = 7 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 25, row = 7 }, start = { col = 24, row = 7 } } (Token (Sigil (Bracket Round Open)))
-                , Located { end = { col = 28, row = 7 }, start = { col = 25, row = 7 } } (Token (Identifier { name = "Int", qualifiers = [] }))
+                , Located { end = { col = 28, row = 7 }, start = { col = 25, row = 7 } } (Token (Identifier { name = TokenUpperCase (UpperCase "Int"), qualifiers = [] }))
                 , Located { end = { col = 29, row = 7 }, start = { col = 28, row = 7 } } (Token (Sigil Comma))
                 , Located { end = { col = 30, row = 7 }, start = { col = 29, row = 7 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 31, row = 7 }, start = { col = 30, row = 7 } } (Token (Sigil (Bracket Round Open)))
@@ -4315,9 +4388,9 @@ type alias Function3 = (Int, () ->, ())
       , contextualized =
             Just
                 [ Err
-                    { error = Error_TypeDoesNotTakeArgs2 (TypeExpression_Bracketed (TypeExpression_NamedType { args = Stack [], name = "Int" }))
+                    { error = Error_TypeDoesNotTakeArgs2 (TypeExpression_Bracketed (TypeExpression_NamedType { args = Stack [], name = UpperCase "Int", qualifiers = [] }))
                     , item = Just (Located { end = { col = 24, row = 1 }, start = { col = 23, row = 1 } } (Token (Sigil (Bracket Round Open))))
-                    , state = State_BlockTypeAlias (BlockTypeAlias_Completish "Hi" [] (TypeExpressionNestingLeaf_Expr (TypeExpression_Bracketed (TypeExpression_NamedType { args = Stack [], name = "Int" }))))
+                    , state = State_BlockTypeAlias (BlockTypeAlias_Completish (UpperCase "Hi") [] (TypeExpressionNestingLeaf_Expr (TypeExpression_Bracketed (TypeExpression_NamedType { args = Stack [], name = UpperCase "Int", qualifiers = [] }))))
                     }
                 ]
       , lexed =
@@ -4326,12 +4399,12 @@ type alias Function3 = (Int, () ->, ())
                 , Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 11, row = 1 }, start = { col = 6, row = 1 } } (Token (Keyword Alias))
                 , Located { end = { col = 12, row = 1 }, start = { col = 11, row = 1 } } (Ignorable (Whitespace 1))
-                , Located { end = { col = 14, row = 1 }, start = { col = 12, row = 1 } } (Token (Identifier { name = "Hi", qualifiers = [] }))
+                , Located { end = { col = 14, row = 1 }, start = { col = 12, row = 1 } } (Token (Identifier { name = TokenUpperCase (UpperCase "Hi"), qualifiers = [] }))
                 , Located { end = { col = 15, row = 1 }, start = { col = 14, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 16, row = 1 }, start = { col = 15, row = 1 } } (Token (Sigil Assign))
                 , Located { end = { col = 17, row = 1 }, start = { col = 16, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 18, row = 1 }, start = { col = 17, row = 1 } } (Token (Sigil (Bracket Round Open)))
-                , Located { end = { col = 21, row = 1 }, start = { col = 18, row = 1 } } (Token (Identifier { name = "Int", qualifiers = [] }))
+                , Located { end = { col = 21, row = 1 }, start = { col = 18, row = 1 } } (Token (Identifier { name = TokenUpperCase (UpperCase "Int"), qualifiers = [] }))
                 , Located { end = { col = 22, row = 1 }, start = { col = 21, row = 1 } } (Token (Sigil (Bracket Round Close)))
                 , Located { end = { col = 23, row = 1 }, start = { col = 22, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 24, row = 1 }, start = { col = 23, row = 1 } } (Token (Sigil (Bracket Round Open)))
@@ -4350,7 +4423,7 @@ type alias Function3 = (Int, () ->, ())
                 [ Err
                     { error = Error_TypeDoesNotTakeArgs2 TypeExpression_Unit
                     , item = Just (Located { end = { col = 21, row = 1 }, start = { col = 20, row = 1 } } (Token (Sigil (Bracket Round Open))))
-                    , state = State_BlockTypeAlias (BlockTypeAlias_Completish "Hi" [] (TypeExpressionNestingLeaf_Expr TypeExpression_Unit))
+                    , state = State_BlockTypeAlias (BlockTypeAlias_Completish (UpperCase "Hi") [] (TypeExpressionNestingLeaf_Expr TypeExpression_Unit))
                     }
                 ]
       , lexed =
@@ -4359,7 +4432,7 @@ type alias Function3 = (Int, () ->, ())
                 , Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 11, row = 1 }, start = { col = 6, row = 1 } } (Token (Keyword Alias))
                 , Located { end = { col = 12, row = 1 }, start = { col = 11, row = 1 } } (Ignorable (Whitespace 1))
-                , Located { end = { col = 14, row = 1 }, start = { col = 12, row = 1 } } (Token (Identifier { name = "Hi", qualifiers = [] }))
+                , Located { end = { col = 14, row = 1 }, start = { col = 12, row = 1 } } (Token (Identifier { name = TokenUpperCase (UpperCase "Hi"), qualifiers = [] }))
                 , Located { end = { col = 15, row = 1 }, start = { col = 14, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 16, row = 1 }, start = { col = 15, row = 1 } } (Token (Sigil Assign))
                 , Located { end = { col = 17, row = 1 }, start = { col = 16, row = 1 } } (Ignorable (Whitespace 1))
@@ -4382,7 +4455,7 @@ type alias Function3 = (Int, () ->, ())
                 [ Err
                     { error = Error_TypeDoesNotTakeArgs2 TypeExpression_Unit
                     , item = Just (Located { end = { col = 21, row = 1 }, start = { col = 20, row = 1 } } (Token (Sigil (Bracket Round Open))))
-                    , state = State_BlockTypeAlias (BlockTypeAlias_Completish "Hi" [] (TypeExpressionNestingLeaf_Expr TypeExpression_Unit))
+                    , state = State_BlockTypeAlias (BlockTypeAlias_Completish (UpperCase "Hi") [] (TypeExpressionNestingLeaf_Expr TypeExpression_Unit))
                     }
                 ]
       , lexed =
@@ -4391,7 +4464,7 @@ type alias Function3 = (Int, () ->, ())
                 , Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 11, row = 1 }, start = { col = 6, row = 1 } } (Token (Keyword Alias))
                 , Located { end = { col = 12, row = 1 }, start = { col = 11, row = 1 } } (Ignorable (Whitespace 1))
-                , Located { end = { col = 14, row = 1 }, start = { col = 12, row = 1 } } (Token (Identifier { name = "Hi", qualifiers = [] }))
+                , Located { end = { col = 14, row = 1 }, start = { col = 12, row = 1 } } (Token (Identifier { name = TokenUpperCase (UpperCase "Hi"), qualifiers = [] }))
                 , Located { end = { col = 15, row = 1 }, start = { col = 14, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 16, row = 1 }, start = { col = 15, row = 1 } } (Token (Sigil Assign))
                 , Located { end = { col = 17, row = 1 }, start = { col = 16, row = 1 } } (Ignorable (Whitespace 1))
@@ -4399,9 +4472,170 @@ type alias Function3 = (Int, () ->, ())
                 , Located { end = { col = 19, row = 1 }, start = { col = 18, row = 1 } } (Token (Sigil (Bracket Round Close)))
                 , Located { end = { col = 20, row = 1 }, start = { col = 19, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 21, row = 1 }, start = { col = 20, row = 1 } } (Token (Sigil (Bracket Round Open)))
-                , Located { end = { col = 24, row = 1 }, start = { col = 21, row = 1 } } (Token (Identifier { name = "Int", qualifiers = [] }))
+                , Located { end = { col = 24, row = 1 }, start = { col = 21, row = 1 } } (Token (Identifier { name = TokenUpperCase (UpperCase "Int"), qualifiers = [] }))
                 , Located { end = { col = 25, row = 1 }, start = { col = 24, row = 1 } } (Token (Sigil (Bracket Round Close)))
                 , Located { end = { col = 1, row = 2 }, start = { col = 25, row = 1 } } (Newlines [] 0)
+                ]
+      }
+    , { name = "type-alias-lower-case-types"
+      , source = """type alias A = B.C.d
+
+type alias B = List A.d
+
+type alias C = list A
+
+type alias D a = a -> B.c
+type alias E a = B.c -> a"""
+      , pretty = """
+        ( ( Err, todo ) )
+"""
+      , contextualized =
+            Just
+                [ Err
+                    { error =
+                        Error_LowerCasedTypename
+                            { name = LowerCase "d"
+                            , qualifiers =
+                                [ UpperCase "B"
+                                , UpperCase "C"
+                                ]
+                            }
+                    , item =
+                        Just
+                            (Located { end = { col = 21, row = 1 }, start = { col = 16, row = 1 } }
+                                (Token
+                                    (Identifier
+                                        { name = TokenLowerCase (LowerCase "d")
+                                        , qualifiers =
+                                            [ UpperCase "B"
+                                            , UpperCase "C"
+                                            ]
+                                        }
+                                    )
+                                )
+                            )
+                    , state = State_BlockTypeAlias (BlockTypeAlias_NamedAssigns (UpperCase "A") [])
+                    }
+                ]
+      , lexed =
+            Ok
+                [ Located { end = { col = 5, row = 1 }, start = { col = 1, row = 1 } } (Token (Keyword Type))
+                , Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 11, row = 1 }, start = { col = 6, row = 1 } } (Token (Keyword Alias))
+                , Located { end = { col = 12, row = 1 }, start = { col = 11, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 13, row = 1 }, start = { col = 12, row = 1 } } (Token (Identifier { name = TokenUpperCase (UpperCase "A"), qualifiers = [] }))
+                , Located { end = { col = 14, row = 1 }, start = { col = 13, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 15, row = 1 }, start = { col = 14, row = 1 } } (Token (Sigil Assign))
+                , Located { end = { col = 16, row = 1 }, start = { col = 15, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 21, row = 1 }, start = { col = 16, row = 1 } }
+                    (Token
+                        (Identifier
+                            { name = TokenLowerCase (LowerCase "d")
+                            , qualifiers =
+                                [ UpperCase "B"
+                                , UpperCase "C"
+                                ]
+                            }
+                        )
+                    )
+                , Located { end = { col = 1, row = 3 }, start = { col = 21, row = 1 } }
+                    (Newlines
+                        [ 0
+                        ]
+                        0
+                    )
+                , Located { end = { col = 5, row = 3 }, start = { col = 1, row = 3 } } (Token (Keyword Type))
+                , Located { end = { col = 6, row = 3 }, start = { col = 5, row = 3 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 11, row = 3 }, start = { col = 6, row = 3 } } (Token (Keyword Alias))
+                , Located { end = { col = 12, row = 3 }, start = { col = 11, row = 3 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 13, row = 3 }, start = { col = 12, row = 3 } } (Token (Identifier { name = TokenUpperCase (UpperCase "B"), qualifiers = [] }))
+                , Located { end = { col = 14, row = 3 }, start = { col = 13, row = 3 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 15, row = 3 }, start = { col = 14, row = 3 } } (Token (Sigil Assign))
+                , Located { end = { col = 16, row = 3 }, start = { col = 15, row = 3 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 20, row = 3 }, start = { col = 16, row = 3 } } (Token (Identifier { name = TokenUpperCase (UpperCase "List"), qualifiers = [] }))
+                , Located { end = { col = 21, row = 3 }, start = { col = 20, row = 3 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 24, row = 3 }, start = { col = 21, row = 3 } }
+                    (Token
+                        (Identifier
+                            { name = TokenLowerCase (LowerCase "d")
+                            , qualifiers =
+                                [ UpperCase "A"
+                                ]
+                            }
+                        )
+                    )
+                , Located { end = { col = 1, row = 5 }, start = { col = 24, row = 3 } }
+                    (Newlines
+                        [ 0
+                        ]
+                        0
+                    )
+                , Located { end = { col = 5, row = 5 }, start = { col = 1, row = 5 } } (Token (Keyword Type))
+                , Located { end = { col = 6, row = 5 }, start = { col = 5, row = 5 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 11, row = 5 }, start = { col = 6, row = 5 } } (Token (Keyword Alias))
+                , Located { end = { col = 12, row = 5 }, start = { col = 11, row = 5 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 13, row = 5 }, start = { col = 12, row = 5 } } (Token (Identifier { name = TokenUpperCase (UpperCase "C"), qualifiers = [] }))
+                , Located { end = { col = 14, row = 5 }, start = { col = 13, row = 5 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 15, row = 5 }, start = { col = 14, row = 5 } } (Token (Sigil Assign))
+                , Located { end = { col = 16, row = 5 }, start = { col = 15, row = 5 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 20, row = 5 }, start = { col = 16, row = 5 } } (Token (Identifier { name = TokenLowerCase (LowerCase "list"), qualifiers = [] }))
+                , Located { end = { col = 21, row = 5 }, start = { col = 20, row = 5 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 22, row = 5 }, start = { col = 21, row = 5 } } (Token (Identifier { name = TokenUpperCase (UpperCase "A"), qualifiers = [] }))
+                , Located { end = { col = 1, row = 7 }, start = { col = 22, row = 5 } }
+                    (Newlines
+                        [ 0
+                        ]
+                        0
+                    )
+                , Located { end = { col = 5, row = 7 }, start = { col = 1, row = 7 } } (Token (Keyword Type))
+                , Located { end = { col = 6, row = 7 }, start = { col = 5, row = 7 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 11, row = 7 }, start = { col = 6, row = 7 } } (Token (Keyword Alias))
+                , Located { end = { col = 12, row = 7 }, start = { col = 11, row = 7 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 13, row = 7 }, start = { col = 12, row = 7 } } (Token (Identifier { name = TokenUpperCase (UpperCase "D"), qualifiers = [] }))
+                , Located { end = { col = 14, row = 7 }, start = { col = 13, row = 7 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 15, row = 7 }, start = { col = 14, row = 7 } } (Token (Identifier { name = TokenLowerCase (LowerCase "a"), qualifiers = [] }))
+                , Located { end = { col = 16, row = 7 }, start = { col = 15, row = 7 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 17, row = 7 }, start = { col = 16, row = 7 } } (Token (Sigil Assign))
+                , Located { end = { col = 18, row = 7 }, start = { col = 17, row = 7 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 19, row = 7 }, start = { col = 18, row = 7 } } (Token (Identifier { name = TokenLowerCase (LowerCase "a"), qualifiers = [] }))
+                , Located { end = { col = 20, row = 7 }, start = { col = 19, row = 7 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 22, row = 7 }, start = { col = 20, row = 7 } } (Token (Sigil ThinArrow))
+                , Located { end = { col = 23, row = 7 }, start = { col = 22, row = 7 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 26, row = 7 }, start = { col = 23, row = 7 } }
+                    (Token
+                        (Identifier
+                            { name = TokenLowerCase (LowerCase "c")
+                            , qualifiers =
+                                [ UpperCase "B"
+                                ]
+                            }
+                        )
+                    )
+                , Located { end = { col = 1, row = 8 }, start = { col = 26, row = 7 } } (Newlines [] 0)
+                , Located { end = { col = 5, row = 8 }, start = { col = 1, row = 8 } } (Token (Keyword Type))
+                , Located { end = { col = 6, row = 8 }, start = { col = 5, row = 8 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 11, row = 8 }, start = { col = 6, row = 8 } } (Token (Keyword Alias))
+                , Located { end = { col = 12, row = 8 }, start = { col = 11, row = 8 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 13, row = 8 }, start = { col = 12, row = 8 } } (Token (Identifier { name = TokenUpperCase (UpperCase "E"), qualifiers = [] }))
+                , Located { end = { col = 14, row = 8 }, start = { col = 13, row = 8 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 15, row = 8 }, start = { col = 14, row = 8 } } (Token (Identifier { name = TokenLowerCase (LowerCase "a"), qualifiers = [] }))
+                , Located { end = { col = 16, row = 8 }, start = { col = 15, row = 8 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 17, row = 8 }, start = { col = 16, row = 8 } } (Token (Sigil Assign))
+                , Located { end = { col = 18, row = 8 }, start = { col = 17, row = 8 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 21, row = 8 }, start = { col = 18, row = 8 } }
+                    (Token
+                        (Identifier
+                            { name = TokenLowerCase (LowerCase "c")
+                            , qualifiers =
+                                [ UpperCase "B"
+                                ]
+                            }
+                        )
+                    )
+                , Located { end = { col = 22, row = 8 }, start = { col = 21, row = 8 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 24, row = 8 }, start = { col = 22, row = 8 } } (Token (Sigil ThinArrow))
+                , Located { end = { col = 25, row = 8 }, start = { col = 24, row = 8 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 26, row = 8 }, start = { col = 25, row = 8 } } (Token (Identifier { name = TokenLowerCase (LowerCase "a"), qualifiers = [] }))
                 ]
       }
     , { name = "type-alias-multiline-missing-indentation"
@@ -4418,21 +4652,12 @@ List Int
                 [ Err
                     { error = Error_PartwayThroughBlock
                     , item = Just (Located { end = { col = 1, row = 2 }, start = { col = 19, row = 1 } } (Newlines [] 0))
-                    , state = State_BlockTypeAlias (BlockTypeAlias_NamedAssigns "Model" [])
+                    , state = State_BlockTypeAlias (BlockTypeAlias_NamedAssigns (UpperCase "Model") [])
                     }
                 , Err
-                    { error = Error_PartwayThroughBlock
-                    , item = Just (Located { end = { col = 1, row = 3 }, start = { col = 9, row = 2 } } (Newlines [] 0))
-                    , state =
-                        State_BlockValueDeclaration
-                            (BlockValueDeclaration_Named
-                                { args =
-                                    Stack
-                                        [ Located { end = { col = 9, row = 2 }, start = { col = 6, row = 2 } } "Int"
-                                        ]
-                                , name = Located { end = { col = 5, row = 2 }, start = { col = 1, row = 2 } } "List"
-                                }
-                            )
+                    { error = Error_BlockStartsWithUpperCase (UpperCase "List")
+                    , item = Just (Located { end = { col = 5, row = 2 }, start = { col = 1, row = 2 } } (Token (Identifier { name = TokenUpperCase (UpperCase "List"), qualifiers = [] })))
+                    , state = State_BlockStart
                     }
                 ]
       , lexed =
@@ -4441,13 +4666,13 @@ List Int
                 , Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 11, row = 1 }, start = { col = 6, row = 1 } } (Token (Keyword Alias))
                 , Located { end = { col = 12, row = 1 }, start = { col = 11, row = 1 } } (Ignorable (Whitespace 1))
-                , Located { end = { col = 17, row = 1 }, start = { col = 12, row = 1 } } (Token (Identifier { name = "Model", qualifiers = [] }))
+                , Located { end = { col = 17, row = 1 }, start = { col = 12, row = 1 } } (Token (Identifier { name = TokenUpperCase (UpperCase "Model"), qualifiers = [] }))
                 , Located { end = { col = 18, row = 1 }, start = { col = 17, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 19, row = 1 }, start = { col = 18, row = 1 } } (Token (Sigil Assign))
                 , Located { end = { col = 1, row = 2 }, start = { col = 19, row = 1 } } (Newlines [] 0)
-                , Located { end = { col = 5, row = 2 }, start = { col = 1, row = 2 } } (Token (Identifier { name = "List", qualifiers = [] }))
+                , Located { end = { col = 5, row = 2 }, start = { col = 1, row = 2 } } (Token (Identifier { name = TokenUpperCase (UpperCase "List"), qualifiers = [] }))
                 , Located { end = { col = 6, row = 2 }, start = { col = 5, row = 2 } } (Ignorable (Whitespace 1))
-                , Located { end = { col = 9, row = 2 }, start = { col = 6, row = 2 } } (Token (Identifier { name = "Int", qualifiers = [] }))
+                , Located { end = { col = 9, row = 2 }, start = { col = 6, row = 2 } } (Token (Identifier { name = TokenUpperCase (UpperCase "Int"), qualifiers = [] }))
                 , Located { end = { col = 1, row = 3 }, start = { col = 9, row = 2 } } (Newlines [] 0)
                 ]
       }
@@ -4484,7 +4709,7 @@ List Int
                 [ Err
                     { error = Error_PartwayThroughBlock
                     , item = Just (Located { end = { col = 1, row = 2 }, start = { col = 14, row = 1 } } (Newlines [] 0))
-                    , state = State_BlockTypeAlias (BlockTypeAlias_Named "Hi" (Stack []))
+                    , state = State_BlockTypeAlias (BlockTypeAlias_Named (UpperCase "Hi") (Stack []))
                     }
                 ]
       , lexed =
@@ -4493,7 +4718,7 @@ List Int
                 , Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 11, row = 1 }, start = { col = 6, row = 1 } } (Token (Keyword Alias))
                 , Located { end = { col = 12, row = 1 }, start = { col = 11, row = 1 } } (Ignorable (Whitespace 1))
-                , Located { end = { col = 14, row = 1 }, start = { col = 12, row = 1 } } (Token (Identifier { name = "Hi", qualifiers = [] }))
+                , Located { end = { col = 14, row = 1 }, start = { col = 12, row = 1 } } (Token (Identifier { name = TokenUpperCase (UpperCase "Hi"), qualifiers = [] }))
                 , Located { end = { col = 1, row = 2 }, start = { col = 14, row = 1 } } (Newlines [] 0)
                 ]
       }
@@ -4508,7 +4733,7 @@ List Int
                 [ Err
                     { error = Error_PartwayThroughBlock
                     , item = Just (Located { end = { col = 1, row = 2 }, start = { col = 16, row = 1 } } (Newlines [] 0))
-                    , state = State_BlockTypeAlias (BlockTypeAlias_NamedAssigns "Hi" [])
+                    , state = State_BlockTypeAlias (BlockTypeAlias_NamedAssigns (UpperCase "Hi") [])
                     }
                 ]
       , lexed =
@@ -4517,7 +4742,7 @@ List Int
                 , Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 11, row = 1 }, start = { col = 6, row = 1 } } (Token (Keyword Alias))
                 , Located { end = { col = 12, row = 1 }, start = { col = 11, row = 1 } } (Ignorable (Whitespace 1))
-                , Located { end = { col = 14, row = 1 }, start = { col = 12, row = 1 } } (Token (Identifier { name = "Hi", qualifiers = [] }))
+                , Located { end = { col = 14, row = 1 }, start = { col = 12, row = 1 } } (Token (Identifier { name = TokenUpperCase (UpperCase "Hi"), qualifiers = [] }))
                 , Located { end = { col = 15, row = 1 }, start = { col = 14, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 16, row = 1 }, start = { col = 15, row = 1 } } (Token (Sigil Assign))
                 , Located { end = { col = 1, row = 2 }, start = { col = 16, row = 1 } } (Newlines [] 0)
@@ -4534,7 +4759,7 @@ List Int
                 [ Err
                     { error = Error_PartwayThroughBlock
                     , item = Just (Located { end = { col = 1, row = 2 }, start = { col = 18, row = 1 } } (Newlines [] 0))
-                    , state = State_BlockTypeAlias (BlockTypeAlias_Completish "Hi" [] (TypeExpressionNestingLeaf_Bracket { firstExpressions = Stack [], parent = Nothing, trailingExpression = Nothing }))
+                    , state = State_BlockTypeAlias (BlockTypeAlias_Completish (UpperCase "Hi") [] (TypeExpressionNestingLeaf_Bracket { firstExpressions = Stack [], parent = Nothing, trailingExpression = Nothing }))
                     }
                 ]
       , lexed =
@@ -4543,7 +4768,7 @@ List Int
                 , Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 11, row = 1 }, start = { col = 6, row = 1 } } (Token (Keyword Alias))
                 , Located { end = { col = 12, row = 1 }, start = { col = 11, row = 1 } } (Ignorable (Whitespace 1))
-                , Located { end = { col = 14, row = 1 }, start = { col = 12, row = 1 } } (Token (Identifier { name = "Hi", qualifiers = [] }))
+                , Located { end = { col = 14, row = 1 }, start = { col = 12, row = 1 } } (Token (Identifier { name = TokenUpperCase (UpperCase "Hi"), qualifiers = [] }))
                 , Located { end = { col = 15, row = 1 }, start = { col = 14, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 16, row = 1 }, start = { col = 15, row = 1 } } (Token (Sigil Assign))
                 , Located { end = { col = 17, row = 1 }, start = { col = 16, row = 1 } } (Ignorable (Whitespace 1))
@@ -4563,7 +4788,7 @@ List Int
                 [ Err
                     { error = Error_PartwayThroughBlock
                     , item = Just (Located { end = { col = 1, row = 3 }, start = { col = 12, row = 2 } } (Newlines [] 0))
-                    , state = State_BlockTypeAlias (BlockTypeAlias_Completish "Hi" [] (TypeExpressionNestingLeaf_TypeWithArgs { args = Stack [], name = "Int", parent = Just (NestingParentType_Bracket { expressions = Stack [], parent = Nothing }) }))
+                    , state = State_BlockTypeAlias (BlockTypeAlias_Completish (UpperCase "Hi") [] (TypeExpressionNestingLeaf_TypeWithArgs { args = Stack [], name = UpperCase "Int", parent = Just (NestingParentType_Bracket { expressions = Stack [], parent = Nothing }), qualifiers = [] }))
                     }
                 ]
       , lexed =
@@ -4572,13 +4797,13 @@ List Int
                 , Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 11, row = 1 }, start = { col = 6, row = 1 } } (Token (Keyword Alias))
                 , Located { end = { col = 12, row = 1 }, start = { col = 11, row = 1 } } (Ignorable (Whitespace 1))
-                , Located { end = { col = 14, row = 1 }, start = { col = 12, row = 1 } } (Token (Identifier { name = "Hi", qualifiers = [] }))
+                , Located { end = { col = 14, row = 1 }, start = { col = 12, row = 1 } } (Token (Identifier { name = TokenUpperCase (UpperCase "Hi"), qualifiers = [] }))
                 , Located { end = { col = 15, row = 1 }, start = { col = 14, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 16, row = 1 }, start = { col = 15, row = 1 } } (Token (Sigil Assign))
                 , Located { end = { col = 17, row = 1 }, start = { col = 16, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 18, row = 1 }, start = { col = 17, row = 1 } } (Token (Sigil (Bracket Round Open)))
                 , Located { end = { col = 9, row = 2 }, start = { col = 18, row = 1 } } (Newlines [] 8)
-                , Located { end = { col = 12, row = 2 }, start = { col = 9, row = 2 } } (Token (Identifier { name = "Int", qualifiers = [] }))
+                , Located { end = { col = 12, row = 2 }, start = { col = 9, row = 2 } } (Token (Identifier { name = TokenUpperCase (UpperCase "Int"), qualifiers = [] }))
                 , Located { end = { col = 1, row = 3 }, start = { col = 12, row = 2 } } (Newlines [] 0)
                 ]
       }
@@ -4593,7 +4818,7 @@ List Int
                 [ Err
                     { error = Error_PartwayThroughBlock
                     , item = Just (Located { end = { col = 1, row = 2 }, start = { col = 18, row = 1 } } (Newlines [] 0))
-                    , state = State_BlockTypeAlias (BlockTypeAlias_Completish "Ty" [] (TypeExpressionNestingLeaf_PartialRecord { firstEntries = Stack [], lastEntry = LastEntryOfRecord_Empty, parent = Nothing }))
+                    , state = State_BlockTypeAlias (BlockTypeAlias_Completish (UpperCase "Ty") [] (TypeExpressionNestingLeaf_PartialRecord { firstEntries = Stack [], lastEntry = LastEntryOfRecord_Empty, parent = Nothing }))
                     }
                 ]
       , lexed =
@@ -4602,7 +4827,7 @@ List Int
                 , Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 11, row = 1 }, start = { col = 6, row = 1 } } (Token (Keyword Alias))
                 , Located { end = { col = 12, row = 1 }, start = { col = 11, row = 1 } } (Ignorable (Whitespace 1))
-                , Located { end = { col = 14, row = 1 }, start = { col = 12, row = 1 } } (Token (Identifier { name = "Ty", qualifiers = [] }))
+                , Located { end = { col = 14, row = 1 }, start = { col = 12, row = 1 } } (Token (Identifier { name = TokenUpperCase (UpperCase "Ty"), qualifiers = [] }))
                 , Located { end = { col = 15, row = 1 }, start = { col = 14, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 16, row = 1 }, start = { col = 15, row = 1 } } (Token (Sigil Assign))
                 , Located { end = { col = 17, row = 1 }, start = { col = 16, row = 1 } } (Ignorable (Whitespace 1))
@@ -4620,8 +4845,8 @@ List Int
             Just
                 [ Err
                     { error = Error_ExpectedColonWhilstParsingRecord
-                    , item = Just (Located { end = { col = 24, row = 1 }, start = { col = 22, row = 1 } } (Token (Identifier { name = "j7", qualifiers = [] })))
-                    , state = State_BlockTypeAlias (BlockTypeAlias_Completish "Ty" [] (TypeExpressionNestingLeaf_PartialRecord { firstEntries = Stack [], lastEntry = LastEntryOfRecord_Key "hi", parent = Nothing }))
+                    , item = Just (Located { end = { col = 24, row = 1 }, start = { col = 22, row = 1 } } (Token (Identifier { name = TokenLowerCase (LowerCase "j7"), qualifiers = [] })))
+                    , state = State_BlockTypeAlias (BlockTypeAlias_Completish (UpperCase "Ty") [] (TypeExpressionNestingLeaf_PartialRecord { firstEntries = Stack [], lastEntry = LastEntryOfRecord_Key (LowerCase "hi"), parent = Nothing }))
                     }
                 ]
       , lexed =
@@ -4630,15 +4855,15 @@ List Int
                 , Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 11, row = 1 }, start = { col = 6, row = 1 } } (Token (Keyword Alias))
                 , Located { end = { col = 12, row = 1 }, start = { col = 11, row = 1 } } (Ignorable (Whitespace 1))
-                , Located { end = { col = 14, row = 1 }, start = { col = 12, row = 1 } } (Token (Identifier { name = "Ty", qualifiers = [] }))
+                , Located { end = { col = 14, row = 1 }, start = { col = 12, row = 1 } } (Token (Identifier { name = TokenUpperCase (UpperCase "Ty"), qualifiers = [] }))
                 , Located { end = { col = 15, row = 1 }, start = { col = 14, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 16, row = 1 }, start = { col = 15, row = 1 } } (Token (Sigil Assign))
                 , Located { end = { col = 17, row = 1 }, start = { col = 16, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 18, row = 1 }, start = { col = 17, row = 1 } } (Token (Sigil (Bracket Curly Open)))
                 , Located { end = { col = 19, row = 1 }, start = { col = 18, row = 1 } } (Ignorable (Whitespace 1))
-                , Located { end = { col = 21, row = 1 }, start = { col = 19, row = 1 } } (Token (Identifier { name = "hi", qualifiers = [] }))
+                , Located { end = { col = 21, row = 1 }, start = { col = 19, row = 1 } } (Token (Identifier { name = TokenLowerCase (LowerCase "hi"), qualifiers = [] }))
                 , Located { end = { col = 22, row = 1 }, start = { col = 21, row = 1 } } (Ignorable (Whitespace 1))
-                , Located { end = { col = 24, row = 1 }, start = { col = 22, row = 1 } } (Token (Identifier { name = "j7", qualifiers = [] }))
+                , Located { end = { col = 24, row = 1 }, start = { col = 22, row = 1 } } (Token (Identifier { name = TokenLowerCase (LowerCase "j7"), qualifiers = [] }))
                 , Located { end = { col = 25, row = 1 }, start = { col = 24, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 26, row = 1 }, start = { col = 25, row = 1 } } (Token (Sigil (Bracket Curly Close)))
                 , Located { end = { col = 1, row = 2 }, start = { col = 26, row = 1 } } (Newlines [] 0)
@@ -4691,14 +4916,14 @@ type alias Hi = (A Int, C D E F, H I (J K), L M () O P)
                     , item = Just (Located { end = { col = 1, row = 2 }, start = { col = 34, row = 1 } } (Newlines [] 0))
                     , state =
                         State_BlockTypeAlias
-                            (BlockTypeAlias_Completish "Hi"
+                            (BlockTypeAlias_Completish (UpperCase "Hi")
                                 []
                                 (TypeExpressionNestingLeaf_Expr
-                                    (TypeExpression_Tuple (TypeExpression_NamedType { args = Stack [], name = "Int" })
-                                        (TypeExpression_NamedType { args = Stack [], name = "A" })
-                                        [ TypeExpression_NamedType { args = Stack [], name = "B" }
-                                        , TypeExpression_NamedType { args = Stack [], name = "C" }
-                                        , TypeExpression_NamedType { args = Stack [], name = "D" }
+                                    (TypeExpression_Tuple (TypeExpression_NamedType { args = Stack [], name = UpperCase "Int", qualifiers = [] })
+                                        (TypeExpression_NamedType { args = Stack [], name = UpperCase "A", qualifiers = [] })
+                                        [ TypeExpression_NamedType { args = Stack [], name = UpperCase "B", qualifiers = [] }
+                                        , TypeExpression_NamedType { args = Stack [], name = UpperCase "C", qualifiers = [] }
+                                        , TypeExpression_NamedType { args = Stack [], name = UpperCase "D", qualifiers = [] }
                                         ]
                                     )
                                 )
@@ -4791,26 +5016,28 @@ type alias Hi = (A Int, C D E F, H I (J K), L M () O P)
                     , item = Just (Located { end = { col = 1, row = 3 }, start = { col = 56, row = 2 } } (Newlines [] 0))
                     , state =
                         State_BlockTypeAlias
-                            (BlockTypeAlias_Completish "Hi"
+                            (BlockTypeAlias_Completish (UpperCase "Hi")
                                 []
                                 (TypeExpressionNestingLeaf_Expr
                                     (TypeExpression_Tuple
                                         (TypeExpression_NamedType
                                             { args =
                                                 Stack
-                                                    [ TypeExpression_NamedType { args = Stack [], name = "Int" }
+                                                    [ TypeExpression_NamedType { args = Stack [], name = UpperCase "Int", qualifiers = [] }
                                                     ]
-                                            , name = "A"
+                                            , name = UpperCase "A"
+                                            , qualifiers = []
                                             }
                                         )
                                         (TypeExpression_NamedType
                                             { args =
                                                 Stack
-                                                    [ TypeExpression_NamedType { args = Stack [], name = "F" }
-                                                    , TypeExpression_NamedType { args = Stack [], name = "E" }
-                                                    , TypeExpression_NamedType { args = Stack [], name = "D" }
+                                                    [ TypeExpression_NamedType { args = Stack [], name = UpperCase "F", qualifiers = [] }
+                                                    , TypeExpression_NamedType { args = Stack [], name = UpperCase "E", qualifiers = [] }
+                                                    , TypeExpression_NamedType { args = Stack [], name = UpperCase "D", qualifiers = [] }
                                                     ]
-                                            , name = "C"
+                                            , name = UpperCase "C"
+                                            , qualifiers = []
                                             }
                                         )
                                         [ TypeExpression_NamedType
@@ -4820,24 +5047,27 @@ type alias Hi = (A Int, C D E F, H I (J K), L M () O P)
                                                         (TypeExpression_NamedType
                                                             { args =
                                                                 Stack
-                                                                    [ TypeExpression_NamedType { args = Stack [], name = "K" }
+                                                                    [ TypeExpression_NamedType { args = Stack [], name = UpperCase "K", qualifiers = [] }
                                                                     ]
-                                                            , name = "J"
+                                                            , name = UpperCase "J"
+                                                            , qualifiers = []
                                                             }
                                                         )
-                                                    , TypeExpression_NamedType { args = Stack [], name = "I" }
+                                                    , TypeExpression_NamedType { args = Stack [], name = UpperCase "I", qualifiers = [] }
                                                     ]
-                                            , name = "H"
+                                            , name = UpperCase "H"
+                                            , qualifiers = []
                                             }
                                         , TypeExpression_NamedType
                                             { args =
                                                 Stack
-                                                    [ TypeExpression_NamedType { args = Stack [], name = "P" }
-                                                    , TypeExpression_NamedType { args = Stack [], name = "O" }
+                                                    [ TypeExpression_NamedType { args = Stack [], name = UpperCase "P", qualifiers = [] }
+                                                    , TypeExpression_NamedType { args = Stack [], name = UpperCase "O", qualifiers = [] }
                                                     , TypeExpression_Unit
-                                                    , TypeExpression_NamedType { args = Stack [], name = "M" }
+                                                    , TypeExpression_NamedType { args = Stack [], name = UpperCase "M", qualifiers = [] }
                                                     ]
-                                            , name = "L"
+                                            , name = UpperCase "L"
+                                            , qualifiers = []
                                             }
                                         ]
                                     )
@@ -4851,70 +5081,70 @@ type alias Hi = (A Int, C D E F, H I (J K), L M () O P)
                 , Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 11, row = 1 }, start = { col = 6, row = 1 } } (Token (Keyword Alias))
                 , Located { end = { col = 12, row = 1 }, start = { col = 11, row = 1 } } (Ignorable (Whitespace 1))
-                , Located { end = { col = 14, row = 1 }, start = { col = 12, row = 1 } } (Token (Identifier { name = "Hi", qualifiers = [] }))
+                , Located { end = { col = 14, row = 1 }, start = { col = 12, row = 1 } } (Token (Identifier { name = TokenUpperCase (UpperCase "Hi"), qualifiers = [] }))
                 , Located { end = { col = 15, row = 1 }, start = { col = 14, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 16, row = 1 }, start = { col = 15, row = 1 } } (Token (Sigil Assign))
                 , Located { end = { col = 17, row = 1 }, start = { col = 16, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 18, row = 1 }, start = { col = 17, row = 1 } } (Token (Sigil (Bracket Round Open)))
-                , Located { end = { col = 21, row = 1 }, start = { col = 18, row = 1 } } (Token (Identifier { name = "Int", qualifiers = [] }))
+                , Located { end = { col = 21, row = 1 }, start = { col = 18, row = 1 } } (Token (Identifier { name = TokenUpperCase (UpperCase "Int"), qualifiers = [] }))
                 , Located { end = { col = 22, row = 1 }, start = { col = 21, row = 1 } } (Token (Sigil Comma))
                 , Located { end = { col = 23, row = 1 }, start = { col = 22, row = 1 } } (Ignorable (Whitespace 1))
-                , Located { end = { col = 24, row = 1 }, start = { col = 23, row = 1 } } (Token (Identifier { name = "A", qualifiers = [] }))
+                , Located { end = { col = 24, row = 1 }, start = { col = 23, row = 1 } } (Token (Identifier { name = TokenUpperCase (UpperCase "A"), qualifiers = [] }))
                 , Located { end = { col = 25, row = 1 }, start = { col = 24, row = 1 } } (Token (Sigil Comma))
                 , Located { end = { col = 26, row = 1 }, start = { col = 25, row = 1 } } (Ignorable (Whitespace 1))
-                , Located { end = { col = 27, row = 1 }, start = { col = 26, row = 1 } } (Token (Identifier { name = "B", qualifiers = [] }))
+                , Located { end = { col = 27, row = 1 }, start = { col = 26, row = 1 } } (Token (Identifier { name = TokenUpperCase (UpperCase "B"), qualifiers = [] }))
                 , Located { end = { col = 28, row = 1 }, start = { col = 27, row = 1 } } (Token (Sigil Comma))
                 , Located { end = { col = 29, row = 1 }, start = { col = 28, row = 1 } } (Ignorable (Whitespace 1))
-                , Located { end = { col = 30, row = 1 }, start = { col = 29, row = 1 } } (Token (Identifier { name = "C", qualifiers = [] }))
+                , Located { end = { col = 30, row = 1 }, start = { col = 29, row = 1 } } (Token (Identifier { name = TokenUpperCase (UpperCase "C"), qualifiers = [] }))
                 , Located { end = { col = 31, row = 1 }, start = { col = 30, row = 1 } } (Token (Sigil Comma))
                 , Located { end = { col = 32, row = 1 }, start = { col = 31, row = 1 } } (Ignorable (Whitespace 1))
-                , Located { end = { col = 33, row = 1 }, start = { col = 32, row = 1 } } (Token (Identifier { name = "D", qualifiers = [] }))
+                , Located { end = { col = 33, row = 1 }, start = { col = 32, row = 1 } } (Token (Identifier { name = TokenUpperCase (UpperCase "D"), qualifiers = [] }))
                 , Located { end = { col = 34, row = 1 }, start = { col = 33, row = 1 } } (Token (Sigil (Bracket Round Close)))
                 , Located { end = { col = 1, row = 2 }, start = { col = 34, row = 1 } } (Newlines [] 0)
                 , Located { end = { col = 5, row = 2 }, start = { col = 1, row = 2 } } (Token (Keyword Type))
                 , Located { end = { col = 6, row = 2 }, start = { col = 5, row = 2 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 11, row = 2 }, start = { col = 6, row = 2 } } (Token (Keyword Alias))
                 , Located { end = { col = 12, row = 2 }, start = { col = 11, row = 2 } } (Ignorable (Whitespace 1))
-                , Located { end = { col = 14, row = 2 }, start = { col = 12, row = 2 } } (Token (Identifier { name = "Hi", qualifiers = [] }))
+                , Located { end = { col = 14, row = 2 }, start = { col = 12, row = 2 } } (Token (Identifier { name = TokenUpperCase (UpperCase "Hi"), qualifiers = [] }))
                 , Located { end = { col = 15, row = 2 }, start = { col = 14, row = 2 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 16, row = 2 }, start = { col = 15, row = 2 } } (Token (Sigil Assign))
                 , Located { end = { col = 17, row = 2 }, start = { col = 16, row = 2 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 18, row = 2 }, start = { col = 17, row = 2 } } (Token (Sigil (Bracket Round Open)))
-                , Located { end = { col = 19, row = 2 }, start = { col = 18, row = 2 } } (Token (Identifier { name = "A", qualifiers = [] }))
+                , Located { end = { col = 19, row = 2 }, start = { col = 18, row = 2 } } (Token (Identifier { name = TokenUpperCase (UpperCase "A"), qualifiers = [] }))
                 , Located { end = { col = 20, row = 2 }, start = { col = 19, row = 2 } } (Ignorable (Whitespace 1))
-                , Located { end = { col = 23, row = 2 }, start = { col = 20, row = 2 } } (Token (Identifier { name = "Int", qualifiers = [] }))
+                , Located { end = { col = 23, row = 2 }, start = { col = 20, row = 2 } } (Token (Identifier { name = TokenUpperCase (UpperCase "Int"), qualifiers = [] }))
                 , Located { end = { col = 24, row = 2 }, start = { col = 23, row = 2 } } (Token (Sigil Comma))
                 , Located { end = { col = 25, row = 2 }, start = { col = 24, row = 2 } } (Ignorable (Whitespace 1))
-                , Located { end = { col = 26, row = 2 }, start = { col = 25, row = 2 } } (Token (Identifier { name = "C", qualifiers = [] }))
+                , Located { end = { col = 26, row = 2 }, start = { col = 25, row = 2 } } (Token (Identifier { name = TokenUpperCase (UpperCase "C"), qualifiers = [] }))
                 , Located { end = { col = 27, row = 2 }, start = { col = 26, row = 2 } } (Ignorable (Whitespace 1))
-                , Located { end = { col = 28, row = 2 }, start = { col = 27, row = 2 } } (Token (Identifier { name = "D", qualifiers = [] }))
+                , Located { end = { col = 28, row = 2 }, start = { col = 27, row = 2 } } (Token (Identifier { name = TokenUpperCase (UpperCase "D"), qualifiers = [] }))
                 , Located { end = { col = 29, row = 2 }, start = { col = 28, row = 2 } } (Ignorable (Whitespace 1))
-                , Located { end = { col = 30, row = 2 }, start = { col = 29, row = 2 } } (Token (Identifier { name = "E", qualifiers = [] }))
+                , Located { end = { col = 30, row = 2 }, start = { col = 29, row = 2 } } (Token (Identifier { name = TokenUpperCase (UpperCase "E"), qualifiers = [] }))
                 , Located { end = { col = 31, row = 2 }, start = { col = 30, row = 2 } } (Ignorable (Whitespace 1))
-                , Located { end = { col = 32, row = 2 }, start = { col = 31, row = 2 } } (Token (Identifier { name = "F", qualifiers = [] }))
+                , Located { end = { col = 32, row = 2 }, start = { col = 31, row = 2 } } (Token (Identifier { name = TokenUpperCase (UpperCase "F"), qualifiers = [] }))
                 , Located { end = { col = 33, row = 2 }, start = { col = 32, row = 2 } } (Token (Sigil Comma))
                 , Located { end = { col = 34, row = 2 }, start = { col = 33, row = 2 } } (Ignorable (Whitespace 1))
-                , Located { end = { col = 35, row = 2 }, start = { col = 34, row = 2 } } (Token (Identifier { name = "H", qualifiers = [] }))
+                , Located { end = { col = 35, row = 2 }, start = { col = 34, row = 2 } } (Token (Identifier { name = TokenUpperCase (UpperCase "H"), qualifiers = [] }))
                 , Located { end = { col = 36, row = 2 }, start = { col = 35, row = 2 } } (Ignorable (Whitespace 1))
-                , Located { end = { col = 37, row = 2 }, start = { col = 36, row = 2 } } (Token (Identifier { name = "I", qualifiers = [] }))
+                , Located { end = { col = 37, row = 2 }, start = { col = 36, row = 2 } } (Token (Identifier { name = TokenUpperCase (UpperCase "I"), qualifiers = [] }))
                 , Located { end = { col = 38, row = 2 }, start = { col = 37, row = 2 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 39, row = 2 }, start = { col = 38, row = 2 } } (Token (Sigil (Bracket Round Open)))
-                , Located { end = { col = 40, row = 2 }, start = { col = 39, row = 2 } } (Token (Identifier { name = "J", qualifiers = [] }))
+                , Located { end = { col = 40, row = 2 }, start = { col = 39, row = 2 } } (Token (Identifier { name = TokenUpperCase (UpperCase "J"), qualifiers = [] }))
                 , Located { end = { col = 41, row = 2 }, start = { col = 40, row = 2 } } (Ignorable (Whitespace 1))
-                , Located { end = { col = 42, row = 2 }, start = { col = 41, row = 2 } } (Token (Identifier { name = "K", qualifiers = [] }))
+                , Located { end = { col = 42, row = 2 }, start = { col = 41, row = 2 } } (Token (Identifier { name = TokenUpperCase (UpperCase "K"), qualifiers = [] }))
                 , Located { end = { col = 43, row = 2 }, start = { col = 42, row = 2 } } (Token (Sigil (Bracket Round Close)))
                 , Located { end = { col = 44, row = 2 }, start = { col = 43, row = 2 } } (Token (Sigil Comma))
                 , Located { end = { col = 45, row = 2 }, start = { col = 44, row = 2 } } (Ignorable (Whitespace 1))
-                , Located { end = { col = 46, row = 2 }, start = { col = 45, row = 2 } } (Token (Identifier { name = "L", qualifiers = [] }))
+                , Located { end = { col = 46, row = 2 }, start = { col = 45, row = 2 } } (Token (Identifier { name = TokenUpperCase (UpperCase "L"), qualifiers = [] }))
                 , Located { end = { col = 47, row = 2 }, start = { col = 46, row = 2 } } (Ignorable (Whitespace 1))
-                , Located { end = { col = 48, row = 2 }, start = { col = 47, row = 2 } } (Token (Identifier { name = "M", qualifiers = [] }))
+                , Located { end = { col = 48, row = 2 }, start = { col = 47, row = 2 } } (Token (Identifier { name = TokenUpperCase (UpperCase "M"), qualifiers = [] }))
                 , Located { end = { col = 49, row = 2 }, start = { col = 48, row = 2 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 50, row = 2 }, start = { col = 49, row = 2 } } (Token (Sigil (Bracket Round Open)))
                 , Located { end = { col = 51, row = 2 }, start = { col = 50, row = 2 } } (Token (Sigil (Bracket Round Close)))
                 , Located { end = { col = 52, row = 2 }, start = { col = 51, row = 2 } } (Ignorable (Whitespace 1))
-                , Located { end = { col = 53, row = 2 }, start = { col = 52, row = 2 } } (Token (Identifier { name = "O", qualifiers = [] }))
+                , Located { end = { col = 53, row = 2 }, start = { col = 52, row = 2 } } (Token (Identifier { name = TokenUpperCase (UpperCase "O"), qualifiers = [] }))
                 , Located { end = { col = 54, row = 2 }, start = { col = 53, row = 2 } } (Ignorable (Whitespace 1))
-                , Located { end = { col = 55, row = 2 }, start = { col = 54, row = 2 } } (Token (Identifier { name = "P", qualifiers = [] }))
+                , Located { end = { col = 55, row = 2 }, start = { col = 54, row = 2 } } (Token (Identifier { name = TokenUpperCase (UpperCase "P"), qualifiers = [] }))
                 , Located { end = { col = 56, row = 2 }, start = { col = 55, row = 2 } } (Token (Sigil (Bracket Round Close)))
                 , Located { end = { col = 1, row = 3 }, start = { col = 56, row = 2 } } (Newlines [] 0)
                 ]
@@ -4932,12 +5162,12 @@ type alias Hi = (A Int, C D E F, H I (J K), L M () O P)
                     , item = Just (Located { end = { col = 24, row = 1 }, start = { col = 23, row = 1 } } (Token (Sigil Comma)))
                     , state =
                         State_BlockTypeAlias
-                            (BlockTypeAlias_Completish "Hi"
+                            (BlockTypeAlias_Completish (UpperCase "Hi")
                                 []
                                 (TypeExpressionNestingLeaf_Bracket
                                     { firstExpressions =
                                         Stack
-                                            [ TypeExpression_NamedType { args = Stack [], name = "Int" }
+                                            [ TypeExpression_NamedType { args = Stack [], name = UpperCase "Int", qualifiers = [] }
                                             ]
                                     , parent = Nothing
                                     , trailingExpression = Nothing
@@ -4952,17 +5182,17 @@ type alias Hi = (A Int, C D E F, H I (J K), L M () O P)
                 , Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 11, row = 1 }, start = { col = 6, row = 1 } } (Token (Keyword Alias))
                 , Located { end = { col = 12, row = 1 }, start = { col = 11, row = 1 } } (Ignorable (Whitespace 1))
-                , Located { end = { col = 14, row = 1 }, start = { col = 12, row = 1 } } (Token (Identifier { name = "Hi", qualifiers = [] }))
+                , Located { end = { col = 14, row = 1 }, start = { col = 12, row = 1 } } (Token (Identifier { name = TokenUpperCase (UpperCase "Hi"), qualifiers = [] }))
                 , Located { end = { col = 15, row = 1 }, start = { col = 14, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 16, row = 1 }, start = { col = 15, row = 1 } } (Token (Sigil Assign))
                 , Located { end = { col = 17, row = 1 }, start = { col = 16, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 18, row = 1 }, start = { col = 17, row = 1 } } (Token (Sigil (Bracket Round Open)))
-                , Located { end = { col = 21, row = 1 }, start = { col = 18, row = 1 } } (Token (Identifier { name = "Int", qualifiers = [] }))
+                , Located { end = { col = 21, row = 1 }, start = { col = 18, row = 1 } } (Token (Identifier { name = TokenUpperCase (UpperCase "Int"), qualifiers = [] }))
                 , Located { end = { col = 22, row = 1 }, start = { col = 21, row = 1 } } (Token (Sigil Comma))
                 , Located { end = { col = 23, row = 1 }, start = { col = 22, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 24, row = 1 }, start = { col = 23, row = 1 } } (Token (Sigil Comma))
                 , Located { end = { col = 25, row = 1 }, start = { col = 24, row = 1 } } (Ignorable (Whitespace 1))
-                , Located { end = { col = 26, row = 1 }, start = { col = 25, row = 1 } } (Token (Identifier { name = "A", qualifiers = [] }))
+                , Located { end = { col = 26, row = 1 }, start = { col = 25, row = 1 } } (Token (Identifier { name = TokenUpperCase (UpperCase "A"), qualifiers = [] }))
                 , Located { end = { col = 27, row = 1 }, start = { col = 26, row = 1 } } (Token (Sigil (Bracket Round Close)))
                 , Located { end = { col = 1, row = 2 }, start = { col = 27, row = 1 } } (Newlines [] 0)
                 ]
@@ -4993,12 +5223,12 @@ type alias Hi = (A Int, C D E F, H I (J K), L M () O P)
                             )
                     , state =
                         State_BlockTypeAlias
-                            (BlockTypeAlias_Completish "Hi"
+                            (BlockTypeAlias_Completish (UpperCase "Hi")
                                 []
                                 (TypeExpressionNestingLeaf_Bracket
                                     { firstExpressions =
                                         Stack
-                                            [ TypeExpression_NamedType { args = Stack [], name = "Int" }
+                                            [ TypeExpression_NamedType { args = Stack [], name = UpperCase "Int", qualifiers = [] }
                                             ]
                                     , parent = Nothing
                                     , trailingExpression = Nothing
@@ -5013,12 +5243,12 @@ type alias Hi = (A Int, C D E F, H I (J K), L M () O P)
                 , Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 11, row = 1 }, start = { col = 6, row = 1 } } (Token (Keyword Alias))
                 , Located { end = { col = 12, row = 1 }, start = { col = 11, row = 1 } } (Ignorable (Whitespace 1))
-                , Located { end = { col = 14, row = 1 }, start = { col = 12, row = 1 } } (Token (Identifier { name = "Hi", qualifiers = [] }))
+                , Located { end = { col = 14, row = 1 }, start = { col = 12, row = 1 } } (Token (Identifier { name = TokenUpperCase (UpperCase "Hi"), qualifiers = [] }))
                 , Located { end = { col = 15, row = 1 }, start = { col = 14, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 16, row = 1 }, start = { col = 15, row = 1 } } (Token (Sigil Assign))
                 , Located { end = { col = 17, row = 1 }, start = { col = 16, row = 1 } } (Ignorable (Whitespace 1))
                 , Located { end = { col = 18, row = 1 }, start = { col = 17, row = 1 } } (Token (Sigil (Bracket Round Open)))
-                , Located { end = { col = 21, row = 1 }, start = { col = 18, row = 1 } } (Token (Identifier { name = "Int", qualifiers = [] }))
+                , Located { end = { col = 21, row = 1 }, start = { col = 18, row = 1 } } (Token (Identifier { name = TokenUpperCase (UpperCase "Int"), qualifiers = [] }))
                 , Located { end = { col = 22, row = 1 }, start = { col = 21, row = 1 } } (Token (Sigil Comma))
                 , Located { end = { col = 1, row = 5 }, start = { col = 22, row = 1 } }
                     (Newlines

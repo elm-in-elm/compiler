@@ -62,17 +62,17 @@ type Block
         , exposingList : Elm.Data.Exposing.Exposing
         }
     | ValueDeclaration
-        { name : Located String
+        { name : Located Token.LowerCase
 
         -- TODO(harry): these could be patterns!
-        , args : List (Located String)
+        , args : List (Located Token.LowerCase)
 
         -- This key's name is hard coded into parser-tests/Update.elm
         , valueExpr__ : Frontend.LocatedExpr
         }
     | TypeAlias
-        { ty : String
-        , genericArgs : List String
+        { ty : Token.UpperCase
+        , genericArgs : List Token.LowerCase
         , expr : ConcreteType PossiblyQualified
         }
     | CustomType
@@ -111,28 +111,28 @@ type BlockFirstItem
 
 type BlockTypeAlias
     = BlockTypeAlias_Keywords
-    | BlockTypeAlias_Named String (Stack String)
-    | BlockTypeAlias_NamedAssigns String (List String)
-    | BlockTypeAlias_Completish String (List String) TypeExpressionNestingLeaf
+    | BlockTypeAlias_Named Token.UpperCase (Stack Token.LowerCase)
+    | BlockTypeAlias_NamedAssigns Token.UpperCase (List Token.LowerCase)
+    | BlockTypeAlias_Completish Token.UpperCase (List Token.LowerCase) TypeExpressionNestingLeaf
 
 
 type BlockCustomType
-    = BlockCustomType_Named String (Stack String)
-    | BlockCustomType_NamedAssigns String (List String)
+    = BlockCustomType_Named Token.UpperCase (Stack Token.LowerCase)
+    | BlockCustomType_NamedAssigns Token.UpperCase (List Token.LowerCase)
 
 
 type BlockValueDeclaration
     = BlockValueDeclaration_Named
-        { name : Located String
-        , args : Stack (Located String)
+        { name : Located Token.LowerCase
+        , args : Stack (Located Token.LowerCase)
         }
     | BlockValueDeclaration_NamedAssigns
-        { name : Located String
-        , args : List (Located String)
+        { name : Located Token.LowerCase
+        , args : List (Located Token.LowerCase)
         }
     | BlockValueDeclaration_Completish
-        { name : Located String
-        , args : List (Located String)
+        { name : Located Token.LowerCase
+        , args : List (Located Token.LowerCase)
         , partialExpr : ExpressionNestingLeaf
         }
 
@@ -150,13 +150,15 @@ type BlockValueDeclaration
 -}
 type TypeExpression
     = TypeExpression_NamedType
-        { name : String
+        { qualifiers : List Token.UpperCase
+        , name : Token.UpperCase
         , args : Stack TypeExpression
         }
+    | TypeExpression_GenericType Token.LowerCase
     | TypeExpression_Unit
     | TypeExpression_Bracketed TypeExpression
     | TypeExpression_Tuple TypeExpression TypeExpression (List TypeExpression)
-    | TypeExpression_Record (List ( String, TypeExpression ))
+    | TypeExpression_Record (List ( Token.LowerCase, TypeExpression ))
     | TypeExpression_Function
         { firstInput : TypeExpression
         , otherInputs : List TypeExpression
@@ -166,13 +168,13 @@ type TypeExpression
 
 type LastEntryOfRecord
     = LastEntryOfRecord_Empty
-    | LastEntryOfRecord_Key String
-    | LastEntryOfRecord_KeyColon String
-    | LastEntryOfRecord_KeyValue String TypeExpression
+    | LastEntryOfRecord_Key Token.LowerCase
+    | LastEntryOfRecord_KeyColon Token.LowerCase
+    | LastEntryOfRecord_KeyValue Token.LowerCase TypeExpression
 
 
 type alias PartialRecord =
-    { firstEntries : Stack ( String, TypeExpression )
+    { firstEntries : Stack ( Token.LowerCase, TypeExpression )
     , lastEntry : LastEntryOfRecord
     , parent : Maybe TypeExpressionNestingParent
     }
@@ -184,12 +186,13 @@ type TypeExpressionNestingParent
         , parent : Maybe TypeExpressionNestingParent
         }
     | NestingParentType_PartialRecord
-        { firstEntries : Stack ( String, TypeExpression )
-        , lastEntryName : String
+        { firstEntries : Stack ( Token.LowerCase, TypeExpression )
+        , lastEntryName : Token.LowerCase
         , parent : Maybe TypeExpressionNestingParent
         }
     | NestingParentType_TypeWithArgs
-        { name : String
+        { qualifiers : List Token.UpperCase
+        , name : Token.UpperCase
         , args : Stack TypeExpression
         , parent : Maybe TypeExpressionNestingParent
         }
@@ -208,7 +211,8 @@ type TypeExpressionNestingLeaf
         }
     | TypeExpressionNestingLeaf_PartialRecord PartialRecord
     | TypeExpressionNestingLeaf_TypeWithArgs
-        { name : String
+        { qualifiers : List Token.UpperCase
+        , name : Token.UpperCase
         , args : Stack TypeExpression
         , parent : Maybe TypeExpressionNestingParent
         }
@@ -259,10 +263,27 @@ type alias ExpressionResult =
 type Error
     = Error_InvalidToken Expecting
     | Error_MisplacedKeyword Keyword
-    | Error_BlockStartsWithTypeOrConstructor Token.TypeOrConstructor
+    | Error_BlockStartsWithUpperCase Token.UpperCase
     | Error_BlockStartsWithQualifiedName
-        { qualifiers : List String
-        , name : String
+        { qualifiers : List Token.UpperCase
+        , name : Token.Token
+        }
+    | Error_QualifiedArgName
+        { qualifiers : List Token.UpperCase
+        , name : Token.Token
+        }
+    | Error_UpperCaseArgName
+        { qualifiers : List Token.UpperCase
+        , name : Token.UpperCase
+        }
+    | Error_UpperCaseRecordKey Token.UpperCase
+    | Error_QualifiedRecordKey
+        { qualifiers : List Token.UpperCase
+        , name : Token.Token
+        }
+    | Error_LowerCasedTypename
+        { qualifiers : List Token.UpperCase
+        , name : Token.LowerCase
         }
       -- Type Expressions --
     | Error_TypeNameStartsWithLowerCase String
@@ -411,6 +432,7 @@ runHelp items state =
 parseAnything : State -> Located Lexer.LexItem -> ParseResult
 parseAnything state item =
     let
+        newTypeAliasState : Token.UpperCase -> List Token.LowerCase -> PartialResult TypeExpressionNestingLeaf TypeExpression -> ParseResult
         newTypeAliasState aliasName typeArgs res =
             case res of
                 PartialResult_Progress expr ->
@@ -431,6 +453,7 @@ parseAnything state item =
                             Error_TooManyTupleArgs a b c d e
                                 |> ParseResult_Err
 
+        newExpressionState : Located Token.LowerCase -> List (Located Token.LowerCase) -> PartialResult ExpressionNestingLeaf LocatedExpr -> ParseResult
         newExpressionState name args res =
             case res of
                 PartialResult_Progress expr ->
@@ -660,14 +683,20 @@ parseBlockStart region item =
                 ParseResult_Err (Error_BlockStartsWithQualifiedName identitfier)
 
             else
-                ParseResult_Ok
-                    (State_BlockValueDeclaration
-                        (BlockValueDeclaration_Named
-                            { name = withCorrectLocation name
-                            , args = empty
-                            }
-                        )
-                    )
+                case name of
+                    Token.TokenLowerCase lower ->
+                        ParseResult_Ok
+                            (State_BlockValueDeclaration
+                                (BlockValueDeclaration_Named
+                                    { name = withCorrectLocation lower
+                                    , args = empty
+                                    }
+                                )
+                            )
+
+                    Token.TokenUpperCase upperCase ->
+                        Error_BlockStartsWithUpperCase upperCase
+                            |> ParseResult_Err
 
         _ ->
             ParseResult_Err (Error_InvalidToken Expecting_Block)
@@ -689,8 +718,17 @@ parseTypeBlock item =
                 ParseResult_Err (Error_BlockStartsWithQualifiedName identifier)
 
             else
-                State_BlockCustomType (BlockCustomType_Named name empty)
-                    |> ParseResult_Ok
+                case name of
+                    Token.TokenLowerCase lower ->
+                        Error_LowerCasedTypename
+                            { qualifiers = qualifiers
+                            , name = lower
+                            }
+                            |> ParseResult_Err
+
+                    Token.TokenUpperCase upper ->
+                        State_BlockCustomType (BlockCustomType_Named upper empty)
+                            |> ParseResult_Ok
 
         _ ->
             -- TODO(harry) indicate that we could also be expecting the `alias`
@@ -711,15 +749,24 @@ parseTypeAliasName item =
                 ParseResult_Err (Error_BlockStartsWithQualifiedName identifier)
 
             else
-                State_BlockTypeAlias (BlockTypeAlias_Named name empty)
-                    |> ParseResult_Ok
+                case name of
+                    Token.TokenLowerCase lower ->
+                        Error_LowerCasedTypename
+                            { qualifiers = qualifiers
+                            , name = lower
+                            }
+                            |> ParseResult_Err
+
+                    Token.TokenUpperCase upper ->
+                        State_BlockTypeAlias (BlockTypeAlias_Named upper empty)
+                            |> ParseResult_Ok
 
         _ ->
             Error_InvalidToken Expecting_TypeName
                 |> ParseResult_Err
 
 
-parseLowercaseArgsOrAssignment : (Located String -> State) -> State -> Located Lexer.LexToken -> ParseResult
+parseLowercaseArgsOrAssignment : (Located Token.LowerCase -> State) -> State -> Located Lexer.LexToken -> ParseResult
 parseLowercaseArgsOrAssignment onTypeArg onAssignment item =
     let
         withCorrectLocation x =
@@ -732,11 +779,17 @@ parseLowercaseArgsOrAssignment onTypeArg onAssignment item =
 
         Lexer.Identifier ({ qualifiers, name } as identifier) ->
             if qualifiers /= [] then
-                ParseResult_Err (Error_BlockStartsWithQualifiedName identifier)
+                ParseResult_Err (Error_QualifiedArgName identifier)
 
             else
-                onTypeArg (withCorrectLocation name)
-                    |> ParseResult_Ok
+                case name of
+                    Token.TokenLowerCase lower ->
+                        onTypeArg (withCorrectLocation lower)
+                            |> ParseResult_Ok
+
+                    Token.TokenUpperCase upper ->
+                        Error_UpperCaseArgName { qualifiers = qualifiers, name = upper }
+                            |> ParseResult_Err
 
         Lexer.Sigil Lexer.Assign ->
             onAssignment
@@ -754,17 +807,34 @@ parserTypeExprFromEmpty :
 parserTypeExprFromEmpty newState item =
     case Located.unwrap item of
         Lexer.Identifier { qualifiers, name } ->
-            if qualifiers /= [] then
-                Debug.todo ""
+            case name of
+                Token.TokenLowerCase lower ->
+                    if qualifiers == [] then
+                        TypeExpression_GenericType lower
+                            |> TypeExpressionNestingLeaf_Expr
+                            |> PartialResult_Progress
+                            |> newState
 
-            else
-                TypeExpressionNestingLeaf_TypeWithArgs
-                    { name = name
-                    , args = empty
-                    , parent = Nothing
-                    }
-                    |> PartialResult_Progress
-                    |> newState
+                    else
+                        Error_LowerCasedTypename
+                            { qualifiers = qualifiers
+                            , name = lower
+                            }
+                            |> ParseResult_Err
+
+                Token.TokenUpperCase upper ->
+                    if qualifiers /= [] then
+                        Debug.todo ""
+
+                    else
+                        TypeExpressionNestingLeaf_TypeWithArgs
+                            { qualifiers = qualifiers
+                            , name = upper
+                            , args = empty
+                            , parent = Nothing
+                            }
+                            |> PartialResult_Progress
+                            |> newState
 
         Lexer.Sigil (Lexer.Bracket Lexer.Round Lexer.Open) ->
             TypeExpressionNestingLeaf_Bracket
@@ -812,13 +882,9 @@ parserTypeExpr :
     -> ParseResult
 parserTypeExpr newState prevExpr item =
     case Located.unwrap item of
-        Lexer.Identifier { qualifiers, name } ->
-            if qualifiers /= [] then
-                Debug.todo ""
-
-            else
-                exprAppend prevExpr name
-                    |> partialExpressionToParseResult newState
+        Lexer.Identifier ident ->
+            exprAppend prevExpr ident
+                |> partialExpressionToParseResult newState
 
         Lexer.Sigil (Lexer.Bracket Lexer.Round Lexer.Open) ->
             leafToParent prevExpr
@@ -1153,9 +1219,10 @@ parentsToLeafWith expr toMakeIntoLeaf =
                 , parent = parent
                 }
 
-        Just (NestingParentType_TypeWithArgs { name, args, parent }) ->
+        Just (NestingParentType_TypeWithArgs { qualifiers, name, args, parent }) ->
             TypeExpressionNestingLeaf_TypeWithArgs
-                { name = name
+                { qualifiers = qualifiers
+                , name = name
                 , args = expr |> pushOnto args
                 , parent = parent
                 }
@@ -1174,87 +1241,175 @@ parentsToLeafWith expr toMakeIntoLeaf =
 
 exprAppend :
     TypeExpressionNestingLeaf
-    -> String
+    ->
+        { qualifiers : List Token.UpperCase
+        , name : Token.Token
+        }
     -> Result Error TypeExpressionNestingLeaf
 exprAppend currentLeaf token =
-    let
-        newType =
-            TypeExpression_NamedType
-                { name = token
-                , args = empty
-                }
-    in
-    case currentLeaf of
-        -- We are within a nested bracket.
-        TypeExpressionNestingLeaf_Bracket { firstExpressions, trailingExpression } ->
-            case trailingExpression of
-                Nothing ->
-                    leafToParent currentLeaf
-                        |> Result.map
-                            (\newParent ->
-                                TypeExpressionNestingLeaf_TypeWithArgs
-                                    { name = token
-                                    , args = empty
-                                    , parent = Just newParent
-                                    }
-                            )
-
-                Just existingRoot ->
-                    Error_TypeDoesNotTakeArgs existingRoot newType
+    case token.name of
+        Token.TokenLowerCase lower ->
+            let
+                lowerCaseTypeError =
+                    Error_LowerCasedTypename
+                        { qualifiers = token.qualifiers
+                        , name = lower
+                        }
                         |> Err
 
-        TypeExpressionNestingLeaf_Expr expr ->
-            Error_TypeDoesNotTakeArgs expr newType
-                |> Err
+                doesNotTakeArgsError expr =
+                    if token.qualifiers == [] then
+                        Error_TypeDoesNotTakeArgs expr
+                            (TypeExpression_GenericType lower)
+                            |> Err
 
-        TypeExpressionNestingLeaf_PartialRecord pr ->
-            case pr.lastEntry of
-                LastEntryOfRecord_Empty ->
-                    TypeExpressionNestingLeaf_PartialRecord
-                        { firstEntries = pr.firstEntries
-                        , lastEntry = LastEntryOfRecord_Key token
-                        , parent = pr.parent
+                    else
+                        lowerCaseTypeError
+            in
+            case currentLeaf of
+                -- We are within a nested bracket.
+                TypeExpressionNestingLeaf_Bracket { firstExpressions, trailingExpression, parent } ->
+                    case trailingExpression of
+                        Nothing ->
+                            if token.qualifiers == [] then
+                                TypeExpressionNestingLeaf_Bracket
+                                    { firstExpressions = firstExpressions
+                                    , trailingExpression = Just (TypeExpression_GenericType lower)
+                                    , parent = parent
+                                    }
+                                    |> Ok
+
+                            else
+                                lowerCaseTypeError
+
+                        Just existingRoot ->
+                            doesNotTakeArgsError existingRoot
+
+                TypeExpressionNestingLeaf_Expr expr ->
+                    doesNotTakeArgsError expr
+
+                TypeExpressionNestingLeaf_PartialRecord pr ->
+                    case pr.lastEntry of
+                        LastEntryOfRecord_Empty ->
+                            if token.qualifiers == [] then
+                                TypeExpressionNestingLeaf_PartialRecord
+                                    { firstEntries = pr.firstEntries
+                                    , lastEntry = LastEntryOfRecord_Key lower
+                                    , parent = pr.parent
+                                    }
+                                    |> Ok
+
+                            else
+                                Error_QualifiedRecordKey
+                                    { qualifiers = token.qualifiers
+                                    , name = token.name
+                                    }
+                                    |> Err
+
+                        _ ->
+                            leafToParent currentLeaf
+                                |> Result.map (Just >> parentsToLeafWith (TypeExpression_GenericType lower))
+
+                TypeExpressionNestingLeaf_TypeWithArgs _ ->
+                    leafToParent currentLeaf
+                        |> Result.map (Just >> parentsToLeafWith (TypeExpression_GenericType lower))
+
+                TypeExpressionNestingLeaf_Function _ ->
+                    leafToParent currentLeaf
+                        |> Result.map (Just >> parentsToLeafWith (TypeExpression_GenericType lower))
+
+        Token.TokenUpperCase upper ->
+            let
+                doesNotTakeArgsError expr =
+                    Error_TypeDoesNotTakeArgs expr
+                        (TypeExpression_NamedType
+                            { qualifiers = token.qualifiers
+                            , name = upper
+                            , args = empty
+                            }
+                        )
+                        |> Err
+            in
+            case currentLeaf of
+                -- We are within a nested bracket.
+                TypeExpressionNestingLeaf_Bracket { firstExpressions, trailingExpression } ->
+                    case trailingExpression of
+                        Nothing ->
+                            leafToParent currentLeaf
+                                |> Result.map
+                                    (\newParent ->
+                                        TypeExpressionNestingLeaf_TypeWithArgs
+                                            { qualifiers = token.qualifiers
+                                            , name = upper
+                                            , args = empty
+                                            , parent = Just newParent
+                                            }
+                                    )
+
+                        Just existingRoot ->
+                            doesNotTakeArgsError existingRoot
+
+                TypeExpressionNestingLeaf_Expr expr ->
+                    doesNotTakeArgsError expr
+
+                TypeExpressionNestingLeaf_PartialRecord pr ->
+                    case pr.lastEntry of
+                        LastEntryOfRecord_Empty ->
+                            if token.qualifiers /= [] then
+                                Error_QualifiedRecordKey
+                                    { qualifiers = token.qualifiers
+                                    , name = token.name
+                                    }
+                                    |> Err
+
+                            else
+                                Error_UpperCaseRecordKey upper
+                                    |> Err
+
+                        _ ->
+                            leafToParent currentLeaf
+                                |> Result.map
+                                    (\newParent ->
+                                        TypeExpressionNestingLeaf_TypeWithArgs
+                                            { qualifiers = token.qualifiers
+                                            , name = upper
+                                            , args = empty
+                                            , parent = Just newParent
+                                            }
+                                    )
+
+                TypeExpressionNestingLeaf_TypeWithArgs { name, args, parent } ->
+                    TypeExpressionNestingLeaf_TypeWithArgs
+                        { qualifiers = token.qualifiers
+                        , name = name
+                        , args =
+                            { qualifiers = token.qualifiers
+                            , name = upper
+                            , args = empty
+                            }
+                                |> TypeExpression_NamedType
+                                |> pushOnto args
+                        , parent = parent
                         }
                         |> Ok
 
-                _ ->
-                    leafToParent currentLeaf
-                        |> Result.map
-                            (\newParent ->
-                                TypeExpressionNestingLeaf_TypeWithArgs
-                                    { name = token
-                                    , args = empty
-                                    , parent = Just newParent
-                                    }
-                            )
+                TypeExpressionNestingLeaf_Function { firstInput, output } ->
+                    Result.andThen
+                        (\newParent ->
+                            case output of
+                                Just outputExpr ->
+                                    doesNotTakeArgsError outputExpr
 
-        TypeExpressionNestingLeaf_TypeWithArgs { name, args, parent } ->
-            TypeExpressionNestingLeaf_TypeWithArgs
-                { name = name
-                , args =
-                    newType
-                        |> pushOnto args
-                , parent = parent
-                }
-                |> Ok
-
-        TypeExpressionNestingLeaf_Function { firstInput, output } ->
-            Result.andThen
-                (\newParent ->
-                    case output of
-                        Just outputExpr ->
-                            Error_TypeDoesNotTakeArgs outputExpr newType
-                                |> Err
-
-                        Nothing ->
-                            TypeExpressionNestingLeaf_TypeWithArgs
-                                { name = token
-                                , args = empty
-                                , parent = Just newParent
-                                }
-                                |> Ok
-                )
-                (leafToParent currentLeaf)
+                                Nothing ->
+                                    TypeExpressionNestingLeaf_TypeWithArgs
+                                        { qualifiers = token.qualifiers
+                                        , name = upper
+                                        , args = empty
+                                        , parent = Just newParent
+                                        }
+                                        |> Ok
+                        )
+                        (leafToParent currentLeaf)
 
 
 appendCommaTo : TypeExpressionNestingLeaf -> Result Error TypeExpressionNestingLeaf
@@ -1638,10 +1793,10 @@ type CollapseLevel
 autoCollapseNesting : CollapseLevel -> TypeExpressionNestingLeaf -> TypeExpressionNestingLeaf
 autoCollapseNesting collapseLevel pte =
     case pte of
-        TypeExpressionNestingLeaf_TypeWithArgs { name, args, parent } ->
+        TypeExpressionNestingLeaf_TypeWithArgs { qualifiers, name, args, parent } ->
             let
                 newTypeExpr =
-                    TypeExpression_NamedType { name = name, args = args }
+                    TypeExpression_NamedType { qualifiers = qualifiers, name = name, args = args }
             in
             parentsToLeafWith newTypeExpr parent
                 |> autoCollapseNesting collapseLevel
@@ -1711,18 +1866,44 @@ type ToConcreteTypeError
 partialTypeExpressionToConcreteType : TypeExpression -> Result ToConcreteTypeError (ConcreteType PossiblyQualified)
 partialTypeExpressionToConcreteType pte =
     case pte of
-        TypeExpression_NamedType { name, args } ->
+        TypeExpression_NamedType { qualifiers, name, args } ->
+            let
+                (Token.UpperCase sName) =
+                    name
+
+                mModuleName =
+                    if qualifiers == [] then
+                        Nothing
+
+                    else
+                        qualifiers
+                            |> List.map (\(Token.UpperCase s) -> s)
+                            |> String.join "."
+                            |> Just
+            in
             args
                 |> toList partialTypeExpressionToConcreteType
                 |> collectList (\x -> x)
                 |> Result.map
                     (\goodArgs ->
-                        { qualifiedness = Qualifiedness.PossiblyQualified Nothing
-                        , name = name
+                        { qualifiedness = Qualifiedness.PossiblyQualified mModuleName
+                        , name = sName
                         , args = goodArgs
                         }
                             |> ConcreteType.UserDefinedType
                     )
+
+        TypeExpression_GenericType name ->
+            let
+                (Token.LowerCase sName) =
+                    name
+            in
+            { qualifiedness = Qualifiedness.PossiblyQualified Nothing
+            , name = sName
+            , args = []
+            }
+                |> ConcreteType.UserDefinedType
+                |> Ok
 
         TypeExpression_Unit ->
             ConcreteType.Unit
@@ -1759,7 +1940,7 @@ partialTypeExpressionToConcreteType pte =
         TypeExpression_Record keyValues ->
             keyValues
                 |> collectList
-                    (\( key, value ) ->
+                    (\( Token.LowerCase key, value ) ->
                         partialTypeExpressionToConcreteType value
                             |> Result.map (\concreteValue -> ( key, concreteValue ))
                     )

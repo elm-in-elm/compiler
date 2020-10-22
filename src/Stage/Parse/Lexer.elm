@@ -17,11 +17,11 @@ type LexItem
 type LexToken
     = Sigil LexSigil
     | Identifier
-        { qualifiers : List String
-        , name : String
+        { qualifiers : List Token.UpperCase
+        , name : Token.Token
         }
-    | RecordAccessorLiteral String
-    | RecordAccessorFunction String
+    | RecordAccessorLiteral Token.LowerCase
+    | RecordAccessorFunction Token.LowerCase
     | Keyword Token.Keyword
     | NumericLiteral String
     | TextLiteral LexLiteralType String
@@ -34,8 +34,8 @@ type LexIgnorable
 
 type LexInvalid
     = IdentifierWithTrailingDot
-        { qualifiers : List String
-        , name : String
+        { qualifiers : List Token.UpperCase
+        , name : Token.UpperCase
         }
     | IllegalCharacter Char
     | OtherInvalid String
@@ -150,13 +150,13 @@ toString item =
             Operator.toString op
 
         Token (Identifier { qualifiers, name }) ->
-            (qualifiers ++ [ name ])
+            (List.map (\(Token.UpperCase s) -> s) qualifiers ++ [ Token.tokenToString name ])
                 |> String.join "."
 
-        Token (RecordAccessorLiteral name) ->
+        Token (RecordAccessorLiteral (Token.LowerCase name)) ->
             "." ++ name
 
-        Token (RecordAccessorFunction name) ->
+        Token (RecordAccessorFunction (Token.LowerCase name)) ->
             "." ++ name
 
         Token (Keyword k) ->
@@ -189,8 +189,11 @@ toString item =
             "{-|" ++ s ++ "-}"
 
         Invalid (IdentifierWithTrailingDot { qualifiers, name }) ->
-            (qualifiers ++ [ name, "" ])
+            ((qualifiers ++ [ name ])
+                |> List.map (\(Token.UpperCase s) -> s)
                 |> String.join "."
+            )
+                ++ "."
 
         Invalid (IllegalCharacter c) ->
             String.fromChar c
@@ -268,14 +271,26 @@ parser =
         )
 
 
-word : Parser_ String
-word =
+upperCaseWord : Parser_ Token.UpperCase
+upperCaseWord =
     P.variable
-        { start = Char.isAlpha
+        { start = Char.isUpper
         , inner = \c -> Char.isAlphaNum c || c == '_'
         , reserved = Set.empty
         , expecting = ExpectingToken
         }
+        |> P.map Token.UpperCase
+
+
+lowerCaseWord : Parser_ Token.LowerCase
+lowerCaseWord =
+    P.variable
+        { start = Char.isLower
+        , inner = \c -> Char.isAlphaNum c || c == '_'
+        , reserved = Set.empty
+        , expecting = ExpectingToken
+        }
+        |> P.map Token.LowerCase
 
 
 identifierParser : Parser_ LexItem
@@ -286,13 +301,23 @@ identifierParser =
                 [ P.succeed (\x -> x)
                     |. P.symbol (P.Token "." ExpectingSigil)
                     |= P.oneOf
-                        [ word
+                        [ upperCaseWord
                             |> P.map
                                 (\new ->
                                     P.Loop
                                         { reversedQualifiers = name :: reversedQualifiers
                                         , name = new
                                         }
+                                )
+                        , lowerCaseWord
+                            |> P.map
+                                (\new ->
+                                    { qualifiers = List.reverse (name :: reversedQualifiers)
+                                    , name = Token.TokenLowerCase new
+                                    }
+                                        |> Identifier
+                                        |> Token
+                                        |> P.Done
                                 )
                         , { qualifiers = List.reverse reversedQualifiers
                           , name = name
@@ -303,7 +328,7 @@ identifierParser =
                             |> P.succeed
                         ]
                 , { qualifiers = List.reverse reversedQualifiers
-                  , name = name
+                  , name = Token.TokenUpperCase name
                   }
                     |> Identifier
                     |> Token
@@ -375,8 +400,17 @@ identifierParser =
                         |> Keyword
                         |> Token
                 )
-        , word
+        , upperCaseWord
             |> P.andThen (\first -> P.loop { reversedQualifiers = [], name = first } loopHelp)
+        , lowerCaseWord
+            |> P.map
+                (\name ->
+                    { name = Token.TokenLowerCase name
+                    , qualifiers = []
+                    }
+                        |> Identifier
+                        |> Token
+                )
         ]
 
 
@@ -385,7 +419,7 @@ recordAccessorParser previous =
     P.succeed (\x -> x)
         |. P.symbol (P.Token "." ExpectingSigil)
         |= P.oneOf
-            [ word
+            [ lowerCaseWord
                 |> P.map
                     (case previous of
                         Just (Token (Sigil (Bracket Round Close))) ->
@@ -395,7 +429,7 @@ recordAccessorParser previous =
                             RecordAccessorLiteral >> Token
 
                         Just (Token (Identifier _)) ->
-                            \_ -> Debug.todo "impossible state: add ICE here"
+                            RecordAccessorLiteral >> Token
 
                         _ ->
                             RecordAccessorFunction >> Token

@@ -13,18 +13,26 @@ type Keyword
     | Else
 
 
-type TypeOrConstructor
-    = TypeOrConstructor String
+type UpperCase
+    = UpperCase String
 
 
-type ValueOrFunctionOrGenericType
-    = ValueOrFunctionOrGenericType String
+type LowerCase
+    = LowerCase String
 
 
 type Token
-    = TokenTypeOrConstructor TypeOrConstructor
-    | TokenValueOrFunction ValueOrFunctionOrGenericType
-    | TokenKeyword Keyword
+    = TokenUpperCase UpperCase
+    | TokenLowerCase LowerCase
+
+
+tokenToString t =
+    case t of
+        TokenUpperCase (UpperCase s) ->
+            s
+
+        TokenLowerCase (LowerCase s) ->
+            s
 
 
 keywordToString : Keyword -> String
@@ -56,48 +64,3 @@ keywordToString keyword =
 
         Else ->
             "else"
-
-
-{-| Note: empty strings become `ValueOrFunction`s
--}
-classifyToken : String -> Token
-classifyToken token =
-    case token of
-        "module" ->
-            TokenKeyword Module
-
-        "type" ->
-            TokenKeyword Type
-
-        "alias" ->
-            TokenKeyword Alias
-
-        "exposing" ->
-            TokenKeyword Exposing
-
-        "case" ->
-            TokenKeyword Case
-
-        "of" ->
-            TokenKeyword Of
-
-        "if" ->
-            TokenKeyword If
-
-        "then" ->
-            TokenKeyword Then
-
-        "else" ->
-            TokenKeyword Else
-
-        _ ->
-            case String.uncons token of
-                Just ( first, _ ) ->
-                    if Char.isUpper first then
-                        TokenTypeOrConstructor (TypeOrConstructor token)
-
-                    else
-                        TokenValueOrFunction (ValueOrFunctionOrGenericType token)
-
-                Nothing ->
-                    TokenValueOrFunction (ValueOrFunctionOrGenericType token)
