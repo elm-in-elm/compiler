@@ -225,15 +225,6 @@ type TypeExpressionNestingLeaf
     | TypeExpressionNestingLeaf_Expr TypeExpression
 
 
-type PartialResult progress done
-    = PartialResult_Progress progress
-    | PartialResult_Done done
-
-
-type alias TypeExpressionResult =
-    PartialResult TypeExpressionNestingLeaf TypeExpression
-
-
 
 -- EXPRESSIONS --
 
@@ -254,10 +245,6 @@ type ExpressionNestingLeaf
         , parent : Maybe ExpressionNestingParent
         }
     | ExpressionTypeExpressionNestingLeaf_Expr Frontend.LocatedExpr
-
-
-type alias ExpressionResult =
-    PartialResult ExpressionNestingLeaf Frontend.LocatedExpr
 
 
 type Error
@@ -432,47 +419,45 @@ runHelp items state =
 parseAnything : State -> Located Lexer.LexItem -> ParseResult
 parseAnything state item =
     let
-        newTypeAliasState : Token.UpperCase -> List Token.LowerCase -> PartialResult TypeExpressionNestingLeaf TypeExpression -> ParseResult
-        newTypeAliasState aliasName typeArgs res =
-            case res of
-                PartialResult_Progress expr ->
-                    State_BlockTypeAlias (BlockTypeAlias_Completish aliasName typeArgs expr)
-                        |> ParseResult_Ok
+        newTypeAliasState : Token.UpperCase -> List Token.LowerCase -> TypeExpressionNestingLeaf -> ParseResult
+        newTypeAliasState aliasName typeArgs expr =
+            State_BlockTypeAlias (BlockTypeAlias_Completish aliasName typeArgs expr)
+                |> ParseResult_Ok
 
-                PartialResult_Done expr ->
-                    case partialTypeExpressionToConcreteType expr of
-                        Ok concreteType ->
-                            { ty = aliasName
-                            , genericArgs = typeArgs
-                            , expr = concreteType
-                            }
-                                |> TypeAlias
-                                |> ParseResult_Complete
+        doneParsingTypeAlias : Token.UpperCase -> List Token.LowerCase -> TypeExpression -> ParseResult
+        doneParsingTypeAlias aliasName typeArgs expr =
+            case partialTypeExpressionToConcreteType expr of
+                Ok concreteType ->
+                    { ty = aliasName
+                    , genericArgs = typeArgs
+                    , expr = concreteType
+                    }
+                        |> TypeAlias
+                        |> ParseResult_Complete
 
-                        Err (ToConcreteTypeError_TooManyTupleArgs a b c d e) ->
-                            Error_TooManyTupleArgs a b c d e
-                                |> ParseResult_Err
+                Err (ToConcreteTypeError_TooManyTupleArgs a b c d e) ->
+                    Error_TooManyTupleArgs a b c d e
+                        |> ParseResult_Err
 
-        newExpressionState : Located Token.LowerCase -> List (Located Token.LowerCase) -> PartialResult ExpressionNestingLeaf LocatedExpr -> ParseResult
-        newExpressionState name args res =
-            case res of
-                PartialResult_Progress expr ->
-                    State_BlockValueDeclaration
-                        (BlockValueDeclaration_Completish
-                            { name = name
-                            , args = args
-                            , partialExpr = expr
-                            }
-                        )
-                        |> ParseResult_Ok
-
-                PartialResult_Done expr ->
+        newExpressionState : Located Token.LowerCase -> List (Located Token.LowerCase) -> ExpressionNestingLeaf -> ParseResult
+        newExpressionState name args expr =
+            State_BlockValueDeclaration
+                (BlockValueDeclaration_Completish
                     { name = name
                     , args = args
-                    , valueExpr__ = expr
+                    , partialExpr = expr
                     }
-                        |> ValueDeclaration
-                        |> ParseResult_Complete
+                )
+                |> ParseResult_Ok
+
+        doneParsingExpr : Located Token.LowerCase -> List (Located Token.LowerCase) -> LocatedExpr -> ParseResult
+        doneParsingExpr name args expr =
+            { name = name
+            , args = args
+            , valueExpr__ = expr
+            }
+                |> ValueDeclaration
+                |> ParseResult_Complete
 
         region =
             Located.getRegion item
@@ -512,17 +497,14 @@ parseAnything state item =
                             case rhs of
                                 Just rhs_ ->
                                     collapseOperators { op = op, lhs = lhs, parent = parent } rhs_
-                                        |> PartialResult_Done
-                                        |> newExpressionState name args
+                                        |> doneParsingExpr name args
 
                                 Nothing ->
                                     Error_PartwayThroughBlock
                                         |> ParseResult_Err
 
                         ExpressionTypeExpressionNestingLeaf_Expr expr ->
-                            expr
-                                |> PartialResult_Done
-                                |> newExpressionState name args
+                            doneParsingExpr name args expr
 
                 State_BlockTypeAlias BlockTypeAlias_Keywords ->
                     Error_PartwayThroughBlock
@@ -539,8 +521,7 @@ parseAnything state item =
                 State_BlockTypeAlias (BlockTypeAlias_Completish name typeArgs exprSoFar) ->
                     case autoCollapseNesting CollapseLevel_Function exprSoFar of
                         TypeExpressionNestingLeaf_Expr expr ->
-                            PartialResult_Done expr
-                                |> newTypeAliasState name typeArgs
+                            doneParsingTypeAlias name typeArgs expr
 
                         _ ->
                             Error_PartwayThroughBlock
@@ -801,7 +782,7 @@ parseLowercaseArgsOrAssignment onTypeArg onAssignment item =
 
 
 parserTypeExprFromEmpty :
-    (TypeExpressionResult -> ParseResult)
+    (TypeExpressionNestingLeaf -> ParseResult)
     -> Located Lexer.LexToken
     -> ParseResult
 parserTypeExprFromEmpty newState item =
@@ -812,7 +793,6 @@ parserTypeExprFromEmpty newState item =
                     if qualifiers == [] then
                         TypeExpression_GenericType lower
                             |> TypeExpressionNestingLeaf_Expr
-                            |> PartialResult_Progress
                             |> newState
 
                     else
@@ -833,7 +813,6 @@ parserTypeExprFromEmpty newState item =
                             , args = empty
                             , parent = Nothing
                             }
-                            |> PartialResult_Progress
                             |> newState
 
         Lexer.Sigil (Lexer.Bracket Lexer.Round Lexer.Open) ->
@@ -842,7 +821,6 @@ parserTypeExprFromEmpty newState item =
                 , trailingExpression = Nothing
                 , parent = Nothing
                 }
-                |> PartialResult_Progress
                 |> newState
 
         Lexer.Sigil (Lexer.Bracket role Lexer.Close) ->
@@ -855,7 +833,6 @@ parserTypeExprFromEmpty newState item =
                 , lastEntry = LastEntryOfRecord_Empty
                 , parent = Nothing
                 }
-                |> PartialResult_Progress
                 |> newState
 
         Lexer.Sigil Lexer.Colon ->
@@ -876,7 +853,7 @@ parserTypeExprFromEmpty newState item =
 
 
 parserTypeExpr :
-    (TypeExpressionResult -> ParseResult)
+    (TypeExpressionNestingLeaf -> ParseResult)
     -> TypeExpressionNestingLeaf
     -> Located Lexer.LexToken
     -> ParseResult
@@ -997,7 +974,6 @@ parserTypeExpr newState prevExpr item =
                         , output = Nothing
                         , parent = Nothing
                         }
-                        |> PartialResult_Progress
                         |> newState
 
                 TypeExpressionNestingLeaf_TypeWithArgs _ ->
@@ -1016,7 +992,6 @@ parserTypeExpr newState prevExpr item =
                                 , output = Nothing
                                 , parent = parent
                                 }
-                                |> PartialResult_Progress
                                 |> newState
 
                 TypeExpressionNestingLeaf_Bracket { firstExpressions, trailingExpression, parent } ->
@@ -1033,7 +1008,6 @@ parserTypeExpr newState prevExpr item =
                                         |> NestingParentType_Bracket
                                         |> Just
                                 }
-                                |> PartialResult_Progress
                                 |> newState
 
                         Nothing ->
@@ -1067,7 +1041,6 @@ parserTypeExpr newState prevExpr item =
                                         |> NestingParentType_PartialRecord
                                         |> Just
                                 }
-                                |> PartialResult_Progress
                                 |> newState
 
         _ ->
@@ -1076,7 +1049,7 @@ parserTypeExpr newState prevExpr item =
 
 
 parserExpressionFromEmpty :
-    (ExpressionResult -> ParseResult)
+    (ExpressionNestingLeaf -> ParseResult)
     -> Located Lexer.LexToken
     -> ParseResult
 parserExpressionFromEmpty newState item =
@@ -1091,7 +1064,6 @@ parserExpressionFromEmpty newState item =
                     Frontend.Int i
                         |> withCorrectLocation
                         |> ExpressionTypeExpressionNestingLeaf_Expr
-                        |> PartialResult_Progress
                         |> newState
 
                 Nothing ->
@@ -1104,7 +1076,7 @@ parserExpressionFromEmpty newState item =
 
 
 parserExpression :
-    (ExpressionResult -> ParseResult)
+    (ExpressionNestingLeaf -> ParseResult)
     -> ExpressionNestingLeaf
     -> Located Lexer.LexToken
     -> ParseResult
@@ -1845,14 +1817,13 @@ TODO(harry): We can inline this function.
 
 -}
 partialExpressionToParseResult :
-    (PartialResult progress neverDone -> ParseResult)
+    (progress -> ParseResult)
     -> Result Error progress
     -> ParseResult
 partialExpressionToParseResult newState rnewPartialType =
     case rnewPartialType of
         Ok newPartialType ->
-            PartialResult_Progress newPartialType
-                |> newState
+            newState newPartialType
 
         Err e ->
             ParseResult_Err e
