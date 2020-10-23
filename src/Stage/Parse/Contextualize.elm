@@ -865,11 +865,7 @@ parserTypeExpr newState prevExpr item =
                 |> Result.andThen newState
 
         Lexer.Sigil (Lexer.Bracket Lexer.Round Lexer.Close) ->
-            let
-                collapsedLeaf =
-                    autoCollapseNesting CollapseLevel_Function prevExpr
-            in
-            case collapsedLeaf of
+            case autoCollapseNesting CollapseLevel_Function prevExpr of
                 TypeExpressionNestingLeaf_Expr _ ->
                     Error_UnmatchedBracket Lexer.Round Lexer.Close
                         |> Err
@@ -918,11 +914,7 @@ parserTypeExpr newState prevExpr item =
                 |> Result.andThen newState
 
         Lexer.Sigil (Lexer.Bracket Lexer.Curly Lexer.Close) ->
-            let
-                collapsedLeaf =
-                    autoCollapseNesting CollapseLevel_Function prevExpr
-            in
-            case collapsedLeaf of
+            case autoCollapseNesting CollapseLevel_Function prevExpr of
                 TypeExpressionNestingLeaf_Expr _ ->
                     Error_UnmatchedBracket Lexer.Curly Lexer.Close
                         |> Err
@@ -951,11 +943,7 @@ parserTypeExpr newState prevExpr item =
                             Debug.todo "Make this state impossible"
 
         Lexer.Sigil Lexer.ThinArrow ->
-            let
-                collapsedLeaf =
-                    autoCollapseNesting CollapseLevel_TypeWithArgs prevExpr
-            in
-            case collapsedLeaf of
+            case autoCollapseNesting CollapseLevel_TypeWithArgs prevExpr of
                 TypeExpressionNestingLeaf_Expr expr ->
                     TypeExpressionNestingLeaf_Function
                         { firstInput = expr
@@ -1382,11 +1370,7 @@ exprAppend currentLeaf token =
 
 appendCommaTo : TypeExpressionNestingLeaf -> Result Error TypeExpressionNestingLeaf
 appendCommaTo prevExpr =
-    let
-        collapsedLeaf =
-            autoCollapseNesting CollapseLevel_Function prevExpr
-    in
-    case collapsedLeaf of
+    case autoCollapseNesting CollapseLevel_Function prevExpr of
         TypeExpressionNestingLeaf_PartialRecord { firstEntries, lastEntry, parent } ->
             case lastEntry of
                 LastEntryOfRecord_KeyValue key value ->
@@ -1809,8 +1793,6 @@ type ToConcreteTypeError
         (List (ConcreteType PossiblyQualified))
 
 
-{-| TODO(harry): custom error message here
--}
 partialTypeExpressionToConcreteType : TypeExpression -> Result ToConcreteTypeError (ConcreteType PossiblyQualified)
 partialTypeExpressionToConcreteType pte =
     case pte of
