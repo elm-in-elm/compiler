@@ -406,7 +406,7 @@ parseAnything state item =
 
         doneParsingTypeAlias : Token.UpperCase -> List Token.LowerCase -> TypeExpression -> Result Error ParseSuccess
         doneParsingTypeAlias aliasName typeArgs expr =
-            case partialTypeExpressionToConcreteType expr of
+            case typeExpressionToConcreteType expr of
                 Ok concreteType ->
                     { ty = aliasName
                     , genericArgs = typeArgs
@@ -1686,7 +1686,7 @@ blockFromState state =
         State_BlockTypeAlias (BlockTypeAlias_Completish aliasName typeArgs partialExpr) ->
             case autoCollapseNesting CollapseLevel_Function partialExpr of
                 TypeExpressionNestingLeaf_Expr expr ->
-                    partialTypeExpressionToConcreteType expr
+                    typeExpressionToConcreteType expr
                         |> Result.map
                             (\conceteType ->
                                 { ty = aliasName
@@ -1793,8 +1793,8 @@ type ToConcreteTypeError
         (List (ConcreteType PossiblyQualified))
 
 
-partialTypeExpressionToConcreteType : TypeExpression -> Result ToConcreteTypeError (ConcreteType PossiblyQualified)
-partialTypeExpressionToConcreteType pte =
+typeExpressionToConcreteType : TypeExpression -> Result ToConcreteTypeError (ConcreteType PossiblyQualified)
+typeExpressionToConcreteType pte =
     case pte of
         TypeExpression_NamedType { qualifiers, name, args } ->
             let
@@ -1812,7 +1812,7 @@ partialTypeExpressionToConcreteType pte =
                             |> Just
             in
             args
-                |> toList partialTypeExpressionToConcreteType
+                |> toList typeExpressionToConcreteType
                 |> collectList (\x -> x)
                 |> Result.map
                     (\goodArgs ->
@@ -1840,30 +1840,30 @@ partialTypeExpressionToConcreteType pte =
                 |> Ok
 
         TypeExpression_Bracketed ty ->
-            partialTypeExpressionToConcreteType ty
+            typeExpressionToConcreteType ty
 
         TypeExpression_Tuple first second [] ->
             Result.map2
                 ConcreteType.Tuple
-                (partialTypeExpressionToConcreteType first)
-                (partialTypeExpressionToConcreteType second)
+                (typeExpressionToConcreteType first)
+                (typeExpressionToConcreteType second)
 
         TypeExpression_Tuple first second (third :: []) ->
             Result.map3
                 ConcreteType.Tuple3
-                (partialTypeExpressionToConcreteType first)
-                (partialTypeExpressionToConcreteType second)
-                (partialTypeExpressionToConcreteType third)
+                (typeExpressionToConcreteType first)
+                (typeExpressionToConcreteType second)
+                (typeExpressionToConcreteType third)
 
         TypeExpression_Tuple first second (third :: fouth :: rest) ->
             Result.map5
                 ToConcreteTypeError_TooManyTupleArgs
-                (partialTypeExpressionToConcreteType first)
-                (partialTypeExpressionToConcreteType second)
-                (partialTypeExpressionToConcreteType third)
-                (partialTypeExpressionToConcreteType fouth)
+                (typeExpressionToConcreteType first)
+                (typeExpressionToConcreteType second)
+                (typeExpressionToConcreteType third)
+                (typeExpressionToConcreteType fouth)
                 (rest
-                    |> collectList partialTypeExpressionToConcreteType
+                    |> collectList typeExpressionToConcreteType
                 )
                 |> Result.andThen Err
 
@@ -1871,7 +1871,7 @@ partialTypeExpressionToConcreteType pte =
             keyValues
                 |> collectList
                     (\( Token.LowerCase key, value ) ->
-                        partialTypeExpressionToConcreteType value
+                        typeExpressionToConcreteType value
                             |> Result.map (\concreteValue -> ( key, concreteValue ))
                     )
                 |> Result.map
@@ -1897,12 +1897,12 @@ partialTypeExpressionToConcreteType pte =
                                 concreteOtherInputs
                         }
                 )
-                (partialTypeExpressionToConcreteType functionTypeExpr.firstInput)
+                (typeExpressionToConcreteType functionTypeExpr.firstInput)
                 (functionTypeExpr.otherInputs
                     |> List.reverse
-                    |> collectList partialTypeExpressionToConcreteType
+                    |> collectList typeExpressionToConcreteType
                 )
-                (partialTypeExpressionToConcreteType functionTypeExpr.output)
+                (typeExpressionToConcreteType functionTypeExpr.output)
 
 
 collectList : (a -> Result e o) -> List a -> Result e (List o)
