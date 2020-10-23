@@ -30,27 +30,17 @@ unindented line.
 
 In the following Program
 
-    module Main exposing (..)
-
-    -- 0
-
-    import Dict
+```text
+module Main exposing (..)   -- 0
 
 
-    -- 1
-    type
-        A
-        -- 2
-        = A -- 2
+import Dict                 -- 1
 
-    a : A
+type A = A                  -- 2
 
-    -- 3
-    a =
-        -- 4
-        A
-
-    -- 4
+a : A                       -- 3
+a = A                       -- 4
+```
 
 There are five blocks.
 
