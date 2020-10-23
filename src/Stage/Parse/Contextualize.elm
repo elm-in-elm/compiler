@@ -3,7 +3,7 @@ module Stage.Parse.Contextualize exposing (..)
 {-| Here we define parsers. A parser is function
 
     type alias Parser =
-        Lexer.LexItem -> ParseResult
+        Lexer.LexItem -> Result Error State
 
 that takes one lexed item and produces either an error or some state (it can also
 choose to skip the lexed item).
@@ -419,10 +419,10 @@ runHelp items state =
 parseAnything : State -> Located Lexer.LexItem -> ParseResult
 parseAnything state item =
     let
-        newTypeAliasState : Token.UpperCase -> List Token.LowerCase -> TypeExpressionNestingLeaf -> ParseResult
+        newTypeAliasState : Token.UpperCase -> List Token.LowerCase -> TypeExpressionNestingLeaf -> Result Error State
         newTypeAliasState aliasName typeArgs expr =
             State_BlockTypeAlias (BlockTypeAlias_Completish aliasName typeArgs expr)
-                |> ParseResult_Ok
+                |> Ok
 
         doneParsingTypeAlias : Token.UpperCase -> List Token.LowerCase -> TypeExpression -> ParseResult
         doneParsingTypeAlias aliasName typeArgs expr =
@@ -439,7 +439,7 @@ parseAnything state item =
                     Error_TooManyTupleArgs a b c d e
                         |> ParseResult_Err
 
-        newExpressionState : Located Token.LowerCase -> List (Located Token.LowerCase) -> ExpressionNestingLeaf -> ParseResult
+        newExpressionState : Located Token.LowerCase -> List (Located Token.LowerCase) -> ExpressionNestingLeaf -> Result Error State
         newExpressionState name args expr =
             State_BlockValueDeclaration
                 (BlockValueDeclaration_Completish
@@ -448,7 +448,7 @@ parseAnything state item =
                     , partialExpr = expr
                     }
                 )
-                |> ParseResult_Ok
+                |> Ok
 
         doneParsingExpr : Located Token.LowerCase -> List (Located Token.LowerCase) -> LocatedExpr -> ParseResult
         doneParsingExpr name args expr =
@@ -541,98 +541,107 @@ parseAnything state item =
             ParseResult_Skip
 
         Lexer.Token token ->
-            case state of
-                State_Error_Recovery ->
-                    State_Error_Recovery
-                        |> ParseResult_Ok
+            let
+                res =
+                    case state of
+                        State_Error_Recovery ->
+                            State_Error_Recovery
+                                |> Ok
 
-                State_BlockStart ->
-                    parseBlockStart region token
+                        State_BlockStart ->
+                            parseBlockStart region token
 
-                State_BlockFirstItem BlockFirstItem_Type ->
-                    parseTypeBlock token
+                        State_BlockFirstItem BlockFirstItem_Type ->
+                            parseTypeBlock token
 
-                State_BlockFirstItem BlockFirstItem_Module ->
-                    Debug.todo "BlockFirstItem_Module"
+                        State_BlockFirstItem BlockFirstItem_Module ->
+                            Debug.todo "BlockFirstItem_Module"
 
-                State_BlockValueDeclaration (BlockValueDeclaration_Named { name, args }) ->
-                    parseLowercaseArgsOrAssignment
-                        (\newArg ->
-                            State_BlockValueDeclaration
-                                (BlockValueDeclaration_Named
-                                    { name = name
-                                    , args = newArg |> pushOnto args
-                                    }
+                        State_BlockValueDeclaration (BlockValueDeclaration_Named { name, args }) ->
+                            parseLowercaseArgsOrAssignment
+                                (\newArg ->
+                                    State_BlockValueDeclaration
+                                        (BlockValueDeclaration_Named
+                                            { name = name
+                                            , args = newArg |> pushOnto args
+                                            }
+                                        )
                                 )
-                        )
-                        (State_BlockValueDeclaration
-                            (BlockValueDeclaration_NamedAssigns
-                                { name = name
-                                , args = args |> toList (\x -> x)
-                                }
-                            )
-                        )
-                        (Located.located region token)
-
-                State_BlockValueDeclaration (BlockValueDeclaration_NamedAssigns { name, args }) ->
-                    parserExpressionFromEmpty (newExpressionState name args) (Located.located region token)
-
-                State_BlockValueDeclaration (BlockValueDeclaration_Completish { name, args, partialExpr }) ->
-                    parserExpression
-                        (newExpressionState name args)
-                        partialExpr
-                        (Located.located region token)
-
-                State_BlockTypeAlias BlockTypeAlias_Keywords ->
-                    parseTypeAliasName token
-
-                State_BlockTypeAlias (BlockTypeAlias_Named name typeArgs) ->
-                    parseLowercaseArgsOrAssignment
-                        (\newTypeArg ->
-                            State_BlockTypeAlias
-                                (BlockTypeAlias_Named
-                                    name
-                                    (Located.unwrap newTypeArg |> pushOnto typeArgs)
+                                (State_BlockValueDeclaration
+                                    (BlockValueDeclaration_NamedAssigns
+                                        { name = name
+                                        , args = args |> toList (\x -> x)
+                                        }
+                                    )
                                 )
-                        )
-                        (State_BlockTypeAlias
-                            (BlockTypeAlias_NamedAssigns
-                                name
-                                (typeArgs |> toList (\x -> x))
-                            )
-                        )
-                        (Located.located region token)
+                                (Located.located region token)
 
-                State_BlockTypeAlias (BlockTypeAlias_NamedAssigns name typeArgs) ->
-                    parserTypeExprFromEmpty
-                        (newTypeAliasState name typeArgs)
-                        (Located.located region token)
+                        State_BlockValueDeclaration (BlockValueDeclaration_NamedAssigns { name, args }) ->
+                            parserExpressionFromEmpty (newExpressionState name args) (Located.located region token)
 
-                State_BlockTypeAlias (BlockTypeAlias_Completish name typeArgs exprSoFar) ->
-                    parserTypeExpr
-                        (newTypeAliasState name typeArgs)
-                        exprSoFar
-                        (Located.located region token)
+                        State_BlockValueDeclaration (BlockValueDeclaration_Completish { name, args, partialExpr }) ->
+                            parserExpression
+                                (newExpressionState name args)
+                                partialExpr
+                                (Located.located region token)
 
-                State_BlockCustomType (BlockCustomType_Named name typeArgs) ->
-                    parseLowercaseArgsOrAssignment
-                        (\newTypeArg ->
-                            State_BlockCustomType
-                                (BlockCustomType_Named
-                                    name
-                                    (Located.unwrap newTypeArg |> pushOnto typeArgs)
+                        State_BlockTypeAlias BlockTypeAlias_Keywords ->
+                            parseTypeAliasName token
+
+                        State_BlockTypeAlias (BlockTypeAlias_Named name typeArgs) ->
+                            parseLowercaseArgsOrAssignment
+                                (\newTypeArg ->
+                                    State_BlockTypeAlias
+                                        (BlockTypeAlias_Named
+                                            name
+                                            (Located.unwrap newTypeArg |> pushOnto typeArgs)
+                                        )
                                 )
-                        )
-                        (State_BlockCustomType
-                            (BlockCustomType_NamedAssigns
-                                name
-                                (typeArgs |> toList (\x -> x))
-                            )
-                        )
-                        (Located.located region token)
+                                (State_BlockTypeAlias
+                                    (BlockTypeAlias_NamedAssigns
+                                        name
+                                        (typeArgs |> toList (\x -> x))
+                                    )
+                                )
+                                (Located.located region token)
 
-                State_BlockCustomType (BlockCustomType_NamedAssigns _ _) ->
-                    Debug.todo "BlockCustomType_NamedAssigns"
+                        State_BlockTypeAlias (BlockTypeAlias_NamedAssigns name typeArgs) ->
+                            parserTypeExprFromEmpty
+                                (newTypeAliasState name typeArgs)
+                                (Located.located region token)
+
+                        State_BlockTypeAlias (BlockTypeAlias_Completish name typeArgs exprSoFar) ->
+                            parserTypeExpr
+                                (newTypeAliasState name typeArgs)
+                                exprSoFar
+                                (Located.located region token)
+
+                        State_BlockCustomType (BlockCustomType_Named name typeArgs) ->
+                            parseLowercaseArgsOrAssignment
+                                (\newTypeArg ->
+                                    State_BlockCustomType
+                                        (BlockCustomType_Named
+                                            name
+                                            (Located.unwrap newTypeArg |> pushOnto typeArgs)
+                                        )
+                                )
+                                (State_BlockCustomType
+                                    (BlockCustomType_NamedAssigns
+                                        name
+                                        (typeArgs |> toList (\x -> x))
+                                    )
+                                )
+                                (Located.located region token)
+
+                        State_BlockCustomType (BlockCustomType_NamedAssigns _ _) ->
+                            Debug.todo "BlockCustomType_NamedAssigns"
+            in
+            case res of
+                Ok s ->
+                    ParseResult_Ok s
+
+                Err e ->
+                    ParseResult_Err e
 
 
 {-|
@@ -643,7 +652,7 @@ parseAnything state item =
 If the LexItem is a `Newlines` with indentation or is `Whitespace`.
 
 -}
-parseBlockStart : Located.Region -> Lexer.LexToken -> ParseResult
+parseBlockStart : Located.Region -> Lexer.LexToken -> Result Error State
 parseBlockStart region item =
     let
         withCorrectLocation =
@@ -651,22 +660,22 @@ parseBlockStart region item =
     in
     case item of
         Lexer.Keyword Token.Type ->
-            ParseResult_Ok (State_BlockFirstItem BlockFirstItem_Type)
+            Ok (State_BlockFirstItem BlockFirstItem_Type)
 
         Lexer.Keyword Token.Module ->
-            ParseResult_Ok (State_BlockFirstItem BlockFirstItem_Module)
+            Ok (State_BlockFirstItem BlockFirstItem_Module)
 
         Lexer.Keyword other ->
-            ParseResult_Err (Error_MisplacedKeyword other)
+            Err (Error_MisplacedKeyword other)
 
         Lexer.Identifier ({ qualifiers, name } as identitfier) ->
             if qualifiers /= [] then
-                ParseResult_Err (Error_BlockStartsWithQualifiedName identitfier)
+                Err (Error_BlockStartsWithQualifiedName identitfier)
 
             else
                 case name of
                     Token.TokenLowerCase lower ->
-                        ParseResult_Ok
+                        Ok
                             (State_BlockValueDeclaration
                                 (BlockValueDeclaration_Named
                                     { name = withCorrectLocation lower
@@ -677,26 +686,26 @@ parseBlockStart region item =
 
                     Token.TokenUpperCase upperCase ->
                         Error_BlockStartsWithUpperCase upperCase
-                            |> ParseResult_Err
+                            |> Err
 
         _ ->
-            ParseResult_Err (Error_InvalidToken Expecting_Block)
+            Err (Error_InvalidToken Expecting_Block)
 
 
-parseTypeBlock : Lexer.LexToken -> ParseResult
+parseTypeBlock : Lexer.LexToken -> Result Error State
 parseTypeBlock item =
     case item of
         Lexer.Keyword Token.Alias ->
             State_BlockTypeAlias BlockTypeAlias_Keywords
-                |> ParseResult_Ok
+                |> Ok
 
         Lexer.Keyword other ->
             Error_MisplacedKeyword other
-                |> ParseResult_Err
+                |> Err
 
         Lexer.Identifier ({ qualifiers, name } as identifier) ->
             if qualifiers /= [] then
-                ParseResult_Err (Error_BlockStartsWithQualifiedName identifier)
+                Err (Error_BlockStartsWithQualifiedName identifier)
 
             else
                 case name of
@@ -705,29 +714,29 @@ parseTypeBlock item =
                             { qualifiers = qualifiers
                             , name = lower
                             }
-                            |> ParseResult_Err
+                            |> Err
 
                     Token.TokenUpperCase upper ->
                         State_BlockCustomType (BlockCustomType_Named upper empty)
-                            |> ParseResult_Ok
+                            |> Ok
 
         _ ->
             -- TODO(harry) indicate that we could also be expecting the `alias`
             -- keyword.
             Error_InvalidToken Expecting_TypeName
-                |> ParseResult_Err
+                |> Err
 
 
-parseTypeAliasName : Lexer.LexToken -> ParseResult
+parseTypeAliasName : Lexer.LexToken -> Result Error State
 parseTypeAliasName item =
     case item of
         Lexer.Keyword other ->
             Error_MisplacedKeyword other
-                |> ParseResult_Err
+                |> Err
 
         Lexer.Identifier ({ qualifiers, name } as identifier) ->
             if qualifiers /= [] then
-                ParseResult_Err (Error_BlockStartsWithQualifiedName identifier)
+                Err (Error_BlockStartsWithQualifiedName identifier)
 
             else
                 case name of
@@ -736,18 +745,18 @@ parseTypeAliasName item =
                             { qualifiers = qualifiers
                             , name = lower
                             }
-                            |> ParseResult_Err
+                            |> Err
 
                     Token.TokenUpperCase upper ->
                         State_BlockTypeAlias (BlockTypeAlias_Named upper empty)
-                            |> ParseResult_Ok
+                            |> Ok
 
         _ ->
             Error_InvalidToken Expecting_TypeName
-                |> ParseResult_Err
+                |> Err
 
 
-parseLowercaseArgsOrAssignment : (Located Token.LowerCase -> State) -> State -> Located Lexer.LexToken -> ParseResult
+parseLowercaseArgsOrAssignment : (Located Token.LowerCase -> State) -> State -> Located Lexer.LexToken -> Result Error State
 parseLowercaseArgsOrAssignment onTypeArg onAssignment item =
     let
         withCorrectLocation x =
@@ -756,35 +765,35 @@ parseLowercaseArgsOrAssignment onTypeArg onAssignment item =
     case Located.unwrap item of
         Lexer.Keyword kw ->
             Error_MisplacedKeyword kw
-                |> ParseResult_Err
+                |> Err
 
         Lexer.Identifier ({ qualifiers, name } as identifier) ->
             if qualifiers /= [] then
-                ParseResult_Err (Error_QualifiedArgName identifier)
+                Err (Error_QualifiedArgName identifier)
 
             else
                 case name of
                     Token.TokenLowerCase lower ->
                         onTypeArg (withCorrectLocation lower)
-                            |> ParseResult_Ok
+                            |> Ok
 
                     Token.TokenUpperCase upper ->
                         Error_UpperCaseArgName { qualifiers = qualifiers, name = upper }
-                            |> ParseResult_Err
+                            |> Err
 
         Lexer.Sigil Lexer.Assign ->
             onAssignment
-                |> ParseResult_Ok
+                |> Ok
 
         _ ->
             Error_InvalidToken (Expecting_Sigil Lexer.Assign)
-                |> ParseResult_Err
+                |> Err
 
 
 parserTypeExprFromEmpty :
-    (TypeExpressionNestingLeaf -> ParseResult)
+    (TypeExpressionNestingLeaf -> Result Error State)
     -> Located Lexer.LexToken
-    -> ParseResult
+    -> Result Error State
 parserTypeExprFromEmpty newState item =
     case Located.unwrap item of
         Lexer.Identifier { qualifiers, name } ->
@@ -800,7 +809,7 @@ parserTypeExprFromEmpty newState item =
                             { qualifiers = qualifiers
                             , name = lower
                             }
-                            |> ParseResult_Err
+                            |> Err
 
                 Token.TokenUpperCase upper ->
                     if qualifiers /= [] then
@@ -825,7 +834,7 @@ parserTypeExprFromEmpty newState item =
 
         Lexer.Sigil (Lexer.Bracket role Lexer.Close) ->
             Error_UnmatchedBracket role Lexer.Close
-                |> ParseResult_Err
+                |> Err
 
         Lexer.Sigil (Lexer.Bracket Lexer.Curly Lexer.Open) ->
             TypeExpressionNestingLeaf_PartialRecord
@@ -837,26 +846,26 @@ parserTypeExprFromEmpty newState item =
 
         Lexer.Sigil Lexer.Colon ->
             Error_InvalidToken Expecting_Unknown
-                |> ParseResult_Err
+                |> Err
 
         Lexer.Sigil Lexer.Comma ->
             Error_InvalidToken Expecting_Unknown
-                |> ParseResult_Err
+                |> Err
 
         Lexer.Sigil Lexer.ThinArrow ->
             Error_InvalidToken Expecting_Unknown
-                |> ParseResult_Err
+                |> Err
 
         _ ->
             Error_InvalidToken Expecting_Unknown
-                |> ParseResult_Err
+                |> Err
 
 
 parserTypeExpr :
-    (TypeExpressionNestingLeaf -> ParseResult)
+    (TypeExpressionNestingLeaf -> Result Error State)
     -> TypeExpressionNestingLeaf
     -> Located Lexer.LexToken
-    -> ParseResult
+    -> Result Error State
 parserTypeExpr newState prevExpr item =
     case Located.unwrap item of
         Lexer.Identifier ident ->
@@ -883,7 +892,7 @@ parserTypeExpr newState prevExpr item =
             case collapsedLeaf of
                 TypeExpressionNestingLeaf_Expr _ ->
                     Error_UnmatchedBracket Lexer.Round Lexer.Close
-                        |> ParseResult_Err
+                        |> Err
 
                 TypeExpressionNestingLeaf_TypeWithArgs { name, args } ->
                     Debug.todo "Make this state impossible"
@@ -897,13 +906,13 @@ parserTypeExpr newState prevExpr item =
                         { expecting = Lexer.Curly
                         , found = Lexer.Round
                         }
-                        |> ParseResult_Err
+                        |> Err
 
                 TypeExpressionNestingLeaf_Function { output } ->
                     case output of
                         Nothing ->
                             Error_MissingFunctionReturnType
-                                |> ParseResult_Err
+                                |> Err
 
                         Just _ ->
                             Debug.todo "Make this state impossible"
@@ -936,7 +945,7 @@ parserTypeExpr newState prevExpr item =
             case collapsedLeaf of
                 TypeExpressionNestingLeaf_Expr _ ->
                     Error_UnmatchedBracket Lexer.Curly Lexer.Close
-                        |> ParseResult_Err
+                        |> Err
 
                 TypeExpressionNestingLeaf_TypeWithArgs { name, args } ->
                     Debug.todo "Make this state impossible"
@@ -946,7 +955,7 @@ parserTypeExpr newState prevExpr item =
                         { expecting = Lexer.Round
                         , found = Lexer.Curly
                         }
-                        |> ParseResult_Err
+                        |> Err
 
                 TypeExpressionNestingLeaf_PartialRecord pr ->
                     closeRecord pr
@@ -956,7 +965,7 @@ parserTypeExpr newState prevExpr item =
                     case output of
                         Nothing ->
                             Error_MissingFunctionReturnType
-                                |> ParseResult_Err
+                                |> Err
 
                         Just _ ->
                             Debug.todo "Make this state impossible"
@@ -983,7 +992,7 @@ parserTypeExpr newState prevExpr item =
                     case output of
                         Nothing ->
                             Error_InvalidToken Expecting_Unknown
-                                |> ParseResult_Err
+                                |> Err
 
                         Just output_ ->
                             TypeExpressionNestingLeaf_Function
@@ -1012,21 +1021,21 @@ parserTypeExpr newState prevExpr item =
 
                         Nothing ->
                             Error_InvalidToken Expecting_Unknown
-                                |> ParseResult_Err
+                                |> Err
 
                 TypeExpressionNestingLeaf_PartialRecord { firstEntries, lastEntry, parent } ->
                     case lastEntry of
                         LastEntryOfRecord_Empty ->
                             Error_InvalidToken Expecting_Identifier
-                                |> ParseResult_Err
+                                |> Err
 
                         LastEntryOfRecord_Key _ ->
                             Error_InvalidToken (Expecting_Sigil Lexer.Colon)
-                                |> ParseResult_Err
+                                |> Err
 
                         LastEntryOfRecord_KeyColon _ ->
                             Error_InvalidToken Expecting_Unknown
-                                |> ParseResult_Err
+                                |> Err
 
                         LastEntryOfRecord_KeyValue key value ->
                             TypeExpressionNestingLeaf_Function
@@ -1045,13 +1054,13 @@ parserTypeExpr newState prevExpr item =
 
         _ ->
             Error_InvalidToken Expecting_Unknown
-                |> ParseResult_Err
+                |> Err
 
 
 parserExpressionFromEmpty :
-    (ExpressionNestingLeaf -> ParseResult)
+    (ExpressionNestingLeaf -> Result Error State)
     -> Located Lexer.LexToken
-    -> ParseResult
+    -> Result Error State
 parserExpressionFromEmpty newState item =
     let
         withCorrectLocation x =
@@ -1068,18 +1077,18 @@ parserExpressionFromEmpty newState item =
 
                 Nothing ->
                     Error_InvalidNumericLiteral str
-                        |> ParseResult_Err
+                        |> Err
 
         _ ->
             Error_InvalidToken Expecting_Unknown
-                |> ParseResult_Err
+                |> Err
 
 
 parserExpression :
-    (ExpressionNestingLeaf -> ParseResult)
+    (ExpressionNestingLeaf -> Result Error State)
     -> ExpressionNestingLeaf
     -> Located Lexer.LexToken
-    -> ParseResult
+    -> Result Error State
 parserExpression newState prevExpr item =
     let
         withCorrectLocation x =
@@ -1100,11 +1109,11 @@ parserExpression newState prevExpr item =
 
                 Nothing ->
                     Error_InvalidNumericLiteral str
-                        |> ParseResult_Err
+                        |> Err
 
         _ ->
             Error_InvalidToken Expecting_Unknown
-                |> ParseResult_Err
+                |> Err
 
 
 
@@ -1817,16 +1826,16 @@ TODO(harry): We can inline this function.
 
 -}
 partialExpressionToParseResult :
-    (progress -> ParseResult)
+    (progress -> Result Error State)
     -> Result Error progress
-    -> ParseResult
+    -> Result Error State
 partialExpressionToParseResult newState rnewPartialType =
     case rnewPartialType of
         Ok newPartialType ->
             newState newPartialType
 
         Err e ->
-            ParseResult_Err e
+            Err e
 
 
 type ToConcreteTypeError
