@@ -101,7 +101,7 @@ type BlockTypeAlias
     = BlockTypeAlias_Keywords
     | BlockTypeAlias_Named Token.UpperCase (Stack Token.LowerCase)
     | BlockTypeAlias_NamedAssigns Token.UpperCase (List Token.LowerCase)
-    | BlockTypeAlias_Completish Token.UpperCase (List Token.LowerCase) TypeExpressionNestingLeaf
+    | BlockTypeAlias_Completish Token.UpperCase (List Token.LowerCase) (TypeExpressionNestingLeaf () ())
 
 
 type BlockCustomType
@@ -183,6 +183,7 @@ type TypeExpressionNestingParent
         , name : Token.UpperCase
         , args : Stack TypeExpression
         , parent : Maybe TypeExpressionNestingParent
+        , phantom : ()
         }
     | NestingParentType_Function
         { firstInput : TypeExpression
@@ -191,7 +192,10 @@ type TypeExpressionNestingParent
         }
 
 
-type TypeExpressionNestingLeaf
+{-| Sometimes we need to limit which types of `TypeExpressionNestingLeaf` are valid. We do that using the phantom type
+parameters. For example `TypeExpressionNestingLeaf () Never` cannot be a `TypeExpressionNestingLeaf_TypeWithArgs`.
+-}
+type TypeExpressionNestingLeaf phantomFunctionWithOutput phantomTypeWithArgs
     = TypeExpressionNestingLeaf_Bracket
         { firstExpressions : Stack TypeExpression
         , trailingExpression : Maybe TypeExpression
@@ -203,11 +207,12 @@ type TypeExpressionNestingLeaf
         , name : Token.UpperCase
         , args : Stack TypeExpression
         , parent : Maybe TypeExpressionNestingParent
+        , phantom : phantomTypeWithArgs
         }
     | TypeExpressionNestingLeaf_Function
         { firstInput : TypeExpression
         , otherInputs : Stack TypeExpression
-        , output : Maybe TypeExpression
+        , output : Maybe ( TypeExpression, phantomFunctionWithOutput )
         , parent : Maybe TypeExpressionNestingParent
         }
     | TypeExpressionNestingLeaf_Expr TypeExpression
@@ -399,7 +404,7 @@ runHelp items state =
 parseAnything : State -> Located Lexer.LexItem -> Result Error ParseSuccess
 parseAnything state item =
     let
-        newTypeAliasState : Token.UpperCase -> List Token.LowerCase -> TypeExpressionNestingLeaf -> Result Error State
+        newTypeAliasState : Token.UpperCase -> List Token.LowerCase -> TypeExpressionNestingLeaf () () -> Result Error State
         newTypeAliasState aliasName typeArgs expr =
             State_BlockTypeAlias (BlockTypeAlias_Completish aliasName typeArgs expr)
                 |> Ok
@@ -771,7 +776,7 @@ parseLowercaseArgsOrAssignment onTypeArg onAssignment item =
 
 
 parserTypeExprFromEmpty :
-    (TypeExpressionNestingLeaf -> Result Error State)
+    (TypeExpressionNestingLeaf () () -> Result Error State)
     -> Located Lexer.LexToken
     -> Result Error State
 parserTypeExprFromEmpty newState item =
@@ -801,6 +806,7 @@ parserTypeExprFromEmpty newState item =
                             , name = upper
                             , args = empty
                             , parent = Nothing
+                            , phantom = ()
                             }
                             |> newState
 
@@ -842,8 +848,8 @@ parserTypeExprFromEmpty newState item =
 
 
 parserTypeExpr :
-    (TypeExpressionNestingLeaf -> Result Error State)
-    -> TypeExpressionNestingLeaf
+    (TypeExpressionNestingLeaf () () -> Result Error State)
+    -> TypeExpressionNestingLeaf () ()
     -> Located Lexer.LexToken
     -> Result Error State
 parserTypeExpr newState prevExpr item =
@@ -870,8 +876,8 @@ parserTypeExpr newState prevExpr item =
                     Error_UnmatchedBracket Lexer.Round Lexer.Close
                         |> Err
 
-                TypeExpressionNestingLeaf_TypeWithArgs { name, args } ->
-                    Debug.todo "Make this state impossible"
+                TypeExpressionNestingLeaf_TypeWithArgs { name, args, phantom } ->
+                    never phantom
 
                 TypeExpressionNestingLeaf_Bracket { firstExpressions, trailingExpression, parent } ->
                     closeBracket firstExpressions trailingExpression parent
@@ -890,8 +896,8 @@ parserTypeExpr newState prevExpr item =
                             Error_MissingFunctionReturnType
                                 |> Err
 
-                        Just _ ->
-                            Debug.todo "Make this state impossible"
+                        Just ( _, phantom ) ->
+                            never phantom
 
         Lexer.Sigil (Lexer.Bracket Lexer.Curly Lexer.Open) ->
             leafToParent prevExpr
@@ -919,8 +925,8 @@ parserTypeExpr newState prevExpr item =
                     Error_UnmatchedBracket Lexer.Curly Lexer.Close
                         |> Err
 
-                TypeExpressionNestingLeaf_TypeWithArgs { name, args } ->
-                    Debug.todo "Make this state impossible"
+                TypeExpressionNestingLeaf_TypeWithArgs { name, args, phantom } ->
+                    never phantom
 
                 TypeExpressionNestingLeaf_Bracket _ ->
                     Error_WrongClosingBracket
@@ -939,11 +945,11 @@ parserTypeExpr newState prevExpr item =
                             Error_MissingFunctionReturnType
                                 |> Err
 
-                        Just _ ->
-                            Debug.todo "Make this state impossible"
+                        Just ( _, phantom ) ->
+                            never phantom
 
         Lexer.Sigil Lexer.ThinArrow ->
-            case autoCollapseNesting CollapseLevel_TypeWithArgs prevExpr of
+            case autoCollapseNesting (CollapseLevel_TypeWithArgs ()) prevExpr of
                 TypeExpressionNestingLeaf_Expr expr ->
                     TypeExpressionNestingLeaf_Function
                         { firstInput = expr
@@ -953,8 +959,8 @@ parserTypeExpr newState prevExpr item =
                         }
                         |> newState
 
-                TypeExpressionNestingLeaf_TypeWithArgs _ ->
-                    Debug.todo "make state impossible"
+                TypeExpressionNestingLeaf_TypeWithArgs { phantom } ->
+                    never phantom
 
                 TypeExpressionNestingLeaf_Function { firstInput, otherInputs, output, parent } ->
                     case output of
@@ -965,7 +971,7 @@ parserTypeExpr newState prevExpr item =
                         Just output_ ->
                             TypeExpressionNestingLeaf_Function
                                 { firstInput = firstInput
-                                , otherInputs = output_ |> pushOnto otherInputs
+                                , otherInputs = output_ |> Tuple.first |> pushOnto otherInputs
                                 , output = Nothing
                                 , parent = parent
                                 }
@@ -1088,7 +1094,7 @@ parserExpression newState prevExpr item =
 -- HELPERS
 
 
-leafToParent : TypeExpressionNestingLeaf -> Result Error TypeExpressionNestingParent
+leafToParent : TypeExpressionNestingLeaf () () -> Result Error TypeExpressionNestingParent
 leafToParent leaf =
     case leaf of
         TypeExpressionNestingLeaf_Expr expr ->
@@ -1146,12 +1152,12 @@ leafToParent leaf =
                         }
                         |> Ok
 
-                Just te ->
+                Just ( te, () ) ->
                     Error_TypeDoesNotTakeArgs2 te
                         |> Err
 
 
-parentsToLeafWith : TypeExpression -> Maybe TypeExpressionNestingParent -> TypeExpressionNestingLeaf
+parentsToLeafWith : TypeExpression -> Maybe TypeExpressionNestingParent -> TypeExpressionNestingLeaf () ()
 parentsToLeafWith expr toMakeIntoLeaf =
     case toMakeIntoLeaf of
         Just (NestingParentType_PartialRecord { firstEntries, lastEntryName, parent }) ->
@@ -1174,13 +1180,14 @@ parentsToLeafWith expr toMakeIntoLeaf =
                 , name = name
                 , args = expr |> pushOnto args
                 , parent = parent
+                , phantom = ()
                 }
 
         Just (NestingParentType_Function { firstInput, otherInputs, parent }) ->
             TypeExpressionNestingLeaf_Function
                 { firstInput = firstInput
                 , otherInputs = otherInputs
-                , output = Just expr
+                , output = Just ( expr, () )
                 , parent = parent
                 }
 
@@ -1189,12 +1196,12 @@ parentsToLeafWith expr toMakeIntoLeaf =
 
 
 exprAppend :
-    TypeExpressionNestingLeaf
+    TypeExpressionNestingLeaf () ()
     ->
         { qualifiers : List Token.UpperCase
         , name : Token.Token
         }
-    -> Result Error TypeExpressionNestingLeaf
+    -> Result Error (TypeExpressionNestingLeaf () ())
 exprAppend currentLeaf token =
     case token.name of
         Token.TokenLowerCase lower ->
@@ -1299,6 +1306,7 @@ exprAppend currentLeaf token =
                                             , name = upper
                                             , args = empty
                                             , parent = Just newParent
+                                            , phantom = ()
                                             }
                                     )
 
@@ -1331,6 +1339,7 @@ exprAppend currentLeaf token =
                                             , name = upper
                                             , args = empty
                                             , parent = Just newParent
+                                            , phantom = ()
                                             }
                                     )
 
@@ -1346,6 +1355,7 @@ exprAppend currentLeaf token =
                                 |> TypeExpression_NamedType
                                 |> pushOnto args
                         , parent = parent
+                        , phantom = ()
                         }
                         |> Ok
 
@@ -1353,7 +1363,7 @@ exprAppend currentLeaf token =
                     Result.andThen
                         (\newParent ->
                             case output of
-                                Just outputExpr ->
+                                Just ( outputExpr, () ) ->
                                     doesNotTakeArgsError outputExpr
 
                                 Nothing ->
@@ -1362,13 +1372,14 @@ exprAppend currentLeaf token =
                                         , name = upper
                                         , args = empty
                                         , parent = Just newParent
+                                        , phantom = ()
                                         }
                                         |> Ok
                         )
                         (leafToParent currentLeaf)
 
 
-appendCommaTo : TypeExpressionNestingLeaf -> Result Error TypeExpressionNestingLeaf
+appendCommaTo : TypeExpressionNestingLeaf () () -> Result Error (TypeExpressionNestingLeaf () ())
 appendCommaTo prevExpr =
     case autoCollapseNesting CollapseLevel_Function prevExpr of
         TypeExpressionNestingLeaf_PartialRecord { firstEntries, lastEntry, parent } ->
@@ -1404,7 +1415,7 @@ appendCommaTo prevExpr =
                 |> Err
 
 
-appendColonTo : TypeExpressionNestingLeaf -> Result Error TypeExpressionNestingLeaf
+appendColonTo : TypeExpressionNestingLeaf () () -> Result Error (TypeExpressionNestingLeaf () ())
 appendColonTo prevExpr =
     case prevExpr of
         TypeExpressionNestingLeaf_PartialRecord { firstEntries, lastEntry, parent } ->
@@ -1430,7 +1441,7 @@ closeBracket :
     Stack TypeExpression
     -> Maybe TypeExpression
     -> Maybe TypeExpressionNestingParent
-    -> Result Error TypeExpressionNestingLeaf
+    -> Result Error (TypeExpressionNestingLeaf () ())
 closeBracket argStack mLastExpression mParent =
     let
         rexpr =
@@ -1475,7 +1486,7 @@ closeBracket argStack mLastExpression mParent =
 
 closeRecord :
     PartialRecord
-    -> Result Error TypeExpressionNestingLeaf
+    -> Result Error (TypeExpressionNestingLeaf () ())
 closeRecord { firstEntries, lastEntry, parent } =
     let
         fromRecord recordEntries =
@@ -1737,12 +1748,12 @@ blockFromState state =
 -- helper functions
 
 
-type CollapseLevel
-    = CollapseLevel_TypeWithArgs
+type CollapseLevel phantomFunctionWithOutput
+    = CollapseLevel_TypeWithArgs phantomFunctionWithOutput
     | CollapseLevel_Function
 
 
-autoCollapseNesting : CollapseLevel -> TypeExpressionNestingLeaf -> TypeExpressionNestingLeaf
+autoCollapseNesting : CollapseLevel phantomFunctionWithOutput -> TypeExpressionNestingLeaf () () -> TypeExpressionNestingLeaf phantomFunctionWithOutput Never
 autoCollapseNesting collapseLevel pte =
     case pte of
         TypeExpressionNestingLeaf_TypeWithArgs { qualifiers, name, args, parent } ->
@@ -1753,24 +1764,34 @@ autoCollapseNesting collapseLevel pte =
             parentsToLeafWith newTypeExpr parent
                 |> autoCollapseNesting collapseLevel
 
-        TypeExpressionNestingLeaf_Expr _ ->
-            pte
+        TypeExpressionNestingLeaf_Expr expr ->
+            TypeExpressionNestingLeaf_Expr expr
 
-        TypeExpressionNestingLeaf_Bracket _ ->
-            pte
+        TypeExpressionNestingLeaf_Bracket b ->
+            TypeExpressionNestingLeaf_Bracket b
 
-        TypeExpressionNestingLeaf_PartialRecord _ ->
-            pte
+        TypeExpressionNestingLeaf_PartialRecord pr ->
+            TypeExpressionNestingLeaf_PartialRecord pr
 
         TypeExpressionNestingLeaf_Function { firstInput, otherInputs, output, parent } ->
             case ( collapseLevel, output ) of
-                ( CollapseLevel_TypeWithArgs, _ ) ->
-                    pte
+                ( CollapseLevel_TypeWithArgs phantom, _ ) ->
+                    TypeExpressionNestingLeaf_Function
+                        { firstInput = firstInput
+                        , otherInputs = otherInputs
+                        , output = output |> Maybe.map (\( o, _ ) -> ( o, phantom ))
+                        , parent = parent
+                        }
 
                 ( CollapseLevel_Function, Nothing ) ->
-                    pte
+                    TypeExpressionNestingLeaf_Function
+                        { firstInput = firstInput
+                        , otherInputs = otherInputs
+                        , output = Nothing
+                        , parent = parent
+                        }
 
-                ( CollapseLevel_Function, Just outputExpr ) ->
+                ( CollapseLevel_Function, Just ( outputExpr, () ) ) ->
                     let
                         newTypeExpr =
                             TypeExpression_Function

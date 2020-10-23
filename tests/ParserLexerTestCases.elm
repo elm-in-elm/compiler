@@ -4703,7 +4703,7 @@ type alias E a = B.c -> a"""
                                     )
                                 )
                             )
-                    , state = State_BlockTypeAlias (BlockTypeAlias_Completish (UpperCase "B") [] (TypeExpressionNestingLeaf_TypeWithArgs { args = Stack [], name = UpperCase "List", parent = Nothing, qualifiers = [] }))
+                    , state = State_BlockTypeAlias (BlockTypeAlias_Completish (UpperCase "B") [] (TypeExpressionNestingLeaf_TypeWithArgs { args = Stack [], name = UpperCase "List", parent = Nothing, phantom = (), qualifiers = [] }))
                     }
                 , Err
                     { error = Error_TypeDoesNotTakeArgs (TypeExpression_GenericType (LowerCase "list")) (TypeExpression_NamedType { args = Stack [], name = UpperCase "A", qualifiers = [] })
@@ -5039,7 +5039,7 @@ List Int
                 [ Err
                     { error = Error_PartwayThroughBlock
                     , item = Just (Located { end = { col = 1, row = 3 }, start = { col = 12, row = 2 } } (Newlines [] 0))
-                    , state = State_BlockTypeAlias (BlockTypeAlias_Completish (UpperCase "Hi") [] (TypeExpressionNestingLeaf_TypeWithArgs { args = Stack [], name = UpperCase "Int", parent = Just (NestingParentType_Bracket { expressions = Stack [], parent = Nothing }), qualifiers = [] }))
+                    , state = State_BlockTypeAlias (BlockTypeAlias_Completish (UpperCase "Hi") [] (TypeExpressionNestingLeaf_TypeWithArgs { args = Stack [], name = UpperCase "Int", parent = Just (NestingParentType_Bracket { expressions = Stack [], parent = Nothing }), phantom = (), qualifiers = [] }))
                     }
                 ]
       , lexed =
