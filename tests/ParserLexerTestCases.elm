@@ -2819,6 +2819,143 @@ type alias Function3 = (Int, () -> (Int, String), ())
                 , Located { end = { col = 1, row = 4 }, start = { col = 10, row = 3 } } (Newlines [] 0)
                 ]
       }
+    , { name = "type-alias-qualified-type"
+      , source = """type alias A = B.C.D
+
+type alias A = List B.C.D"""
+      , pretty = """
+        ( ( Ok
+          , ( TypeAlias
+            , ( ty, A )
+            , ( genericArgs, () )
+            , ( expr
+              , ( UserDefinedType
+                , ( ( qualifiedness
+                    , ( PossiblyQualified
+                      , ( Just, B.C )
+                      )
+                    )
+                  , ( name, D )
+                  , ( args, () )
+                  )
+                )
+              )
+            )
+          )
+        , ( Ok
+          , ( TypeAlias
+            , ( ty, A )
+            , ( genericArgs, () )
+            , ( expr
+              , ( UserDefinedType
+                , ( ( qualifiedness
+                    , ( PossiblyQualified
+                      , ( Just, B.C )
+                      )
+                    )
+                  , ( name, List )
+                  , ( args
+                    , ( ( UserDefinedType
+                        , ( ( qualifiedness
+                            , ( PossiblyQualified
+                              , ( Just, B.C )
+                              )
+                            )
+                          , ( name, D )
+                          , ( args, () )
+                          )
+                        ) )
+                    )
+                  )
+                )
+              )
+            )
+          )
+        )
+"""
+      , contextualized =
+            Just
+                [ Ok
+                    (TypeAlias
+                        { expr =
+                            UserDefinedType
+                                { args = []
+                                , name = "D"
+                                , qualifiedness = PossiblyQualified (Just "B.C")
+                                }
+                        , genericArgs = []
+                        , ty = UpperCase "A"
+                        }
+                    )
+                , Ok
+                    (TypeAlias
+                        { expr =
+                            UserDefinedType
+                                { args =
+                                    [ UserDefinedType
+                                        { args = []
+                                        , name = "D"
+                                        , qualifiedness = PossiblyQualified (Just "B.C")
+                                        }
+                                    ]
+                                , name = "List"
+                                , qualifiedness = PossiblyQualified (Just "B.C")
+                                }
+                        , genericArgs = []
+                        , ty = UpperCase "A"
+                        }
+                    )
+                ]
+      , lexed =
+            Ok
+                [ Located { end = { col = 5, row = 1 }, start = { col = 1, row = 1 } } (Token (Keyword Type))
+                , Located { end = { col = 6, row = 1 }, start = { col = 5, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 11, row = 1 }, start = { col = 6, row = 1 } } (Token (Keyword Alias))
+                , Located { end = { col = 12, row = 1 }, start = { col = 11, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 13, row = 1 }, start = { col = 12, row = 1 } } (Token (Identifier { name = TokenUpperCase (UpperCase "A"), qualifiers = [] }))
+                , Located { end = { col = 14, row = 1 }, start = { col = 13, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 15, row = 1 }, start = { col = 14, row = 1 } } (Token (Sigil Assign))
+                , Located { end = { col = 16, row = 1 }, start = { col = 15, row = 1 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 21, row = 1 }, start = { col = 16, row = 1 } }
+                    (Token
+                        (Identifier
+                            { name = TokenUpperCase (UpperCase "D")
+                            , qualifiers =
+                                [ UpperCase "B"
+                                , UpperCase "C"
+                                ]
+                            }
+                        )
+                    )
+                , Located { end = { col = 1, row = 3 }, start = { col = 21, row = 1 } }
+                    (Newlines
+                        [ 0
+                        ]
+                        0
+                    )
+                , Located { end = { col = 5, row = 3 }, start = { col = 1, row = 3 } } (Token (Keyword Type))
+                , Located { end = { col = 6, row = 3 }, start = { col = 5, row = 3 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 11, row = 3 }, start = { col = 6, row = 3 } } (Token (Keyword Alias))
+                , Located { end = { col = 12, row = 3 }, start = { col = 11, row = 3 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 13, row = 3 }, start = { col = 12, row = 3 } } (Token (Identifier { name = TokenUpperCase (UpperCase "A"), qualifiers = [] }))
+                , Located { end = { col = 14, row = 3 }, start = { col = 13, row = 3 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 15, row = 3 }, start = { col = 14, row = 3 } } (Token (Sigil Assign))
+                , Located { end = { col = 16, row = 3 }, start = { col = 15, row = 3 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 20, row = 3 }, start = { col = 16, row = 3 } } (Token (Identifier { name = TokenUpperCase (UpperCase "List"), qualifiers = [] }))
+                , Located { end = { col = 21, row = 3 }, start = { col = 20, row = 3 } } (Ignorable (Whitespace 1))
+                , Located { end = { col = 26, row = 3 }, start = { col = 21, row = 3 } }
+                    (Token
+                        (Identifier
+                            { name = TokenUpperCase (UpperCase "D")
+                            , qualifiers =
+                                [ UpperCase "B"
+                                , UpperCase "C"
+                                ]
+                            }
+                        )
+                    )
+                ]
+      }
     , { name = "type-alias-record-3-entries"
       , source = """type alias Ty = { a: A, b: B, c: C }
 """

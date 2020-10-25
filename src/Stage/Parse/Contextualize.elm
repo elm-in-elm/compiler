@@ -796,18 +796,14 @@ parserTypeExprFromEmpty newState item =
                             |> Err
 
                 Token.TokenUpperCase upper ->
-                    if qualifiers /= [] then
-                        Debug.todo ""
-
-                    else
-                        TypeExpressionNestingLeaf_TypeWithArgs
-                            { qualifiers = qualifiers
-                            , name = upper
-                            , args = empty
-                            , parent = Nothing
-                            , phantom = ()
-                            }
-                            |> newState
+                    TypeExpressionNestingLeaf_TypeWithArgs
+                        { qualifiers = qualifiers
+                        , name = upper
+                        , args = empty
+                        , parent = Nothing
+                        , phantom = ()
+                        }
+                        |> newState
 
         Lexer.Sigil (Lexer.Bracket Lexer.Round Lexer.Open) ->
             TypeExpressionNestingLeaf_Bracket
