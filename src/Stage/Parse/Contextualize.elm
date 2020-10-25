@@ -567,13 +567,12 @@ parseAnything state item =
                             (Located.located region token)
 
                     State_BlockValueDeclaration (BlockValueDeclaration_NamedAssigns { name, args }) ->
-                        parserExpressionFromEmpty (newExpressionState name args) (Located.located region token)
+                        parserExpressionFromEmpty (Located.located region token)
+                            |> Result.andThen (newExpressionState name args)
 
                     State_BlockValueDeclaration (BlockValueDeclaration_Completish { name, args, partialExpr }) ->
-                        parserExpression
-                            (newExpressionState name args)
-                            partialExpr
-                            (Located.located region token)
+                        parserExpression partialExpr (Located.located region token)
+                            |> Result.andThen (newExpressionState name args)
 
                     State_BlockTypeAlias BlockTypeAlias_Keywords ->
                         parseTypeAliasName token
@@ -596,15 +595,12 @@ parseAnything state item =
                             (Located.located region token)
 
                     State_BlockTypeAlias (BlockTypeAlias_NamedAssigns name typeArgs) ->
-                        parserTypeExprFromEmpty
-                            (newTypeAliasState name typeArgs)
-                            (Located.located region token)
+                        parserTypeExprFromEmpty (Located.located region token)
+                            |> Result.andThen (newTypeAliasState name typeArgs)
 
                     State_BlockTypeAlias (BlockTypeAlias_Completish name typeArgs exprSoFar) ->
-                        parserTypeExpr
-                            (newTypeAliasState name typeArgs)
-                            exprSoFar
-                            (Located.located region token)
+                        parserTypeExpr exprSoFar (Located.located region token)
+                            |> Result.andThen (newTypeAliasState name typeArgs)
 
                     State_BlockCustomType (BlockCustomType_Named name typeArgs) ->
                         parseLowercaseArgsOrAssignment
@@ -775,10 +771,9 @@ parseLowercaseArgsOrAssignment onTypeArg onAssignment item =
 
 
 parserTypeExprFromEmpty :
-    (TypeExpressionNestingLeaf () () -> Result Error State)
-    -> Located Lexer.LexToken
-    -> Result Error State
-parserTypeExprFromEmpty newState item =
+    Located Lexer.LexToken
+    -> Result Error (TypeExpressionNestingLeaf () ())
+parserTypeExprFromEmpty item =
     case Located.unwrap item of
         Lexer.Identifier { qualifiers, name } ->
             case name of
@@ -786,7 +781,7 @@ parserTypeExprFromEmpty newState item =
                     if qualifiers == [] then
                         TypeExpression_GenericType lower
                             |> TypeExpressionNestingLeaf_Expr
-                            |> newState
+                            |> Ok
 
                     else
                         Error_LowerCasedTypename
@@ -803,7 +798,7 @@ parserTypeExprFromEmpty newState item =
                         , parent = Nothing
                         , phantom = ()
                         }
-                        |> newState
+                        |> Ok
 
         Lexer.Sigil (Lexer.Bracket Lexer.Round Lexer.Open) ->
             TypeExpressionNestingLeaf_Bracket
@@ -811,7 +806,7 @@ parserTypeExprFromEmpty newState item =
                 , trailingExpression = Nothing
                 , parent = Nothing
                 }
-                |> newState
+                |> Ok
 
         Lexer.Sigil (Lexer.Bracket role Lexer.Close) ->
             Error_UnmatchedBracket role Lexer.Close
@@ -823,7 +818,7 @@ parserTypeExprFromEmpty newState item =
                 , lastEntry = LastEntryOfRecord_Empty
                 , parent = Nothing
                 }
-                |> newState
+                |> Ok
 
         Lexer.Sigil Lexer.Colon ->
             Error_InvalidToken Expecting_Unknown
@@ -843,15 +838,13 @@ parserTypeExprFromEmpty newState item =
 
 
 parserTypeExpr :
-    (TypeExpressionNestingLeaf () () -> Result Error State)
-    -> TypeExpressionNestingLeaf () ()
+    TypeExpressionNestingLeaf () ()
     -> Located Lexer.LexToken
-    -> Result Error State
-parserTypeExpr newState prevExpr item =
+    -> Result Error (TypeExpressionNestingLeaf () ())
+parserTypeExpr prevExpr item =
     case Located.unwrap item of
         Lexer.Identifier ident ->
             exprAppend prevExpr ident
-                |> Result.andThen newState
 
         Lexer.Sigil (Lexer.Bracket Lexer.Round Lexer.Open) ->
             leafToParent prevExpr
@@ -863,7 +856,6 @@ parserTypeExpr newState prevExpr item =
                             , parent = Just parent
                             }
                     )
-                |> Result.andThen newState
 
         Lexer.Sigil (Lexer.Bracket Lexer.Round Lexer.Close) ->
             case collapseFunction prevExpr of
@@ -876,7 +868,6 @@ parserTypeExpr newState prevExpr item =
 
                 TypeExpressionNestingLeaf_Bracket { firstExpressions, trailingExpression, parent } ->
                     closeBracket firstExpressions trailingExpression parent
-                        |> Result.andThen newState
 
                 TypeExpressionNestingLeaf_PartialRecord _ ->
                     Error_WrongClosingBracket
@@ -904,15 +895,12 @@ parserTypeExpr newState prevExpr item =
                             , parent = Just newParent
                             }
                     )
-                |> Result.andThen newState
 
         Lexer.Sigil Lexer.Colon ->
             appendColonTo prevExpr
-                |> Result.andThen newState
 
         Lexer.Sigil Lexer.Comma ->
             appendCommaTo prevExpr
-                |> Result.andThen newState
 
         Lexer.Sigil (Lexer.Bracket Lexer.Curly Lexer.Close) ->
             case collapseFunction prevExpr of
@@ -932,7 +920,6 @@ parserTypeExpr newState prevExpr item =
 
                 TypeExpressionNestingLeaf_PartialRecord pr ->
                     closeRecord pr
-                        |> Result.andThen newState
 
                 TypeExpressionNestingLeaf_Function { output } ->
                     case output of
@@ -952,7 +939,7 @@ parserTypeExpr newState prevExpr item =
                         , output = Nothing
                         , parent = Nothing
                         }
-                        |> newState
+                        |> Ok
 
                 TypeExpressionNestingLeaf_TypeWithArgs { phantom } ->
                     never phantom
@@ -970,7 +957,7 @@ parserTypeExpr newState prevExpr item =
                                 , output = Nothing
                                 , parent = parent
                                 }
-                                |> newState
+                                |> Ok
 
                 TypeExpressionNestingLeaf_Bracket { firstExpressions, trailingExpression, parent } ->
                     case trailingExpression of
@@ -986,7 +973,7 @@ parserTypeExpr newState prevExpr item =
                                         |> NestingParentType_Bracket
                                         |> Just
                                 }
-                                |> newState
+                                |> Ok
 
                         Nothing ->
                             Error_InvalidToken Expecting_Unknown
@@ -1019,7 +1006,7 @@ parserTypeExpr newState prevExpr item =
                                         |> NestingParentType_PartialRecord
                                         |> Just
                                 }
-                                |> newState
+                                |> Ok
 
         _ ->
             Error_InvalidToken Expecting_Unknown
@@ -1027,10 +1014,9 @@ parserTypeExpr newState prevExpr item =
 
 
 parserExpressionFromEmpty :
-    (ExpressionNestingLeaf -> Result Error State)
-    -> Located Lexer.LexToken
-    -> Result Error State
-parserExpressionFromEmpty newState item =
+    Located Lexer.LexToken
+    -> Result Error ExpressionNestingLeaf
+parserExpressionFromEmpty item =
     let
         withCorrectLocation x =
             Located.map (\_ -> x) item
@@ -1042,7 +1028,7 @@ parserExpressionFromEmpty newState item =
                     Frontend.Int i
                         |> withCorrectLocation
                         |> ExpressionTypeExpressionNestingLeaf_Expr
-                        |> newState
+                        |> Ok
 
                 Nothing ->
                     Error_InvalidNumericLiteral str
@@ -1054,11 +1040,10 @@ parserExpressionFromEmpty newState item =
 
 
 parserExpression :
-    (ExpressionNestingLeaf -> Result Error State)
-    -> ExpressionNestingLeaf
+    ExpressionNestingLeaf
     -> Located Lexer.LexToken
-    -> Result Error State
-parserExpression newState prevExpr item =
+    -> Result Error ExpressionNestingLeaf
+parserExpression prevExpr item =
     let
         withCorrectLocation x =
             Located.map (\_ -> x) item
@@ -1066,7 +1051,6 @@ parserExpression newState prevExpr item =
     case Located.unwrap item of
         Lexer.Sigil (Lexer.Operator op) ->
             appendOperatorTo prevExpr (withCorrectLocation op)
-                |> Result.andThen newState
 
         Lexer.NumericLiteral str ->
             case String.toInt str of
@@ -1074,7 +1058,6 @@ parserExpression newState prevExpr item =
                     Frontend.Int i
                         |> withCorrectLocation
                         |> appendValueExprTo prevExpr
-                        |> Result.andThen newState
 
                 Nothing ->
                     Error_InvalidNumericLiteral str
