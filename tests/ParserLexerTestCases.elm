@@ -4686,7 +4686,7 @@ type alias Function3 = (Int, () ->, ())
       , contextualized =
             Just
                 [ Err
-                    { error = Error_TypeDoesNotTakeArgs2 (TypeExpression_Bracketed (TypeExpression_NamedType { args = Stack [], name = UpperCase "Int", qualifiers = [] }))
+                    { error = Error_TypeDoesNotTakeArgs (TypeExpression_Bracketed (TypeExpression_NamedType { args = Stack [], name = UpperCase "Int", qualifiers = [] })) (TypeExpressionNestingLeaf_Bracket { firstExpressions = Stack [], parent = Nothing, trailingExpression = Nothing })
                     , item = Just (Located { end = { col = 24, row = 1 }, start = { col = 23, row = 1 } } (Token (Sigil (Bracket Round Open))))
                     , state = State_BlockTypeAlias (BlockTypeAlias_Completish (UpperCase "Hi") [] (TypeExpressionNestingLeaf_Expr (TypeExpression_Bracketed (TypeExpression_NamedType { args = Stack [], name = UpperCase "Int", qualifiers = [] }))))
                     }
@@ -4719,7 +4719,7 @@ type alias Function3 = (Int, () ->, ())
       , contextualized =
             Just
                 [ Err
-                    { error = Error_TypeDoesNotTakeArgs2 TypeExpression_Unit
+                    { error = Error_TypeDoesNotTakeArgs TypeExpression_Unit (TypeExpressionNestingLeaf_Bracket { firstExpressions = Stack [], parent = Nothing, trailingExpression = Nothing })
                     , item = Just (Located { end = { col = 21, row = 1 }, start = { col = 20, row = 1 } } (Token (Sigil (Bracket Round Open))))
                     , state = State_BlockTypeAlias (BlockTypeAlias_Completish (UpperCase "Hi") [] (TypeExpressionNestingLeaf_Expr TypeExpression_Unit))
                     }
@@ -4751,7 +4751,7 @@ type alias Function3 = (Int, () ->, ())
       , contextualized =
             Just
                 [ Err
-                    { error = Error_TypeDoesNotTakeArgs2 TypeExpression_Unit
+                    { error = Error_TypeDoesNotTakeArgs TypeExpression_Unit (TypeExpressionNestingLeaf_Bracket { firstExpressions = Stack [], parent = Nothing, trailingExpression = Nothing })
                     , item = Just (Located { end = { col = 21, row = 1 }, start = { col = 20, row = 1 } } (Token (Sigil (Bracket Round Open))))
                     , state = State_BlockTypeAlias (BlockTypeAlias_Completish (UpperCase "Hi") [] (TypeExpressionNestingLeaf_Expr TypeExpression_Unit))
                     }
@@ -4843,7 +4843,7 @@ type alias E a = B.c -> a"""
                     , state = State_BlockTypeAlias (BlockTypeAlias_Completish (UpperCase "B") [] (TypeExpressionNestingLeaf_TypeWithArgs { args = Stack [], name = UpperCase "List", parent = Nothing, phantom = (), qualifiers = [] }))
                     }
                 , Err
-                    { error = Error_TypeDoesNotTakeArgs (TypeExpression_GenericType (LowerCase "list")) (TypeExpression_NamedType { args = Stack [], name = UpperCase "A", qualifiers = [] })
+                    { error = Error_TypeDoesNotTakeArgs (TypeExpression_GenericType (LowerCase "list")) (TypeExpressionNestingLeaf_TypeWithArgs { args = Stack [], name = UpperCase "A", parent = Nothing, phantom = (), qualifiers = [] })
                     , item = Just (Located { end = { col = 22, row = 5 }, start = { col = 21, row = 5 } } (Token (Identifier { name = TokenUpperCase (UpperCase "A"), qualifiers = [] })))
                     , state = State_BlockTypeAlias (BlockTypeAlias_Completish (UpperCase "C") [] (TypeExpressionNestingLeaf_Expr (TypeExpression_GenericType (LowerCase "list"))))
                     }

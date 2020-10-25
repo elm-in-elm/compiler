@@ -274,8 +274,7 @@ type Error
     | Error_MissingFunctionReturnType
     | Error_ExpectedColonWhilstParsingRecord
     | Error_ExpectedKeyWhilstParsingRecord
-    | Error_TypeDoesNotTakeArgs TypeExpression TypeExpression
-    | Error_TypeDoesNotTakeArgs2 TypeExpression
+    | Error_TypeDoesNotTakeArgs TypeExpression (TypeExpressionNestingLeaf () ())
     | Error_ValueDoesNotTakeArgs Frontend.LocatedExpr
     | Error_ExtraItemAfterBlock TypeExpression Lexer.LexItem
     | Error_TooManyTupleArgs
@@ -781,9 +780,7 @@ parseLowercaseArgsOrAssignment item =
                 |> Err
 
 
-parserTypeExprFromEmpty :
-    Located Lexer.LexToken
-    -> Result Error (TypeExpressionNestingLeaf () ())
+parserTypeExprFromEmpty : Located Lexer.LexToken -> Result Error (TypeExpressionNestingLeaf () ())
 parserTypeExprFromEmpty item =
     case Located.unwrap item of
         Lexer.Identifier { qualifiers, name } ->
@@ -859,14 +856,14 @@ parserTypeExpr prevExpr item =
 
         Lexer.Sigil (Lexer.Bracket Lexer.Round Lexer.Open) ->
             leafToParent prevExpr
-                |> Result.map
-                    (\parent ->
-                        TypeExpressionNestingLeaf_Bracket
-                            { firstExpressions = empty
-                            , trailingExpression = Nothing
-                            , parent = Just parent
-                            }
-                    )
+                (\mParent ->
+                    TypeExpressionNestingLeaf_Bracket
+                        { firstExpressions = empty
+                        , trailingExpression = Nothing
+                        , parent = mParent
+                        }
+                        |> Ok
+                )
 
         Lexer.Sigil (Lexer.Bracket Lexer.Round Lexer.Close) ->
             case collapseFunction prevExpr of
@@ -898,14 +895,14 @@ parserTypeExpr prevExpr item =
 
         Lexer.Sigil (Lexer.Bracket Lexer.Curly Lexer.Open) ->
             leafToParent prevExpr
-                |> Result.map
-                    (\newParent ->
-                        TypeExpressionNestingLeaf_PartialRecord
-                            { firstEntries = empty
-                            , lastEntry = LastEntryOfRecord_Empty
-                            , parent = Just newParent
-                            }
-                    )
+                (\mNewParent ->
+                    TypeExpressionNestingLeaf_PartialRecord
+                        { firstEntries = empty
+                        , lastEntry = LastEntryOfRecord_Empty
+                        , parent = mNewParent
+                        }
+                        |> Ok
+                )
 
         Lexer.Sigil Lexer.Colon ->
             appendColonTo prevExpr
@@ -1024,9 +1021,7 @@ parserTypeExpr prevExpr item =
                 |> Err
 
 
-parserExpressionFromEmpty :
-    Located Lexer.LexToken
-    -> Result Error ExpressionNestingLeaf
+parserExpressionFromEmpty : Located Lexer.LexToken -> Result Error ExpressionNestingLeaf
 parserExpressionFromEmpty item =
     let
         withCorrectLocation x =
@@ -1083,27 +1078,28 @@ parserExpression prevExpr item =
 -- HELPERS
 
 
-leafToParent : TypeExpressionNestingLeaf () () -> Result Error TypeExpressionNestingParent
-leafToParent leaf =
+leafToParent : TypeExpressionNestingLeaf () () -> (Maybe TypeExpressionNestingParent -> Result Error (TypeExpressionNestingLeaf () ())) -> Result Error (TypeExpressionNestingLeaf () ())
+leafToParent leaf processParent =
     case leaf of
         TypeExpressionNestingLeaf_Expr expr ->
             -- Cannot nest unless there is a trailing comma!
-            Error_TypeDoesNotTakeArgs2 expr
-                |> Err
+            processParent Nothing
+                |> Result.andThen (Error_TypeDoesNotTakeArgs expr >> Err)
 
         TypeExpressionNestingLeaf_Bracket { firstExpressions, trailingExpression, parent } ->
             case trailingExpression of
                 Just lastType ->
                     -- Cannot nest unless there is a trailing comma!
-                    Error_TypeDoesNotTakeArgs2 lastType
-                        |> Err
+                    processParent Nothing
+                        |> Result.andThen (Error_TypeDoesNotTakeArgs lastType >> Err)
 
                 Nothing ->
                     { expressions = firstExpressions
                     , parent = parent
                     }
                         |> NestingParentType_Bracket
-                        |> Ok
+                        |> Just
+                        |> processParent
 
         TypeExpressionNestingLeaf_PartialRecord { firstEntries, lastEntry, parent } ->
             case lastEntry of
@@ -1121,15 +1117,17 @@ leafToParent leaf =
                     , parent = parent
                     }
                         |> NestingParentType_PartialRecord
-                        |> Ok
+                        |> Just
+                        |> processParent
 
                 LastEntryOfRecord_KeyValue _ lastValueType ->
-                    Error_TypeDoesNotTakeArgs2 lastValueType
-                        |> Err
+                    processParent Nothing
+                        |> Result.andThen (Error_TypeDoesNotTakeArgs lastValueType >> Err)
 
         TypeExpressionNestingLeaf_TypeWithArgs details ->
             NestingParentType_TypeWithArgs details
-                |> Ok
+                |> Just
+                |> processParent
 
         TypeExpressionNestingLeaf_Function { firstInput, otherInputs, output, parent } ->
             case output of
@@ -1139,11 +1137,12 @@ leafToParent leaf =
                         , otherInputs = otherInputs
                         , parent = parent
                         }
-                        |> Ok
+                        |> Just
+                        |> processParent
 
                 Just ( te, () ) ->
-                    Error_TypeDoesNotTakeArgs2 te
-                        |> Err
+                    processParent Nothing
+                        |> Result.andThen (Error_TypeDoesNotTakeArgs te >> Err)
 
 
 parentsToLeafWith : TypeExpression -> Maybe TypeExpressionNestingParent -> TypeExpressionNestingLeaf () ()
@@ -1209,12 +1208,8 @@ exprAppend currentLeaf token =
 
                     else
                         lowerCaseTypeError
-
-                doesNotTakeArgsError expr =
-                    Result.andThen (Error_TypeDoesNotTakeArgs expr >> Err) genericType
             in
             case currentLeaf of
-                -- We are within a nested bracket.
                 TypeExpressionNestingLeaf_Bracket { firstExpressions, trailingExpression, parent } ->
                     case trailingExpression of
                         Nothing ->
@@ -1229,10 +1224,14 @@ exprAppend currentLeaf token =
                                     )
 
                         Just existingRoot ->
-                            doesNotTakeArgsError existingRoot
+                            genericType
+                                |> Result.andThen
+                                    (TypeExpressionNestingLeaf_Expr >> Error_TypeDoesNotTakeArgs existingRoot >> Err)
 
                 TypeExpressionNestingLeaf_Expr expr ->
-                    doesNotTakeArgsError expr
+                    genericType
+                        |> Result.andThen
+                            (TypeExpressionNestingLeaf_Expr >> Error_TypeDoesNotTakeArgs expr >> Err)
 
                 TypeExpressionNestingLeaf_PartialRecord pr ->
                     case pr.lastEntry of
@@ -1253,57 +1252,55 @@ exprAppend currentLeaf token =
                                     |> Err
 
                         _ ->
-                            Result.map2
-                                (\newParent gt -> parentsToLeafWith gt (Just newParent))
-                                (leafToParent currentLeaf)
-                                genericType
+                            -- TODO(harry): dedup
+                            leafToParent
+                                currentLeaf
+                                (\mNewParent ->
+                                    genericType
+                                        |> Result.map (\gt -> parentsToLeafWith gt mNewParent)
+                                )
 
                 TypeExpressionNestingLeaf_TypeWithArgs _ ->
-                    Result.map2
-                        (\newParent gt -> parentsToLeafWith gt (Just newParent))
-                        (leafToParent currentLeaf)
-                        genericType
+                    leafToParent
+                        currentLeaf
+                        (\mNewParent ->
+                            genericType
+                                |> Result.map (\gt -> parentsToLeafWith gt mNewParent)
+                        )
 
                 TypeExpressionNestingLeaf_Function _ ->
-                    Result.map2
-                        (\newParent gt -> parentsToLeafWith gt (Just newParent))
-                        (leafToParent currentLeaf)
-                        genericType
+                    leafToParent
+                        currentLeaf
+                        (\mNewParent ->
+                            genericType
+                                |> Result.map (\gt -> parentsToLeafWith gt mNewParent)
+                        )
 
         Token.TokenUpperCase upper ->
             let
-                doesNotTakeArgsError expr =
-                    Error_TypeDoesNotTakeArgs expr
-                        (TypeExpression_NamedType
-                            { qualifiers = token.qualifiers
-                            , name = upper
-                            , args = empty
-                            }
-                        )
-                        |> Err
+                ty parent =
+                    TypeExpressionNestingLeaf_TypeWithArgs
+                        { qualifiers = token.qualifiers
+                        , name = upper
+                        , args = empty
+                        , parent = parent
+                        , phantom = ()
+                        }
             in
             case currentLeaf of
                 -- We are within a nested bracket.
                 TypeExpressionNestingLeaf_Bracket { firstExpressions, trailingExpression } ->
                     case trailingExpression of
                         Nothing ->
-                            leafToParent currentLeaf
-                                |> Result.map
-                                    (\newParent ->
-                                        TypeExpressionNestingLeaf_TypeWithArgs
-                                            { qualifiers = token.qualifiers
-                                            , name = upper
-                                            , args = empty
-                                            , parent = Just newParent
-                                            , phantom = ()
-                                            }
-                                    )
+                            leafToParent currentLeaf (ty >> Ok)
 
                         Just existingRoot ->
-                            doesNotTakeArgsError existingRoot
+                            Error_TypeDoesNotTakeArgs existingRoot (ty Nothing)
+                                |> Err
 
                 TypeExpressionNestingLeaf_Expr expr ->
-                    doesNotTakeArgsError expr
+                    Error_TypeDoesNotTakeArgs expr (ty Nothing)
+                        |> Err
 
                 TypeExpressionNestingLeaf_PartialRecord pr ->
                     case pr.lastEntry of
@@ -1320,17 +1317,18 @@ exprAppend currentLeaf token =
                                     |> Err
 
                         _ ->
-                            leafToParent currentLeaf
-                                |> Result.map
-                                    (\newParent ->
-                                        TypeExpressionNestingLeaf_TypeWithArgs
-                                            { qualifiers = token.qualifiers
-                                            , name = upper
-                                            , args = empty
-                                            , parent = Just newParent
-                                            , phantom = ()
-                                            }
-                                    )
+                            leafToParent
+                                currentLeaf
+                                (\mNewParent ->
+                                    TypeExpressionNestingLeaf_TypeWithArgs
+                                        { qualifiers = token.qualifiers
+                                        , name = upper
+                                        , args = empty
+                                        , parent = mNewParent
+                                        , phantom = ()
+                                        }
+                                        |> Ok
+                                )
 
                 TypeExpressionNestingLeaf_TypeWithArgs { name, args, parent } ->
                     TypeExpressionNestingLeaf_TypeWithArgs
@@ -1349,23 +1347,24 @@ exprAppend currentLeaf token =
                         |> Ok
 
                 TypeExpressionNestingLeaf_Function { firstInput, output } ->
-                    Result.andThen
-                        (\newParent ->
+                    leafToParent currentLeaf
+                        (\mNewParent ->
                             case output of
                                 Just ( outputExpr, () ) ->
-                                    doesNotTakeArgsError outputExpr
+                                    Error_TypeDoesNotTakeArgs outputExpr (ty Nothing)
+                                        |> Err
 
                                 Nothing ->
+                                    -- TODO(harry) dedup
                                     TypeExpressionNestingLeaf_TypeWithArgs
                                         { qualifiers = token.qualifiers
                                         , name = upper
                                         , args = empty
-                                        , parent = Just newParent
+                                        , parent = mNewParent
                                         , phantom = ()
                                         }
                                         |> Ok
                         )
-                        (leafToParent currentLeaf)
 
 
 appendCommaTo : TypeExpressionNestingLeaf () () -> Result Error (TypeExpressionNestingLeaf () ())
