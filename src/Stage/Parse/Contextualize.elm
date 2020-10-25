@@ -548,23 +548,26 @@ parseAnything state item =
                         Debug.todo "BlockFirstItem_Module"
 
                     State_BlockValueDeclaration (BlockValueDeclaration_Named { name, args }) ->
-                        parseLowercaseArgsOrAssignment
-                            (\newArg ->
-                                State_BlockValueDeclaration
-                                    (BlockValueDeclaration_Named
-                                        { name = name
-                                        , args = newArg |> pushOnto args
-                                        }
-                                    )
-                            )
-                            (State_BlockValueDeclaration
-                                (BlockValueDeclaration_NamedAssigns
-                                    { name = name
-                                    , args = args |> toList (\x -> x)
-                                    }
+                        parseLowercaseArgsOrAssignment token
+                            |> Result.map
+                                (\res ->
+                                    case res of
+                                        ArgOrAssign_Arg newArg ->
+                                            State_BlockValueDeclaration
+                                                (BlockValueDeclaration_Named
+                                                    { name = name
+                                                    , args = Located.located region newArg |> pushOnto args
+                                                    }
+                                                )
+
+                                        ArgOrAssign_Assign ->
+                                            State_BlockValueDeclaration
+                                                (BlockValueDeclaration_NamedAssigns
+                                                    { name = name
+                                                    , args = args |> toList (\x -> x)
+                                                    }
+                                                )
                                 )
-                            )
-                            (Located.located region token)
 
                     State_BlockValueDeclaration (BlockValueDeclaration_NamedAssigns { name, args }) ->
                         parserExpressionFromEmpty (Located.located region token)
@@ -578,21 +581,24 @@ parseAnything state item =
                         parseTypeAliasName token
 
                     State_BlockTypeAlias (BlockTypeAlias_Named name typeArgs) ->
-                        parseLowercaseArgsOrAssignment
-                            (\newTypeArg ->
-                                State_BlockTypeAlias
-                                    (BlockTypeAlias_Named
-                                        name
-                                        (Located.unwrap newTypeArg |> pushOnto typeArgs)
-                                    )
-                            )
-                            (State_BlockTypeAlias
-                                (BlockTypeAlias_NamedAssigns
-                                    name
-                                    (typeArgs |> toList (\x -> x))
+                        parseLowercaseArgsOrAssignment token
+                            |> Result.map
+                                (\res ->
+                                    case res of
+                                        ArgOrAssign_Arg newTypeArg ->
+                                            State_BlockTypeAlias
+                                                (BlockTypeAlias_Named
+                                                    name
+                                                    (newTypeArg |> pushOnto typeArgs)
+                                                )
+
+                                        ArgOrAssign_Assign ->
+                                            State_BlockTypeAlias
+                                                (BlockTypeAlias_NamedAssigns
+                                                    name
+                                                    (typeArgs |> toList (\x -> x))
+                                                )
                                 )
-                            )
-                            (Located.located region token)
 
                     State_BlockTypeAlias (BlockTypeAlias_NamedAssigns name typeArgs) ->
                         parserTypeExprFromEmpty (Located.located region token)
@@ -603,21 +609,24 @@ parseAnything state item =
                             |> Result.andThen (newTypeAliasState name typeArgs)
 
                     State_BlockCustomType (BlockCustomType_Named name typeArgs) ->
-                        parseLowercaseArgsOrAssignment
-                            (\newTypeArg ->
-                                State_BlockCustomType
-                                    (BlockCustomType_Named
-                                        name
-                                        (Located.unwrap newTypeArg |> pushOnto typeArgs)
-                                    )
-                            )
-                            (State_BlockCustomType
-                                (BlockCustomType_NamedAssigns
-                                    name
-                                    (typeArgs |> toList (\x -> x))
+                        parseLowercaseArgsOrAssignment token
+                            |> Result.map
+                                (\res ->
+                                    case res of
+                                        ArgOrAssign_Arg newTypeArg ->
+                                            State_BlockCustomType
+                                                (BlockCustomType_Named
+                                                    name
+                                                    (newTypeArg |> pushOnto typeArgs)
+                                                )
+
+                                        ArgOrAssign_Assign ->
+                                            State_BlockCustomType
+                                                (BlockCustomType_NamedAssigns
+                                                    name
+                                                    (typeArgs |> toList (\x -> x))
+                                                )
                                 )
-                            )
-                            (Located.located region token)
 
                     State_BlockCustomType (BlockCustomType_NamedAssigns _ _) ->
                         Debug.todo "BlockCustomType_NamedAssigns"
@@ -736,13 +745,14 @@ parseTypeAliasName item =
                 |> Err
 
 
-parseLowercaseArgsOrAssignment : (Located Token.LowerCase -> State) -> State -> Located Lexer.LexToken -> Result Error State
-parseLowercaseArgsOrAssignment onTypeArg onAssignment item =
-    let
-        withCorrectLocation x =
-            Located.map (\_ -> x) item
-    in
-    case Located.unwrap item of
+type ArgOrAssign
+    = ArgOrAssign_Arg Token.LowerCase
+    | ArgOrAssign_Assign
+
+
+parseLowercaseArgsOrAssignment : Lexer.LexToken -> Result Error ArgOrAssign
+parseLowercaseArgsOrAssignment item =
+    case item of
         Lexer.Keyword kw ->
             Error_MisplacedKeyword kw
                 |> Err
@@ -754,7 +764,8 @@ parseLowercaseArgsOrAssignment onTypeArg onAssignment item =
             else
                 case name of
                     Token.TokenLowerCase lower ->
-                        onTypeArg (withCorrectLocation lower)
+                        lower
+                            |> ArgOrAssign_Arg
                             |> Ok
 
                     Token.TokenUpperCase upper ->
@@ -762,7 +773,7 @@ parseLowercaseArgsOrAssignment onTypeArg onAssignment item =
                             |> Err
 
         Lexer.Sigil Lexer.Assign ->
-            onAssignment
+            ArgOrAssign_Assign
                 |> Ok
 
         _ ->
