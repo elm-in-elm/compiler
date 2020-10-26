@@ -345,7 +345,7 @@ typeExpr expr_ =
                 )
 
 
-typeExpressionNestingLeaf : TypeExpressionNestingLeaf () () -> Sexpr String
+typeExpressionNestingLeaf : TypeExpressionNestingLeaf () () () -> Sexpr String
 typeExpressionNestingLeaf leaf =
     case leaf of
         TypeExpressionNestingLeaf_Bracket record ->
@@ -360,7 +360,7 @@ typeExpressionNestingLeaf leaf =
         TypeExpressionNestingLeaf_Function record ->
             pair "TypeExpressionNestingLeaf_Function" (Atom "TODO")
 
-        TypeExpressionNestingLeaf_Expr typeExpression ->
+        TypeExpressionNestingLeaf_Expr () typeExpression ->
             pair "TypeExpressionNestingLeaf_Expr" (Atom "TODO")
 
 
