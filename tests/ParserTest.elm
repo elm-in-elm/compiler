@@ -18,6 +18,7 @@ import Elm.Compiler.Error exposing (ParseContext, ParseProblem)
 import Elm.Data.Declaration as Declaration exposing (DeclarationBody)
 import Elm.Data.Exposing exposing (ExposedItem(..), Exposing(..))
 import Elm.Data.Module exposing (ModuleType(..))
+import Elm.Data.Operator as Operator
 import Elm.Data.Qualifiedness exposing (PossiblyQualified(..))
 import Elm.Data.Type.Concrete as ConcreteType exposing (ConcreteType)
 import Elm.Data.TypeAnnotation exposing (TypeAnnotation)
@@ -489,7 +490,8 @@ expr =
                         (Lambda
                             { arguments = [ "x" ]
                             , body =
-                                Plus
+                                Operator
+                                    Operator.Add
                                     (Argument "x")
                                     (Int 1)
                             }
@@ -506,7 +508,8 @@ expr =
                         (Lambda
                             { arguments = [ "x" ]
                             , body =
-                                Plus
+                                Operator
+                                    Operator.Add
                                     (Argument "x")
                                     (Int 1)
                             }
@@ -518,7 +521,8 @@ expr =
                         (Lambda
                             { arguments = [ "x", "y" ]
                             , body =
-                                Plus
+                                Operator
+                                    Operator.Add
                                     (Argument "x")
                                     (Argument "y")
                             }
@@ -1049,7 +1053,8 @@ expr =
                                   }
                                 ]
                             , body =
-                                Plus
+                                Operator
+                                    Operator.Add
                                     (Int 1)
                                     (Argument "x")
                             }
@@ -1073,7 +1078,8 @@ expr =
                                   }
                                 , { name = "y"
                                   , body =
-                                        Plus
+                                        Operator
+                                            Operator.Add
                                             (Argument "x")
                                             (Int 1)
                                   }
@@ -1123,7 +1129,7 @@ expr =
                   )
                 , ( "list concat"
                   , "[] ++ []"
-                  , Just (ListConcat (List []) (List []))
+                  , Just (Operator Operator.Append (List []) (List []))
                   )
                 , ( "multiline"
                   , """
@@ -1205,7 +1211,7 @@ expr =
               , [ ( "simple case"
                   , "1 :: []"
                   , Just
-                        (Cons
+                        (Operator Operator.Cons
                             (Int 1)
                             (List [])
                         )
@@ -1213,9 +1219,9 @@ expr =
                 , ( "multiple values case"
                   , "1 :: 2 :: []"
                   , Just
-                        (Cons
+                        (Operator Operator.Cons
                             (Int 1)
-                            (Cons
+                            (Operator Operator.Cons
                                 (Int 2)
                                 (List [])
                             )
@@ -1224,7 +1230,7 @@ expr =
                 , ( "no spaces"
                   , "1::[]"
                   , Just
-                        (Cons
+                        (Operator Operator.Cons
                             (Int 1)
                             (List [])
                         )
@@ -1232,7 +1238,7 @@ expr =
                 , ( "multiple spaces"
                   , "1    ::      []"
                   , Just
-                        (Cons
+                        (Operator Operator.Cons
                             (Int 1)
                             (List [])
                         )
@@ -1268,7 +1274,7 @@ expr =
                 , ( "multiline"
                   , """
                     { a = 42
-                    , b = "hello" 
+                    , b = "hello"
                     }
                     """
                   , Just
@@ -1618,7 +1624,7 @@ type_ =
             , ( "multiline record"
               , """
                 { x : Int
-                , y : String 
+                , y : String
                 }
                 """
                     |> String.unindent

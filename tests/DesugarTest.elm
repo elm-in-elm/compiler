@@ -11,6 +11,7 @@ import Elm.Data.Import exposing (Import)
 import Elm.Data.Located as Located
 import Elm.Data.Module as Module exposing (Module)
 import Elm.Data.ModuleName exposing (ModuleName)
+import Elm.Data.Operator as Operator
 import Elm.Data.Qualifiedness exposing (PossiblyQualified(..))
 import Elm.Data.TypeAnnotation exposing (TypeAnnotation)
 import Elm.Data.VarName exposing (VarName)
@@ -167,7 +168,8 @@ frontendLambda arg1 arg2 =
             { arguments = [ arg1, arg2 ]
             , body =
                 located <|
-                    Frontend.Plus
+                    Frontend.Operator
+                        (located Operator.Add)
                         (located <| Frontend.Argument arg1)
                         (located <| Frontend.Argument arg2)
             }
@@ -183,7 +185,8 @@ canonicalLambda arg1 arg2 =
             CanonicalU.Lambda
                 { argument = arg2
                 , body =
-                    CanonicalU.Plus
+                    CanonicalU.Operator
+                        Operator.Add
                         (CanonicalU.Argument arg1)
                         (CanonicalU.Argument arg2)
                 }

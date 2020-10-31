@@ -1,0 +1,2 @@
+type alias Hi = (Int, Two, Three)
+type alias Hi = ((), (), ())

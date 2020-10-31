@@ -6,7 +6,8 @@ FORMAT_DIRS = \
 	cli \
 	example-library-usages \
 	src \
-	tests
+	tests \
+	parser-tests \
 
 .PHONY: run
 run: build
@@ -34,6 +35,15 @@ test: build
 	npx elm make --output /dev/null # build the library just to test it compiles
 	npx elm-test
 	npx ava
+
+.PHONY: regenerate
+regenerate:
+	cd parser-tests \
+		&& npx elm make Update.elm --output elm.js \
+		&& node --unhandled-rejections=strict update \
+		; CODE=$$? \
+		; elm-format ../tests/ParserLexerTestCases.elm --yes \
+		; exit $$CODE
 
 .PHONY: format
 format:

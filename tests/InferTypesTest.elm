@@ -5,6 +5,7 @@ import Elm.AST.Canonical as Canonical
 import Elm.AST.Canonical.Unwrapped as CanonicalU
 import Elm.AST.Typed as Typed
 import Elm.Compiler.Error as Error exposing (Error(..), TypeError(..))
+import Elm.Data.Operator as Operator
 import Elm.Data.Qualifiedness exposing (PossiblyQualified(..), Qualified(..))
 import Elm.Data.Type as Type exposing (Type(..), TypeOrId(..))
 import Elm.Data.Type.ToString as TypeToString
@@ -115,7 +116,7 @@ typeInference =
             ]
         , runSection "plus"
             [ ( "same types"
-              , CanonicalU.Plus
+              , CanonicalU.Operator Operator.Add
                     (CanonicalU.Var { module_ = "Main", name = "age" })
                     (CanonicalU.Int 1)
               , Ok Int
@@ -123,15 +124,15 @@ typeInference =
             ]
         , runSection "cons"
             [ ( "simple case"
-              , CanonicalU.Cons
+              , CanonicalU.Operator Operator.Cons
                     (CanonicalU.Int 1)
                     (CanonicalU.List [])
               , Ok (List (Type Int))
               )
             , ( "advanced case"
-              , CanonicalU.Cons
+              , CanonicalU.Operator Operator.Cons
                     (CanonicalU.Int 1)
-                    (CanonicalU.Cons
+                    (CanonicalU.Operator Operator.Cons
                         (CanonicalU.Int 2)
                         (CanonicalU.List
                             [ CanonicalU.Int 3
@@ -142,7 +143,7 @@ typeInference =
               , Ok (List (Type Int))
               )
             , ( "fail with wrong argument types"
-              , CanonicalU.Cons
+              , CanonicalU.Operator Operator.Cons
                     (CanonicalU.List
                         [ CanonicalU.Int 1
                         , CanonicalU.Int 2
@@ -160,7 +161,7 @@ typeInference =
                     )
               )
             , ( "variable and list"
-              , CanonicalU.Cons
+              , CanonicalU.Operator Operator.Cons
                     (CanonicalU.Var { module_ = "Main", name = "age" })
                     (CanonicalU.List [ CanonicalU.Int 1 ])
               , Ok (List (Type Int))

@@ -23,6 +23,8 @@ import Elm.Compiler.Error exposing (Error(..))
 import Elm.Data.Declaration exposing (Declaration, DeclarationBody(..))
 import Elm.Data.FileContents exposing (FileContents)
 import Elm.Data.FilePath exposing (FilePath)
+import Elm.Data.Located as Located
+import Elm.Data.Operator as Operator exposing (Operator)
 import Elm.Data.Project exposing (Project)
 import Elm.Data.Qualifiedness exposing (Qualified)
 import Stage.Emit.Common exposing (mangleQualifiedVar, mangleVarName, prepareProjectFields)
@@ -75,11 +77,19 @@ emitExpr located =
         Argument argument ->
             mangleVarName argument
 
-        Plus e1 e2 ->
-            "(" ++ emitExpr e1 ++ " + " ++ emitExpr e2 ++ ")"
+        Operator op e1 e2 ->
+            case Located.unwrap op of
+                Operator.Add ->
+                    "(" ++ emitExpr e1 ++ " + " ++ emitExpr e2 ++ ")"
 
-        Cons e1 e2 ->
-            "[" ++ emitExpr e1 ++ "].concat(" ++ emitExpr e2 ++ ")"
+                Operator.Cons ->
+                    "[" ++ emitExpr e1 ++ "].concat(" ++ emitExpr e2 ++ ")"
+
+                Operator.Append ->
+                    emitExpr e1 ++ ".concat(" ++ emitExpr e2 ++ ")"
+
+                _ ->
+                    Debug.todo "emit js for other operators"
 
         Lambda { argument, body } ->
             -- TODO are these parentheses needed?

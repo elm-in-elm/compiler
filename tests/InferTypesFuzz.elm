@@ -5,6 +5,7 @@ import Elm.AST.Canonical as Canonical
 import Elm.AST.Canonical.Unwrapped as CanonicalU
 import Elm.Compiler.Error exposing (TypeError(..))
 import Elm.Data.Located as Located
+import Elm.Data.Operator as Operator
 import Elm.Data.Qualifiedness exposing (Qualified)
 import Elm.Data.Type as Type
 import Elm.Data.Type.Concrete as ConcreteType exposing (ConcreteType(..))
@@ -248,7 +249,8 @@ intToIntFunctionExpr =
     let
         combine argument intPart =
             lambda argument <|
-                CanonicalU.Plus
+                CanonicalU.Operator
+                    Operator.Add
                     (CanonicalU.Argument argument)
                     intPart
 
@@ -361,11 +363,8 @@ shrinkExpr expr =
         CanonicalU.Argument _ ->
             nope
 
-        CanonicalU.Plus left right ->
-            shrinkPlus left right
-
-        CanonicalU.Cons x xs ->
-            shrinkCons x xs
+        CanonicalU.Operator op x xs ->
+            shrinkOp op x xs
 
         CanonicalU.Lambda { argument, body } ->
             shrinkLambda argument body
@@ -410,47 +409,21 @@ shrinkExpr expr =
             nope
 
 
-{-| Shrinks a plus expression.
+{-| Shrinks a binary operator expression.
 
 ---
 
 We cannot write a type annotation here.
 The `LazyList a` type used by shrinkers is not exposed outside `elm-explorations/test`.
 
-    shrinkPlus : CanonicalU.Expr -> CanonicalU.Expr -> LazyList CanonicalU.Expr
+    shrinkCons : Operator -> CanonicalU.Expr -> CanonicalU.Expr -> LazyList CanonicalU.Expr
 
 -}
-shrinkPlus left right =
-    ([ Shrink.map2 CanonicalU.Plus
-        (shrinkExpr left)
-        (Shrink.singleton right)
-     , Shrink.map2 CanonicalU.Plus
-        (Shrink.singleton left)
-        (shrinkExpr right)
-     ]
-        |> List.map always
-        |> Shrink.mergeMany
-    )
-        -- The value built up to this point is a shrinker.
-        -- We need to call it with an CanonicalU.Expr to get a lazy list.
-        left
-
-
-{-| Shrinks a cons expression.
-
----
-
-We cannot write a type annotation here.
-The `LazyList a` type used by shrinkers is not exposed outside `elm-explorations/test`.
-
-    shrinkCons : CanonicalU.Expr -> CanonicalU.Expr -> LazyList CanonicalU.Expr
-
--}
-shrinkCons x xs =
-    ([ Shrink.map2 CanonicalU.Cons
+shrinkOp op x xs =
+    ([ Shrink.map2 (CanonicalU.Operator op)
         (shrinkExpr x)
         (Shrink.singleton xs)
-     , Shrink.map2 CanonicalU.Cons
+     , Shrink.map2 (CanonicalU.Operator op)
         (Shrink.singleton x)
         (shrinkExpr xs)
      ]

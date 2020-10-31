@@ -23,6 +23,7 @@ import Elm.Data.Binding as Binding exposing (Binding)
 import Elm.Data.Located as Located exposing (Located)
 import Elm.Data.Module exposing (Module)
 import Elm.Data.ModuleName exposing (ModuleName)
+import Elm.Data.Operator exposing (Operator)
 import Elm.Data.Qualifiedness exposing (Qualified)
 import Elm.Data.Type as Type exposing (Type, TypeOrId(..))
 import Elm.Data.VarName exposing (VarName)
@@ -73,8 +74,7 @@ type Expr_
     | Var { module_ : ModuleName, name : VarName }
     | ConstructorValue { module_ : ModuleName, name : VarName }
     | Argument VarName
-    | Plus LocatedExpr LocatedExpr
-    | Cons LocatedExpr LocatedExpr
+    | Operator (Located Operator) LocatedExpr LocatedExpr
     | Lambda { argument : VarName, body : LocatedExpr }
     | Call { fn : LocatedExpr, argument : LocatedExpr }
     | If { test : LocatedExpr, then_ : LocatedExpr, else_ : LocatedExpr }
@@ -147,13 +147,9 @@ recurse fn locatedExpr =
                     Argument _ ->
                         expr
 
-                    Plus e1 e2 ->
-                        Plus
-                            (fn e1)
-                            (fn e2)
-
-                    Cons e1 e2 ->
-                        Cons
+                    Operator op e1 e2 ->
+                        Operator
+                            op
                             (fn e1)
                             (fn e2)
 
@@ -270,13 +266,8 @@ recursiveChildren fn locatedExpr =
         Argument _ ->
             []
 
-        Plus left right ->
-            fn left
-                ++ fn right
-
-        Cons left right ->
-            fn left
-                ++ fn right
+        Operator _ left right ->
+            fn left ++ fn right
 
         Lambda { body } ->
             fn body
@@ -387,13 +378,9 @@ unwrap expr =
         Argument name ->
             Unwrapped.Argument name
 
-        Plus e1 e2 ->
-            Unwrapped.Plus
-                (f e1)
-                (f e2)
-
-        Cons e1 e2 ->
-            Unwrapped.Cons
+        Operator op e1 e2 ->
+            Unwrapped.Operator
+                (Located.unwrap op)
                 (f e1)
                 (f e2)
 
@@ -555,13 +542,9 @@ dropTypes locatedExpr =
                     Argument var ->
                         Canonical.Argument var
 
-                    Plus e1 e2 ->
-                        Canonical.Plus
-                            (f e1)
-                            (f e2)
-
-                    Cons e1 e2 ->
-                        Canonical.Cons
+                    Operator op e1 e2 ->
+                        Canonical.Operator
+                            op
                             (f e1)
                             (f e2)
 

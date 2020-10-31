@@ -32,7 +32,7 @@ import AssocList
 import AssocSet
 import Dict exposing (Dict)
 import Dict.Extra as Dict
-import Elm.AST.Typed as Typed exposing (Expr_(..))
+import Elm.AST.Typed as Typed exposing (Expr_(..), Pattern_(..))
 import Elm.Compiler.Error
     exposing
         ( DesugarError(..)
@@ -43,6 +43,7 @@ import Elm.Data.Declaration exposing (Declaration, DeclarationBody(..))
 import Elm.Data.Exposing as Exposing exposing (ExposedItem(..), Exposing(..))
 import Elm.Data.Module exposing (Module)
 import Elm.Data.ModuleName exposing (ModuleName)
+import Elm.Data.Operator as Operator
 import Elm.Data.Project exposing (Project)
 import Elm.Data.Qualifiedness exposing (Qualified(..))
 import Elm.Data.Type.Concrete as ConcreteType exposing (ConcreteType)
@@ -489,12 +490,7 @@ findDependenciesOfExpr modules locatedExpr =
         Argument _ ->
             Ok []
 
-        Plus e1 e2 ->
-            Result.map2 (++)
-                (f e1)
-                (f e2)
-
-        Cons e1 e2 ->
+        Operator _ e1 e2 ->
             Result.map2 (++)
                 (f e1)
                 (f e2)

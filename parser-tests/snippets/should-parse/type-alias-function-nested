@@ -1,0 +1,7 @@
+type alias Function = (() -> (Int, String))
+
+type alias Function2 = { a: () -> (Int, String) }
+
+type alias Function3 = (() -> (Int, String), ())
+
+type alias Function3 = (Int, () -> (Int, String), ())

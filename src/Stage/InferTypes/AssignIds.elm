@@ -11,7 +11,8 @@ Input (forgive the nonsense AST):
 
     Canonical.If
         { test =
-            Canonical.Plus
+            Canonical.Operator
+                Operator.Add
                 (Canonical.Int 1)
                 (Canonical.Int 2)
         , then_ = Canonical.Unit
@@ -22,7 +23,8 @@ Output:
 
     ( Typed.If
         { test =
-            ( Typed.Plus
+            ( Typed.Operator
+                Operator.Add
                 ( Typed.Int 1
                 , Var 0
                 )
@@ -101,7 +103,7 @@ assignIdsHelp currentId located =
         Canonical.Var name ->
             assignId currentId (Typed.Var name)
 
-        Canonical.Plus e1 e2 ->
+        Canonical.Operator op e1 e2 ->
             let
                 ( e1_, id1 ) =
                     f currentId e1
@@ -109,17 +111,7 @@ assignIdsHelp currentId located =
                 ( e2_, id2 ) =
                     f id1 e2
             in
-            assignId id2 (Typed.Plus e1_ e2_)
-
-        Canonical.Cons e1 e2 ->
-            let
-                ( e1_, id1 ) =
-                    f currentId e1
-
-                ( e2_, id2 ) =
-                    f id1 e2
-            in
-            assignId id2 (Typed.Cons e1_ e2_)
+            assignId id2 (Typed.Operator op e1_ e2_)
 
         Canonical.Lambda { argument, body } ->
             let

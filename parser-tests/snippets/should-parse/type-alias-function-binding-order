@@ -1,0 +1,2 @@
+type alias Function = A -> B -> C
+type alias Function = A -> B -> C -> D

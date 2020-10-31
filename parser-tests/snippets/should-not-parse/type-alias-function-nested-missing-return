@@ -1,0 +1,7 @@
+type alias Function = (() -> )
+
+type alias Function2 = { a: () ->  }
+
+type alias Function3 = (() -> , ())
+
+type alias Function3 = (Int, () ->, ())

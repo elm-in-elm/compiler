@@ -1,6 +1,7 @@
 module OptimizeTest exposing (optimize)
 
 import Elm.AST.Typed as Typed exposing (Expr_(..))
+import Elm.Data.Operator as Operator exposing (Operator)
 import Elm.Data.Type as Type exposing (TypeOrId(..))
 import Expect
 import Stage.Optimize
@@ -31,7 +32,8 @@ optimize =
                 (List.map runTest
                     [ ( "works with two literal ints"
                       , located
-                            ( Plus
+                            ( Operator
+                                (located Operator.Add)
                                 (typedInt 2)
                                 (typedInt 5)
                             , Type Type.Int
@@ -40,13 +42,15 @@ optimize =
                       )
                     , ( "doesn't work if left is not int"
                       , located
-                            ( Plus
+                            ( Operator
+                                (located Operator.Add)
                                 (located ( Argument "x", Type Type.Int ))
                                 (typedInt 5)
                             , Type Type.Int
                             )
                       , located
-                            ( Plus
+                            ( Operator
+                                (located Operator.Add)
                                 (located ( Argument "x", Type Type.Int ))
                                 (typedInt 5)
                             , Type Type.Int
@@ -54,13 +58,15 @@ optimize =
                       )
                     , ( "doesn't work if right is not int"
                       , located
-                            ( Plus
+                            ( Operator
+                                (located Operator.Add)
                                 (typedInt 5)
                                 (located ( Argument "x", Type Type.Int ))
                             , Type Type.Int
                             )
                       , located
-                            ( Plus
+                            ( Operator
+                                (located Operator.Add)
                                 (typedInt 5)
                                 (located ( Argument "x", Type Type.Int ))
                             , Type Type.Int
@@ -72,7 +78,8 @@ optimize =
                 (List.map runTest
                     [ ( "works with one value"
                       , located
-                            ( Cons
+                            ( Operator
+                                (located Operator.Cons)
                                 (typedInt 1)
                                 (typedIntList [ 2, 3 ])
                             , Type Type.Int

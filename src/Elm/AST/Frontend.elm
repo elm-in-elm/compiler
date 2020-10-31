@@ -19,6 +19,7 @@ import Elm.Data.Binding as Binding exposing (Binding)
 import Elm.Data.Located as Located exposing (Located)
 import Elm.Data.Module exposing (Module)
 import Elm.Data.ModuleName exposing (ModuleName)
+import Elm.Data.Operator exposing (Operator)
 import Elm.Data.Qualifiedness exposing (PossiblyQualified)
 import Elm.Data.TypeAnnotation exposing (TypeAnnotation)
 import Elm.Data.VarName exposing (VarName)
@@ -61,9 +62,7 @@ type Expr
     | ConstructorValue { qualifiedness : PossiblyQualified, name : VarName }
     | -- Both lambda arguments and let..in bindings
       Argument VarName
-    | Plus LocatedExpr LocatedExpr
-    | Cons LocatedExpr LocatedExpr
-    | ListConcat LocatedExpr LocatedExpr
+    | Operator (Located Operator) LocatedExpr LocatedExpr
     | Lambda { arguments : List VarName, body : LocatedExpr }
     | Call { fn : LocatedExpr, argument : LocatedExpr }
     | If { test : LocatedExpr, then_ : LocatedExpr, else_ : LocatedExpr }
@@ -132,18 +131,11 @@ recurse f expr =
         Argument _ ->
             expr
 
-        Plus e1 e2 ->
-            Plus
+        Operator op e1 e2 ->
+            Operator
+                op
                 (f_ e1)
                 (f_ e2)
-
-        Cons e1 e2 ->
-            Cons
-                (f_ e1)
-                (f_ e2)
-
-        ListConcat e1 e2 ->
-            ListConcat (f_ e1) (f_ e2)
 
         Lambda ({ body } as lambda_) ->
             Lambda { lambda_ | body = f_ body }
@@ -243,18 +235,9 @@ unwrap expr =
         Argument name ->
             Unwrapped.Argument name
 
-        Plus e1 e2 ->
-            Unwrapped.Plus
-                (unwrap e1)
-                (unwrap e2)
-
-        Cons e1 e2 ->
-            Unwrapped.Cons
-                (unwrap e1)
-                (unwrap e2)
-
-        ListConcat e1 e2 ->
-            Unwrapped.ListConcat
+        Operator op e1 e2 ->
+            Unwrapped.Operator
+                (Located.unwrap op)
                 (unwrap e1)
                 (unwrap e2)
 

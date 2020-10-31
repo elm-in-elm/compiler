@@ -12,6 +12,7 @@ module TestHelpers exposing
 
 import Elm.AST.Typed as Typed exposing (Expr_(..))
 import Elm.Data.Located as Located exposing (Located)
+import Elm.Data.Operator as Operator
 import Elm.Data.Qualifiedness exposing (Qualified)
 import Elm.Data.Type as Type exposing (Type, TypeOrId(..))
 import Elm.Data.Type.Concrete as ConcreteType exposing (ConcreteType)

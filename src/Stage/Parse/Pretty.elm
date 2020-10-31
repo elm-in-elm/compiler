@@ -1,0 +1,377 @@
+module Stage.Parse.Pretty exposing (..)
+
+import Dict exposing (Dict)
+import Elm.AST.Frontend as Frontend
+import Elm.Data.Located as Located
+import Elm.Data.Module as ModuleType exposing (ModuleType)
+import Elm.Data.Operator as Operator
+import Elm.Data.Qualifiedness exposing (PossiblyQualified(..))
+import Elm.Data.Type.Concrete as Concrete exposing (ConcreteType)
+import Stage.Parse.Contextualize as Contextualize exposing (Block(..), BlockTypeAlias(..), State(..), TypeExpressionNestingLeaf(..))
+import Stage.Parse.Token as Token
+
+
+type Sexpr a
+    = Atom a
+    | Many (List (Sexpr a))
+
+
+printWithIndentationOf : Int -> Sexpr String -> String
+printWithIndentationOf indent sexpr =
+    case sexpr of
+        Atom s ->
+            s
+
+        Many ls ->
+            case ls of
+                [] ->
+                    "()"
+
+                [ first ] ->
+                    "( "
+                        ++ printWithIndentationOf (indent + 1) first
+                        ++ " )"
+
+                [ Atom first, Atom second ] ->
+                    "( " ++ first ++ ", " ++ second ++ " )"
+
+                [ Many [], Atom second ] ->
+                    "( (), " ++ second ++ " )"
+
+                [ Atom first, Many [] ] ->
+                    "( " ++ first ++ ", () )"
+
+                [ Many [], Many [] ] ->
+                    "( (), () )"
+
+                _ ->
+                    printManyItems True indent ls ""
+                        ++ ")"
+
+
+printManyItems : Bool -> Int -> List (Sexpr String) -> String -> String
+printManyItems isFirst indent many soFar =
+    case many of
+        first :: rest ->
+            printManyItems
+                False
+                indent
+                rest
+                (soFar
+                    ++ (if isFirst then
+                            "( "
+
+                        else
+                            ", "
+                       )
+                    ++ printWithIndentationOf (indent + 1) first
+                    ++ "\n"
+                    ++ String.repeat (indent * 2) " "
+                )
+
+        [] ->
+            soFar
+
+
+listWith : (a -> Sexpr String) -> List a -> Sexpr String
+listWith f ls =
+    Many (List.map f ls)
+
+
+dictEntriesWith : (a -> Sexpr String) -> (b -> Sexpr String) -> Dict a b -> Sexpr String
+dictEntriesWith keys values d =
+    Dict.toList d |> listWith (\( k, v ) -> Many [ keys k, values v ])
+
+
+pair : a -> Sexpr a -> Sexpr a
+pair key value =
+    Many [ Atom key, value ]
+
+
+block : Block -> Sexpr String
+block b =
+    case b of
+        Module record ->
+            Many
+                [ Atom "Module"
+                , Many
+                    [ Atom "ty"
+                    , moduleType record.ty
+                    ]
+                ]
+
+        ValueDeclaration record ->
+            Many
+                [ Atom "ValueDeclaration"
+                , Many
+                    [ Atom "name"
+                    , record.name |> Located.unwrap |> Token.TokenLowerCase |> Token.tokenToString |> Atom
+                    ]
+                , Many
+                    [ Atom "args"
+                    , listWith
+                        (Located.unwrap >> Token.TokenLowerCase >> Token.tokenToString >> Atom)
+                        record.args
+                    ]
+                , Many
+                    [ Atom "valueExpr__"
+                    , expr record.valueExpr__
+                    ]
+                ]
+
+        TypeAlias record ->
+            Many
+                [ Atom "TypeAlias"
+                , Many
+                    [ Atom "ty"
+                    , record.ty |> Token.TokenUpperCase |> Token.tokenToString |> Atom
+                    ]
+                , Many
+                    [ Atom "genericArgs"
+                    , Many
+                        (record.genericArgs
+                            |> List.map (Token.TokenLowerCase >> Token.tokenToString >> Atom)
+                        )
+                    ]
+                , Many
+                    [ Atom "expr"
+                    , typeExpr record.expr
+                    ]
+                ]
+
+        CustomType record ->
+            Debug.todo ""
+
+
+state : State -> Sexpr String
+state s =
+    case s of
+        State_BlockStart ->
+            Atom "State_BlockStart"
+
+        State_Error_Recovery ->
+            Atom "State_Error_Recovery"
+
+        State_BlockFirstItem _ ->
+            pair "State_BlockFirstItem" (Atom "TODO")
+
+        State_BlockTypeAlias BlockTypeAlias_Keywords ->
+            pair "State_BlockTypeAlias" (Atom "BlockTypeAlias_Keywords")
+
+        State_BlockTypeAlias (BlockTypeAlias_Named name genericArgs) ->
+            pair "State_BlockTypeAlias"
+                (Many
+                    [ Atom "BlockTypeAlias_Named"
+                    , name |> Token.TokenUpperCase |> Token.tokenToString |> Atom
+                    , listWith Atom (Contextualize.toList (Token.TokenLowerCase >> Token.tokenToString) genericArgs)
+                    ]
+                )
+
+        State_BlockTypeAlias (BlockTypeAlias_NamedAssigns name genericArgs) ->
+            pair "State_BlockTypeAlias"
+                (Many
+                    [ Atom "BlockTypeAlias_NamedAssigns"
+                    , name |> Token.TokenUpperCase |> Token.tokenToString |> Atom
+                    , listWith (Token.TokenLowerCase >> Token.tokenToString >> Atom) genericArgs
+                    ]
+                )
+
+        State_BlockTypeAlias (BlockTypeAlias_Completish name genericArgs typeExpr_) ->
+            pair "State_BlockTypeAlias"
+                (Many
+                    [ Atom "BlockTypeAlias_Completish"
+                    , name |> Token.TokenUpperCase |> Token.tokenToString |> Atom
+                    , listWith (Token.TokenLowerCase >> Token.tokenToString >> Atom) genericArgs
+                    , typeExpressionNestingLeaf typeExpr_
+                    ]
+                )
+
+        State_BlockCustomType _ ->
+            pair "State_BlockCustomType" (Atom "TODO")
+
+        State_BlockValueDeclaration _ ->
+            pair "State_BlockValueDeclaration" (Atom "TODO")
+
+
+expr : Frontend.LocatedExpr -> Sexpr String
+expr expr_ =
+    case Located.unwrap expr_ of
+        Frontend.Int int ->
+            pair "Int" (Atom (String.fromInt int))
+
+        Frontend.HexInt int ->
+            pair "HexInt" (Atom (String.fromInt int))
+
+        Frontend.Float float ->
+            pair "Float" (Atom (String.fromFloat float))
+
+        Frontend.Char char ->
+            pair "Char" (Atom (String.fromChar char))
+
+        Frontend.String string ->
+            pair "String" (Atom string)
+
+        Frontend.Bool bool ->
+            pair "Bool"
+                (Atom
+                    (if bool then
+                        "True"
+
+                     else
+                        "False"
+                    )
+                )
+
+        Frontend.Var { qualifiedness, name } ->
+            pair "Var"
+                (Many
+                    [ pair "qualifiedness" (Atom "TODO")
+                    , pair "name" (Atom name)
+                    ]
+                )
+
+        Frontend.Argument varName ->
+            pair "Argument" (Atom varName)
+
+        Frontend.Operator operator lhs rhs ->
+            pair "Operator"
+                (Many
+                    [ pair "op" (operator |> Located.unwrap |> Operator.toString |> Atom)
+                    , pair "lhs" (expr lhs)
+                    , pair "rhs" (expr rhs)
+                    ]
+                )
+
+        Frontend.Lambda { arguments, body } ->
+            pair "Lambda"
+                (Many
+                    [ pair "arguments" (listWith Atom arguments)
+                    , pair "body    " (Atom "TODO")
+                    ]
+                )
+
+        Frontend.Call record ->
+            pair "Call" (Atom "TODO")
+
+        Frontend.If record ->
+            pair "If" (Atom "TODO")
+
+        Frontend.Let record ->
+            pair "Let" (Atom "TODO")
+
+        Frontend.List locateds ->
+            pair "List" (Atom "TODO")
+
+        Frontend.Unit ->
+            Atom "Unit"
+
+        Frontend.Tuple first second ->
+            pair "Tuple" (Many [ Atom "TODO", Atom "TODO" ])
+
+        Frontend.Tuple3 first second third ->
+            pair "Tuple" (Many [ Atom "TODO", Atom "TODO", Atom "TODO" ])
+
+        Frontend.Record bindings ->
+            pair "Record" (Atom "TODO")
+
+        Frontend.Case locatedExpr list ->
+            Debug.todo ""
+
+
+typeExpr : ConcreteType PossiblyQualified -> Sexpr String
+typeExpr expr_ =
+    case expr_ of
+        Concrete.TypeVar string ->
+            pair "TypeVar" (Atom string)
+
+        Concrete.Function { from, to } ->
+            pair "Function"
+                (Many
+                    [ pair "from" (typeExpr from)
+                    , pair "to" (typeExpr to)
+                    ]
+                )
+
+        Concrete.Int ->
+            Atom "Int"
+
+        Concrete.Float ->
+            Atom "Float"
+
+        Concrete.Char ->
+            Atom "Char"
+
+        Concrete.String ->
+            Atom "String"
+
+        Concrete.Bool ->
+            Atom "Bool"
+
+        Concrete.List list ->
+            pair "List" (typeExpr list)
+
+        Concrete.Unit ->
+            Atom "Unit"
+
+        Concrete.Tuple first second ->
+            pair "Tuple" (Many [ typeExpr first, typeExpr second ])
+
+        Concrete.Tuple3 first second third ->
+            pair "Tuple" (Many [ typeExpr first, typeExpr second, typeExpr third ])
+
+        Concrete.Record dict ->
+            pair "Record" (dictEntriesWith Atom typeExpr dict)
+
+        Concrete.UserDefinedType { qualifiedness, name, args } ->
+            let
+                (PossiblyQualified q) =
+                    qualifiedness
+            in
+            pair "UserDefinedType"
+                (Many
+                    [ pair "qualifiedness"
+                        (pair "PossiblyQualified"
+                            (case q of
+                                Just moduleName ->
+                                    pair "Just" (Atom moduleName)
+
+                                Nothing ->
+                                    Atom "Nothing"
+                            )
+                        )
+                    , pair "name" (Atom name)
+                    , pair "args" (listWith typeExpr args)
+                    ]
+                )
+
+
+typeExpressionNestingLeaf : TypeExpressionNestingLeaf () () () -> Sexpr String
+typeExpressionNestingLeaf leaf =
+    case leaf of
+        TypeExpressionNestingLeaf_Bracket record ->
+            pair "TypeExpressionNestingLeaf_Bracket" (Atom "TODO")
+
+        TypeExpressionNestingLeaf_PartialRecord partialRecord ->
+            pair "TypeExpressionNestingLeaf_PartialRecord" (Atom "TODO")
+
+        TypeExpressionNestingLeaf_TypeWithArgs record ->
+            pair "TypeExpressionNestingLeaf_TypeWithArgs" (Atom "TODO")
+
+        TypeExpressionNestingLeaf_Function record ->
+            pair "TypeExpressionNestingLeaf_Function" (Atom "TODO")
+
+        TypeExpressionNestingLeaf_Expr () typeExpression ->
+            pair "TypeExpressionNestingLeaf_Expr" (Atom "TODO")
+
+
+moduleType : ModuleType -> Sexpr String
+moduleType m =
+    case m of
+        ModuleType.PlainModule ->
+            Atom "PlainModule"
+
+        ModuleType.PortModule ->
+            Atom "PortModule"
+
+        ModuleType.EffectModule ->
+            Atom "EffectModule"
