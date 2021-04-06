@@ -12,7 +12,7 @@
             "elm/core": "1.0.5",
             "elm/json": "1.1.3",
             "elm/parser": "1.1.0",
-            "elm/project-metadata-utils": "1.0.1",
+            "elm/project-metadata-utils": "1.0.2",
             "elm-community/dict-extra": "2.4.0",
             "elm-community/graph": "6.0.0",
             "elm-community/maybe-extra": "5.2.0",
