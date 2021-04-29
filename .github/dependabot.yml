@@ -1,0 +1,29 @@
+version: 2
+updates:
+- package-ecosystem: elm
+  directory: "/"
+  schedule:
+    interval: daily
+  open-pull-requests-limit: 10
+  reviewers:
+  - janiczek
+- package-ecosystem: elm
+  directory: "/cli"
+  schedule:
+    interval: daily
+  open-pull-requests-limit: 10
+- package-ecosystem: elm
+  directory: "/example-project"
+  schedule:
+    interval: daily
+  open-pull-requests-limit: 10
+- package-ecosystem: elm
+  directory: "/example-library-usages"
+  schedule:
+    interval: daily
+  open-pull-requests-limit: 10
+- package-ecosystem: elm
+  directory: "/benchmarks/findDuplicatesBy"
+  schedule:
+    interval: daily
+  open-pull-requests-limit: 10
