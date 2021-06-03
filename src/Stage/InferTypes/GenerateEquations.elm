@@ -85,11 +85,11 @@ generateEquations currentId located =
             )
 
         Typed.Argument _ ->
-            -- we can't make any assumptions here
+            -- TODO we need to make sure argument usages use their inferred (from function) types
             ( [], currentId )
 
         Typed.Var _ ->
-            -- we can't make any assumptions here
+            -- TODO we need to make sure vars use their top level inferred types
             ( [], currentId )
 
         Typed.Plus left right ->
