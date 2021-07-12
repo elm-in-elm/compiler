@@ -41,7 +41,7 @@ typeInference =
                 |> List.map fuzzExpr
                 |> describe description
     in
-    describe "Stage.InferType"
+    describe "Stage.InferTypesFuzz"
         [ describe "inferExpr"
             [ fuzzExpressions "fuzz literals"
                 [ Int

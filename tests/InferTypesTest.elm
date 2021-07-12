@@ -35,7 +35,7 @@ typeInference =
                         |> Result.mapError Tuple.first
                         |> Expect.equal (Result.map Just output)
     in
-    describe "Stage.InferType"
+    describe "Stage.InferTypesTest"
         [ runSection "list"
             [ ( "empty list"
               , CanonicalU.List []
