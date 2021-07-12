@@ -1,5 +1,9 @@
 module Stage.InferTypes exposing (inferExpr, inferTypes, unifyWithTypeAnnotation)
 
+{-| The intent is to have all the interesting stuff in here, and all the boring
+mamping/wrapping code in `Stage.InferTypes.Boilerplate`.
+-}
+
 import Dict exposing (Dict)
 import Elm.AST.Canonical as Canonical
 import Elm.AST.Typed as Typed
