@@ -25,7 +25,6 @@ import Expect exposing (Expectation)
 import OurExtras.String as String
 import Parser.Advanced as P
 import Stage.Parse.Parser
-import String.Extra as String
 import Test exposing (Test, describe, test)
 
 
@@ -63,8 +62,7 @@ moduleDeclaration =
                     module
                     Foo exposing (..)
                     """
-                        |> String.unindent
-                        |> String.removeNewlinesAtEnds
+                        |> String.multilineInput
                   , Nothing
                   )
                 , ( "allows a newline and space between the `module` keyword and the module name"
@@ -72,8 +70,7 @@ moduleDeclaration =
                     module
                      Foo exposing (..)
                     """
-                        |> String.unindent
-                        |> String.removeNewlinesAtEnds
+                        |> String.multilineInput
                   , Just ( PlainModule, "Foo", ExposingAll )
                   )
                 , ( "allows multiple spaces between the module name and the `exposing` keyword"
@@ -85,8 +82,7 @@ moduleDeclaration =
                     module Foo
                     exposing (..)
                     """
-                        |> String.unindent
-                        |> String.removeNewlinesAtEnds
+                        |> String.multilineInput
                   , Nothing
                   )
                 , ( "allows newline and space between the module name and the `exposing` keyword"
@@ -94,8 +90,7 @@ moduleDeclaration =
                     module Foo
                      exposing (..)
                     """
-                        |> String.unindent
-                        |> String.removeNewlinesAtEnds
+                        |> String.multilineInput
                   , Just ( PlainModule, "Foo", ExposingAll )
                   )
                 , ( "allows multiple spaces between the `exposing` keyword and the exposing list"
@@ -107,8 +102,7 @@ moduleDeclaration =
                     module Foo exposing
                     (..)
                     """
-                        |> String.unindent
-                        |> String.removeNewlinesAtEnds
+                        |> String.multilineInput
                   , Nothing
                   )
                 , ( "allows a newline and space between the `exposing` keyword and the exposing list"
@@ -116,8 +110,7 @@ moduleDeclaration =
                     module Foo exposing
                      (..)
                     """
-                        |> String.unindent
-                        |> String.removeNewlinesAtEnds
+                        |> String.multilineInput
                   , Just ( PlainModule, "Foo", ExposingAll )
                   )
                 , ( "doesn't work without something after the `exposing` keyword"
@@ -500,8 +493,7 @@ expr =
                     \\x ->
                         x + 1
                     """
-                        |> String.unindent
-                        |> String.removeNewlinesAtEnds
+                        |> String.multilineInput
                   , Just
                         (Lambda
                             { arguments = [ "x" ]
@@ -573,8 +565,7 @@ expr =
                         arg1
                         arg2
                     """
-                        |> String.unindent
-                        |> String.removeNewlinesAtEnds
+                        |> String.multilineInput
                   , Just
                         (Call
                             { fn =
@@ -618,8 +609,7 @@ expr =
                         3
 
                     """
-                        |> String.unindent
-                        |> String.removeNewlinesAtEnds
+                        |> String.multilineInput
                   , Just
                         (If
                             { test = Int 1
@@ -940,8 +930,7 @@ expr =
                     in
                       2
                     """
-                        |> String.unindent
-                        |> String.removeNewlinesAtEnds
+                        |> String.multilineInput
                   , Just
                         (Let
                             { bindings =
@@ -960,8 +949,7 @@ expr =
                     in
                       2
                     """
-                        |> String.unindent
-                        |> String.removeNewlinesAtEnds
+                        |> String.multilineInput
                   , Nothing
                   )
                 , ( "allows result expr on the same indentation level as `let`"
@@ -971,8 +959,7 @@ expr =
                     in
                     2
                     """
-                        |> String.unindent
-                        |> String.removeNewlinesAtEnds
+                        |> String.multilineInput
                   , Just
                         (Let
                             { bindings =
@@ -992,8 +979,7 @@ expr =
                     in
                     3
                     """
-                        |> String.unindent
-                        |> String.removeNewlinesAtEnds
+                        |> String.multilineInput
                   , Just
                         (Let
                             { bindings =
@@ -1016,8 +1002,7 @@ expr =
                     in
                       3
                     """
-                        |> String.unindent
-                        |> String.removeNewlinesAtEnds
+                        |> String.multilineInput
                   , Nothing
                   )
                 , ( "doesn't allow bindings to have different indentation from each other - the other way"
@@ -1028,8 +1013,7 @@ expr =
                     in
                       3
                     """
-                        |> String.unindent
-                        |> String.removeNewlinesAtEnds
+                        |> String.multilineInput
                   , Nothing
                   )
                 , ( "one binding that's used in the body"
@@ -1039,8 +1023,7 @@ expr =
                     in
                       1 + x
                     """
-                        |> String.unindent
-                        |> String.removeNewlinesAtEnds
+                        |> String.multilineInput
                   , Just
                         (Let
                             { bindings =
@@ -1063,8 +1046,7 @@ expr =
                     in
                       42
                     """
-                        |> String.unindent
-                        |> String.removeNewlinesAtEnds
+                        |> String.multilineInput
                   , Just
                         (Let
                             { bindings =
@@ -1132,8 +1114,7 @@ expr =
                     , 3
                     ]
                     """
-                        |> String.unindent
-                        |> String.removeNewlinesAtEnds
+                        |> String.multilineInput
                   , Just
                         (List
                             [ Int 1
@@ -1297,8 +1278,7 @@ expr =
                         0xABC -> True
                         _ -> False
                     """
-                        |> String.unindent
-                        |> String.removeNewlinesAtEnds
+                        |> String.multilineInput
                   , Just
                         (Case (Int 21)
                             [ { pattern = PInt 31, body = Bool True }
@@ -1324,8 +1304,7 @@ expr =
                         ({ count } as alias1) as alias2 ->
                             False
                     """
-                        |> String.unindent
-                        |> String.removeNewlinesAtEnds
+                        |> String.multilineInput
                   , Just
                         (Case (Var { name = "arg", qualifiedness = PossiblyQualified Nothing })
                             [ { pattern = PTuple (PChar 'c') (PInt 23)
@@ -1621,8 +1600,7 @@ type_ =
                 , y : String 
                 }
                 """
-                    |> String.unindent
-                    |> String.removeNewlinesAtEnds
+                    |> String.multilineInput
               , ConcreteType.Record <|
                     Dict.fromList
                         [ ( "x", ConcreteType.Int )
@@ -1678,8 +1656,7 @@ valueDeclaration =
                 y : ()
                 y = ()
                 """
-                    |> String.unindent
-                    |> String.removeNewlinesAtEnds
+                    |> String.multilineInput
               , Just
                     ( "y"
                     , Declaration.Value
@@ -1698,8 +1675,7 @@ valueDeclaration =
                  ()
                 x = ()
                 """
-                    |> String.unindent
-                    |> String.removeNewlinesAtEnds
+                    |> String.multilineInput
               , Just
                     ( "x"
                     , Declaration.Value
@@ -1723,8 +1699,7 @@ valueDeclaration =
                 ()
                 x = ()
                 """
-                    |> String.unindent
-                    |> String.removeNewlinesAtEnds
+                    |> String.multilineInput
               , Nothing
               )
             , ( "type on a newline+space"
@@ -1733,8 +1708,7 @@ valueDeclaration =
                  ()
                 x = ()
                 """
-                    |> String.unindent
-                    |> String.removeNewlinesAtEnds
+                    |> String.multilineInput
               , Just
                     ( "x"
                     , Declaration.Value
@@ -1753,8 +1727,7 @@ valueDeclaration =
                 ()
                 x = ()
                 """
-                    |> String.unindent
-                    |> String.removeNewlinesAtEnds
+                    |> String.multilineInput
               , Nothing
               )
             ]
@@ -2024,8 +1997,7 @@ portDeclaration =
                  :
                  String -> Cmd msg
                 """
-                    |> String.unindent
-                    |> String.removeNewlinesAtEnds
+                    |> String.multilineInput
               , outgoing
               )
             ]

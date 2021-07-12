@@ -1,4 +1,15 @@
-module OurExtras.String exposing (removeNewlinesAtEnds)
+module OurExtras.String exposing (multilineInput)
+
+import String.Extra as String
+
+
+{-| Allows us to have nicely formatted multi-line strings in parser tests etc.
+-}
+multilineInput : String -> String
+multilineInput string =
+    string
+        |> String.unindent
+        |> removeNewlinesAtEnds
 
 
 removeNewlinesAtEnds : String -> String
