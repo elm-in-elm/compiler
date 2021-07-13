@@ -1220,6 +1220,29 @@ expr =
                   )
                 ]
               )
+            , ( "bin operator"
+              , [ ( "combining binop with fn call - issue #75"
+                  , "f a b c + 5"
+                  , Just
+                        (Plus
+                            (Call
+                                { fn =
+                                    Call
+                                        { fn =
+                                            Call
+                                                { fn = Var { name = "f", qualifiedness = PossiblyQualified Nothing }
+                                                , argument = Var { name = "a", qualifiedness = PossiblyQualified Nothing }
+                                                }
+                                        , argument = Var { name = "b", qualifiedness = PossiblyQualified Nothing }
+                                        }
+                                , argument = Var { name = "c", qualifiedness = PossiblyQualified Nothing }
+                                }
+                            )
+                            (Int 5)
+                        )
+                  )
+                ]
+              )
             , ( "record"
               , [ ( "empty record"
                   , "{}"
