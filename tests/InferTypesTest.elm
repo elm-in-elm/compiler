@@ -450,6 +450,11 @@ typeToString =
                 , "{ foo : a }"
                 )
             ]
+        , runTest
+            ( "unit"
+            , Type Unit
+            , "()"
+            )
         ]
 
 

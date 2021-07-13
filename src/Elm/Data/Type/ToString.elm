@@ -252,7 +252,7 @@ toStringType_ qualifiednessToString state type_ =
             ( "Bool", state )
 
         Unit ->
-            ( "Unit", state )
+            ( "()", state )
 
         Tuple t1 t2 ->
             let
