@@ -17,6 +17,7 @@ import Random.Extra as Random
 import Shrink exposing (Shrinker)
 import Shrink.Extra as Shrink
 import Stage.InferTypes
+import Stage.InferTypes.Environment as Env
 import Stage.InferTypes.SubstitutionMap as SubstitutionMap
 import Test exposing (Test, describe, fuzz)
 import TestHelpers exposing (dumpConcreteType)
@@ -31,8 +32,12 @@ typeInference =
                 \input ->
                     input
                         |> Canonical.fromUnwrapped
-                        |> Stage.InferTypes.inferExpr Dict.empty 0 SubstitutionMap.empty
-                        |> Result.map (Tuple3.first >> Located.unwrap >> Tuple.second)
+                        |> Stage.InferTypes.inferExpr
+                            Dict.empty
+                            0
+                            Env.empty
+                            SubstitutionMap.empty
+                        |> Result.map (Tuple.first >> Located.unwrap >> Tuple.second)
                         |> Expect.equal (Ok (ConcreteType.toTypeOrId typeWanted))
 
         fuzzExpressions : String -> List (ConcreteType Qualified) -> Test

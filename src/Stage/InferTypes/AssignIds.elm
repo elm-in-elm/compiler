@@ -44,10 +44,10 @@ import Elm.AST.Canonical as Canonical
 import Elm.AST.Typed as Typed
 import Elm.Data.Located as Located
 import Elm.Data.Qualifiedness exposing (Qualified)
-import Elm.Data.Type as Type exposing (TypeOrId)
+import Elm.Data.Type as Type exposing (Id, TypeOrId)
 
 
-assignIds : Int -> Canonical.LocatedExpr -> ( Typed.LocatedExpr, Int )
+assignIds : Id -> Canonical.LocatedExpr -> ( Typed.LocatedExpr, Id )
 assignIds currentId locatedCanonicalExpr =
     let
         ( typedExpr, newId ) =
@@ -59,20 +59,25 @@ assignIds currentId locatedCanonicalExpr =
     )
 
 
-assignId : Int -> a -> ( ( a, TypeOrId Qualified ), Int )
+assignId : Id -> a -> ( ( a, TypeOrId Qualified ), Id )
 assignId currentId located =
     ( ( located, Type.Id currentId ), currentId + 1 )
 
 
-assignIdsHelp : Int -> Canonical.Expr -> ( Typed.Expr, Int )
+{-| TODO it might make more sense to do the collecting of Var usages inside exprs
+into Environment here, instead of in GenerateEquations. Alas, I've learned that
+while being too deep into this, so I'm leaving that to somebody else (most likely
+a future me) who can tackle this as an isolated refactoring while not 100 yaks
+deep. ~janiczek
+-}
+assignIdsHelp : Id -> Canonical.Expr -> ( Typed.Expr, Id )
 assignIdsHelp currentId located =
     let
         f =
             assignIds
     in
     {- Be careful when dealing with the ids, they all have to be distinct.
-       Enable the "unused variable" warning from elm-analyze may help you
-       to detect created but unused ids.
+       elm-review should be able to help you detect created but unused ids.
     -}
     case located of
         {- With literals, we could plug their final type in right here
@@ -308,7 +313,7 @@ assignIdsHelp currentId located =
             assignId currentId (Typed.ConstructorValue rec)
 
 
-assignPatternIds : Int -> Canonical.LocatedPattern -> ( Typed.LocatedPattern, Int )
+assignPatternIds : Id -> Canonical.LocatedPattern -> ( Typed.LocatedPattern, Id )
 assignPatternIds currentId locatedCanonicalPattern =
     let
         ( typedPattern, newId ) =
@@ -320,7 +325,7 @@ assignPatternIds currentId locatedCanonicalPattern =
     )
 
 
-assignPatternIdsHelp : Int -> Canonical.Pattern -> ( Typed.Pattern, Int )
+assignPatternIdsHelp : Id -> Canonical.Pattern -> ( Typed.Pattern, Id )
 assignPatternIdsHelp currentId located =
     let
         f =

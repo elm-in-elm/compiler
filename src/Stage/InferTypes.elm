@@ -17,11 +17,13 @@ import Elm.Data.Located as Located
 import Elm.Data.ModuleName exposing (ModuleName)
 import Elm.Data.Project exposing (Project)
 import Elm.Data.Qualifiedness exposing (Qualified)
-import Elm.Data.Type exposing (Type(..), TypeOrId(..))
+import Elm.Data.Type exposing (Id, Type(..), TypeOrId(..))
 import Elm.Data.Type.Concrete as ConcreteType exposing (ConcreteType)
+import Elm.Data.Type.ToString
 import Elm.Data.VarName exposing (VarName)
 import Stage.InferTypes.AssignIds as AssignIds
 import Stage.InferTypes.Boilerplate as Boilerplate
+import Stage.InferTypes.Environment as Env exposing (Environment)
 import Stage.InferTypes.GenerateEquations as GenerateEquations
 import Stage.InferTypes.SubstitutionMap as SubstitutionMap exposing (SubstitutionMap)
 import Stage.InferTypes.Unify as Unify
@@ -48,23 +50,33 @@ inferTypes project =
         |> Boilerplate.inferProject
             inferExpr
             unifyWithTypeAnnotation
-            SubstitutionMap.empty
         |> Result.mapError TypeError
 
 
 inferExpr :
     Dict ( ModuleName, VarName ) (ConcreteType Qualified)
-    -> Int
+    -> Id
+    -> Environment
     -> SubstitutionMap
     -> Canonical.LocatedExpr
-    -> Result ( TypeError, SubstitutionMap ) ( Typed.LocatedExpr, SubstitutionMap, Int )
-inferExpr aliases unusedId substitutionMap located =
+    -> Result ( TypeError, SubstitutionMap ) ( Typed.LocatedExpr, ( SubstitutionMap, Id, Environment ) )
+inferExpr aliases unusedId env substitutionMap located =
     let
         ( exprWithIds, unusedId1 ) =
             AssignIds.assignIds unusedId located
 
-        ( typeEquations, unusedId2 ) =
-            GenerateEquations.generateEquations unusedId1 exprWithIds
+        ( unusedId2, env1, localTypeEquations ) =
+            GenerateEquations.generateLocalEquations unusedId1 env exprWithIds
+
+        typeEquationsAcrossDeclarations =
+            {- TODO this should be ran only once per project, else there will be
+               a bunch of duplicates I'm afraid.
+            -}
+            GenerateEquations.generateEquationsAcrossDeclarations env1
+
+        allTypeEquations =
+            -- use them both
+            localTypeEquations ++ typeEquationsAcrossDeclarations
 
         {- We have an interesting dilemma:
 
@@ -80,15 +92,16 @@ inferExpr aliases unusedId substitutionMap located =
         -}
         newSubstitutionMap : Result ( TypeError, SubstitutionMap ) SubstitutionMap
         newSubstitutionMap =
-            Unify.unifyAllEquations typeEquations aliases substitutionMap
+            Unify.unifyAllEquations allTypeEquations aliases substitutionMap
     in
     newSubstitutionMap
         |> Result.map
             (\map ->
-                ( substituteAllInExpr exprWithIds map
-                , map
-                , unusedId2
-                )
+                let
+                    substituted =
+                        substituteAllInExpr exprWithIds map
+                in
+                ( substituted, ( map, unusedId2, env1 ) )
             )
         |> Result.mapError substituteAllInError
 
@@ -219,17 +232,20 @@ getBetterType substitutionMap typeOrId =
 
 unifyWithTypeAnnotation :
     Dict ( ModuleName, VarName ) (ConcreteType Qualified)
-    -> Int
+    -> Id
+    -> Environment
     -> SubstitutionMap
     -> Declaration Typed.LocatedExpr (ConcreteType Qualified) Qualified
-    -> Result ( TypeError, SubstitutionMap ) ( Declaration Typed.LocatedExpr Never Qualified, SubstitutionMap, Int )
-unifyWithTypeAnnotation aliases unusedId substitutionMap decl =
+    -> Result ( TypeError, SubstitutionMap ) ( Declaration Typed.LocatedExpr Never Qualified, ( SubstitutionMap, Id, Environment ) )
+unifyWithTypeAnnotation aliases unusedId env substitutionMap decl =
     let
         default =
             Ok
                 ( throwAwayType decl
-                , substitutionMap
-                , unusedId
+                , ( substitutionMap
+                  , unusedId
+                  , env
+                  )
                 )
     in
     case decl.body of
@@ -251,8 +267,10 @@ unifyWithTypeAnnotation aliases unusedId substitutionMap decl =
                         |> Result.map
                             (\newSubstitutionMap ->
                                 ( throwAwayType decl
-                                , newSubstitutionMap
-                                , unusedId
+                                , ( newSubstitutionMap
+                                  , unusedId
+                                  , env
+                                  )
                                 )
                             )
 

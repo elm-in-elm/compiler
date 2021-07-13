@@ -11,6 +11,7 @@ import Elm.Data.Type.ToString as TypeToString
 import Expect
 import OurExtras.Tuple3 as Tuple3
 import Stage.InferTypes
+import Stage.InferTypes.Environment as Env
 import Stage.InferTypes.SubstitutionMap as SubstitutionMap
 import Test exposing (Test, describe, test)
 import TestHelpers exposing (dumpTypeOrId)
@@ -30,8 +31,12 @@ typeInference =
                 \() ->
                     input
                         |> Canonical.fromUnwrapped
-                        |> Stage.InferTypes.inferExpr Dict.empty 0 SubstitutionMap.empty
-                        |> Result.map (Tuple3.first >> Typed.getType)
+                        |> Stage.InferTypes.inferExpr
+                            Dict.empty
+                            0
+                            Env.empty
+                            SubstitutionMap.empty
+                        |> Result.map (Tuple.first >> Typed.getType)
                         |> Result.mapError Tuple.first
                         |> Expect.equal (Result.map Just output)
     in

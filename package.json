@@ -4,7 +4,7 @@
     },
     "devDependencies": {
         "ava": "^3.10.0",
-        "elm-review": "^2.2.2",
+        "elm-review": "^2.5.3",
         "elm-tooling": "^1.3.0",
         "xo": "^0.32.1"
     },

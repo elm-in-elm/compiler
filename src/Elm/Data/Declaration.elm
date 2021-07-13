@@ -230,35 +230,34 @@ combineType body =
 
 
 combineTuple3 :
-    ( x, y )
-    -> DeclarationBody ( a, x, y ) b c
-    -> ( DeclarationBody a b c, x, y )
-combineTuple3 ( defaultX, defaultY ) body =
+    ( x, y, z )
+    -> DeclarationBody ( a, ( x, y, z ) ) b c
+    -> ( DeclarationBody a b c, ( x, y, z ) )
+combineTuple3 ( defaultX, defaultY, defaultZ ) body =
     case body of
         Value r ->
             case r.expression of
-                ( expr, x, y ) ->
+                ( expr, ( x, y, z ) ) ->
                     ( Value
                         { expression = expr
                         , typeAnnotation = r.typeAnnotation
                         }
-                    , x
-                    , y
+                    , ( x, y, z )
                     )
 
         TypeAlias r ->
-            ( TypeAlias r, defaultX, defaultY )
+            ( TypeAlias r, ( defaultX, defaultY, defaultZ ) )
 
         CustomType r ->
-            ( CustomType r, defaultX, defaultY )
+            ( CustomType r, ( defaultX, defaultY, defaultZ ) )
 
         Port type_ ->
-            ( Port type_, defaultX, defaultY )
+            ( Port type_, ( defaultX, defaultY, defaultZ ) )
 
 
-getExpr : Declaration expr a b -> Maybe expr
-getExpr decl =
-    case decl.body of
+getExpr : DeclarationBody expr a b -> Maybe expr
+getExpr body =
+    case body of
         Value { expression } ->
             Just expression
 

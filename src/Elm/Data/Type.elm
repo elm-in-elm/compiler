@@ -1,5 +1,5 @@
 module Elm.Data.Type exposing
-    ( Type(..), TypeOrId(..)
+    ( Type(..), TypeOrId(..), Id
     , isParametric, mapType, mapTypeOrId
     , varName, varName_, varNames, varNames_
     , getId, getType
@@ -10,7 +10,7 @@ module Elm.Data.Type exposing
 
 The main confusion point here is "what is the
 
-@docs Type, TypeOrId
+@docs Type, TypeOrId, Id
 @docs isParametric, mapType, mapTypeOrId
 @docs varName, varName_, varNames, varNames_
 @docs getId, getType
@@ -28,8 +28,12 @@ import Transform
 
 {-| -}
 type TypeOrId qualifiedness
-    = Id Int
+    = Id Id
     | Type (Type qualifiedness)
+
+
+type alias Id =
+    Int
 
 
 {-| The `a` here is the same as the `qualifiedness` in `TypeOrId` above.
@@ -494,8 +498,8 @@ combineType type_ =
 combineTypeOrId : TypeOrId (Result err a) -> Result err (TypeOrId a)
 combineTypeOrId typeOrId =
     case typeOrId of
-        Id int ->
-            Ok <| Id int
+        Id id ->
+            Ok <| Id id
 
         Type type_ ->
             combineType type_

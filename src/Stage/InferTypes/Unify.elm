@@ -7,7 +7,7 @@ import Dict exposing (Dict)
 import Elm.Compiler.Error exposing (TypeError(..))
 import Elm.Data.ModuleName exposing (ModuleName)
 import Elm.Data.Qualifiedness exposing (Qualified(..))
-import Elm.Data.Type as Type exposing (Type(..), TypeOrId(..))
+import Elm.Data.Type as Type exposing (Id, Type(..), TypeOrId(..))
 import Elm.Data.Type.Concrete as ConcreteType exposing (ConcreteType)
 import Elm.Data.VarName exposing (VarName)
 import Stage.InferTypes.SubstitutionMap as SubstitutionMap exposing (SubstitutionMap)
@@ -189,7 +189,7 @@ unifyTypes t1 t2 aliases substitutionMap =
 
 
 unifyVariable :
-    Int
+    Id
     -> TypeOrId Qualified
     -> Dict ( ModuleName, VarName ) (ConcreteType Qualified)
     -> SubstitutionMap
@@ -216,7 +216,7 @@ unifyVariable id otherTypeOrId aliases substitutionMap =
                         Ok (SubstitutionMap.insert id otherTypeOrId substitutionMap)
 
 
-occurs : Int -> TypeOrId Qualified -> SubstitutionMap -> Bool
+occurs : Id -> TypeOrId Qualified -> SubstitutionMap -> Bool
 occurs id typeOrId substitutionMap =
     let
         f : TypeOrId Qualified -> Bool

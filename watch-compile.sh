@@ -3,7 +3,7 @@
 COLOR_OFF="\e[0m";
 DIM="\e[2m";
 
-LOCKNAME=$(cat /dev/urandom | tr -cd 'a-f0-9' | head -c 16);
+LOCKNAME=$(cat /dev/urandom | LC_ALL=C tr -cd 'a-f0-9' | head -c 16);
 LOCKFILE="/tmp/elm-lock-${LOCKNAME}"
 
 function compile {
@@ -28,6 +28,6 @@ function run {
 
 run;
 
-find . -name '*.elm' | xargs inotifywait -mqr -e close_write --format '%w %e %f' | while read DIR EVENT FILE; do
+chokidar '**/*.elm' | while read WHATEVER; do
   run;
 done;

@@ -54,3 +54,7 @@ readme_lib:
 readme_gh:
 	mv README.md README-library.md
 	mv README-github.md README.md
+
+.PHONY: review
+review:
+	npx elm-review

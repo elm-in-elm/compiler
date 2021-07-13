@@ -13,17 +13,20 @@ import Elm.Data.Module exposing (Module)
 import Elm.Data.ModuleName exposing (ModuleName)
 import Elm.Data.Project exposing (Project)
 import Elm.Data.Qualifiedness exposing (Qualified)
+import Elm.Data.Type exposing (Id, TypeOrId)
 import Elm.Data.Type.Concrete exposing (ConcreteType)
 import Elm.Data.VarName exposing (VarName)
 import OurExtras.Dict as Dict
 import OurExtras.List as List
 import OurExtras.Tuple3 as Tuple3
+import Stage.InferTypes.Environment as Env exposing (Environment)
 import Stage.InferTypes.SubstitutionMap as SubstitutionMap exposing (SubstitutionMap)
 
 
 type alias InferExprFn =
     Dict ( ModuleName, VarName ) (ConcreteType Qualified)
-    -> Int
+    -> Id
+    -> Environment
     -> SubstitutionMap
     -> Canonical.LocatedExpr
     -> SubstResult Typed.LocatedExpr
@@ -31,14 +34,15 @@ type alias InferExprFn =
 
 type alias UnifyWithTypeAnnotationFn =
     Dict ( ModuleName, VarName ) (ConcreteType Qualified)
-    -> Int
+    -> Id
+    -> Environment
     -> SubstitutionMap
     -> Declaration Typed.LocatedExpr (ConcreteType Qualified) Qualified
     -> SubstResult (Declaration Typed.LocatedExpr Never Qualified)
 
 
 type alias SubstResult a =
-    Result ( TypeError, SubstitutionMap ) ( a, SubstitutionMap, Int )
+    Result ( TypeError, SubstitutionMap ) ( a, ( SubstitutionMap, Id, Environment ) )
 
 
 getAliases :
@@ -63,10 +67,9 @@ getAliases project =
 inferProject :
     InferExprFn
     -> UnifyWithTypeAnnotationFn
-    -> SubstitutionMap
     -> Project Canonical.ProjectFields
     -> Result TypeError (Project Typed.ProjectFields)
-inferProject inferExpr unifyWithTypeAnnotation substitutionMap project =
+inferProject inferExpr unifyWithTypeAnnotation project =
     -- TODO would it be benefitial to return the SubstitutionMap in the Err case too?
     let
         aliases : Dict ( ModuleName, VarName ) (ConcreteType Qualified)
@@ -80,27 +83,30 @@ inferProject inferExpr unifyWithTypeAnnotation substitutionMap project =
                     (\moduleName module_ result_ ->
                         result_
                             |> Result.andThen
-                                (\( newModules, substMap, unusedId ) ->
+                                (\( newModules, ( substMap, unusedId, env ) ) ->
                                     inferModule
                                         inferExpr
                                         unifyWithTypeAnnotation
                                         aliases
                                         unusedId
+                                        env
                                         substMap
                                         module_
                                         |> Result.map
-                                            (\( newModule, newSubstMap, newUnusedId ) ->
+                                            (\( newModule, ( newSubstMap, newUnusedId, newEnv ) ) ->
                                                 ( Dict.insert moduleName newModule newModules
-                                                , newSubstMap
-                                                , newUnusedId
+                                                , ( newSubstMap
+                                                  , newUnusedId
+                                                  , newEnv
+                                                  )
                                                 )
                                             )
                                 )
                     )
-                    (Ok ( Dict.empty, substitutionMap, 0 ))
+                    (Ok ( Dict.empty, ( SubstitutionMap.empty, 0, Env.empty ) ))
     in
     result
-        |> Result.map (Tuple3.first >> projectOfNewType project)
+        |> Result.map (Tuple.first >> projectOfNewType project)
         |> Result.mapError Tuple.first
 
 
@@ -123,31 +129,36 @@ inferModule :
     InferExprFn
     -> UnifyWithTypeAnnotationFn
     -> Dict ( ModuleName, VarName ) (ConcreteType Qualified)
-    -> Int
+    -> Id
+    -> Environment
     -> SubstitutionMap
     -> Module Canonical.LocatedExpr (ConcreteType Qualified) Qualified
     -> SubstResult (Module Typed.LocatedExpr Never Qualified)
-inferModule inferExpr unifyWithTypeAnnotation aliases unusedId substitutionMap module_ =
+inferModule inferExpr unifyWithTypeAnnotation aliases unusedId env substitutionMap module_ =
     module_.declarations
         |> Dict.foldl
             (\varName decl result_ ->
                 result_
                     |> Result.andThen
-                        (\( newDecls, substitutionMap1, unusedId1 ) ->
-                            inferDeclaration inferExpr aliases unusedId1 substitutionMap1 decl
+                        (\( newDecls, ( substitutionMap1, unusedId1, env1 ) ) ->
+                            inferDeclaration inferExpr aliases unusedId1 env1 substitutionMap1 decl
                                 |> Result.andThen
-                                    (\( newDecl, substitutionMap2, unusedId2 ) ->
+                                    (\( newDecl, ( substitutionMap2, unusedId2, env2 ) ) ->
                                         unifyWithTypeAnnotation
                                             aliases
                                             unusedId2
+                                            env2
                                             substitutionMap2
                                             newDecl
                                     )
-                                |> Result.map (Tuple3.mapFirst (\newDecl -> Dict.insert varName newDecl newDecls))
+                                |> Result.map
+                                    (Tuple.mapFirst
+                                        (\newDecl -> Dict.insert varName newDecl newDecls)
+                                    )
                         )
             )
-            (Ok ( Dict.empty, substitutionMap, unusedId ))
-        |> Result.map (Tuple3.mapFirst (moduleOfNewType module_))
+            (Ok ( Dict.empty, ( substitutionMap, unusedId, env ) ))
+        |> Result.map (Tuple.mapFirst (moduleOfNewType module_))
 
 
 moduleOfNewType :
@@ -169,17 +180,24 @@ moduleOfNewType old newDecls =
 inferDeclaration :
     InferExprFn
     -> Dict ( ModuleName, VarName ) (ConcreteType Qualified)
-    -> Int
+    -> Id
+    -> Environment
     -> SubstitutionMap
     -> Declaration Canonical.LocatedExpr (ConcreteType Qualified) Qualified
     -> SubstResult (Declaration Typed.LocatedExpr (ConcreteType Qualified) Qualified)
-inferDeclaration inferExpr aliases unusedId substitutionMap decl =
+inferDeclaration inferExpr aliases unusedId env substitutionMap decl =
     let
+        name : { module_ : ModuleName, name : VarName }
+        name =
+            { module_ = decl.module_
+            , name = decl.name
+            }
+
         result : SubstResult (DeclarationBody Typed.LocatedExpr (ConcreteType Qualified) Qualified)
         result =
             decl.body
                 |> Declaration.mapBody
-                    (inferExpr aliases unusedId substitutionMap)
+                    (inferExpr aliases unusedId env substitutionMap)
                     identity
                     identity
                 |> Declaration.combineValue
@@ -187,10 +205,40 @@ inferDeclaration inferExpr aliases unusedId substitutionMap decl =
                    SubstitutionMaps with the non-empty ones?
                    Are the 0s meaningful?
                 -}
-                |> Result.map (Declaration.combineTuple3 ( SubstitutionMap.empty, 0 ))
+                |> Result.map
+                    (\declBody ->
+                        let
+                            ( declBody_, ( finalSubstMap, finalCurrentId, finalEnv ) ) =
+                                Declaration.combineTuple3
+                                    {- These are just defaults, only used if
+                                       DeclarationBody is not a Value. And thus
+                                       harmless (there's nothing to infer for type or
+                                       port declarations).
+                                    -}
+                                    ( SubstitutionMap.empty, 0, Env.empty )
+                                    declBody
+
+                            maybeType : Maybe (TypeOrId Qualified)
+                            maybeType =
+                                declBody_
+                                    |> Declaration.getExpr
+                                    |> Maybe.map Typed.getTypeOrId
+                        in
+                        ( declBody_
+                        , ( finalSubstMap
+                          , finalCurrentId
+                          , case maybeType of
+                                Nothing ->
+                                    finalEnv
+
+                                Just type_ ->
+                                    finalEnv |> Env.add name type_
+                          )
+                        )
+                    )
     in
     result
-        |> Result.map (Tuple3.mapFirst (declarationOfNewType decl))
+        |> Result.map (Tuple.mapFirst (declarationOfNewType decl))
 
 
 declarationOfNewType :
