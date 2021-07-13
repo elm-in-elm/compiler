@@ -138,6 +138,7 @@ import Elm.Data.Import exposing (Import)
 import Elm.Data.Module exposing (Module)
 import Elm.Data.ModuleName exposing (ModuleName)
 import Elm.Data.Qualifiedness exposing (PossiblyQualified, Qualified)
+import Elm.Data.Type exposing (Id)
 import Elm.Data.Type.Concrete exposing (ConcreteType)
 import Elm.Data.TypeAnnotation exposing (TypeAnnotation)
 import Elm.Data.VarName exposing (VarName)
@@ -149,6 +150,7 @@ import Stage.Desugar
 import Stage.Desugar.Boilerplate
 import Stage.InferTypes
 import Stage.InferTypes.Boilerplate
+import Stage.InferTypes.Environment exposing (Environment)
 import Stage.InferTypes.SubstitutionMap exposing (SubstitutionMap)
 import Stage.Optimize
 import Stage.Optimize.Boilerplate
@@ -424,12 +426,18 @@ very descriptive. **The real type of this function is:**
 -}
 inferExpr :
     Dict ( ModuleName, VarName ) (ConcreteType Qualified)
-    -> Int
+    -> Id
+    -> Environment
     -> SubstitutionMap
     -> Canonical.LocatedExpr
-    -> Result Error ( Typed.LocatedExpr, SubstitutionMap, Int )
-inferExpr aliases unusedId substitutionMap locatedExpr =
-    Stage.InferTypes.inferExpr aliases unusedId substitutionMap locatedExpr
+    -> Result Error ( Typed.LocatedExpr, ( SubstitutionMap, Id, Environment ) )
+inferExpr aliases unusedId env substitutionMap locatedExpr =
+    Stage.InferTypes.inferExpr
+        aliases
+        unusedId
+        env
+        substitutionMap
+        locatedExpr
         |> Result.mapError (Tuple.first >> TypeError)
 
 
@@ -441,16 +449,18 @@ very descriptive. **We're going from Canonical expressions to Typed expressions.
 -}
 inferModule :
     Dict ( ModuleName, VarName ) (ConcreteType Qualified)
-    -> Int
+    -> Id
+    -> Environment
     -> SubstitutionMap
     -> Module Canonical.LocatedExpr (ConcreteType Qualified) Qualified
-    -> Result Error ( Module Typed.LocatedExpr Never Qualified, SubstitutionMap, Int )
-inferModule aliases unusedId substitutionMap thisModule =
+    -> Result Error ( Module Typed.LocatedExpr Never Qualified, ( SubstitutionMap, Id, Environment ) )
+inferModule aliases unusedId env substitutionMap thisModule =
     Stage.InferTypes.Boilerplate.inferModule
         Stage.InferTypes.inferExpr
         Stage.InferTypes.unifyWithTypeAnnotation
         aliases
         unusedId
+        env
         substitutionMap
         thisModule
         |> Result.mapError (Tuple.first >> TypeError)
@@ -464,27 +474,33 @@ very descriptive. **We're going from Canonical expressions to Typed expressions.
 -}
 inferModules :
     Dict ( ModuleName, VarName ) (ConcreteType Qualified)
-    -> Int
+    -> Id
+    -> Environment
     -> SubstitutionMap
     -> Dict ModuleName (Module Canonical.LocatedExpr (ConcreteType Qualified) Qualified)
-    -> Result Error ( Dict ModuleName (Module Typed.LocatedExpr Never Qualified), SubstitutionMap, Int )
-inferModules aliases unusedId substitutionMap modules =
+    -> Result Error ( Dict ModuleName (Module Typed.LocatedExpr Never Qualified), ( SubstitutionMap, Id, Environment ) )
+inferModules aliases unusedId env substitutionMap modules =
     modules
         |> Dict.foldl
             (\moduleName module_ acc ->
                 acc
                     |> Result.andThen
-                        (\( accDict, accSubstMap, accUnusedId ) ->
-                            inferModule aliases accUnusedId accSubstMap module_
+                        (\( accDict, ( accSubstMap, accUnusedId, accEnv ) ) ->
+                            inferModule
+                                aliases
+                                accUnusedId
+                                accEnv
+                                accSubstMap
+                                module_
                                 |> Result.map
-                                    (Tuple3.mapFirst
+                                    (Tuple.mapFirst
                                         (\newModule_ ->
                                             Dict.insert moduleName newModule_ accDict
                                         )
                                     )
                         )
             )
-            (Ok ( Dict.empty, substitutionMap, unusedId ))
+            (Ok ( Dict.empty, ( substitutionMap, unusedId, env ) ))
 
 
 
