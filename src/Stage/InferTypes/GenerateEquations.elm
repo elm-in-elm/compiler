@@ -472,7 +472,7 @@ generateLocalEquations currentId env located =
             , testEquations ++ branchesEquations
             )
 
-        Typed.ConstructorValue rec ->
+        Typed.ConstructorValue _ ->
             -- TODO how to get the type definition and its arguments into scope here?
             -- [ equals type_ thatUserDefinedType ]
             ( currentId

@@ -8,7 +8,7 @@ import Dict.Extra
 import Elm.AST.Canonical as Canonical
 import Elm.AST.Typed as Typed
 import Elm.Compiler.Error exposing (TypeError)
-import Elm.Data.Declaration as Declaration exposing (Declaration, DeclarationBody(..))
+import Elm.Data.Declaration as Declaration exposing (Declaration, DeclarationBody)
 import Elm.Data.Module exposing (Module)
 import Elm.Data.ModuleName exposing (ModuleName)
 import Elm.Data.Project exposing (Project)
@@ -16,9 +16,7 @@ import Elm.Data.Qualifiedness exposing (Qualified)
 import Elm.Data.Type exposing (Id, TypeOrId)
 import Elm.Data.Type.Concrete exposing (ConcreteType)
 import Elm.Data.VarName exposing (VarName)
-import OurExtras.Dict as Dict
 import OurExtras.List as List
-import OurExtras.Tuple3 as Tuple3
 import Stage.InferTypes.Environment as Env exposing (Environment)
 import Stage.InferTypes.SubstitutionMap as SubstitutionMap exposing (SubstitutionMap)
 

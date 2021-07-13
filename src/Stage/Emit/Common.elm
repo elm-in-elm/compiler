@@ -5,9 +5,9 @@ module Stage.Emit.Common exposing
     , prepareProjectFields
     )
 
-import Elm.AST.Typed as Typed exposing (Expr_(..))
+import Elm.AST.Typed as Typed
 import Elm.Compiler.Error exposing (Error(..))
-import Elm.Data.Declaration exposing (Declaration, DeclarationBody(..))
+import Elm.Data.Declaration exposing (Declaration)
 import Elm.Data.ModuleName exposing (ModuleName)
 import Elm.Data.Project exposing (Project)
 import Elm.Data.Qualifiedness exposing (Qualified)

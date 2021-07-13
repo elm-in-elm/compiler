@@ -33,14 +33,9 @@ import AssocSet
 import Dict exposing (Dict)
 import Dict.Extra as Dict
 import Elm.AST.Typed as Typed exposing (Expr_(..))
-import Elm.Compiler.Error
-    exposing
-        ( DesugarError(..)
-        , EmitError(..)
-        , Error(..)
-        )
+import Elm.Compiler.Error exposing (EmitError(..))
 import Elm.Data.Declaration exposing (Declaration, DeclarationBody(..))
-import Elm.Data.Exposing as Exposing exposing (ExposedItem(..), Exposing(..))
+import Elm.Data.Exposing as Exposing exposing (ExposedItem, Exposing(..))
 import Elm.Data.Module exposing (Module)
 import Elm.Data.ModuleName exposing (ModuleName)
 import Elm.Data.Project exposing (Project)

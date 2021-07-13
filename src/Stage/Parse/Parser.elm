@@ -19,10 +19,8 @@ import Dict exposing (Dict)
 import Elm.AST.Frontend as Frontend exposing (Expr(..), LocatedExpr, LocatedPattern, Pattern(..))
 import Elm.Compiler.Error
     exposing
-        ( Error(..)
-        , ParseCompilerBug(..)
+        ( ParseCompilerBug(..)
         , ParseContext(..)
-        , ParseError(..)
         , ParseProblem(..)
         )
 import Elm.Data.Binding as Binding exposing (Binding)
@@ -1206,16 +1204,6 @@ nonqualifiedVar =
         |> P.inContext InNonqualifiedVar
 
 
-nonqualifiedConstructor : String -> Parser_ Expr
-nonqualifiedConstructor name =
-    P.succeed
-        (Frontend.ConstructorValue
-            { qualifiedness = PossiblyQualified Nothing
-            , name = name
-            }
-        )
-
-
 varName : Parser_ String
 varName =
     P.variable
@@ -1225,19 +1213,6 @@ varName =
         , expecting = ExpectingVarName
         }
         |> P.inContext InVarName
-
-
-qualifiers : Parser_ (List ModuleName)
-qualifiers =
-    P.sequence
-        { start = P.Token "" (ParseCompilerBug QualifiersStartParserFailed)
-        , separator = dot_
-        , end = P.Token "" (ParseCompilerBug QualifiersEndParserFailed)
-        , spaces = P.succeed ()
-        , item = uppercaseNameWithoutDots
-        , trailing = P.Mandatory
-        }
-        |> P.inContext InQualifiers
 
 
 qualify : List ModuleName -> PossiblyQualified

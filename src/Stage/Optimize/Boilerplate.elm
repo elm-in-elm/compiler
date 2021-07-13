@@ -5,7 +5,7 @@ module Stage.Optimize.Boilerplate exposing
 
 import Dict exposing (Dict)
 import Elm.AST.Typed as Typed
-import Elm.Data.Declaration as Declaration exposing (Declaration, DeclarationBody(..))
+import Elm.Data.Declaration as Declaration exposing (Declaration, DeclarationBody)
 import Elm.Data.Module exposing (Module)
 import Elm.Data.ModuleName exposing (ModuleName)
 import Elm.Data.Project exposing (Project)

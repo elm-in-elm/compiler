@@ -24,7 +24,7 @@ import Elm.Data.Located as Located exposing (Located)
 import Elm.Data.Module exposing (Module)
 import Elm.Data.ModuleName exposing (ModuleName)
 import Elm.Data.Qualifiedness exposing (Qualified)
-import Elm.Data.Type as Type exposing (Type, TypeOrId(..))
+import Elm.Data.Type as Type exposing (Type, TypeOrId)
 import Elm.Data.VarName exposing (VarName)
 import OurExtras.List as List
 import Transform
@@ -312,7 +312,7 @@ recursiveChildren fn locatedExpr =
         Case e branches ->
             fn e ++ List.fastConcatMap (.body >> fn) branches
 
-        ConstructorValue rec ->
+        ConstructorValue _ ->
             []
 
 

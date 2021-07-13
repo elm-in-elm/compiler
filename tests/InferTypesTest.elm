@@ -9,7 +9,6 @@ import Elm.Data.Qualifiedness exposing (PossiblyQualified(..), Qualified(..))
 import Elm.Data.Type as Type exposing (Type(..), TypeOrId(..))
 import Elm.Data.Type.ToString as TypeToString
 import Expect
-import OurExtras.Tuple3 as Tuple3
 import Stage.InferTypes
 import Stage.InferTypes.Environment as Env
 import Stage.InferTypes.SubstitutionMap as SubstitutionMap

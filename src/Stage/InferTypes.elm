@@ -19,11 +19,10 @@ import Elm.Data.Project exposing (Project)
 import Elm.Data.Qualifiedness exposing (Qualified)
 import Elm.Data.Type exposing (Id, Type(..), TypeOrId(..))
 import Elm.Data.Type.Concrete as ConcreteType exposing (ConcreteType)
-import Elm.Data.Type.ToString
 import Elm.Data.VarName exposing (VarName)
 import Stage.InferTypes.AssignIds as AssignIds
 import Stage.InferTypes.Boilerplate as Boilerplate
-import Stage.InferTypes.Environment as Env exposing (Environment)
+import Stage.InferTypes.Environment exposing (Environment)
 import Stage.InferTypes.GenerateEquations as GenerateEquations
 import Stage.InferTypes.SubstitutionMap as SubstitutionMap exposing (SubstitutionMap)
 import Stage.InferTypes.Unify as Unify

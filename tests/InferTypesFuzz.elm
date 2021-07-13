@@ -3,7 +3,6 @@ module InferTypesFuzz exposing (typeInference)
 import Dict exposing (Dict)
 import Elm.AST.Canonical as Canonical
 import Elm.AST.Canonical.Unwrapped as CanonicalU
-import Elm.Compiler.Error exposing (TypeError(..))
 import Elm.Data.Located as Located
 import Elm.Data.Qualifiedness exposing (Qualified)
 import Elm.Data.Type as Type
@@ -11,7 +10,6 @@ import Elm.Data.Type.Concrete as ConcreteType exposing (ConcreteType(..))
 import Elm.Data.VarName exposing (VarName)
 import Expect
 import Fuzz exposing (Fuzzer)
-import OurExtras.Tuple3 as Tuple3
 import Random exposing (Generator)
 import Random.Extra as Random
 import Shrink exposing (Shrinker)
@@ -411,7 +409,7 @@ shrinkExpr expr =
             -- TODO take a stab at this? Do we actually even generate these?
             nope
 
-        CanonicalU.ConstructorValue rec ->
+        CanonicalU.ConstructorValue _ ->
             nope
 
 

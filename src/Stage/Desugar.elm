@@ -6,7 +6,6 @@ module Stage.Desugar exposing
     )
 
 import Dict exposing (Dict)
-import Dict.Extra as Dict
 import Elm.AST.Canonical as Canonical
 import Elm.AST.Frontend as Frontend
 import Elm.Compiler.Error
@@ -25,7 +24,6 @@ import Elm.Data.Module as Module exposing (Module)
 import Elm.Data.ModuleName exposing (ModuleName)
 import Elm.Data.Project exposing (Project)
 import Elm.Data.Qualifiedness exposing (PossiblyQualified(..), Qualified(..))
-import Elm.Data.Type exposing (TypeOrId(..))
 import Elm.Data.Type.Concrete exposing (ConcreteType(..))
 import Elm.Data.TypeAnnotation exposing (TypeAnnotation)
 import Elm.Data.VarName exposing (VarName)

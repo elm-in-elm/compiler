@@ -19,7 +19,7 @@ testing purposes.
 
 import Dict exposing (Dict)
 import Elm.AST.Typed as Typed exposing (Expr_(..))
-import Elm.Compiler.Error exposing (Error(..))
+import Elm.Compiler.Error exposing (Error)
 import Elm.Data.Declaration exposing (Declaration, DeclarationBody(..))
 import Elm.Data.FileContents exposing (FileContents)
 import Elm.Data.FilePath exposing (FilePath)
