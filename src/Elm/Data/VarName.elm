@@ -1,9 +1,10 @@
 module Elm.Data.VarName exposing (VarName)
 
-{-| Variable name, eg. the `x` in
+{-| Variable name or a type name, eg. the 'A' and the `x` in
 
+    foo : A
     foo =
-        x + 1
+        bar x
 
 @docs VarName
 
