@@ -1,4 +1,5 @@
 const fs = require('fs').promises; // Needs Node.JS v10+
+const yargs = require('yargs');
 
 const {Elm} = require('../build/elm.js'); // Build using Makefile... no Webpack around here!
 const {registerPort} = require('./utils.js');
@@ -6,7 +7,6 @@ const {registerPort} = require('./utils.js');
 // Async/await is nice! (needs Node.JS v7.6+)
 (async function () {
 	// Process command line arguments
-	const yargs = require('yargs');
 	const argv = yargs
 		.option('main', {
 			alias: 'm',
