@@ -16,9 +16,9 @@ const {registerPort} = require('./utils.js');
 		})
 		.option('output', {
 			alias: 'o',
-			description: 'The format to emit: JavaScript or JSON',
+			description: 'The format to emit: js | json | python',
 			type: 'string',
-			default: 'JavaScript'
+			default: 'js'
 		})
 		.help()
 		.alias('help', 'h')

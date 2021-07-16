@@ -62,6 +62,7 @@ import Set exposing (Set)
 import Stage.Desugar as Desugar
 import Stage.Emit.JavaScript as EmitJS
 import Stage.Emit.JsonAST as EmitJson
+import Stage.Emit.Python as EmitPython
 import Stage.InferTypes as InferTypes
 import Stage.Optimize as Optimize
 import Stage.Parse as Parse
@@ -511,8 +512,14 @@ compile format project =
 
         emitter =
             case format of
-                "JSON" ->
+                "json" ->
                     EmitJson.emitProject
+
+                "python" ->
+                    EmitPython.emitProject
+
+                "js" ->
+                    EmitJS.emitProject
 
                 _ ->
                     EmitJS.emitProject
@@ -552,7 +559,7 @@ writeToFSAndExit result =
             in
             ( Finished
             , Cmd.batch
-                (println "Compilation finished, writing output to `out.js`."
+                (println "Compilation finished, writing output."
                     :: outputCmds
                 )
             )
