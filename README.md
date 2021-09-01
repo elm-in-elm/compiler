@@ -8,7 +8,7 @@ Elm compiler written in Elm!
 
 <a href="https://travis-ci.com/elm-in-elm/compiler" alt="Build Status">
   <img src="https://img.shields.io/travis/com/elm-in-elm/compiler/master.svg" /></a>
-<a href="https://discordapp.com/invite/d6kkjg7" alt="Discord">
+<a href="https://discordapp.com/invite/pSqzWRV" alt="Discord">
   <img src="https://img.shields.io/discord/578305644780716039.svg?label=discord" /></a>
 <a href="https://github.com/elm-in-elm/compiler/commits/master" alt="Latest commits">
   <img src="https://badgen.net/github/last-commit/elm-in-elm/compiler" /></a>
@@ -61,7 +61,7 @@ It is written in Elm, and compiles Elm to JavaScript, but lays the foundation to
 
 ## Contributing
 
-Please yes! :heart: Feel free to look around the [<kbd>help wanted</kbd>](https://github.com/elm-in-elm/compiler/labels/help%20wanted) or [<kbd>good first issue</kbd>](https://github.com/elm-in-elm/compiler/labels/good%20first%20issue) issues, have a look around the codebase for some general nitpicks or refactorings, or hit us up on [Discord](https://discordapp.com/invite/d6kkjg7)!
+Please yes! :heart: Feel free to look around the [<kbd>help wanted</kbd>](https://github.com/elm-in-elm/compiler/labels/help%20wanted) or [<kbd>good first issue</kbd>](https://github.com/elm-in-elm/compiler/labels/good%20first%20issue) issues, have a look around the codebase for some general nitpicks or refactorings, or hit us up on [Discord](https://discordapp.com/invite/pSqzWRV)!
 
 ## Roadmap
 
