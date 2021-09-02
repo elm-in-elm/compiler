@@ -20,6 +20,11 @@ json: build
 	tput reset
 	cd example-project && node ../cli/index.js --main src/Main.elm -o JSON
 
+.PHONY: python
+python: build
+	tput reset
+	cd example-project && node ../cli/index.js --main src/Main.elm -o python
+
 .PHONY: build
 build:
 	rm -rf build/elm.js elm-stuff

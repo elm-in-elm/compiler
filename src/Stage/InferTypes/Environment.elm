@@ -16,6 +16,13 @@ import Elm.Data.Type exposing (TypeOrId)
 import Elm.Data.VarName exposing (VarName)
 
 
+{-| A dict from variable names to their types/type IDs.
+
+Usually one of these will be something of substance (the declaration of a var)
+and the rest will be just type IDs of its usages. That way we can link them
+together.
+
+-}
 type alias Environment =
     Dict ( ModuleName, VarName ) (List (TypeOrId Qualified))
 
