@@ -847,29 +847,6 @@ literalNumber : Parser_ LocatedExpr
 literalNumber =
     let
         parseLiteralNumber =
-            {- TODO remove backtrackable.
-
-               This means either waiting for elm/parser to be fixed (see below) or
-               reimplementing numerical parsers from scratch.
-
-               The underlying problem is that `P.number` commits when it sees an
-               `e` at the beginning of the parsed string. There are a few issues
-               already about it:
-
-               https://github.com/elm/parser/issues/25
-               https://github.com/elm/parser/issues/44
-
-               Note that reimplementing `P.number` isn't as simple as it looks: we
-               have to support:
-
-                   5
-                   1e15
-                   1.123e10
-                   1.123
-                   0xDEADBEEF
-
-               and all their `-` prefixed variants.
-            -}
             number
                 { int = Int
                 , hex = HexInt
