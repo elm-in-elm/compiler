@@ -8,6 +8,7 @@ FORMAT_DIRS = \
 	src \
 	tests
 
+.SILENT: run
 .PHONY: run
 run: build
 	tput reset
