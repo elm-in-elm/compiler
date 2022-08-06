@@ -1,0 +1,5 @@
+Theoretical
+http://web.archive.org/web/20210414062233/https://www.seas.harvard.edu/courses/cs152/2010sp/lectures.html
+
+Practical
+https://www.cs.princeton.edu/~appel/modern/ml/index.html
