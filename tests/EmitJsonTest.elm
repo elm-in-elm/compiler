@@ -5,7 +5,7 @@ import Elm.AST.Typed as Typed exposing (Expr_(..))
 import Elm.Data.Declaration exposing (Declaration, DeclarationBody(..))
 import Elm.Data.Qualifiedness exposing (Qualified)
 import Expect
-import Fuzz exposing (bool, char, float, int, string)
+import Fuzz exposing (bool, char, int, niceFloat, string)
 import Json.Encode as E
 import Stage.Emit.JsonAST as JSON
 import Test exposing (Test, describe, fuzz, test)
@@ -38,7 +38,7 @@ json =
                         |> E.encode 0
                         |> Expect.equal
                             ("{\"type\":\"int\",\"value\":" ++ String.fromInt x ++ "}")
-            , fuzz float "encode float" <|
+            , fuzz niceFloat "encode float" <|
                 \x ->
                     typed (Float x)
                         |> JSON.emitExpr

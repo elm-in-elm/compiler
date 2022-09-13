@@ -10,10 +10,6 @@ import Elm.Data.Type.Concrete as ConcreteType exposing (ConcreteType(..))
 import Elm.Data.VarName exposing (VarName)
 import Expect
 import Fuzz exposing (Fuzzer)
-import Random exposing (Generator)
-import Random.Extra as Random
-import Shrink exposing (Shrinker)
-import Shrink.Extra as Shrink
 import Stage.InferTypes
 import Stage.InferTypes.Environment as Env
 import Stage.InferTypes.SubstitutionMap as SubstitutionMap
@@ -79,33 +75,33 @@ typeInference =
 
 exprOfType : ConcreteType Qualified -> Fuzzer CanonicalU.Expr
 exprOfType targetType =
-    Fuzz.custom
-        (exprOfTypeWithDepth 3 targetType)
-        shrinkExpr
+    exprOfTypeWithDepth 3 targetType
 
 
-exprOfTypeWithDepth : Int -> ConcreteType Qualified -> Generator CanonicalU.Expr
+exprOfTypeWithDepth : Int -> ConcreteType Qualified -> Fuzzer CanonicalU.Expr
 exprOfTypeWithDepth depthLeft targetType =
     let
         basicExpr =
             basicExprOfType depthLeft targetType
 
-        pickAffordable ( cost, generator ) =
+        pickAffordable ( cost, fuzzer ) =
             if cost <= depthLeft then
                 targetType
-                    |> generator depthLeft
+                    |> fuzzer depthLeft
                     |> Just
 
             else
                 Nothing
     in
     -- TODO: When generating Ints we should be able to use Plus here.
-    [ ( 1, ifExpr ) ]
+    [ ( 1, ifExpr )
+    ]
         |> List.filterMap pickAffordable
-        |> Random.choices basicExpr
+        |> (::) basicExpr
+        |> Fuzz.oneOf
 
 
-basicExprOfType : Int -> ConcreteType Qualified -> Generator CanonicalU.Expr
+basicExprOfType : Int -> ConcreteType Qualified -> Fuzzer CanonicalU.Expr
 basicExprOfType depthLeft targetType =
     let
         cannotFuzz details =
@@ -178,7 +174,7 @@ basicExprOfType depthLeft targetType =
             cannotFuzz "TODO: Custom type constructors don't exist in Expr types yet"
 
 
-ifExpr : Int -> ConcreteType Qualified -> Generator CanonicalU.Expr
+ifExpr : Int -> ConcreteType Qualified -> Fuzzer CanonicalU.Expr
 ifExpr depth targetType =
     let
         combine test then_ else_ =
@@ -191,62 +187,58 @@ ifExpr depth targetType =
         subexpr =
             exprOfTypeWithDepth (depth - 1)
     in
-    Random.map3 combine
+    Fuzz.map3 combine
         (subexpr Bool)
         (subexpr targetType)
         (subexpr targetType)
 
 
-intExpr : Generator CanonicalU.Expr
+intExpr : Fuzzer CanonicalU.Expr
 intExpr =
-    Random.int Random.minInt Random.maxInt
-        |> Random.map CanonicalU.Int
+    Fuzz.int
+        |> Fuzz.map CanonicalU.Int
 
 
-floatExpr : Generator CanonicalU.Expr
+floatExpr : Fuzzer CanonicalU.Expr
 floatExpr =
     -- Does not produce NaNs, but that should not be an issue for us.
-    Random.float (-1.0 / 0.0) (1.0 / 0.0)
-        |> Random.map CanonicalU.Float
+    Fuzz.float
+        |> Fuzz.map CanonicalU.Float
 
 
-boolExpr : Generator CanonicalU.Expr
+boolExpr : Fuzzer CanonicalU.Expr
 boolExpr =
-    Random.bool
-        |> Random.map CanonicalU.Bool
+    Fuzz.bool
+        |> Fuzz.map CanonicalU.Bool
 
 
-charExpr : Generator CanonicalU.Expr
+charExpr : Fuzzer CanonicalU.Expr
 charExpr =
-    Random.int 0 0x0010FFFF
-        |> Random.map Char.fromCode
-        |> Random.map CanonicalU.Char
+    Fuzz.char
+        |> Fuzz.map CanonicalU.Char
 
 
-stringExpr : Generator CanonicalU.Expr
+stringExpr : Fuzzer CanonicalU.Expr
 stringExpr =
-    Random.int 0 0x0010FFFF
-        |> Random.list 10
-        |> Random.map (List.map Char.fromCode)
-        |> Random.map String.fromList
-        |> Random.map CanonicalU.String
+    Fuzz.stringOfLength 5
+        |> Fuzz.map CanonicalU.String
 
 
-unitExpr : Generator CanonicalU.Expr
+unitExpr : Fuzzer CanonicalU.Expr
 unitExpr =
     CanonicalU.Unit
-        |> Random.constant
+        |> Fuzz.constant
 
 
-listExpr : Int -> ConcreteType Qualified -> Generator CanonicalU.Expr
+listExpr : Int -> ConcreteType Qualified -> Fuzzer CanonicalU.Expr
 listExpr depthLeft elementType =
     elementType
         |> exprOfTypeWithDepth depthLeft
-        |> Random.list 10
-        |> Random.map CanonicalU.List
+        |> Fuzz.listOfLength 5
+        |> Fuzz.map CanonicalU.List
 
 
-intToIntFunctionExpr : Generator CanonicalU.Expr
+intToIntFunctionExpr : Fuzzer CanonicalU.Expr
 intToIntFunctionExpr =
     let
         combine argument intPart =
@@ -258,40 +250,40 @@ intToIntFunctionExpr =
         intSubExpr =
             exprOfTypeWithDepth 0 Int
     in
-    Random.map2 combine
+    Fuzz.map2 combine
         -- TODO: Later we will need something better to avoid shadowing.
         randomVarName
         intSubExpr
 
 
-tupleExpr : Int -> ( ConcreteType Qualified, ConcreteType Qualified ) -> Generator CanonicalU.Expr
+tupleExpr : Int -> ( ConcreteType Qualified, ConcreteType Qualified ) -> Fuzzer CanonicalU.Expr
 tupleExpr depthLeft ( firstType, secondType ) =
-    Random.map2 CanonicalU.Tuple
+    Fuzz.map2 CanonicalU.Tuple
         (firstType |> exprOfTypeWithDepth depthLeft)
         (secondType |> exprOfTypeWithDepth depthLeft)
 
 
-tuple3Expr : Int -> ( ConcreteType Qualified, ConcreteType Qualified, ConcreteType Qualified ) -> Generator CanonicalU.Expr
+tuple3Expr : Int -> ( ConcreteType Qualified, ConcreteType Qualified, ConcreteType Qualified ) -> Fuzzer CanonicalU.Expr
 tuple3Expr depthLeft ( firstType, secondType, thirdType ) =
-    Random.map3 CanonicalU.Tuple3
+    Fuzz.map3 CanonicalU.Tuple3
         (firstType |> exprOfTypeWithDepth depthLeft)
         (secondType |> exprOfTypeWithDepth depthLeft)
         (thirdType |> exprOfTypeWithDepth depthLeft)
 
 
-recordExpr : Int -> Dict VarName (ConcreteType Qualified) -> Generator CanonicalU.Expr
+recordExpr : Int -> Dict VarName (ConcreteType Qualified) -> Fuzzer CanonicalU.Expr
 recordExpr depthLeft bindings =
     let
-        typesGenerator =
+        typesFuzzer =
             bindings
                 |> Dict.values
                 |> List.map (exprOfTypeWithDepth (depthLeft - 1))
-                |> Random.combine
+                |> Fuzz.sequence
 
-        namesGenerator =
-            Dict.keys bindings |> Random.constant
+        namesFuzzer =
+            Dict.keys bindings |> Fuzz.constant
     in
-    Random.map2
+    Fuzz.map2
         (\names exprs ->
             List.map2
                 (\name expr ->
@@ -302,11 +294,11 @@ recordExpr depthLeft bindings =
                 |> Dict.fromList
                 |> CanonicalU.Record
         )
-        namesGenerator
-        typesGenerator
+        namesFuzzer
+        typesFuzzer
 
 
-randomVarName : Generator VarName
+randomVarName : Fuzzer VarName
 randomVarName =
     let
         starters =
@@ -321,263 +313,16 @@ randomVarName =
         charFrom string =
             string
                 |> String.toList
-                |> List.map Random.constant
-                |> Random.choices (Random.constant 'a')
+                |> Fuzz.oneOfValues
 
         firstChar =
             charFrom starters
 
         rest =
-            Random.list 5 <| charFrom all
+            Fuzz.listOfLength 5 <| charFrom all
     in
-    Random.map2 (::) firstChar rest
-        |> Random.map String.fromList
-
-
-{-| An expression shrinker that preserves the inferred type.
--}
-shrinkExpr : Shrinker CanonicalU.Expr
-shrinkExpr expr =
-    let
-        nope =
-            Shrink.noShrink expr
-    in
-    case Debug.log "\nshrinking..." expr of
-        CanonicalU.Int i ->
-            i |> Shrink.int |> Shrink.map CanonicalU.Int
-
-        CanonicalU.Float f ->
-            f |> Shrink.float |> Shrink.map CanonicalU.Float
-
-        CanonicalU.Char c ->
-            c |> Shrink.char |> Shrink.map CanonicalU.Char
-
-        CanonicalU.String s ->
-            s |> Shrink.string |> Shrink.map CanonicalU.String
-
-        CanonicalU.Bool b ->
-            b |> Shrink.bool |> Shrink.map CanonicalU.Bool
-
-        CanonicalU.Var _ ->
-            nope
-
-        CanonicalU.Argument _ ->
-            nope
-
-        CanonicalU.Plus left right ->
-            shrinkPlus left right
-
-        CanonicalU.Cons x xs ->
-            shrinkCons x xs
-
-        CanonicalU.Lambda { argument, body } ->
-            shrinkLambda argument body
-
-        CanonicalU.Call { fn, argument } ->
-            shrinkCall fn argument
-
-        CanonicalU.If { test, then_, else_ } ->
-            shrinkIf test then_ else_
-
-        CanonicalU.Let _ ->
-            -- TODO take a stab at this? Do we actually even generate these?
-            nope
-
-        CanonicalU.List elements ->
-            -- We are not using the default list shrinker here.
-            -- It can turn a non-empty list empty.
-            -- But the lists `[1]` and `[]` will have different types inferred.
-            elements
-                |> Shrink.listWithoutEmptying shrinkExpr
-                |> Shrink.map CanonicalU.List
-
-        CanonicalU.Unit ->
-            -- not possible
-            nope
-
-        CanonicalU.Tuple first second ->
-            shrinkTuple first second
-
-        CanonicalU.Tuple3 first second third ->
-            shrinkTuple3 first second third
-
-        CanonicalU.Record _ ->
-            -- TODO take a stab at this? Do we actually even generate these?
-            nope
-
-        CanonicalU.Case _ _ ->
-            -- TODO take a stab at this? Do we actually even generate these?
-            nope
-
-        CanonicalU.ConstructorValue _ ->
-            nope
-
-
-{-| Shrinks a plus expression.
-
----
-
-We cannot write a type annotation here.
-The `LazyList a` type used by shrinkers is not exposed outside `elm-explorations/test`.
-
-    shrinkPlus : CanonicalU.Expr -> CanonicalU.Expr -> LazyList CanonicalU.Expr
-
--}
-shrinkPlus left right =
-    ([ Shrink.map2 CanonicalU.Plus
-        (shrinkExpr left)
-        (Shrink.singleton right)
-     , Shrink.map2 CanonicalU.Plus
-        (Shrink.singleton left)
-        (shrinkExpr right)
-     ]
-        |> List.map always
-        |> Shrink.mergeMany
-    )
-        -- The value built up to this point is a shrinker.
-        -- We need to call it with an CanonicalU.Expr to get a lazy list.
-        left
-
-
-{-| Shrinks a cons expression.
-
----
-
-We cannot write a type annotation here.
-The `LazyList a` type used by shrinkers is not exposed outside `elm-explorations/test`.
-
-    shrinkCons : CanonicalU.Expr -> CanonicalU.Expr -> LazyList CanonicalU.Expr
-
--}
-shrinkCons x xs =
-    ([ Shrink.map2 CanonicalU.Cons
-        (shrinkExpr x)
-        (Shrink.singleton xs)
-     , Shrink.map2 CanonicalU.Cons
-        (Shrink.singleton x)
-        (shrinkExpr xs)
-     ]
-        |> List.map always
-        |> Shrink.mergeMany
-    )
-        -- The value built up to this point is a shrinker.
-        -- We need to call it with an CanonicalU.Expr to get a lazy list.
-        x
-
-
-{-| Shrinks a call expression.
-
----
-
-We cannot write a type annotation here.
-The `LazyList a` type used by shrinkers is not exposed outside `elm-explorations/test`.
-
-    shrinkCall : CanonicalU.Expr -> CanonicalU.Expr -> LazyList CanonicalU.Expr
-
--}
-shrinkCall fn arg =
-    ([ Shrink.map2 call
-        (shrinkExpr fn)
-        (Shrink.singleton arg)
-     , Shrink.map2 call
-        (Shrink.singleton fn)
-        (shrinkExpr arg)
-     ]
-        |> List.map always
-        |> Shrink.mergeMany
-    )
-        -- The value built up to this point is a shrinker.
-        -- We need to call it with an CanonicalU.Expr to get a lazy list.
-        fn
-
-
-{-| We cannot write a type annotation here.
-The `LazyList a` type used by shrinkers is not exposed outside `elm-explorations/test`.
-
-    shrinkIf : CanonicalU.Expr -> CanonicalU.Expr -> CanonicalU.Expr -> LazyList CanonicalU.Expr
-
--}
-shrinkIf test then_ else_ =
-    let
-        withTest shrunkTest =
-            CanonicalU.If
-                { test = shrunkTest
-                , then_ = then_
-                , else_ = else_
-                }
-    in
-    ([ Shrink.singleton then_
-     , Shrink.singleton else_
-     , test |> shrinkExpr |> Shrink.map withTest
-     ]
-        |> List.map always
-        |> Shrink.mergeMany
-    )
-        -- The value built up to this point is a shrinker.
-        -- We need to call it with an CanonicalU.Expr to get a lazy list.
-        test
-
-
-{-| We cannot write a type annotation here.
-The `LazyList a` type used by shrinkers is not exposed outside `elm-explorations/test`.
-
-    shrinkLambda : VarName -> CanonicalU.Expr -> LazyList CanonicalU.Expr
-
--}
-shrinkLambda argument body =
-    body
-        |> shrinkExpr
-        |> Shrink.map (lambda argument)
-
-
-{-| We cannot write a type annotation here.
-The `LazyList a` type used by shrinkers is not exposed outside `elm-explorations/test`.
-
-    shrinkTuple : CanonicalU.Expr -> CanonicalU.Expr -> LazyList CanonicalU.Expr
-
--}
-shrinkTuple first second =
-    ([ Shrink.map2 CanonicalU.Tuple
-        (shrinkExpr first)
-        (Shrink.singleton second)
-     , Shrink.map2 CanonicalU.Tuple
-        (Shrink.singleton first)
-        (shrinkExpr second)
-     ]
-        |> List.map always
-        |> Shrink.mergeMany
-    )
-        -- The value built up to this point is a shrinker.
-        -- We need to call it with an CanonicalU.Expr to get a lazy list.
-        first
-
-
-{-| We cannot write a type annotation here.
-The `LazyList a` type used by shrinkers is not exposed outside `elm-explorations/test`.
-
-    shrinkTuple3 : CanonicalU.Expr -> CanonicalU.Expr -> CanonicalU.Expr -> LazyList CanonicalU.Expr
-
--}
-shrinkTuple3 first second third =
-    ([ Shrink.map3 CanonicalU.Tuple3
-        (shrinkExpr first)
-        (Shrink.singleton second)
-        (Shrink.singleton third)
-     , Shrink.map3 CanonicalU.Tuple3
-        (Shrink.singleton first)
-        (shrinkExpr second)
-        (Shrink.singleton third)
-     , Shrink.map3 CanonicalU.Tuple3
-        (Shrink.singleton first)
-        (Shrink.singleton second)
-        (shrinkExpr third)
-     ]
-        |> List.map always
-        |> Shrink.mergeMany
-    )
-        -- The value built up to this point is a shrinker.
-        -- We need to call it with an CanonicalU.Expr to get a lazy list.
-        first
+    Fuzz.map2 (::) firstChar rest
+        |> Fuzz.map String.fromList
 
 
 lambda : VarName -> CanonicalU.Expr -> CanonicalU.Expr
