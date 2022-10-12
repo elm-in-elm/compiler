@@ -220,7 +220,7 @@ charExpr =
 
 stringExpr : Fuzzer CanonicalU.Expr
 stringExpr =
-    Fuzz.stringOfLength 5
+    Fuzz.stringOfLengthBetween 1 5
         |> Fuzz.map CanonicalU.String
 
 
@@ -234,7 +234,7 @@ listExpr : Int -> ConcreteType Qualified -> Fuzzer CanonicalU.Expr
 listExpr depthLeft elementType =
     elementType
         |> exprOfTypeWithDepth depthLeft
-        |> Fuzz.listOfLength 5
+        |> Fuzz.listOfLengthBetween 1 5
         |> Fuzz.map CanonicalU.List
 
 
@@ -319,7 +319,7 @@ randomVarName =
             charFrom starters
 
         rest =
-            Fuzz.listOfLength 5 <| charFrom all
+            Fuzz.listOfLengthBetween 1 5 <| charFrom all
     in
     Fuzz.map2 (::) firstChar rest
         |> Fuzz.map String.fromList
