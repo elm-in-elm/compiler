@@ -60,6 +60,7 @@ import Platform
 import Ports exposing (println)
 import Set exposing (Set)
 import Stage.Desugar as Desugar
+import Stage.Emit.HVM as EmitHVM
 import Stage.Emit.JavaScript as EmitJS
 import Stage.Emit.JsonAST as EmitJson
 import Stage.Emit.Python as EmitPython
@@ -520,6 +521,9 @@ compile format project =
 
                 "js" ->
                     EmitJS.emitProject
+
+                "hvm" ->
+                    EmitHVM.emitProject
 
                 _ ->
                     EmitJS.emitProject

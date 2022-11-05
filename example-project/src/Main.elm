@@ -1,10 +1,9 @@
 module Main exposing (main)
 
 
+type alias Record =
+    { a : Int, b : Int }
+
+
 main =
-    let
-        x = 1
-        y = 2
-        z = 3
-    in
-    x + y + z
+    1 + (Record 1 2).a

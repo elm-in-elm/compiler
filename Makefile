@@ -13,13 +13,13 @@ FORMAT_DIRS = \
 run: build
 	tput reset
 	cd example-project && \
-	(node $(NODE_FLAGS) ../cli/index.js --main src/Main.elm || true) \
+	(node $(NODE_FLAGS) ../cli/index.js --main src/Main.elm -o hvm || true) \
 	# have `make run` succeed even if compilation fails.
 
 .PHONY: json
 json: build
 	tput reset
-	cd example-project && node ../cli/index.js --main src/Main.elm -o JSON
+	cd example-project && node ../cli/index.js --main src/Main.elm -o json
 
 .PHONY: python
 python: build
