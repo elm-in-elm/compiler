@@ -427,6 +427,7 @@ valueDeclaration =
         |. notAtBeginningOfLine equals
         |. ignorables
         |= expr
+        |> P.inContext InValueDeclaration
 
 
 equals : Parser_ ()
@@ -455,7 +456,7 @@ typeAliasDeclaration =
                 }
             )
         )
-        |. P.keyword (P.Token "type alias" ExpectingTypeAlias)
+        |. onlyAtBeginningOfLine (P.keyword (P.Token "type alias" ExpectingTypeAlias))
         |. ignorables
         |= uppercaseNameWithoutDots
         |. P.symbol (P.Token " " ExpectingSpace)
@@ -1652,7 +1653,7 @@ The fact that spaces comes last is very important! It can succeed without
 consuming any characters, so if it were the first option, it would always
 succeed and bypass the others!
 
-This possibility of success without consumption is also why wee need the
+This possibility of success without consumption is also why we need the
 ifProgress helper. It detects if there is no more whitespace to consume.
 
 -}
@@ -2075,7 +2076,9 @@ log message parser =
                     -}
                     let
                         remainingSource =
-                            String.dropLeft offsetBefore source
+                            source
+                                |> String.dropLeft offsetBefore
+                                |> String.left 100
                                 |> Debug.log "yet to parse  "
                     in
                     let
@@ -2169,3 +2172,4 @@ portDeclaration =
         |. notAtBeginningOfLine colon
         |. ignorables
         |= notAtBeginningOfLine type_
+        |> P.inContext InPortDeclaration

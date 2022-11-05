@@ -1,4 +1,4 @@
-module OurExtras.String exposing (multilineInput)
+module OurExtras.String exposing (indent, multilineInput)
 
 import String.Extra as String
 
@@ -22,3 +22,8 @@ removeNewlinesAtEnds string =
 
     else
         string
+
+
+indent : String -> String
+indent string =
+    "    " ++ string

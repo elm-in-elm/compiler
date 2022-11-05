@@ -26,6 +26,7 @@ import Elm.Data.Type exposing (TypeOrId(..))
 import Elm.Data.Type.ToString as TypeToString
 import Elm.Data.VarName exposing (VarName)
 import Json.Decode as JD
+import OurExtras.String as String
 import Parser.Advanced as P
 
 
@@ -99,6 +100,8 @@ type ParseContext
     | InTypeBinding
     | InPatternVar
     | InPatternRecord
+    | InValueDeclaration
+    | InPortDeclaration
 
 
 {-| The specific problem the parser encountered. Together with [`ParseContext`](#ParseContext)
@@ -272,10 +275,12 @@ toString error =
                 ParseProblem ( problems, source ) ->
                     String.join
                         "\n"
+                        -- TODO combine multiple errors together rather than showing the source for all of them
                         (List.map
                             (\{ problem, row, col, contextStack } ->
                                 multilineErrorMessage
                                     source
+                                    contextStack
                                     (filenameFromContext contextStack)
                                     ("Parse problem: " ++ parseProblemToString problem)
                                     (parseProblemToString problem)
@@ -697,8 +702,8 @@ filenameFromContext contextStack_ =
             Nothing
 
 
-multilineErrorMessage : FileContents -> Maybe FilePath -> String -> String -> { row : Int, col : Int } -> String
-multilineErrorMessage source filename title errorMessage { row, col } =
+multilineErrorMessage : FileContents -> List { a | context : ParseContext } -> Maybe FilePath -> String -> String -> { row : Int, col : Int } -> String
+multilineErrorMessage source contextStack filename title errorMessage { row, col } =
     title
         ++ "\n  --> "
         ++ (filename
@@ -726,3 +731,151 @@ multilineErrorMessage source filename title errorMessage { row, col } =
                     )
                 |> Maybe.withDefault ""
            )
+        ++ "\n"
+        ++ contextStackToString contextStack
+        ++ "\n"
+
+
+contextStackToString : List { a | context : ParseContext } -> String
+contextStackToString contextStack =
+    "Context stack:\n"
+        ++ (contextStack
+                |> List.map (.context >> parseContextToString >> String.indent)
+                |> String.join "\n"
+           )
+
+
+parseContextToString : ParseContext -> String
+parseContextToString context =
+    case context of
+        InNumber ->
+            "InNumber"
+
+        InChar ->
+            "InChar"
+
+        InCharEscapeMode ->
+            "InCharEscapeMode"
+
+        InUnicodeCharacter ->
+            "InUnicodeCharacter"
+
+        InString ->
+            "InString"
+
+        InDoubleQuoteString ->
+            "InDoubleQuoteString"
+
+        InThreeDoubleQuotesString ->
+            "InThreeDoubleQuotesString"
+
+        InExpr ->
+            "InExpr"
+
+        InIf ->
+            "InIf"
+
+        InLet ->
+            "InLet"
+
+        InLetBinding ->
+            "InLetBinding"
+
+        InRecordBinding ->
+            "InRecordBinding"
+
+        InLambda ->
+            "InLambda"
+
+        InList ->
+            "InList"
+
+        InUnit ->
+            "InUnit"
+
+        InTuple ->
+            "InTuple"
+
+        InTuple3 ->
+            "InTuple3"
+
+        InRecord ->
+            "InRecord"
+
+        InFile path ->
+            "InFile " ++ path
+
+        InCase ->
+            "InCase"
+
+        InPattern ->
+            "InPattern"
+
+        InType ->
+            "InType"
+
+        InTypeAlias ->
+            "InTypeAlias"
+
+        InCustomType ->
+            "InCustomType"
+
+        InConstructors ->
+            "InConstructors"
+
+        InTypeVarType ->
+            "InTypeVarType"
+
+        InUserDefinedType ->
+            "InUserDefinedType"
+
+        InModuleNameWithDot ->
+            "InModuleNameWithDot"
+
+        InQualifiers ->
+            "InQualifiers"
+
+        InQualifiersAndUppercaseName ->
+            "InQualifiersAndUppercaseName"
+
+        InParenthesizedType ->
+            "InParenthesizedType"
+
+        InExposedValue ->
+            "InExposedValue"
+
+        InDeclaration ->
+            "InDeclaration"
+
+        InVar ->
+            "InVar"
+
+        InVarName ->
+            "InVarName"
+
+        InNonqualifiedVar ->
+            "InNonqualifiedVar"
+
+        InNonqualifiedConstructor ->
+            "InNonqualifiedConstructor"
+
+        InQualifiedVar ->
+            "InQualifiedVar"
+
+        InQualifiedConstructor ->
+            "InQualifiedConstructor"
+
+        InTypeBinding ->
+            "InTypeBinding"
+
+        InPatternVar ->
+            "InPatternVar"
+
+        InPatternRecord ->
+            "InPatternRecord"
+
+        InValueDeclaration ->
+            "InValueDeclaration"
+
+        InPortDeclaration ->
+            "InPortDeclaration"
