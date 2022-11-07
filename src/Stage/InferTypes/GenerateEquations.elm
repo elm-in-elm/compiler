@@ -427,6 +427,29 @@ generateLocalEquations currentId env located =
                 :: bindingEquations
             )
 
+        Typed.RecordAccess e field ->
+            {- TODO
+
+               State.do State.getNextIdAndTick <| \extensibleRecordId ->
+               State.do State.getNextIdAndTick <| \resultId ->
+               finish
+                   [ ( type_, Type.id resultId, "Record access = the field = the result" )
+                   , ( NodeV2.type_ record
+                     , Type.mono <|
+                           ExtensibleRecord
+                               { type_ = Type.id_ extensibleRecordId
+                               , fields =
+                                   Dict.singleton
+                                       (NodeV2.value fieldNameNode)
+                                       (Type.id_ resultId)
+                               }
+                     , "Record access: left is a record"
+                     )
+                   ]
+            -}
+            -- TODO make the `e` into a record, make the final expr into its field
+            generateLocalEquations currentId env e
+
         Typed.Case test branches ->
             let
                 ( _, testType ) =

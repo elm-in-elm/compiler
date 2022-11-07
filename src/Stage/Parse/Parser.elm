@@ -586,6 +586,13 @@ expr =
         |> P.inContext InExpr
 
 
+recordAccessor : Parser_ String
+recordAccessor =
+    P.succeed identity
+        |. dot
+        |= varName
+
+
 parenStartingExpr : ExprConfig -> Parser_ LocatedExpr
 parenStartingExpr config =
     P.succeed identity

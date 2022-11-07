@@ -140,6 +140,12 @@ emitExpr located =
         Record bindings ->
             encode "record" [ ( "bind", Encode.dict identity (\v -> emitExpr v.body) bindings ) ]
 
+        RecordAccess e field ->
+            encode "access"
+                [ ( "expr", emitExpr e )
+                , ( "field", Encode.string field )
+                ]
+
         Case test branches ->
             encode "case"
                 [ ( "test", emitExpr test )

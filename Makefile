@@ -38,7 +38,7 @@ watch:
 .PHONY: test
 test: build
 	npx elm make --output /dev/null # build the library just to test it compiles
-	npx elm-test-rs
+	npx elm-test
 	npx ava
 
 .PHONY: format

@@ -548,6 +548,9 @@ findDependenciesOfExpr modules locatedExpr =
                 |> Result.combine
                 |> Result.map List.concat
 
+        RecordAccess e field ->
+            f e
+
         Case e branches ->
             let
                 branchesDependencies =

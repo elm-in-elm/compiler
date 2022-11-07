@@ -84,6 +84,7 @@ type Expr_
     | Tuple LocatedExpr LocatedExpr
     | Tuple3 LocatedExpr LocatedExpr LocatedExpr
     | Record (Dict VarName (Binding LocatedExpr))
+    | RecordAccess LocatedExpr String
     | Case LocatedExpr (List { pattern : LocatedPattern, body : LocatedExpr })
 
 
@@ -206,6 +207,9 @@ recurse fn locatedExpr =
                                 bindings
                             )
 
+                    RecordAccess e field ->
+                        RecordAccess (fn e) field
+
                     Case test branches ->
                         Case (fn test) <|
                             List.map
@@ -308,6 +312,9 @@ recursiveChildren fn locatedExpr =
 
         Record bindings ->
             List.fastConcatMap (.body >> fn) (Dict.values bindings)
+
+        RecordAccess e field ->
+            fn e
 
         Case e branches ->
             fn e ++ List.fastConcatMap (.body >> fn) branches
@@ -448,6 +455,9 @@ unwrap expr =
                 Dict.map
                     (always (Binding.map unwrap))
                     bindings
+
+        RecordAccess e field ->
+            Unwrapped.RecordAccess (f e) field
 
         Case test branches ->
             Unwrapped.Case (f test) <|
@@ -610,6 +620,9 @@ dropTypes locatedExpr =
                     Record bindings ->
                         Canonical.Record <|
                             Dict.map (always (Binding.map f)) bindings
+
+                    RecordAccess e field ->
+                        Canonical.RecordAccess (f e) field
 
                     Case test branches ->
                         Canonical.Case (f test) <|

@@ -49,6 +49,7 @@ type Expr_
     | Tuple Expr Expr
     | Tuple3 Expr Expr Expr
     | Record (Dict VarName (Binding Expr))
+    | RecordAccess Expr String
     | Case Expr (List { pattern : Pattern, body : Expr })
 
 

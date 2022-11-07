@@ -73,6 +73,7 @@ type Expr
     | Tuple LocatedExpr LocatedExpr
     | Tuple3 LocatedExpr LocatedExpr LocatedExpr
     | Record (List (Binding LocatedExpr))
+    | RecordAccess LocatedExpr String
     | Case LocatedExpr (List { pattern : LocatedPattern, body : LocatedExpr })
 
 
@@ -181,6 +182,9 @@ recurse f expr =
 
         Record bindings ->
             Record <| List.map (Binding.map f_) bindings
+
+        RecordAccess e field ->
+            RecordAccess (f_ e) field
 
         Case test branches ->
             Case (f_ test) <|
@@ -304,6 +308,9 @@ unwrap expr =
         Record bindings ->
             Unwrapped.Record <|
                 List.map (Binding.map unwrap) bindings
+
+        RecordAccess e field ->
+            Unwrapped.RecordAccess (unwrap e) field
 
         Case e branches ->
             Unwrapped.Case (unwrap e) <|

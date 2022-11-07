@@ -223,6 +223,15 @@ desugarExpr modules thisModule locatedExpr =
                                     |> Canonical.Record
                             )
 
+        Frontend.RecordAccess e field ->
+            f e
+                |> Result.map
+                    (\e_ ->
+                        Located.replaceWith
+                            (Canonical.RecordAccess e_ field)
+                            locatedExpr
+                    )
+
         Frontend.Case test branches ->
             Result.map2
                 (\expr branches_ ->

@@ -129,6 +129,9 @@ emitExpr located =
             in
             "{" ++ bindingsJS ++ "}"
 
+        RecordAccess e field ->
+            emitExpr e ++ "." ++ field
+
         Case _ _ ->
             "TODO"
 

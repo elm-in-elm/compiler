@@ -27,6 +27,7 @@ import Elm.Data.Project exposing (Project)
 import Elm.Data.Qualifiedness exposing (Qualified)
 import Elm.Data.Type as Type
 import Elm.Data.Type.ToString as TypeToString
+import FNV1a
 import Hex
 import Maybe.Extra as Maybe
 import Stage.Emit.Common exposing (mangleQualifiedVar, mangleVarName, prepareProjectFields)
@@ -216,7 +217,10 @@ emitExpr located =
 
                 recordHashInt : Int
                 recordHashInt =
-                    Debug.todo "record hash"
+                    List.foldl
+                        FNV1a.hashWithSeed
+                        FNV1a.initialSeed
+                        (fieldNames ++ fieldTypes)
 
                 recordHash : String
                 recordHash =
@@ -238,6 +242,9 @@ emitExpr located =
                 ++ " "
                 ++ fieldValues
                 ++ ")"
+
+        RecordAccess e field ->
+            "(Get_" ++ field ++ " " ++ emitExpr e ++ ")"
 
         Case _ _ ->
             "TODO"

@@ -85,6 +85,7 @@ type Expr
     | Tuple LocatedExpr LocatedExpr
     | Tuple3 LocatedExpr LocatedExpr LocatedExpr
     | Record (Dict VarName (Binding LocatedExpr))
+    | RecordAccess LocatedExpr String
     | Case LocatedExpr (List { pattern : LocatedPattern, body : LocatedExpr })
 
 
@@ -202,6 +203,9 @@ unwrap expr =
                 Dict.map
                     (always (Binding.map unwrap))
                     bindings
+
+        RecordAccess e field ->
+            Unwrapped.RecordAccess (unwrap e) field
 
         Case e branches ->
             Unwrapped.Case (f e) <|
@@ -367,6 +371,9 @@ fromUnwrapped expr =
                     Dict.map
                         (always (Binding.map f))
                         bindings
+
+            Unwrapped.RecordAccess e field ->
+                RecordAccess (f e) field
 
             Unwrapped.Case e branches ->
                 Case (f e) <|

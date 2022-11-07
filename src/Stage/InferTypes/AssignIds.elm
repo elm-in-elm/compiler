@@ -281,6 +281,13 @@ assignIdsHelp currentId located =
             assignId newId <|
                 Typed.Record (Dict.fromList bindingBodiesList)
 
+        Canonical.RecordAccess e field ->
+            let
+                ( e_, id1 ) =
+                    f currentId e
+            in
+            assignId id1 (Typed.RecordAccess e_ field)
+
         Canonical.Case e branches ->
             let
                 ( e_, id1 ) =
