@@ -43,6 +43,8 @@ type Type
     | RightArrow -- ->
     | LeftParen -- (
     | RightParen -- )
+    | LeftSquareBracket -- [
+    | RightSquareBracket -- ]
     | LeftCurlyBracket -- {
     | RightCurlyBracket -- }
     | Colon -- :

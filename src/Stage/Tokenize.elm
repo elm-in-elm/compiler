@@ -113,6 +113,12 @@ parseNextToken state_ =
                 ')' ->
                     Tokenize.skip 1 >> found RightParen
 
+                '[' ->
+                    Tokenize.skip 1 >> found LeftSquareBracket
+
+                ']' ->
+                    Tokenize.skip 1 >> found RightSquareBracket
+
                 ',' ->
                     Tokenize.skip 1 >> found Comma
 

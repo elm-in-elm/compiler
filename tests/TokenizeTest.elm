@@ -130,6 +130,8 @@ types =
             , ( "left paren", "(", Ok [ LeftParen ] )
             , ( "right paren", ")", Ok [ RightParen ] )
             , ( "left and right paren in an unit", "()", Ok [ LeftParen, RightParen ] )
+            , ( "left square bracket", "[", Ok [ LeftSquareBracket ] )
+            , ( "right square bracket", "]", Ok [ RightSquareBracket ] )
             , ( "left curly bracket", "{", Ok [ LeftCurlyBracket ] )
             , ( "right curly bracket", "}", Ok [ RightCurlyBracket ] )
             , ( "curly brackets in empty record", "{}", Ok [ LeftCurlyBracket, RightCurlyBracket ] )
