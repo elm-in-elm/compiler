@@ -23,6 +23,7 @@ suite =
     in
     Test.describe "Stage.Tokenize.tokenize"
         (List.map runTest
+            -- TODO error cases, correct "startColumn" etc.
             [ ( "lowerName", "helloWorld", Ok [ LowerName "helloWorld" ] )
             , ( "upperName", "HelloWorld", Ok [ UpperName "HelloWorld" ] )
             , ( "int positive", "123", Ok [ Int 123 ] )
@@ -37,7 +38,14 @@ suite =
             , ( "float negative scientific-negative", "-1.2e-3", Ok [ Float -0.0012 ] )
             , ( "hex int edge case", "0x5e3", Ok [ Int 1507 ] )
             , ( "char", "'a'", Ok [ Char 'a' ] )
-            , ( "escaped newline in a char", "'\\n'", Ok [ Char '\n' ] )
+            , ( "escaped n in a char", "'\\n'", Ok [ Char '\n' ] )
+            , ( "escaped r in a char", "'\\r'", Ok [ Char '\u{000D}' ] )
+            , ( "escaped t in a char", "'\\t'", Ok [ Char '\t' ] )
+            , ( "escaped \" in a char", "'\\\"'", Ok [ Char '"' ] )
+            , ( "escaped ' in a char", "'\\''", Ok [ Char '\'' ] )
+            , ( "escaped \\ in a char", "'\\\\'", Ok [ Char '\\' ] )
+            , ( "escaped uppercase unicode in a char", "'\\u{000D}'", Ok [ Char '\u{000D}' ] )
+            , ( "escaped lowercase unicode in a char", "'\\u{000d}'", Ok [ Char '\u{000D}' ] )
             , ( "multiple things in a char"
               , "'ab'"
               , Err <|

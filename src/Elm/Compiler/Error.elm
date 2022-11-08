@@ -49,6 +49,14 @@ type TokenizeError
         { startLine : Int
         , startColumn : Int
         }
+    | EndOfEscapeNotFound
+        { startLine : Int
+        , startColumn : Int
+        }
+    | EndOfUnicodeEscapeNotFound
+        { startLine : Int
+        , startColumn : Int
+        }
     | EndOfDocCommentNotFound
         { startLine : Int
         , startColumn : Int
@@ -63,6 +71,21 @@ type TokenizeError
         }
     | CharTooLong
         { charContents : String
+        , startLine : Int
+        , startColumn : Int
+        }
+    | UnexpectedEscapeChar
+        { char : Char
+        , line : Int
+        , column : Int
+        }
+    | WrongUnicodeEscapeLength
+        { hexString : String
+        , startLine : Int
+        , startColumn : Int
+        }
+    | WrongUnicodeEscape
+        { hexString : String
         , startLine : Int
         , startColumn : Int
         }
@@ -297,6 +320,16 @@ toString error =
                         |> String.replace "{LINE}" (String.fromInt r.startLine)
                         |> String.replace "{COL}" (String.fromInt r.startColumn)
 
+                EndOfEscapeNotFound r ->
+                    "End of escape not found; started at {LINE}:{COL}"
+                        |> String.replace "{LINE}" (String.fromInt r.startLine)
+                        |> String.replace "{COL}" (String.fromInt r.startColumn)
+
+                EndOfUnicodeEscapeNotFound r ->
+                    "End of Unicode escape not found; started at {LINE}:{COL}"
+                        |> String.replace "{LINE}" (String.fromInt r.startLine)
+                        |> String.replace "{COL}" (String.fromInt r.startColumn)
+
                 EndOfDocCommentNotFound r ->
                     "End of doc comment not found; started at {LINE}:{COL}"
                         |> String.replace "{LINE}" (String.fromInt r.startLine)
@@ -315,6 +348,24 @@ toString error =
                 CharTooLong r ->
                     "Character too long: '{CHAR}'; started at {LINE}:{COL}"
                         |> String.replace "{CHAR}" r.charContents
+                        |> String.replace "{LINE}" (String.fromInt r.startLine)
+                        |> String.replace "{COL}" (String.fromInt r.startColumn)
+
+                UnexpectedEscapeChar r ->
+                    "Unexpected escape char {CHAR} at {LINE}:{COL}"
+                        |> String.replace "{CHAR}" (String.fromChar r.char)
+                        |> String.replace "{LINE}" (String.fromInt r.line)
+                        |> String.replace "{COL}" (String.fromInt r.column)
+
+                WrongUnicodeEscapeLength r ->
+                    "Wrong Unicode escape length for '\\u{{HEXSTRING}}' at {LINE}:{COL}"
+                        |> String.replace "{HEXSTRING}" r.hexString
+                        |> String.replace "{LINE}" (String.fromInt r.startLine)
+                        |> String.replace "{COL}" (String.fromInt r.startColumn)
+
+                WrongUnicodeEscape r ->
+                    "Wrong Unicode escape for '\\u{{HEXSTRING}}' at {LINE}:{COL}"
+                        |> String.replace "{HEXSTRING}" r.hexString
                         |> String.replace "{LINE}" (String.fromInt r.startLine)
                         |> String.replace "{COL}" (String.fromInt r.startColumn)
 

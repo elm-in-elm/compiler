@@ -1,9 +1,11 @@
 module Stage.Tokenize exposing (tokenize)
 
+import Dict exposing (Dict)
 import Elm.Compiler.Error exposing (Error(..), TokenizeError(..))
 import Elm.Data.FileContents exposing (FileContents)
 import Elm.Data.FilePath exposing (FilePath)
 import Elm.Data.Token exposing (Token(..))
+import Hex
 import List.Extra as List
 import List.NonEmpty exposing (NonEmpty)
 import Set exposing (Set)
@@ -288,8 +290,8 @@ found token state =
 
 matchChar : State -> ( Maybe TokenizeError, State )
 matchChar state =
-    case state.program of
-        [] ->
+    let
+        endNotFound () =
             ( Just
                 (EndOfCharNotFound
                     { startLine = state.line
@@ -299,21 +301,7 @@ matchChar state =
             , state
             )
 
-        '\'' :: _ ->
-            ( Just
-                (CharWasEmpty
-                    { startLine = state.line
-                    , startColumn = state.column
-                    }
-                )
-            , state
-            )
-
-        c :: '\'' :: _ ->
-            -- TODO escaping
-            found (Char c) (skip 2 state)
-
-        _ ->
+        foundTooLong () =
             let
                 ( foundContents, newState ) =
                     matchWhile (\c -> c /= '\'') state
@@ -327,6 +315,134 @@ matchChar state =
                 )
             , newState
             )
+    in
+    case state.program of
+        [] ->
+            endNotFound ()
+
+        '\'' :: _ ->
+            ( Just
+                (CharWasEmpty
+                    { startLine = state.line
+                    , startColumn = state.column
+                    }
+                )
+            , state
+            )
+
+        '\\' :: cs ->
+            let
+                ( escapedChar, stateAfterEscaped ) =
+                    matchEscapedChar (skip 1 state)
+            in
+            case escapedChar of
+                Err err ->
+                    ( Just err, stateAfterEscaped )
+
+                Ok escapedChar_ ->
+                    case stateAfterEscaped.program of
+                        [] ->
+                            endNotFound ()
+
+                        '\'' :: _ ->
+                            found (Char escapedChar_) (skip 1 stateAfterEscaped)
+
+                        _ ->
+                            foundTooLong ()
+
+        c :: '\'' :: _ ->
+            found (Char c) (skip 2 state)
+
+        _ ->
+            foundTooLong ()
+
+
+matchEscapedChar : State -> ( Result TokenizeError Char, State )
+matchEscapedChar state =
+    case state.program of
+        [] ->
+            ( Err <|
+                EndOfEscapeNotFound
+                    { startLine = state.line
+                    , startColumn = state.column
+                    }
+            , state
+            )
+
+        'u' :: '{' :: cs ->
+            matchUnicodeEscapedChar (skip 2 state)
+
+        c :: cs ->
+            case Dict.get c allowedEscapes of
+                Just escaped ->
+                    ( Ok escaped, skip 1 state )
+
+                Nothing ->
+                    ( Err <|
+                        UnexpectedEscapeChar
+                            { char = c
+                            , line = state.line
+                            , column = state.column
+                            }
+                    , state
+                    )
+
+
+matchUnicodeEscapedChar : State -> ( Result TokenizeError Char, State )
+matchUnicodeEscapedChar state =
+    let
+        ( hexString, stateAfterHex ) =
+            matchWhile (\c -> c /= '}') state
+    in
+    if String.length hexString /= 4 then
+        ( Err <|
+            WrongUnicodeEscapeLength
+                { hexString = hexString
+                , startLine = state.line
+                , startColumn = state.column
+                }
+        , stateAfterHex
+        )
+
+    else
+        case Hex.fromString (String.toLower hexString) of
+            Err _ ->
+                ( Err <|
+                    WrongUnicodeEscape
+                        { hexString = hexString
+                        , startLine = state.line
+                        , startColumn = state.column
+                        }
+                , stateAfterHex
+                )
+
+            Ok num ->
+                case stateAfterHex.program of
+                    '}' :: _ ->
+                        ( Ok <| Char.fromCode num
+                        , skip 1 stateAfterHex
+                        )
+
+                    _ ->
+                        ( Err <|
+                            EndOfUnicodeEscapeNotFound
+                                { startLine = state.line
+                                , startColumn = state.column
+                                }
+                        , stateAfterHex
+                        )
+
+
+allowedEscapes : Dict Char Char
+allowedEscapes =
+    Dict.fromList
+        [ ( 'n', '\n' )
+        , ( 'r', '\u{000D}' )
+        , ( 't', '\t' )
+        , ( '"', '"' )
+        , ( '\'', '\'' )
+        , ( '\\', '\\' )
+        ]
 
 
 matchString : State -> ( Maybe TokenizeError, State )
