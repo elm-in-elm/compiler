@@ -213,7 +213,7 @@ parseNextToken state =
 
                     else if Char.isDigit char then
                         \s ->
-                            case matchNumber identity s of
+                            case matchNumber { shouldNegate = False } s of
                                 Nothing ->
                                     -- Shouldn't happen
                                     ( Nothing, s )
@@ -266,7 +266,7 @@ oneOf possibilities ({ else_ } as else__) state =
 
                 IsNegatedNumber ->
                     -- we're guaranteed we're sitting on `-`
-                    case matchNumber negate (Tokenize.skip 1 state) of
+                    case matchNumber { shouldNegate = True } (Tokenize.skip 1 state) of
                         Nothing ->
                             nope ()
 
@@ -602,19 +602,19 @@ matchMultilineString state =
     go [] state
 
 
-matchNumber : (Int -> Int) -> State -> Maybe ( Maybe TokenizeError, State )
-matchNumber intFn state =
-    -- This one is a bit special (returns things wrapped in an extra Maybe because it's called after an `-` while it's not yet clear whether a number follows)
-    -- TODO 123.45
-    -- TODO 1.3E-25
-    -- TODO 0x13
+matchNumber : { shouldNegate : Bool } -> State -> Maybe ( Maybe TokenizeError, State )
+matchNumber c state =
+    {- This one is a bit special (returns things wrapped in an extra Maybe
+       because it's called after an `-` while it's not yet clear whether a number
+       follows)
+    -}
     if Tokenize.next 2 state == "0x" then
-        matchHexInt intFn (Tokenize.skip 2 state)
+        matchHexInt c (Tokenize.skip 2 state)
             |> Just
 
     else
         let
-            ( finalNumber, state_ ) =
+            ( finalNumber, stateAfterInt ) =
                 Tokenize.matchWhile Char.isDigit state
         in
         case String.toInt finalNumber of
@@ -625,11 +625,25 @@ matchNumber intFn state =
                 Nothing
 
             Just int ->
-                Just <| found (Int (intFn int)) state_
+                Just <|
+                    case stateAfterInt.program of
+                        '.' :: _ ->
+                            matchDotFloat int c (Tokenize.skip 1 stateAfterInt)
+
+                        'E' :: _ ->
+                            matchScientificFloat (toFloat int) c (Tokenize.skip 1 stateAfterInt)
+
+                        'e' :: _ ->
+                            matchScientificFloat (toFloat int) c (Tokenize.skip 1 stateAfterInt)
+
+                        _ ->
+                            found
+                                (Int (possiblyNegate c int))
+                                stateAfterInt
 
 
-matchHexInt : (Int -> Int) -> State -> ( Maybe TokenizeError, State )
-matchHexInt intFn state =
+matchHexInt : { shouldNegate : Bool } -> State -> ( Maybe TokenizeError, State )
+matchHexInt c state =
     -- 0x was already parsed
     let
         ( finalHexNumber, state_ ) =
@@ -643,7 +657,74 @@ matchHexInt intFn state =
             )
 
         Ok int ->
-            found (Int (intFn int)) state_
+            found (Int (possiblyNegate c int)) state_
+
+
+possiblyNegate : { shouldNegate : Bool } -> number -> number
+possiblyNegate { shouldNegate } n =
+    if shouldNegate then
+        negate n
+
+    else
+        n
+
+
+matchScientificFloat : Float -> { shouldNegate : Bool } -> State -> ( Maybe TokenizeError, State )
+matchScientificFloat float c state =
+    -- 'E' has already been parsed
+    let
+        ( shouldNegateExponent, stateAfterMinus ) =
+            if Tokenize.next 1 state == "-" then
+                ( True, Tokenize.skip 1 state )
+
+            else
+                ( False, state )
+
+        ( finalExponent, stateAfterExponent ) =
+            Tokenize.matchWhile Char.isDigit stateAfterMinus
+    in
+    case String.toInt finalExponent of
+        Nothing ->
+            ( Just (TokenizeCompilerBug "matchWhile isDigit >> String.toInt failed")
+            , stateAfterExponent
+            )
+
+        Just exponent ->
+            let
+                coefficient =
+                    possiblyNegate c float
+
+                negatedExponent =
+                    exponent
+                        |> toFloat
+                        |> possiblyNegate { shouldNegate = shouldNegateExponent }
+            in
+            found (Float (coefficient * 10 ^ negatedExponent)) stateAfterExponent
+
+
+matchDotFloat : Int -> { shouldNegate : Bool } -> State -> ( Maybe TokenizeError, State )
+matchDotFloat int c state =
+    -- '.' has already been parsed
+    let
+        ( finalDecimal, stateAfterDecimal ) =
+            Tokenize.matchWhile Char.isDigit state
+
+        floatString =
+            String.fromInt int ++ "." ++ finalDecimal
+    in
+    case String.toFloat floatString of
+        Nothing ->
+            ( Just (TokenizeCompilerBug "matchWhile isDigit >> String.toFloat failed")
+            , stateAfterDecimal
+            )
+
+        Just coefficient ->
+            -- We could end here but we could also continue with `E-123` scientific notation
+            if String.toUpper (Tokenize.next 1 stateAfterDecimal) == "E" then
+                matchScientificFloat coefficient c (Tokenize.skip 1 stateAfterDecimal)
+
+            else
+                found (Float (possiblyNegate c coefficient)) stateAfterDecimal
 
 
 matchLineComment : State -> ( Maybe TokenizeError, State )
