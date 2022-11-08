@@ -22,7 +22,6 @@ tokenize string =
 type Possibility
     = Exact String (State -> ( Maybe TokenizeError, State ))
     | IsNegatedNumber
-    | IsOperatorStartingWithEquals
 
 
 type alias State =
@@ -225,17 +224,6 @@ oneOf possibilities ({ else_ } as else__) state =
 
                         Just result ->
                             result
-
-                IsOperatorStartingWithEquals ->
-                    let
-                        ( finalOperator, state_ ) =
-                            Tokenize.matchWhile isOperatorChar state
-                    in
-                    if String.length finalOperator == 1 then
-                        nope ()
-
-                    else
-                        found (Operator finalOperator) state_
 
 
 found : Token.Type -> State -> ( Maybe TokenizeError, State )
