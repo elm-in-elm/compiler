@@ -98,6 +98,7 @@ type TokenizeError
         , line : Int
         , column : Int
         }
+    | TokenizeCompilerBug String
 
 
 {-| Errors encountered during [parsing](Elm.Compiler#parseExpr) from String to [AST](Elm.AST.Frontend).
@@ -383,6 +384,9 @@ toString error =
                         |> String.replace "{CHAR}" (String.fromChar r.char)
                         |> String.replace "{LINE}" (String.fromInt r.line)
                         |> String.replace "{COL}" (String.fromInt r.column)
+
+                TokenizeCompilerBug bug ->
+                    "Tokenize compiler bug: " ++ bug
 
         ParseError parseError ->
             case parseError of

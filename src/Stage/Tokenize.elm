@@ -508,14 +508,97 @@ matchString state =
 
                         _ ->
                             -- Shouldn't be possible
-                            Debug.todo "matchString: think of what to return here... a bug variant?"
+                            ( Just (TokenizeCompilerBug "matchUntilOneOf returned a char that wasn't in its input list")
+                            , stateAfterChunk
+                            )
     in
     go [] state
 
 
 matchMultilineString : State -> ( Maybe TokenizeError, State )
 matchMultilineString state =
-    Debug.todo "matchMultilineString"
+    let
+        go : List String -> State -> ( Maybe TokenizeError, State )
+        go accString accState =
+            let
+                ( maybeMatch, stateAfterChunk ) =
+                    Tokenize.matchUntilOneOf [ '"', '\\' ] accState
+            in
+            case maybeMatch of
+                Nothing ->
+                    ( Just
+                        (EndOfStringNotFound
+                            { startLine = state.line
+                            , startColumn = state.column
+                            }
+                        )
+                    , stateAfterChunk
+                    )
+
+                Just ( matchedChar, matchedString ) ->
+                    case matchedChar of
+                        '"' ->
+                            -- might be the end of the string (if """ is found)
+                            -- or it might be just a " character
+                            case stateAfterChunk.program of
+                                '"' :: '"' :: _ ->
+                                    -- end of the string!
+                                    let
+                                        newAccString =
+                                            if String.isEmpty matchedString then
+                                                accString
+
+                                            else
+                                                matchedString :: accString
+                                    in
+                                    found
+                                        (String
+                                            (newAccString
+                                                |> List.reverse
+                                                |> String.concat
+                                            )
+                                        )
+                                        (Tokenize.skip 2 stateAfterChunk)
+
+                                _ ->
+                                    -- just a " character!
+                                    let
+                                        newAccString =
+                                            if String.isEmpty matchedString then
+                                                String.fromChar matchedChar :: accString
+
+                                            else
+                                                String.fromChar matchedChar :: matchedString :: accString
+                                    in
+                                    go newAccString stateAfterChunk
+
+                        '\\' ->
+                            let
+                                ( escapedCharResult, stateAfterChar ) =
+                                    matchEscapedChar stateAfterChunk
+                            in
+                            case escapedCharResult of
+                                Err err ->
+                                    ( Just err, stateAfterChar )
+
+                                Ok escapedChar ->
+                                    let
+                                        newAccString =
+                                            if String.isEmpty matchedString then
+                                                String.fromChar escapedChar :: accString
+
+                                            else
+                                                String.fromChar escapedChar :: matchedString :: accString
+                                    in
+                                    go newAccString stateAfterChar
+
+                        _ ->
+                            -- Shouldn't be possible
+                            ( Just (TokenizeCompilerBug "matchUntilOneOf returned a char that wasn't in its input list")
+                            , stateAfterChunk
+                            )
+    in
+    go [] state
 
 
 matchNumber : (Int -> Int) -> State -> Maybe ( Maybe TokenizeError, State )
