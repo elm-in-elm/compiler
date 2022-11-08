@@ -12,9 +12,9 @@ import Set exposing (Set)
 import Stage.Tokenize.Lib as Tokenize
 
 
-tokenize : String -> Result Error (List Token)
-tokenize string =
-    tokenizeString string
+tokenize : FileContents -> Result Error (List Token)
+tokenize fileContents =
+    tokenizeString fileContents
         |> Result.mapError TokenizeError
         |> Result.map (.tokens >> List.reverse)
 

@@ -23,13 +23,13 @@ import Elm.Data.Import exposing (Import)
 import Elm.Data.ModuleName exposing (ModuleName)
 import Elm.Data.Qualifiedness exposing (PossiblyQualified(..))
 import Elm.Data.VarName exposing (VarName)
+import List.NonEmpty
 import Maybe.Extra
 import Result.Extra
 
 
 {-| -}
 type alias Module expr annotation qualifiedness =
-    -- TODO comments? doc comments?
     { -- TODO somewhere check that dependencies' exposing lists contain only what's in that module's exposing list
       imports : Dict ModuleName Import
     , name : ModuleName
@@ -80,7 +80,7 @@ exposes varName module_ =
             isInDeclarations
 
         ExposingSome items ->
-            List.any
+            List.NonEmpty.any
                 (\exposedItem ->
                     case exposedItem of
                         ExposedValue value ->

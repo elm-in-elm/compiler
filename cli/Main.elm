@@ -44,7 +44,7 @@ about returning those.
 import Dict exposing (Dict)
 import Dict.Extra
 import Elm.AST.Frontend as Frontend
-import Elm.Compiler.Error as Error exposing (Error(..), ParseError(..))
+import Elm.Compiler.Error as Error exposing (Error(..), LocatedParseErrorType(..), ParseError(..))
 import Elm.Data.Declaration as Declaration
 import Elm.Data.FileContents exposing (FileContents)
 import Elm.Data.FilePath as FilePath exposing (FilePath)
@@ -56,7 +56,6 @@ import Elm.Data.TypeAnnotation exposing (TypeAnnotation)
 import Elm.Project
 import Json.Decode as JD
 import OurExtras.Tuple3 as Tuple3
-import Parser.Advanced as P
 import Platform
 import Ports exposing (println)
 import Set exposing (Set)
@@ -68,9 +67,9 @@ import Stage.Emit.Python as EmitPython
 import Stage.InferTypes as InferTypes
 import Stage.Optimize as Optimize
 import Stage.Parse as Parse
-import Stage.Parse.Parser as SPP
+import Stage.Parse.Lib as P
 import Stage.Tokenize as Tokenize
-import String.Extra
+import String.Extra as String
 
 
 {-| We're essentially a Node.JS app (until we get self-hosting :P ).
@@ -232,7 +231,7 @@ findMainModuleName filePath contents =
                 let
                     numberOfDotsInModuleName : Int
                     numberOfDotsInModuleName =
-                        String.Extra.countOccurrences "." declaredModuleName
+                        String.countOccurrences "." declaredModuleName
 
                     sourceDirectory : String
                     sourceDirectory =
@@ -260,15 +259,11 @@ findMainModuleName filePath contents =
 
 getDeclaredModuleName : String -> Result CLIError ModuleName
 getDeclaredModuleName fileContents =
-    P.run SPP.moduleDeclaration fileContents
-        |> Result.map Tuple3.second
-        |> Result.mapError
-            (\err ->
-                ( err, fileContents )
-                    |> ParseProblem
-                    |> ParseError
-                    |> CompilerError
-            )
+    fileContents
+        |> String.leftOf "exposing"
+        |> Tokenize.tokenize
+        |> Result.andThen (P.run Parse.moduleName)
+        |> Result.mapError CompilerError
 
 
 normalizeDirs : Elm.Project.Project -> Elm.Project.Project
@@ -335,12 +330,9 @@ handleReadFileSuccess :
 handleReadFileSuccess moduleType ({ filePath } as file) ({ project } as model) =
     if isWaitingFor filePath model then
         let
-            _ =
-                Tokenize.tokenize file.fileContents
-                    |> Debug.log "tokens"
-
             parseResult =
-                Parse.parse file
+                Tokenize.tokenize file.fileContents
+                    |> Result.andThen (Parse.parse file.filePath)
                     |> Result.andThen
                         (case moduleType of
                             MainModule ->

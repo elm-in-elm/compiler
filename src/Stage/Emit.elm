@@ -105,6 +105,7 @@ findPathForEachModule project graph =
 
                 ExposingSome exposedItems ->
                     exposedItems
+                        |> List.NonEmpty.toList
                         -- throwing away stuff - see comment for `exposedItemToDeclaration`
                         |> List.filterMap (exposedItemToDeclaration module_)
 

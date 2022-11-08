@@ -19,12 +19,13 @@ module Elm.Data.Exposing exposing (Exposing(..), ExposedItem(..), name)
 -}
 
 import Elm.Data.VarName exposing (VarName)
+import List.NonEmpty exposing (NonEmpty)
 
 
 {-| -}
 type Exposing
     = ExposingAll -- exposing (..)
-    | ExposingSome (List ExposedItem) -- exposing (foo, Foo, Bar(..))
+    | ExposingSome (NonEmpty ExposedItem) -- exposing (foo, Foo, Bar(..))
 
 
 {-| -}
