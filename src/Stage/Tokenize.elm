@@ -61,6 +61,10 @@ tokenizeString string =
                 in
                 case err of
                     Just err_ ->
+                        let
+                            _ =
+                                List.map (Debug.log "token") newState.tokens
+                        in
                         Err err_
 
                     Nothing ->
@@ -158,61 +162,6 @@ parseNextToken state_ =
                         [ Exact "\"\"\"" matchMultilineString
                         ]
                         { else_ = Tokenize.skip 1 >> matchString }
-
-                'a' ->
-                    oneOf
-                        [ Exact "alias" (found Alias)
-                        , Exact "as" (found As)
-                        ]
-                        { else_ = Tokenize.skip 1 >> matchLowerName char }
-
-                'c' ->
-                    oneOf
-                        [ Exact "case" (found Case) ]
-                        { else_ = Tokenize.skip 1 >> matchLowerName char }
-
-                'e' ->
-                    oneOf
-                        [ Exact "effect" (found Effect)
-                        , Exact "else" (found Else)
-                        , Exact "exposing" (found Exposing)
-                        ]
-                        { else_ = Tokenize.skip 1 >> matchLowerName char }
-
-                'i' ->
-                    oneOf
-                        [ Exact "if" (found If)
-                        , Exact "import" (found Import)
-                        , Exact "in" (found In)
-                        ]
-                        { else_ = Tokenize.skip 1 >> matchLowerName char }
-
-                'l' ->
-                    oneOf
-                        [ Exact "let" (found Let) ]
-                        { else_ = Tokenize.skip 1 >> matchLowerName char }
-
-                'm' ->
-                    oneOf
-                        [ Exact "module" (found Module) ]
-                        { else_ = Tokenize.skip 1 >> matchLowerName char }
-
-                'o' ->
-                    oneOf
-                        [ Exact "of" (found Of) ]
-                        { else_ = Tokenize.skip 1 >> matchLowerName char }
-
-                'p' ->
-                    oneOf
-                        [ Exact "port" (found Port) ]
-                        { else_ = Tokenize.skip 1 >> matchLowerName char }
-
-                't' ->
-                    oneOf
-                        [ Exact "then" (found Then)
-                        , Exact "type" (found Type)
-                        ]
-                        { else_ = Tokenize.skip 1 >> matchLowerName char }
 
                 _ ->
                     if Char.isLower char then
@@ -811,12 +760,39 @@ matchMultilineComment state =
 
 matchLowerName : Char -> State -> ( Maybe TokenizeError, State )
 matchLowerName first state =
-    matchName LowerName first state
+    matchName lowerNameWithKeywordCheck first state
 
 
 matchUpperName : Char -> State -> ( Maybe TokenizeError, State )
 matchUpperName first state =
     matchName UpperName first state
+
+
+lowerNameWithKeywordCheck : String -> Token.Type
+lowerNameWithKeywordCheck name =
+    Dict.get name reservedKeywords
+        |> Maybe.withDefault (LowerName name)
+
+
+reservedKeywords : Dict String Token.Type
+reservedKeywords =
+    Dict.fromList
+        [ ( "alias", Alias )
+        , ( "as", As )
+        , ( "case", Case )
+        , ( "effect", Effect )
+        , ( "else", Else )
+        , ( "exposing", Exposing )
+        , ( "if", If )
+        , ( "import", Import )
+        , ( "in", In )
+        , ( "let", Let )
+        , ( "module", Module )
+        , ( "of", Of )
+        , ( "port", Port )
+        , ( "then", Then )
+        , ( "type", Type )
+        ]
 
 
 matchName : (String -> Token.Type) -> Char -> State -> ( Maybe TokenizeError, State )

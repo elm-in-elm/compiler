@@ -35,6 +35,7 @@ types =
         List.map runTest
             -- TODO error cases, correct "startColumn" etc.
             [ ( "lowerName", "helloWorld", Ok [ LowerName "helloWorld" ] )
+            , ( "lowerName edge case (prefix shared with keyword)", "intValue", Ok [ LowerName "intValue" ] )
             , ( "upperName", "HelloWorld", Ok [ UpperName "HelloWorld" ] )
             , ( "int positive", "123", Ok [ Int 123 ] )
             , ( "int negative", "-123", Ok [ Int -123 ] )
