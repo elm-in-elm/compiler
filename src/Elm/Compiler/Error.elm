@@ -1,5 +1,6 @@
 module Elm.Compiler.Error exposing
     ( Error(..), toString
+    , TokenizeError(..)
     , ParseError(..), ParseCompilerBug(..), ParseProblem(..), ParseContext(..)
     , DesugarError(..)
     , TypeError(..)
@@ -9,6 +10,7 @@ module Elm.Compiler.Error exposing
 {-| All the errors the compiler can encounter.
 
 @docs Error, toString
+@docs TokenizeError
 @docs ParseError, ParseCompilerBug, ParseProblem, ParseContext
 @docs DesugarError
 @docs TypeError
@@ -33,10 +35,29 @@ import Parser.Advanced as P
 {-| The top-level error type that breaks down into specific error types.
 -}
 type Error
-    = ParseError ParseError
+    = TokenizeError TokenizeError
+    | ParseError ParseError
     | DesugarError DesugarError
     | TypeError TypeError
     | EmitError EmitError
+
+
+{-| Errors encountered during [tokenizing](Elm.Compiler#tokenize) from `String` to `List Token`.
+-}
+type TokenizeError
+    = EndOfDocCommentNotFound
+        { startLine : Int
+        , startColumn : Int
+        }
+    | FoundTabulator
+        { line : Int
+        , column : Int
+        }
+    | UnexpectedChar
+        { char : Char
+        , line : Int
+        , column : Int
+        }
 
 
 {-| Errors encountered during [parsing](Elm.Compiler#parseExpr) from String to [AST](Elm.AST.Frontend).
@@ -256,6 +277,24 @@ type EmitError
 toString : Error -> String
 toString error =
     case error of
+        TokenizeError tokenizeError ->
+            case tokenizeError of
+                EndOfDocCommentNotFound r ->
+                    "End of doc comment not found; started at {LINE}:{COL}"
+                        |> String.replace "{LINE}" (String.fromInt r.startLine)
+                        |> String.replace "{COL}" (String.fromInt r.startColumn)
+
+                FoundTabulator r ->
+                    "Found tabulator at {LINE}:{COL}"
+                        |> String.replace "{LINE}" (String.fromInt r.line)
+                        |> String.replace "{COL}" (String.fromInt r.column)
+
+                UnexpectedChar r ->
+                    "Unexpected char {CHAR} at {LINE}:{COL}"
+                        |> String.replace "{CHAR}" (String.fromChar r.char)
+                        |> String.replace "{LINE}" (String.fromInt r.line)
+                        |> String.replace "{COL}" (String.fromInt r.column)
+
         ParseError parseError ->
             case parseError of
                 ModuleNameDoesntMatchFilePath { moduleName, filePath } ->

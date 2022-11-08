@@ -5,6 +5,7 @@ module Main exposing (main)
 To get things out of the way: it would be great if the pipeline could be pure:
 
     input
+        |> tokenize
         |> parse
         |> desugar
         |> inferTypes
@@ -68,6 +69,7 @@ import Stage.InferTypes as InferTypes
 import Stage.Optimize as Optimize
 import Stage.Parse as Parse
 import Stage.Parse.Parser as SPP
+import Stage.Tokenize as Tokenize
 import String.Extra
 
 
@@ -333,6 +335,10 @@ handleReadFileSuccess :
 handleReadFileSuccess moduleType ({ filePath } as file) ({ project } as model) =
     if isWaitingFor filePath model then
         let
+            _ =
+                Tokenize.tokenize file.fileContents
+                    |> Debug.log "tokens"
+
             parseResult =
                 Parse.parse file
                     |> Result.andThen
