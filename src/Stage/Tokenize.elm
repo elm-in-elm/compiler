@@ -9,6 +9,7 @@ import Hex
 import List.Extra as List
 import List.NonEmpty exposing (NonEmpty)
 import Set exposing (Set)
+import Stage.Tokenize.Lib as Tokenize
 
 
 tokenize : String -> Result Error (List Token)
@@ -73,10 +74,10 @@ parseNextToken state =
         char :: rest ->
             (case char of
                 ' ' ->
-                    \s -> ( Nothing, skipWhile (\c -> c == ' ') s )
+                    \s -> ( Nothing, Tokenize.skipWhile (\c -> c == ' ') s )
 
                 '\n' ->
-                    \s -> ( Nothing, skipWhile (\c -> c == '\n') s )
+                    \s -> ( Nothing, Tokenize.skipWhile (\c -> c == '\n') s )
 
                 '\t' ->
                     \s ->
@@ -92,13 +93,13 @@ parseNextToken state =
                 '(' ->
                     oneOf
                         [ Exact "(..)" (found All) ]
-                        { else_ = skip 1 >> found LeftParen }
+                        { else_ = Tokenize.skip 1 >> found LeftParen }
 
                 ')' ->
-                    skip 1 >> found RightParen
+                    Tokenize.skip 1 >> found RightParen
 
                 ',' ->
-                    skip 1 >> found Comma
+                    Tokenize.skip 1 >> found Comma
 
                 '-' ->
                     oneOf
@@ -106,58 +107,58 @@ parseNextToken state =
                         , Exact "->" (found RightArrow)
                         , IsNegatedNumber
                         ]
-                        { else_ = skip 1 >> found Minus }
+                        { else_ = Tokenize.skip 1 >> found Minus }
 
                 '.' ->
-                    skip 1 >> found Dot
+                    Tokenize.skip 1 >> found Dot
 
                 ':' ->
-                    skip 1 >> found Colon
+                    Tokenize.skip 1 >> found Colon
 
                 '=' ->
                     oneOf
                         [ IsOperatorStartingWithEquals ]
-                        { else_ = skip 1 >> found Equals }
+                        { else_ = Tokenize.skip 1 >> found Equals }
 
                 '\\' ->
-                    skip 1 >> found Backslash
+                    Tokenize.skip 1 >> found Backslash
 
                 '_' ->
-                    skip 1 >> found Underscore
+                    Tokenize.skip 1 >> found Underscore
 
                 '{' ->
                     oneOf
                         [ Exact "{-|" matchMultilineComment
                         , Exact "{-" matchMultilineComment
                         ]
-                        { else_ = skip 1 >> found LeftCurlyBracket }
+                        { else_ = Tokenize.skip 1 >> found LeftCurlyBracket }
 
                 '}' ->
-                    skip 1 >> found RightCurlyBracket
+                    Tokenize.skip 1 >> found RightCurlyBracket
 
                 '|' ->
-                    skip 1 >> found Pipe
+                    Tokenize.skip 1 >> found Pipe
 
                 '\'' ->
-                    skip 1 >> matchChar
+                    Tokenize.skip 1 >> matchChar
 
                 '"' ->
                     oneOf
                         [ Exact "\"\"\"" matchMultilineString
                         ]
-                        { else_ = skip 1 >> matchString }
+                        { else_ = Tokenize.skip 1 >> matchString }
 
                 'a' ->
                     oneOf
                         [ Exact "alias" (found Alias)
                         , Exact "as" (found As)
                         ]
-                        { else_ = skip 1 >> matchLowerName char }
+                        { else_ = Tokenize.skip 1 >> matchLowerName char }
 
                 'c' ->
                     oneOf
                         [ Exact "case" (found Case) ]
-                        { else_ = skip 1 >> matchLowerName char }
+                        { else_ = Tokenize.skip 1 >> matchLowerName char }
 
                 'e' ->
                     oneOf
@@ -165,7 +166,7 @@ parseNextToken state =
                         , Exact "else" (found Else)
                         , Exact "exposing" (found Exposing)
                         ]
-                        { else_ = skip 1 >> matchLowerName char }
+                        { else_ = Tokenize.skip 1 >> matchLowerName char }
 
                 'i' ->
                     oneOf
@@ -173,41 +174,41 @@ parseNextToken state =
                         , Exact "import" (found Import)
                         , Exact "in" (found In)
                         ]
-                        { else_ = skip 1 >> matchLowerName char }
+                        { else_ = Tokenize.skip 1 >> matchLowerName char }
 
                 'l' ->
                     oneOf
                         [ Exact "let" (found Let) ]
-                        { else_ = skip 1 >> matchLowerName char }
+                        { else_ = Tokenize.skip 1 >> matchLowerName char }
 
                 'm' ->
                     oneOf
                         [ Exact "module" (found Module) ]
-                        { else_ = skip 1 >> matchLowerName char }
+                        { else_ = Tokenize.skip 1 >> matchLowerName char }
 
                 'o' ->
                     oneOf
                         [ Exact "of" (found Of) ]
-                        { else_ = skip 1 >> matchLowerName char }
+                        { else_ = Tokenize.skip 1 >> matchLowerName char }
 
                 'p' ->
                     oneOf
                         [ Exact "port" (found Port) ]
-                        { else_ = skip 1 >> matchLowerName char }
+                        { else_ = Tokenize.skip 1 >> matchLowerName char }
 
                 't' ->
                     oneOf
                         [ Exact "then" (found Then)
                         , Exact "type" (found Type)
                         ]
-                        { else_ = skip 1 >> matchLowerName char }
+                        { else_ = Tokenize.skip 1 >> matchLowerName char }
 
                 _ ->
                     if Char.isLower char then
-                        skip 1 >> matchLowerName char
+                        Tokenize.skip 1 >> matchLowerName char
 
                     else if Char.isUpper char then
-                        skip 1 >> matchUpperName char
+                        Tokenize.skip 1 >> matchUpperName char
 
                     else if Char.isDigit char then
                         \s ->
@@ -220,7 +221,7 @@ parseNextToken state =
                                     result
 
                     else if isOperatorChar char then
-                        skip 1 >> matchOperator char
+                        Tokenize.skip 1 >> matchOperator char
 
                     else
                         \s ->
@@ -256,7 +257,7 @@ oneOf possibilities ({ else_ } as else__) state =
                 Exact string then_ ->
                     if List.isPrefixOf (String.toList string) state.program then
                         state
-                            |> skip (String.length string)
+                            |> Tokenize.skip (String.length string)
                             |> then_
 
                     else
@@ -264,7 +265,7 @@ oneOf possibilities ({ else_ } as else__) state =
 
                 IsNegatedNumber ->
                     -- we're guaranteed we're sitting on `-`
-                    case matchNumber negate (skip 1 state) of
+                    case matchNumber negate (Tokenize.skip 1 state) of
                         Nothing ->
                             nope ()
 
@@ -274,7 +275,7 @@ oneOf possibilities ({ else_ } as else__) state =
                 IsOperatorStartingWithEquals ->
                     let
                         ( finalOperator, state_ ) =
-                            matchWhile isOperatorChar state
+                            Tokenize.matchWhile isOperatorChar state
                     in
                     if String.length finalOperator == 1 then
                         nope ()
@@ -304,7 +305,7 @@ matchChar state =
         foundTooLong () =
             let
                 ( foundContents, newState ) =
-                    matchWhile (\c -> c /= '\'') state
+                    Tokenize.matchWhile (\c -> c /= '\'') state
             in
             ( Just
                 (CharTooLong
@@ -333,7 +334,7 @@ matchChar state =
         '\\' :: cs ->
             let
                 ( escapedChar, stateAfterEscaped ) =
-                    matchEscapedChar (skip 1 state)
+                    matchEscapedChar (Tokenize.skip 1 state)
             in
             case escapedChar of
                 Err err ->
@@ -345,13 +346,13 @@ matchChar state =
                             endNotFound ()
 
                         '\'' :: _ ->
-                            found (Char escapedChar_) (skip 1 stateAfterEscaped)
+                            found (Char escapedChar_) (Tokenize.skip 1 stateAfterEscaped)
 
                         _ ->
                             foundTooLong ()
 
         c :: '\'' :: _ ->
-            found (Char c) (skip 2 state)
+            found (Char c) (Tokenize.skip 2 state)
 
         _ ->
             foundTooLong ()
@@ -370,12 +371,12 @@ matchEscapedChar state =
             )
 
         'u' :: '{' :: cs ->
-            matchUnicodeEscapedChar (skip 2 state)
+            matchUnicodeEscapedChar (Tokenize.skip 2 state)
 
         c :: cs ->
             case Dict.get c allowedEscapes of
                 Just escaped ->
-                    ( Ok escaped, skip 1 state )
+                    ( Ok escaped, Tokenize.skip 1 state )
 
                 Nothing ->
                     ( Err <|
@@ -392,7 +393,7 @@ matchUnicodeEscapedChar : State -> ( Result TokenizeError Char, State )
 matchUnicodeEscapedChar state =
     let
         ( hexString, stateAfterHex ) =
-            matchWhile (\c -> c /= '}') state
+            Tokenize.matchWhile (\c -> c /= '}') state
     in
     if String.length hexString /= 4 then
         ( Err <|
@@ -420,7 +421,7 @@ matchUnicodeEscapedChar state =
                 case stateAfterHex.program of
                     '}' :: _ ->
                         ( Ok <| Char.fromCode num
-                        , skip 1 stateAfterHex
+                        , Tokenize.skip 1 stateAfterHex
                         )
 
                     _ ->
@@ -447,7 +448,69 @@ allowedEscapes =
 
 matchString : State -> ( Maybe TokenizeError, State )
 matchString state =
-    Debug.todo "matchString"
+    let
+        go : List String -> State -> ( Maybe TokenizeError, State )
+        go accString accState =
+            let
+                ( maybeMatch, stateAfterChunk ) =
+                    Tokenize.matchUntilOneOf [ '"', '\\' ] accState
+            in
+            case maybeMatch of
+                Nothing ->
+                    ( Just
+                        (EndOfStringNotFound
+                            { startLine = state.line
+                            , startColumn = state.column
+                            }
+                        )
+                    , stateAfterChunk
+                    )
+
+                Just ( matchedChar, matchedString ) ->
+                    case matchedChar of
+                        '"' ->
+                            let
+                                newAccString =
+                                    if String.isEmpty matchedString then
+                                        accString
+
+                                    else
+                                        matchedString :: accString
+                            in
+                            found
+                                (String
+                                    (newAccString
+                                        |> List.reverse
+                                        |> String.concat
+                                    )
+                                )
+                                stateAfterChunk
+
+                        '\\' ->
+                            let
+                                ( escapedCharResult, stateAfterChar ) =
+                                    matchEscapedChar stateAfterChunk
+                            in
+                            case escapedCharResult of
+                                Err err ->
+                                    ( Just err, stateAfterChar )
+
+                                Ok escapedChar ->
+                                    let
+                                        newAccString =
+                                            if String.isEmpty matchedString then
+                                                String.fromChar escapedChar :: accString
+
+                                            else
+                                                String.fromChar escapedChar :: matchedString :: accString
+                                    in
+                                    go newAccString stateAfterChar
+
+                        _ ->
+                            -- Shouldn't be possible
+                            Debug.todo "matchString: think of what to return here... a bug variant?"
+    in
+    go [] state
 
 
 matchMultilineString : State -> ( Maybe TokenizeError, State )
@@ -463,7 +526,7 @@ matchNumber fn state =
     -- TODO 0x13
     let
         ( finalNumber, state_ ) =
-            matchWhile Char.isDigit state
+            Tokenize.matchWhile Char.isDigit state
     in
     case String.toInt finalNumber of
         Nothing ->
@@ -478,7 +541,7 @@ matchNumber fn state =
 
 matchLineComment : State -> ( Maybe TokenizeError, State )
 matchLineComment state =
-    ( Nothing, skipUntil (\c -> c == '\n') state )
+    ( Nothing, Tokenize.skipUntil (\c -> c == '\n') state )
 
 
 matchMultilineComment : State -> ( Maybe TokenizeError, State )
@@ -503,7 +566,7 @@ matchMultilineComment state =
             else
                 let
                     ( matchedChar, stateAfterSkip ) =
-                        skipUntilOneOf [ '-', '{' ] accState
+                        Tokenize.skipUntilOneOf [ '-', '{' ] accState
                 in
                 case matchedChar of
                     Nothing ->
@@ -515,7 +578,7 @@ matchMultilineComment state =
                                 ranOut stateAfterSkip
 
                             '}' :: _ ->
-                                go (level - 1) (skip 1 stateAfterSkip)
+                                go (level - 1) (Tokenize.skip 1 stateAfterSkip)
 
                             _ ->
                                 -- This `-` was not part of the ending `-}`
@@ -527,7 +590,7 @@ matchMultilineComment state =
                                 ranOut stateAfterSkip
 
                             '-' :: _ ->
-                                go (level + 1) (skip 1 stateAfterSkip)
+                                go (level + 1) (Tokenize.skip 1 stateAfterSkip)
 
                             _ ->
                                 -- This `{` was not part of a new `{-`
@@ -554,7 +617,7 @@ matchName : (String -> Token) -> Char -> State -> ( Maybe TokenizeError, State )
 matchName toToken first state =
     let
         ( finalName, state_ ) =
-            matchWhile isIdentifierTailChar state
+            Tokenize.matchWhile isIdentifierTailChar state
                 |> Tuple.mapFirst (String.cons first)
 
         token =
@@ -567,7 +630,7 @@ matchOperator : Char -> State -> ( Maybe TokenizeError, State )
 matchOperator char state =
     let
         ( finalOperator, state_ ) =
-            matchWhile isOperatorChar state
+            Tokenize.matchWhile isOperatorChar state
                 |> Tuple.mapFirst (String.cons char)
     in
     found (Operator finalOperator) state_
@@ -588,102 +651,3 @@ operatorChars =
 isIdentifierTailChar : Char -> Bool
 isIdentifierTailChar char =
     Char.isUpper char || Char.isLower char || Char.isDigit char || char == '_'
-
-
-skipWhile : (Char -> Bool) -> State -> State
-skipWhile pred state =
-    case state.program of
-        [] ->
-            state
-
-        x :: xs ->
-            if pred x then
-                skipWhile pred (skip 1 state)
-
-            else
-                state
-
-
-skipUntil : (Char -> Bool) -> State -> State
-skipUntil pred state =
-    skipWhile (not << pred) state
-
-
-skipUntilOneOf : List Char -> State -> ( Maybe Char, State )
-skipUntilOneOf wantedChars state =
-    case state.program of
-        [] ->
-            ( Nothing, state )
-
-        nextChar :: restOfChars ->
-            let
-                go : List Char -> State -> ( Maybe Char, State )
-                go accWantedChars accState =
-                    case accWantedChars of
-                        [] ->
-                            {- Tried all wanted chars on the current char.
-                               Move to the next one.
-                            -}
-                            skipUntilOneOf wantedChars (skip 1 accState)
-
-                        c :: cs ->
-                            if c == nextChar then
-                                ( Just c, skip 1 accState )
-
-                            else
-                                go cs accState
-            in
-            go wantedChars state
-
-
-matchWhile : (Char -> Bool) -> State -> ( String, State )
-matchWhile pred state =
-    let
-        go : List Char -> State -> ( String, State )
-        go accChars accState =
-            case accState.program of
-                [] ->
-                    ( accChars |> List.reverse |> String.fromList, accState )
-
-                c :: _ ->
-                    if pred c then
-                        go (c :: accChars) (skip 1 accState)
-
-                    else
-                        ( accChars |> List.reverse |> String.fromList, accState )
-    in
-    go [] state
-
-
-skip : Int -> State -> State
-skip n state =
-    -- Doesn't check for \t
-    if n <= 0 then
-        state
-
-    else
-        case state.program of
-            [] ->
-                state
-
-            c :: cs ->
-                let
-                    isNewline =
-                        c == '\n'
-                in
-                skip (n - 1)
-                    { state
-                        | program = cs
-                        , line =
-                            if isNewline then
-                                state.line + 1
-
-                            else
-                                state.line
-                        , column =
-                            if isNewline then
-                                1
-
-                            else
-                                state.column + 1
-                    }

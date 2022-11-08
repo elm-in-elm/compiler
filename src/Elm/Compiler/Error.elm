@@ -49,6 +49,10 @@ type TokenizeError
         { startLine : Int
         , startColumn : Int
         }
+    | EndOfStringNotFound
+        { startLine : Int
+        , startColumn : Int
+        }
     | EndOfEscapeNotFound
         { startLine : Int
         , startColumn : Int
@@ -317,6 +321,11 @@ toString error =
             case tokenizeError of
                 EndOfCharNotFound r ->
                     "End of char not found; started at {LINE}:{COL}"
+                        |> String.replace "{LINE}" (String.fromInt r.startLine)
+                        |> String.replace "{COL}" (String.fromInt r.startColumn)
+
+                EndOfStringNotFound r ->
+                    "End of string not found; started at {LINE}:{COL}"
                         |> String.replace "{LINE}" (String.fromInt r.startLine)
                         |> String.replace "{COL}" (String.fromInt r.startColumn)
 

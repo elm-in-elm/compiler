@@ -56,6 +56,12 @@ suite =
                         }
               )
             , ( "string", "\"a\"", Ok [ String "a" ] )
+            , ( "escaped n in a string", "\"\\n\"", Ok [ String "\n" ] )
+            , ( "escaped r in a string", "\"\\r\"", Ok [ String "\u{000D}" ] )
+            , ( "escaped t in a string", "\"\\t\"", Ok [ String "\t" ] )
+            , ( "escaped \" in a string", "\"\\\"\"", Ok [ String "\"" ] )
+            , ( "escaped ' in a string", "\"\\'\"", Ok [ String "'" ] )
+            , ( "escaped \\ in a string", "\"\\\\\"", Ok [ String "\\" ] )
             , ( "multiline string", "\"\"\"a\n  b\"\"\"", Ok [ String "a\n  b" ] )
             , ( "operator +", "+", Ok [ Operator "+" ] )
             , ( "operator ==", "==", Ok [ Operator "==" ] )
