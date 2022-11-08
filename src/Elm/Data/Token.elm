@@ -15,8 +15,9 @@ type Type
     | Int Int -- 123
     | Float Float -- 123.45
     | Char Char -- 'c'
-    | String String -- "hello"
+    | String String -- "hello", """hello"""
     | Operator String -- +
+    | GlslShader String -- [glsl|...|]
       -- keywords
     | Port -- port
     | Effect -- effect
@@ -32,11 +33,11 @@ type Type
     | In -- in
     | Case -- case
     | Of -- of
+    | As -- as
       -- Symbols
     | Dot -- .
     | All -- (..)
     | Comma -- ,
-    | As -- as
     | Equals -- =
     | Minus -- -
     | Backslash -- \

@@ -114,7 +114,9 @@ parseNextToken state_ =
                     Tokenize.skip 1 >> found RightParen
 
                 '[' ->
-                    Tokenize.skip 1 >> found LeftSquareBracket
+                    oneOf
+                        [ Exact "[glsl|" matchGlslShader ]
+                        { else_ = Tokenize.skip 1 >> found LeftSquareBracket }
 
                 ']' ->
                     Tokenize.skip 1 >> found RightSquareBracket
@@ -129,17 +131,6 @@ parseNextToken state_ =
                         , IsNegatedNumber
                         ]
                         { else_ = Tokenize.skip 1 >> found Minus }
-
-                '.' ->
-                    Tokenize.skip 1 >> found Dot
-
-                ':' ->
-                    Tokenize.skip 1 >> found Colon
-
-                '=' ->
-                    oneOf
-                        [ IsOperatorStartingWithEquals ]
-                        { else_ = Tokenize.skip 1 >> found Equals }
 
                 '\\' ->
                     Tokenize.skip 1 >> found Backslash
@@ -156,9 +147,6 @@ parseNextToken state_ =
 
                 '}' ->
                     Tokenize.skip 1 >> found RightCurlyBracket
-
-                '|' ->
-                    Tokenize.skip 1 >> found Pipe
 
                 '\'' ->
                     Tokenize.skip 1 >> matchChar
@@ -187,7 +175,7 @@ parseNextToken state_ =
                                     result
 
                     else if isOperatorChar char then
-                        Tokenize.skip 1 >> matchOperator char
+                        matchOperator
 
                     else
                         \s ->
@@ -575,6 +563,48 @@ matchMultilineString state =
     go [] state
 
 
+matchGlslShader : State -> ( Maybe TokenizeError, State )
+matchGlslShader state =
+    -- [glsl| was already parsed
+    let
+        go : List String -> State -> ( Maybe TokenizeError, State )
+        go accMatched accState =
+            let
+                ( matchedShader, stateAfterShader ) =
+                    Tokenize.matchWhile (\c -> c /= '|') accState
+            in
+            if Tokenize.next 2 stateAfterShader == "|]" then
+                let
+                    newAccMatched =
+                        if String.isEmpty matchedShader then
+                            accMatched
+
+                        else
+                            matchedShader :: accMatched
+                in
+                found
+                    (GlslShader
+                        (newAccMatched
+                            |> List.reverse
+                            |> String.concat
+                        )
+                    )
+                    (Tokenize.skip 2 stateAfterShader)
+
+            else
+                let
+                    newAccMatched =
+                        if String.isEmpty matchedShader then
+                            "|" :: accMatched
+
+                        else
+                            "|" :: matchedShader :: accMatched
+                in
+                go newAccMatched (Tokenize.skip 1 stateAfterShader)
+    in
+    go [] state
+
+
 matchNumber : { shouldNegate : Bool } -> State -> Maybe ( Maybe TokenizeError, State )
 matchNumber c state =
     {- This one is a bit special (returns things wrapped in an extra Maybe
@@ -780,6 +810,29 @@ lowerNameWithKeywordCheck name =
         |> Maybe.withDefault (LowerName name)
 
 
+reservedOperators : Dict String Token.Type
+reservedOperators =
+    Dict.fromList
+        [ ( ".", Dot )
+        , ( "=", Equals )
+        , ( "-", Minus )
+        , ( "->", RightArrow )
+        , ( ":", Colon )
+        , ( "|", Pipe )
+
+        --, ( "(..)", All ) -- '(' is not reserved
+        --, ( ",", Comma ) -- ',' is not reserved
+        --, ( "\\", Backslash ) -- '\' is not reserved
+        --, ( "(", LeftParen ) -- '(' is not reserved
+        --, ( ")", RightParen ) -- ')' is not reserved
+        --, ( "[", LeftSquareBracket ) -- '[' is not reserved
+        --, ( "]", RightSquareBracket ) -- ']' is not reserved
+        --, ( "{", LeftCurlyBracket ) -- '{' is not reserved
+        --, ( "}", RightCurlyBracket ) -- '}' is not reserved
+        --, ( "_", Underscore ) -- '_' is not reserved
+        ]
+
+
 reservedKeywords : Dict String Token.Type
 reservedKeywords =
     Dict.fromList
@@ -814,14 +867,15 @@ matchName toTokenType first state =
     found tokenType state_
 
 
-matchOperator : Char -> State -> ( Maybe TokenizeError, State )
-matchOperator char state =
+matchOperator : State -> ( Maybe TokenizeError, State )
+matchOperator state =
     let
         ( finalOperator, state_ ) =
             Tokenize.matchWhile isOperatorChar state
-                |> Tuple.mapFirst (String.cons char)
     in
-    found (Operator finalOperator) state_
+    Dict.get finalOperator reservedOperators
+        |> Maybe.withDefault (Operator finalOperator)
+        |> (\op -> found op state_)
 
 
 isOperatorChar : Char -> Bool

@@ -92,8 +92,14 @@ types =
             , ( "non-escaped ' in a multiline string", "\"\"\"'\"\"\"", Ok [ String "'" ] )
             , ( "escaped \\ in a multiline string", "\"\"\"\\\\\"\"\"", Ok [ String "\\" ] )
             , ( "operator +", "+", Ok [ Operator "+" ] )
+            , ( "operator ::", "::", Ok [ Operator "::" ] )
+            , ( "operator |.", "|.", Ok [ Operator "|." ] )
+            , ( "operator |=", "|=", Ok [ Operator "|=" ] )
             , ( "operator ==", "==", Ok [ Operator "==" ] )
             , ( "operator == with numbers", "1 == 2", Ok [ Int 1, Operator "==", Int 2 ] )
+            , ( "operator + as a function", "(+) 1 2", Ok [ LeftParen, Operator "+", RightParen, Int 1, Int 2 ] )
+            , ( "operator :: as a function", "(::) 1 2", Ok [ LeftParen, Operator "::", RightParen, Int 1, Int 2 ] )
+            , ( "GLSL shader", "[glsl|attribute vec3 position;|]", Ok [ GlslShader "attribute vec3 position;" ] )
 
             -- keywords
             , ( "port", "port", Ok [ Port ] )
