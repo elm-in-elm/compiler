@@ -158,7 +158,7 @@ positions =
     in
     Test.describe "Produced full tokens (with positions)" <|
         List.map runTest
-            [ ( "hello world"
+            [ ( "module declaration"
               , """
                 module Main exposing (main)
                 """
@@ -169,6 +169,35 @@ positions =
                     , Token 1 22 LeftParen
                     , Token 1 23 (LowerName "main")
                     , Token 1 27 RightParen
+                    ]
+              )
+            , ( "multiline imports"
+              , """
+                import Browser
+                import Html exposing (..)
+                import Html.Events as Events exposing (onClick)
+                """
+              , Ok
+                    [ Token 1 1 Import
+                    , Token 1 8 (UpperName "Browser")
+
+                    --
+                    , Token 2 1 Import
+                    , Token 2 8 (UpperName "Html")
+                    , Token 2 13 Exposing
+                    , Token 2 22 All
+
+                    --
+                    , Token 3 1 Import
+                    , Token 3 8 (UpperName "Html")
+                    , Token 3 12 Dot
+                    , Token 3 13 (UpperName "Events")
+                    , Token 3 20 As
+                    , Token 3 23 (UpperName "Events")
+                    , Token 3 30 Exposing
+                    , Token 3 39 LeftParen
+                    , Token 3 40 (LowerName "onClick")
+                    , Token 3 47 RightParen
                     ]
               )
             ]
