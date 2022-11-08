@@ -1,5 +1,6 @@
 module Stage.Tokenize.Lib exposing
     ( State
+    , next
     , skip, skipWhile, skipUntil, skipUntilOneOf
     , matchWhile, matchUntilOneOf
     )
@@ -7,6 +8,11 @@ module Stage.Tokenize.Lib exposing
 {-|
 
 @docs State
+
+
+## Peeking
+
+@docs next
 
 
 ## Skipping
@@ -27,6 +33,13 @@ type alias State r =
         , line : Int
         , column : Int
     }
+
+
+next : Int -> State r -> String
+next n state =
+    state.program
+        |> List.take n
+        |> String.fromList
 
 
 skipWhile : (Char -> Bool) -> State r -> State r

@@ -77,6 +77,7 @@ parseNextToken state =
                     \s -> ( Nothing, Tokenize.skipWhile (\c -> c == ' ') s )
 
                 '\n' ->
+                    -- TODO indentation
                     \s -> ( Nothing, Tokenize.skipWhile (\c -> c == '\n') s )
 
                 '\t' ->
@@ -602,24 +603,47 @@ matchMultilineString state =
 
 
 matchNumber : (Int -> Int) -> State -> Maybe ( Maybe TokenizeError, State )
-matchNumber fn state =
+matchNumber intFn state =
     -- This one is a bit special (returns things wrapped in an extra Maybe)
     -- TODO 123.45
     -- TODO 1.3E-25
     -- TODO 0x13
-    let
-        ( finalNumber, state_ ) =
-            Tokenize.matchWhile Char.isDigit state
-    in
-    case String.toInt finalNumber of
-        Nothing ->
-            {- Can happen eg. with `1 - 2` right after the "-": the " " is not
-               a number so our matched numeric string is empty.
-            -}
-            Nothing
+    if Tokenize.next 2 state == "0x" then
+        matchHexInt intFn (Tokenize.skip 2 state)
+            |> Just
 
-        Just int ->
-            Just <| found (Int (fn int)) state_
+    else
+        let
+            ( finalNumber, state_ ) =
+                Tokenize.matchWhile Char.isDigit state
+        in
+        case String.toInt finalNumber of
+            Nothing ->
+                {- Can happen eg. with `1 - 2` right after the "-": the " " is not
+                   a number so our matched numeric string is empty.
+                -}
+                Nothing
+
+            Just int ->
+                Just <| found (Int (intFn int)) state_
+
+
+matchHexInt : (Int -> Int) -> State -> ( Maybe TokenizeError, State )
+matchHexInt intFn state =
+    -- 0x was already parsed
+    let
+        ( finalHexNumber, state_ ) =
+            Tokenize.matchWhile Char.isHexDigit state
+    in
+    case Hex.fromString (String.toLower finalHexNumber) of
+        Err _ ->
+            -- Shouldn't happen
+            ( Just (TokenizeCompilerBug "matchWhile isHexDigit -> Hex.fromString failed")
+            , state_
+            )
+
+        Ok int ->
+            found (Int (intFn int)) state_
 
 
 matchLineComment : State -> ( Maybe TokenizeError, State )
