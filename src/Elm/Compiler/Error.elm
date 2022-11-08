@@ -45,13 +45,26 @@ type Error
 {-| Errors encountered during [tokenizing](Elm.Compiler#tokenize) from `String` to `List Token`.
 -}
 type TokenizeError
-    = EndOfDocCommentNotFound
+    = EndOfCharNotFound
+        { startLine : Int
+        , startColumn : Int
+        }
+    | EndOfDocCommentNotFound
         { startLine : Int
         , startColumn : Int
         }
     | FoundTabulator
         { line : Int
         , column : Int
+        }
+    | CharWasEmpty
+        { startLine : Int
+        , startColumn : Int
+        }
+    | CharTooLong
+        { charContents : String
+        , startLine : Int
+        , startColumn : Int
         }
     | UnexpectedChar
         { char : Char
@@ -279,6 +292,11 @@ toString error =
     case error of
         TokenizeError tokenizeError ->
             case tokenizeError of
+                EndOfCharNotFound r ->
+                    "End of char not found; started at {LINE}:{COL}"
+                        |> String.replace "{LINE}" (String.fromInt r.startLine)
+                        |> String.replace "{COL}" (String.fromInt r.startColumn)
+
                 EndOfDocCommentNotFound r ->
                     "End of doc comment not found; started at {LINE}:{COL}"
                         |> String.replace "{LINE}" (String.fromInt r.startLine)
@@ -288,6 +306,17 @@ toString error =
                     "Found tabulator at {LINE}:{COL}"
                         |> String.replace "{LINE}" (String.fromInt r.line)
                         |> String.replace "{COL}" (String.fromInt r.column)
+
+                CharWasEmpty r ->
+                    "Character was empty; started at {LINE}:{COL}"
+                        |> String.replace "{LINE}" (String.fromInt r.startLine)
+                        |> String.replace "{COL}" (String.fromInt r.startColumn)
+
+                CharTooLong r ->
+                    "Character too long: '{CHAR}'; started at {LINE}:{COL}"
+                        |> String.replace "{CHAR}" r.charContents
+                        |> String.replace "{LINE}" (String.fromInt r.startLine)
+                        |> String.replace "{COL}" (String.fromInt r.startColumn)
 
                 UnexpectedChar r ->
                     "Unexpected char {CHAR} at {LINE}:{COL}"

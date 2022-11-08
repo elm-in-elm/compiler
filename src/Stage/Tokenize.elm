@@ -136,6 +136,15 @@ parseNextToken state =
                 '|' ->
                     skip 1 >> found Pipe
 
+                '\'' ->
+                    skip 1 >> matchChar
+
+                '"' ->
+                    oneOf
+                        [ Exact "\"\"\"" matchMultilineString
+                        ]
+                        { else_ = skip 1 >> matchString }
+
                 'a' ->
                     oneOf
                         [ Exact "alias" (found Alias)
@@ -277,8 +286,62 @@ found token state =
     ( Nothing, { state | tokens = token :: state.tokens } )
 
 
+matchChar : State -> ( Maybe TokenizeError, State )
+matchChar state =
+    case state.program of
+        [] ->
+            ( Just
+                (EndOfCharNotFound
+                    { startLine = state.line
+                    , startColumn = state.column
+                    }
+                )
+            , state
+            )
+
+        '\'' :: _ ->
+            ( Just
+                (CharWasEmpty
+                    { startLine = state.line
+                    , startColumn = state.column
+                    }
+                )
+            , state
+            )
+
+        c :: '\'' :: _ ->
+            -- TODO escaping
+            found (Char c) (skip 2 state)
+
+        _ ->
+            let
+                ( foundContents, newState ) =
+                    matchWhile (\c -> c /= '\'') state
+            in
+            ( Just
+                (CharTooLong
+                    { charContents = foundContents
+                    , startLine = state.line
+                    , startColumn = state.column
+                    }
+                )
+            , newState
+            )
+
+
+matchString : State -> ( Maybe TokenizeError, State )
+matchString state =
+    Debug.todo "matchString"
+
+
+matchMultilineString : State -> ( Maybe TokenizeError, State )
+matchMultilineString state =
+    Debug.todo "matchMultilineString"
+
+
 matchNumber : (Int -> Int) -> State -> Maybe ( Maybe TokenizeError, State )
 matchNumber fn state =
+    -- This one is a bit special (returns things wrapped in an extra Maybe)
     -- TODO 123.45
     -- TODO 1.3E-25
     -- TODO 0x13
