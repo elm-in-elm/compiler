@@ -1,28 +1,38 @@
 module TokenizeTest exposing (suite)
 
 import Elm.Compiler.Error exposing (Error(..), TokenizeError(..))
-import Elm.Data.Token exposing (Token(..))
+import Elm.Data.Token as Token exposing (Token, Type(..))
 import Expect
+import OurExtras.String as String
 import Stage.Tokenize
 import Test exposing (Test)
 
 
 suite : Test
 suite =
+    Test.describe "Stage.Tokenize.tokenize"
+        [ types
+        , positions
+        ]
+
+
+types : Test
+types =
     let
-        runTest : ( String, String, Result TokenizeError (List Token) ) -> Test
+        runTest : ( String, String, Result TokenizeError (List Token.Type) ) -> Test
         runTest ( description, input, output ) =
             Test.test description <|
                 \() ->
                     input
                         |> Stage.Tokenize.tokenize
+                        |> Result.map (List.map .type_)
                         |> Expect.equal
                             (output
                                 |> Result.mapError TokenizeError
                             )
     in
-    Test.describe "Stage.Tokenize.tokenize"
-        (List.map runTest
+    Test.describe "produced `Token.Type`s" <|
+        List.map runTest
             -- TODO error cases, correct "startColumn" etc.
             [ ( "lowerName", "helloWorld", Ok [ LowerName "helloWorld" ] )
             , ( "upperName", "HelloWorld", Ok [ UpperName "HelloWorld" ] )
@@ -129,4 +139,36 @@ suite =
             , ( "underscore", "_", Ok [ Underscore ] )
             , ( "underscore in lambda", "\\_ -> 1", Ok [ Backslash, Underscore, RightArrow, Int 1 ] )
             ]
-        )
+
+
+positions : Test
+positions =
+    let
+        runTest : ( String, String, Result TokenizeError (List Token) ) -> Test
+        runTest ( description, input, output ) =
+            Test.test description <|
+                \() ->
+                    input
+                        |> String.multilineInput
+                        |> Stage.Tokenize.tokenize
+                        |> Expect.equal
+                            (output
+                                |> Result.mapError TokenizeError
+                            )
+    in
+    Test.describe "Produced full tokens (with positions)" <|
+        List.map runTest
+            [ ( "hello world"
+              , """
+                module Main exposing (main)
+                """
+              , Ok
+                    [ Token 1 1 Module
+                    , Token 1 8 (UpperName "Main")
+                    , Token 1 13 Exposing
+                    , Token 1 22 LeftParen
+                    , Token 1 23 (LowerName "main")
+                    , Token 1 27 RightParen
+                    ]
+              )
+            ]

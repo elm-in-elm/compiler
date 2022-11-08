@@ -4,7 +4,7 @@ import Dict exposing (Dict)
 import Elm.Compiler.Error exposing (Error(..), TokenizeError(..))
 import Elm.Data.FileContents exposing (FileContents)
 import Elm.Data.FilePath exposing (FilePath)
-import Elm.Data.Token exposing (Token(..))
+import Elm.Data.Token as Token exposing (Token, Type(..))
 import Hex
 import List.Extra as List
 import List.NonEmpty exposing (NonEmpty)
@@ -29,6 +29,8 @@ type alias State =
     { program : List Char
     , line : Int
     , column : Int
+    , startLine : Int
+    , startColumn : Int
     , tokens : List Token
     }
 
@@ -38,6 +40,8 @@ initState string =
     { program = String.toList string
     , line = 1
     , column = 1
+    , startLine = 1
+    , startColumn = 1
     , tokens = []
     }
 
@@ -66,7 +70,14 @@ tokenizeString string =
 
 
 parseNextToken : State -> ( Maybe TokenizeError, State )
-parseNextToken state =
+parseNextToken state_ =
+    let
+        state =
+            { state_
+                | startLine = state_.line
+                , startColumn = state_.column
+            }
+    in
     case state.program of
         [] ->
             ( Nothing, state )
@@ -77,7 +88,6 @@ parseNextToken state =
                     \s -> ( Nothing, Tokenize.skipWhile (\c -> c == ' ') s )
 
                 '\n' ->
-                    -- TODO indentation
                     \s -> ( Nothing, Tokenize.skipWhile (\c -> c == '\n') s )
 
                 '\t' ->
@@ -285,8 +295,16 @@ oneOf possibilities ({ else_ } as else__) state =
                         found (Operator finalOperator) state_
 
 
-found : Token -> State -> ( Maybe TokenizeError, State )
-found token state =
+found : Token.Type -> State -> ( Maybe TokenizeError, State )
+found type_ state =
+    let
+        token : Token
+        token =
+            { line = state.startLine
+            , column = state.startColumn
+            , type_ = type_
+            }
+    in
     ( Nothing, { state | tokens = token :: state.tokens } )
 
 
@@ -801,17 +819,17 @@ matchUpperName first state =
     matchName UpperName first state
 
 
-matchName : (String -> Token) -> Char -> State -> ( Maybe TokenizeError, State )
-matchName toToken first state =
+matchName : (String -> Token.Type) -> Char -> State -> ( Maybe TokenizeError, State )
+matchName toTokenType first state =
     let
         ( finalName, state_ ) =
             Tokenize.matchWhile isIdentifierTailChar state
                 |> Tuple.mapFirst (String.cons first)
 
-        token =
-            toToken finalName
+        tokenType =
+            toTokenType finalName
     in
-    ( Nothing, { state_ | tokens = token :: state_.tokens } )
+    found tokenType state_
 
 
 matchOperator : Char -> State -> ( Maybe TokenizeError, State )

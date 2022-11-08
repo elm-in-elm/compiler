@@ -1,7 +1,14 @@
-module Elm.Data.Token exposing (Token(..))
+module Elm.Data.Token exposing (Token, Type(..))
 
 
-type Token
+type alias Token =
+    { line : Int -- 1-based
+    , column : Int -- 1-based
+    , type_ : Type
+    }
+
+
+type Type
     = -- parameterized
       LowerName String -- helloWorld
     | UpperName String -- HelloWorld
