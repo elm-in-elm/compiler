@@ -604,7 +604,7 @@ matchMultilineString state =
 
 matchNumber : (Int -> Int) -> State -> Maybe ( Maybe TokenizeError, State )
 matchNumber intFn state =
-    -- This one is a bit special (returns things wrapped in an extra Maybe)
+    -- This one is a bit special (returns things wrapped in an extra Maybe because it's called after an `-` while it's not yet clear whether a number follows)
     -- TODO 123.45
     -- TODO 1.3E-25
     -- TODO 0x13
