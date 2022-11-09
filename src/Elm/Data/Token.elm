@@ -3,8 +3,10 @@ module Elm.Data.Token exposing
     , Token
     , Type(..)
     , flatten
+    , getChar
+    , getFloat
+    , getInt
     , getString
-    , getUpperName
     , tToString
     , typeToString
     )
@@ -107,16 +109,6 @@ flatten type_ =
 
         _ ->
             TOther
-
-
-getUpperName : Token -> Maybe String
-getUpperName token =
-    case token.type_ of
-        UpperName name ->
-            Just name
-
-        _ ->
-            Nothing
 
 
 typeToString : Type -> String
@@ -297,6 +289,99 @@ getString t =
 
         GlslShader str ->
             Just str
+
+        _ ->
+            Nothing
+
+
+getInt : Type -> Maybe Int
+getInt t =
+    case t of
+        LowerName str ->
+            Nothing
+
+        UpperName str ->
+            Nothing
+
+        Int int ->
+            Just int
+
+        Float _ ->
+            Nothing
+
+        Char _ ->
+            Nothing
+
+        String str ->
+            Nothing
+
+        Operator str ->
+            Nothing
+
+        GlslShader str ->
+            Nothing
+
+        _ ->
+            Nothing
+
+
+getFloat : Type -> Maybe Float
+getFloat t =
+    case t of
+        LowerName str ->
+            Nothing
+
+        UpperName str ->
+            Nothing
+
+        Int _ ->
+            Nothing
+
+        Float float ->
+            Just float
+
+        Char _ ->
+            Nothing
+
+        String str ->
+            Nothing
+
+        Operator str ->
+            Nothing
+
+        GlslShader str ->
+            Nothing
+
+        _ ->
+            Nothing
+
+
+getChar : Type -> Maybe Char
+getChar t =
+    case t of
+        LowerName str ->
+            Nothing
+
+        UpperName str ->
+            Nothing
+
+        Int _ ->
+            Nothing
+
+        Float _ ->
+            Nothing
+
+        Char char ->
+            Just char
+
+        String str ->
+            Nothing
+
+        Operator str ->
+            Nothing
+
+        GlslShader str ->
+            Nothing
 
         _ ->
             Nothing

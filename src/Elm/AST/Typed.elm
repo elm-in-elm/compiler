@@ -26,6 +26,7 @@ import Elm.Data.ModuleName exposing (ModuleName)
 import Elm.Data.Qualifiedness exposing (Qualified)
 import Elm.Data.Type as Type exposing (Type, TypeOrId)
 import Elm.Data.VarName exposing (VarName)
+import List.NonEmpty exposing (NonEmpty)
 import OurExtras.List as List
 import Transform
 
@@ -73,8 +74,7 @@ type Expr_
     | Var { module_ : ModuleName, name : VarName }
     | ConstructorValue { module_ : ModuleName, name : VarName }
     | Argument VarName
-    | Plus LocatedExpr LocatedExpr
-    | Cons LocatedExpr LocatedExpr
+    | BinOp String LocatedExpr LocatedExpr
     | Lambda { argument : VarName, body : LocatedExpr }
     | Call { fn : LocatedExpr, argument : LocatedExpr }
     | If { test : LocatedExpr, then_ : LocatedExpr, else_ : LocatedExpr }
@@ -85,7 +85,7 @@ type Expr_
     | Tuple3 LocatedExpr LocatedExpr LocatedExpr
     | Record (Dict VarName (Binding LocatedExpr))
     | RecordAccess LocatedExpr String
-    | Case LocatedExpr (List { pattern : LocatedPattern, body : LocatedExpr })
+    | Case LocatedExpr (NonEmpty { pattern : LocatedPattern, body : LocatedExpr })
 
 
 type alias LocatedPattern =
@@ -111,7 +111,6 @@ type Pattern_
     | PTuple3 LocatedPattern LocatedPattern LocatedPattern
     | PList (List LocatedPattern)
     | PCons LocatedPattern LocatedPattern
-    | PBool Bool
     | PChar Char
     | PString String
     | PInt Int
@@ -148,13 +147,8 @@ recurse fn locatedExpr =
                     Argument _ ->
                         expr
 
-                    Plus e1 e2 ->
-                        Plus
-                            (fn e1)
-                            (fn e2)
-
-                    Cons e1 e2 ->
-                        Cons
+                    BinOp op e1 e2 ->
+                        BinOp op
                             (fn e1)
                             (fn e2)
 
@@ -212,7 +206,7 @@ recurse fn locatedExpr =
 
                     Case test branches ->
                         Case (fn test) <|
-                            List.map
+                            List.NonEmpty.map
                                 (\{ pattern, body } ->
                                     { pattern = pattern
                                     , body = fn body
@@ -274,11 +268,7 @@ recursiveChildren fn locatedExpr =
         Argument _ ->
             []
 
-        Plus left right ->
-            fn left
-                ++ fn right
-
-        Cons left right ->
+        BinOp _ left right ->
             fn left
                 ++ fn right
 
@@ -317,7 +307,7 @@ recursiveChildren fn locatedExpr =
             fn e
 
         Case e branches ->
-            fn e ++ List.fastConcatMap (.body >> fn) branches
+            fn e ++ List.fastConcatMap (.body >> fn) (List.NonEmpty.toList branches)
 
         ConstructorValue _ ->
             []
@@ -394,13 +384,8 @@ unwrap expr =
         Argument name ->
             Unwrapped.Argument name
 
-        Plus e1 e2 ->
-            Unwrapped.Plus
-                (f e1)
-                (f e2)
-
-        Cons e1 e2 ->
-            Unwrapped.Cons
+        BinOp op e1 e2 ->
+            Unwrapped.BinOp op
                 (f e1)
                 (f e2)
 
@@ -461,7 +446,7 @@ unwrap expr =
 
         Case test branches ->
             Unwrapped.Case (f test) <|
-                List.map
+                List.NonEmpty.map
                     (\{ pattern, body } ->
                         { pattern = unwrapPattern pattern
                         , body = f body
@@ -514,9 +499,6 @@ unwrapPattern expr =
         PCons p1 p2 ->
             Unwrapped.PCons (unwrapPattern p1) (unwrapPattern p2)
 
-        PBool bool ->
-            Unwrapped.PBool bool
-
         PChar char ->
             Unwrapped.PChar char
 
@@ -565,13 +547,8 @@ dropTypes locatedExpr =
                     Argument var ->
                         Canonical.Argument var
 
-                    Plus e1 e2 ->
-                        Canonical.Plus
-                            (f e1)
-                            (f e2)
-
-                    Cons e1 e2 ->
-                        Canonical.Cons
+                    BinOp op e1 e2 ->
+                        Canonical.BinOp op
                             (f e1)
                             (f e2)
 
@@ -626,7 +603,7 @@ dropTypes locatedExpr =
 
                     Case test branches ->
                         Canonical.Case (f test) <|
-                            List.map
+                            List.NonEmpty.map
                                 (\{ pattern, body } ->
                                     { pattern = dropPatternTypes pattern
                                     , body = f body
@@ -682,9 +659,6 @@ dropPatternTypes locatedPattern =
 
                     PCons p1 p2 ->
                         Canonical.PCons (f p1) (f p2)
-
-                    PBool bool ->
-                        Canonical.PBool bool
 
                     PChar char ->
                         Canonical.PChar char

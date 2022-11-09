@@ -38,6 +38,7 @@ import Elm.Data.Located as Located
 import Elm.Data.Qualifiedness exposing (Qualified)
 import Elm.Data.Type as Type exposing (Id, Type(..), TypeOrId(..))
 import Elm.Data.VarName exposing (VarName)
+import List.NonEmpty
 import OurExtras.List as List
 import Stage.InferTypes.Environment as Env exposing (Environment)
 import Stage.InferTypes.TypeEquation exposing (TypeEquation, equals)
@@ -120,14 +121,8 @@ generateLocalEquations currentId env located =
             , []
             )
 
-        Typed.Plus left right ->
+        Typed.BinOp op left right ->
             let
-                ( _, leftType ) =
-                    Located.unwrap left
-
-                ( _, rightType ) =
-                    Located.unwrap right
-
                 ( id1, env1, leftEquations ) =
                     generateLocalEquations currentId env left
 
@@ -136,34 +131,8 @@ generateLocalEquations currentId env located =
             in
             ( id2
             , env2
-            , -- for expression `a + b`:
-              [ equals leftType (Type Int) -- type of `a` is Int
-              , equals rightType (Type Int) -- type of `b` is Int
-              , equals type_ (Type Int) -- type of `a + b` is Int
-              ]
-                ++ leftEquations
-                ++ rightEquations
-            )
-
-        Typed.Cons left right ->
-            let
-                ( _, leftType ) =
-                    Located.unwrap left
-
-                ( _, rightType ) =
-                    Located.unwrap right
-
-                ( id1, env1, leftEquations ) =
-                    generateLocalEquations currentId env left
-
-                ( id2, env2, rightEquations ) =
-                    generateLocalEquations id1 env1 right
-            in
-            ( id2
-            , env2
-            , -- For expression a :: [ b ]:
-              [ equals rightType (Type (List leftType)) -- type of b is a List a
-              , equals type_ rightType -- a :: [ b ] is a List b
+            , [-- TODO the operator should be linked to its definition
+               -- TODO the binop is a function: left -> right -> result
               ]
                 ++ leftEquations
                 ++ rightEquations
@@ -488,7 +457,7 @@ generateLocalEquations currentId env located =
                             )
                         )
                         ( id1, env1, [] )
-                        branches
+                        (List.NonEmpty.toList branches)
             in
             ( id2
             , env2
@@ -692,11 +661,6 @@ generatePatternEquations currentId located =
                 ++ leftEquations
                 ++ rightEquations
             , id2
-            )
-
-        Typed.PBool _ ->
-            ( [ equals type_ (Type Bool) ]
-            , currentId
             )
 
         Typed.PChar _ ->

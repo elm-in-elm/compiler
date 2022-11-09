@@ -28,6 +28,7 @@ import Elm.Data.FilePath exposing (FilePath)
 import Elm.Data.Project exposing (Project)
 import Elm.Data.Qualifiedness exposing (Qualified)
 import Json.Encode as Encode exposing (Value)
+import List.NonEmpty
 import Stage.Emit.Common exposing (mangleQualifiedVar, prepareProjectFields)
 
 
@@ -80,15 +81,10 @@ emitExpr located =
         Argument argument ->
             encode "arg" [ ( "name", Encode.string argument ) ]
 
-        Plus e1 e2 ->
-            encode "plus"
-                [ ( "e1", emitExpr e1 )
-                , ( "e2", emitExpr e2 )
-                ]
-
-        Cons e1 e2 ->
-            encode "cons"
-                [ ( "e1", emitExpr e1 )
+        BinOp op e1 e2 ->
+            encode "binop"
+                [ ( "op", Encode.string op )
+                , ( "e1", emitExpr e1 )
                 , ( "e2", emitExpr e2 )
                 ]
 
@@ -157,7 +153,7 @@ emitExpr located =
                                 , ( "body", emitExpr b.body )
                                 ]
                         )
-                        branches
+                        (List.NonEmpty.toList branches)
                   )
                 ]
 

@@ -21,6 +21,7 @@ import Elm.Data.ModuleName exposing (ModuleName)
 import Elm.Data.Qualifiedness exposing (Qualified)
 import Elm.Data.Type.Concrete exposing (ConcreteType)
 import Elm.Data.VarName exposing (VarName)
+import List.NonEmpty exposing (NonEmpty)
 
 
 {-| "What does this compiler stage need to store about the whole project?
@@ -74,8 +75,7 @@ type Expr
     | Var { module_ : ModuleName, name : VarName }
     | ConstructorValue { module_ : ModuleName, name : VarName }
     | Argument VarName
-    | Plus LocatedExpr LocatedExpr
-    | Cons LocatedExpr LocatedExpr
+    | BinOp String LocatedExpr LocatedExpr
     | Lambda { argument : VarName, body : LocatedExpr }
     | Call { fn : LocatedExpr, argument : LocatedExpr }
     | If { test : LocatedExpr, then_ : LocatedExpr, else_ : LocatedExpr }
@@ -86,7 +86,7 @@ type Expr
     | Tuple3 LocatedExpr LocatedExpr LocatedExpr
     | Record (Dict VarName (Binding LocatedExpr))
     | RecordAccess LocatedExpr String
-    | Case LocatedExpr (List { pattern : LocatedPattern, body : LocatedExpr })
+    | Case LocatedExpr (NonEmpty { pattern : LocatedPattern, body : LocatedExpr })
 
 
 type alias LocatedPattern =
@@ -105,7 +105,6 @@ type Pattern
     | PTuple3 LocatedPattern LocatedPattern LocatedPattern
     | PList (List LocatedPattern)
     | PCons LocatedPattern LocatedPattern
-    | PBool Bool
     | PChar Char
     | PString String
     | PInt Int
@@ -142,13 +141,8 @@ unwrap expr =
         Argument name ->
             Unwrapped.Argument name
 
-        Plus e1 e2 ->
-            Unwrapped.Plus
-                (f e1)
-                (f e2)
-
-        Cons e1 e2 ->
-            Unwrapped.Cons
+        BinOp op e1 e2 ->
+            Unwrapped.BinOp op
                 (f e1)
                 (f e2)
 
@@ -209,7 +203,7 @@ unwrap expr =
 
         Case e branches ->
             Unwrapped.Case (f e) <|
-                List.map
+                List.NonEmpty.map
                     (\{ pattern, body } ->
                         { pattern = unwrapPattern pattern
                         , body = f body
@@ -263,9 +257,6 @@ unwrapPattern expr =
         PCons p1 p2 ->
             Unwrapped.PCons (f p1) (f p2)
 
-        PBool bool ->
-            Unwrapped.PBool bool
-
         PChar char ->
             Unwrapped.PChar char
 
@@ -310,13 +301,8 @@ fromUnwrapped expr =
             Unwrapped.Argument name ->
                 Argument name
 
-            Unwrapped.Plus e1 e2 ->
-                Plus
-                    (f e1)
-                    (f e2)
-
-            Unwrapped.Cons e1 e2 ->
-                Cons
+            Unwrapped.BinOp op e1 e2 ->
+                BinOp op
                     (f e1)
                     (f e2)
 
@@ -377,7 +363,7 @@ fromUnwrapped expr =
 
             Unwrapped.Case e branches ->
                 Case (f e) <|
-                    List.map
+                    List.NonEmpty.map
                         (\{ pattern, body } ->
                             { pattern = fromUnwrappedPattern pattern
                             , body = f body
@@ -431,9 +417,6 @@ fromUnwrappedPattern pattern =
 
             Unwrapped.PCons p1 p2 ->
                 PCons (f p1) (f p2)
-
-            Unwrapped.PBool bool ->
-                PBool bool
 
             Unwrapped.PChar char ->
                 PChar char

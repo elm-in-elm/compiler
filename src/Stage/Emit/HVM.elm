@@ -93,15 +93,10 @@ emitExpr located =
         Argument argument ->
             mangleVarName argument
 
-        Plus e1 e2 ->
-            "(+ "
-                ++ emitExpr e1
+        BinOp op e1 e2 ->
+            "("
+                ++ op
                 ++ " "
-                ++ emitExpr e2
-                ++ ")"
-
-        Cons e1 e2 ->
-            "(List.cons "
                 ++ emitExpr e1
                 ++ " "
                 ++ emitExpr e2

@@ -45,6 +45,7 @@ import Elm.AST.Typed as Typed
 import Elm.Data.Located as Located
 import Elm.Data.Qualifiedness exposing (Qualified)
 import Elm.Data.Type as Type exposing (Id, TypeOrId)
+import List.NonEmpty
 
 
 assignIds : Id -> Canonical.LocatedExpr -> ( Typed.LocatedExpr, Id )
@@ -106,7 +107,7 @@ assignIdsHelp currentId located =
         Canonical.Var name ->
             assignId currentId (Typed.Var name)
 
-        Canonical.Plus e1 e2 ->
+        Canonical.BinOp op e1 e2 ->
             let
                 ( e1_, id1 ) =
                     f currentId e1
@@ -114,17 +115,7 @@ assignIdsHelp currentId located =
                 ( e2_, id2 ) =
                     f id1 e2
             in
-            assignId id2 (Typed.Plus e1_ e2_)
-
-        Canonical.Cons e1 e2 ->
-            let
-                ( e1_, id1 ) =
-                    f currentId e1
-
-                ( e2_, id2 ) =
-                    f id1 e2
-            in
-            assignId id2 (Typed.Cons e1_ e2_)
+            assignId id2 (Typed.BinOp op e1_ e2_)
 
         Canonical.Lambda { argument, body } ->
             let
@@ -288,30 +279,39 @@ assignIdsHelp currentId located =
             in
             assignId id1 (Typed.RecordAccess e_ field)
 
-        Canonical.Case e branches ->
+        Canonical.Case e ( firstBranch, restOfBranches ) ->
             let
                 ( e_, id1 ) =
                     f currentId e
 
-                ( branches_, newId ) =
-                    List.foldr
-                        (\{ pattern, body } ( acc, runningId ) ->
-                            let
-                                ( typedPattern, bodyId ) =
-                                    assignPatternIds runningId pattern
+                fn :
+                    { body : Canonical.LocatedExpr, pattern : Canonical.LocatedPattern }
+                    -> Id
+                    -> ( { body : Typed.LocatedExpr, pattern : Typed.LocatedPattern }, Id )
+                fn { pattern, body } runningId =
+                    let
+                        ( typedPattern, bodyId ) =
+                            assignPatternIds runningId pattern
 
-                                ( typedBody, nextId ) =
-                                    f bodyId body
-                            in
-                            ( { pattern = typedPattern
-                              , body = typedBody
-                              }
-                                :: acc
-                            , nextId
-                            )
+                        ( typedBody, nextId ) =
+                            f bodyId body
+                    in
+                    ( { pattern = typedPattern
+                      , body = typedBody
+                      }
+                    , nextId
+                    )
+
+                ( branches_, newId ) =
+                    List.foldl
+                        (\branch ( acc, runningId ) ->
+                            fn branch runningId
+                                |> Tuple.mapFirst (\typedBranch -> List.NonEmpty.cons typedBranch acc)
                         )
-                        ( [], id1 )
-                        branches
+                        (fn firstBranch id1
+                            |> Tuple.mapFirst List.NonEmpty.singleton
+                        )
+                        restOfBranches
             in
             assignId newId <|
                 Typed.Case e_ branches_
@@ -408,9 +408,6 @@ assignPatternIdsHelp currentId located =
                     f id1 pattern2
             in
             assignId id2 (Typed.PCons pattern1_ pattern2_)
-
-        Canonical.PBool bool ->
-            assignId currentId (Typed.PBool bool)
 
         Canonical.PChar char ->
             assignId currentId (Typed.PChar char)

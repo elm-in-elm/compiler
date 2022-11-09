@@ -124,10 +124,14 @@ type LocatedParseErrorType
     = EmptyOneOf
     | ExpectedEOF
     | ExpectedNonemptyList
+    | ExpectedMaxThreeTuple
     | ExpectedModuleNameWithoutDots
     | ExpectedToken Token.Type
     | ExpectedTokenT Token.T
     | TokenDidNotContainString Token.T
+    | TokenDidNotContainInt Token.T
+    | TokenDidNotContainFloat Token.T
+    | TokenDidNotContainChar Token.T
     | ParseCompilerBug String
 
 
@@ -398,6 +402,9 @@ locatedParseErrorTypeToString type_ =
         ExpectedNonemptyList ->
             "Expected non-empty list"
 
+        ExpectedMaxThreeTuple ->
+            "Expected tuple of max length 3"
+
         ExpectedModuleNameWithoutDots ->
             "Expected module name without dots"
 
@@ -409,6 +416,15 @@ locatedParseErrorTypeToString type_ =
 
         TokenDidNotContainString t ->
             "Token did not contain string: " ++ Token.tToString t
+
+        TokenDidNotContainInt t ->
+            "Token did not contain int: " ++ Token.tToString t
+
+        TokenDidNotContainFloat t ->
+            "Token did not contain float: " ++ Token.tToString t
+
+        TokenDidNotContainChar t ->
+            "Token did not contain char: " ++ Token.tToString t
 
         ParseCompilerBug string ->
             "Parse compiler bug: " ++ string

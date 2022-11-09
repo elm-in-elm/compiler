@@ -68,21 +68,14 @@ emitExpr located =
         Argument argument ->
             mangleVarName argument
 
-        Plus e1 e2 ->
+        BinOp op e1 e2 ->
             "("
                 ++ emitExpr e1
-                ++ " + "
+                ++ " "
+                ++ op
+                ++ " "
                 ++ emitExpr e2
                 ++ ")"
-
-        Cons e1 e2 ->
-            -- [x, *xs]
-            -- [1, *[2,3,4]]
-            "["
-                ++ emitExpr e1
-                ++ ", *("
-                ++ emitExpr e2
-                ++ ")]"
 
         Lambda { argument, body } ->
             "(lambda "

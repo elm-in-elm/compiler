@@ -16,6 +16,7 @@ Convert to it using the [`Elm.AST.Frontend.unwrap`](Elm.AST.Frontend#unwrap).
 import Elm.Data.Binding exposing (Binding)
 import Elm.Data.Qualifiedness exposing (PossiblyQualified)
 import Elm.Data.VarName exposing (VarName)
+import List.NonEmpty exposing (NonEmpty)
 
 
 {-| -}
@@ -29,20 +30,18 @@ type Expr
     | Var { qualifiedness : PossiblyQualified, name : VarName }
     | ConstructorValue { qualifiedness : PossiblyQualified, name : VarName }
     | Argument VarName
-    | Plus Expr Expr
-    | Cons Expr Expr
-    | ListConcat Expr Expr
-    | Lambda { arguments : List VarName, body : Expr }
+    | BinOp String Expr Expr
+    | Lambda { arguments : NonEmpty VarName, body : Expr }
     | Call { fn : Expr, argument : Expr }
     | If { test : Expr, then_ : Expr, else_ : Expr }
-    | Let { bindings : List (Binding Expr), body : Expr }
+    | Let { bindings : NonEmpty (Binding Expr), body : Expr }
     | List (List Expr)
     | Unit
     | Tuple Expr Expr
     | Tuple3 Expr Expr Expr
     | Record (List (Binding Expr))
     | RecordAccess Expr String
-    | Case Expr (List { pattern : Pattern, body : Expr })
+    | Case Expr (NonEmpty { pattern : Pattern, body : Expr })
 
 
 type Pattern
@@ -55,9 +54,7 @@ type Pattern
     | PTuple3 Pattern Pattern Pattern
     | PList (List Pattern)
     | PCons Pattern Pattern
-    | PBool Bool
     | PChar Char
     | PString String
     | PInt Int
-    | PHexInt Int
     | PFloat Float

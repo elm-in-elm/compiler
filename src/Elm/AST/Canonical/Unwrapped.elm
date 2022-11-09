@@ -19,6 +19,7 @@ import Dict exposing (Dict)
 import Elm.Data.Binding exposing (Binding)
 import Elm.Data.ModuleName exposing (ModuleName)
 import Elm.Data.VarName exposing (VarName)
+import List.NonEmpty exposing (NonEmpty)
 
 
 {-| -}
@@ -31,8 +32,7 @@ type Expr
     | Var { module_ : ModuleName, name : VarName }
     | ConstructorValue { module_ : ModuleName, name : VarName }
     | Argument VarName
-    | Plus Expr Expr
-    | Cons Expr Expr
+    | BinOp String Expr Expr
     | Lambda { argument : VarName, body : Expr }
     | Call { fn : Expr, argument : Expr }
     | If { test : Expr, then_ : Expr, else_ : Expr }
@@ -43,7 +43,7 @@ type Expr
     | Tuple3 Expr Expr Expr
     | Record (Dict VarName (Binding Expr))
     | RecordAccess Expr String
-    | Case Expr (List { pattern : Pattern, body : Expr })
+    | Case Expr (NonEmpty { pattern : Pattern, body : Expr })
 
 
 type Pattern
@@ -56,7 +56,6 @@ type Pattern
     | PTuple3 Pattern Pattern Pattern
     | PList (List Pattern)
     | PCons Pattern Pattern
-    | PBool Bool
     | PChar Char
     | PString String
     | PInt Int

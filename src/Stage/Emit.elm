@@ -10,11 +10,11 @@ look into Stage.Emit.<LANGUAGE> modules.
 
 There are two emit usecases we know of:
 
-1.  all modules to one output file, dead code eliminated (eg. Elm to JS)
+    1. all modules to one output file, dead code eliminated (eg. Elm to JS)
 
 @docs projectToDeclarationList
 
-1.  each module to its own output file, dead code eliminated (eg. Elm to Elixir?)
+    2. each module to its own output file, dead code eliminated (eg. Elm to Elixir?)
     The fact that we don't have `main` function(s) doesn't stop us - we can think
     of all the _exposed functions_ from all modules as potential entrypoints.
 
@@ -485,12 +485,7 @@ findDependenciesOfExpr modules locatedExpr =
         Argument _ ->
             Ok []
 
-        Plus e1 e2 ->
-            Result.map2 (++)
-                (f e1)
-                (f e2)
-
-        Cons e1 e2 ->
+        BinOp _ e1 e2 ->
             Result.map2 (++)
                 (f e1)
                 (f e2)
@@ -556,6 +551,7 @@ findDependenciesOfExpr modules locatedExpr =
             let
                 branchesDependencies =
                     branches
+                        |> List.NonEmpty.toList
                         |> List.map (.body >> f)
                         |> Result.combine
                         |> Result.map List.concat

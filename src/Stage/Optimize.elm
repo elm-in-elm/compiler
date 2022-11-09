@@ -38,7 +38,7 @@ defaultOptimizations =
 optimizePlus : Typed.LocatedExpr -> Maybe Typed.LocatedExpr
 optimizePlus located =
     case Typed.getExpr located of
-        Typed.Plus l r ->
+        Typed.BinOp "+" l r ->
             case ( Typed.getExpr l, Typed.getExpr r ) of
                 ( Typed.Int left, Typed.Int right ) ->
                     Just (Typed.setExpr (Typed.Int (left + right)) r)
@@ -53,7 +53,7 @@ optimizePlus located =
 optimizeCons : Typed.LocatedExpr -> Maybe Typed.LocatedExpr
 optimizeCons located =
     case Typed.getExpr located of
-        Typed.Cons l r ->
+        Typed.BinOp "::" l r ->
             case Typed.getExpr r of
                 Typed.List list ->
                     Just (Typed.setExpr (Typed.List (l :: list)) r)

@@ -27,6 +27,8 @@ import Elm.Data.Qualifiedness exposing (PossiblyQualified(..), Qualified(..))
 import Elm.Data.Type.Concrete exposing (ConcreteType(..))
 import Elm.Data.TypeAnnotation exposing (TypeAnnotation)
 import Elm.Data.VarName exposing (VarName)
+import List.NonEmpty exposing (NonEmpty)
+import OurExtras.Result as Result
 import Result.Extra as Result
 import Stage.Desugar.Boilerplate as Boilerplate
 
@@ -114,35 +116,10 @@ desugarExpr modules thisModule locatedExpr =
         Frontend.Argument varName ->
             return <| Canonical.Argument varName
 
-        Frontend.Plus e1 e2 ->
-            map2 Canonical.Plus
+        Frontend.BinOp op e1 e2 ->
+            map2 (Canonical.BinOp op)
                 (f e1)
                 (f e2)
-
-        Frontend.Cons e1 e2 ->
-            map2 Canonical.Cons
-                (f e1)
-                (f e2)
-
-        Frontend.ListConcat e1 e2 ->
-            let
-                region =
-                    Located.getRegion locatedExpr
-
-                listConcatVar =
-                    Frontend.Var
-                        { qualifiedness = PossiblyQualified <| Just "List"
-                        , name = "append"
-                        }
-                        |> Located.located region
-
-                firstCall =
-                    Frontend.Call { fn = listConcatVar, argument = e1 } |> Located.located region
-
-                expr =
-                    Frontend.Call { fn = firstCall, argument = e2 } |> Located.located region
-            in
-            f expr
 
         Frontend.Lambda { arguments, body } ->
             f body
@@ -178,13 +155,14 @@ desugarExpr modules thisModule locatedExpr =
                     Canonical.Let
                         { bindings =
                             bindings_
+                                |> List.NonEmpty.toList
                                 |> List.map (\binding -> ( binding.name, binding ))
                                 |> Dict.fromList
                         , body = body_
                         }
                 )
                 -- TODO a bit mouthful:
-                (Result.combine (List.map (Binding.map f >> Binding.combine) bindings))
+                (Result.combineNonEmpty (List.NonEmpty.map (Binding.map f >> Binding.combine) bindings))
                 (f body)
 
         Frontend.List items ->
@@ -241,7 +219,7 @@ desugarExpr modules thisModule locatedExpr =
                 )
                 (f test)
                 (branches
-                    |> List.map
+                    |> List.NonEmpty.map
                         (\{ pattern, body } ->
                             Result.map2
                                 (\p b ->
@@ -252,7 +230,7 @@ desugarExpr modules thisModule locatedExpr =
                                 (desugarPattern pattern)
                                 (f body)
                         )
-                    |> Result.combine
+                    |> Result.combineNonEmpty
                 )
 
         Frontend.ConstructorValue rec ->
@@ -339,9 +317,6 @@ desugarPattern located =
                 (f pattern1)
                 (f pattern2)
 
-        Frontend.PBool bool ->
-            return <| Canonical.PBool bool
-
         Frontend.PChar char ->
             return <| Canonical.PChar char
 
@@ -349,9 +324,6 @@ desugarPattern located =
             return <| Canonical.PString string
 
         Frontend.PInt int ->
-            return <| Canonical.PInt int
-
-        Frontend.PHexInt int ->
             return <| Canonical.PInt int
 
         Frontend.PFloat float ->
@@ -651,7 +623,7 @@ findDuplicatesBy property list =
 -}
 curryLambda :
     Frontend.LocatedExpr
-    -> List VarName
+    -> NonEmpty VarName
     -> Canonical.LocatedExpr
     -> Canonical.LocatedExpr
 curryLambda located arguments body =
@@ -666,4 +638,4 @@ curryLambda located arguments body =
                 located
         )
         body
-        arguments
+        (List.NonEmpty.toList arguments)

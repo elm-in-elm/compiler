@@ -7,7 +7,8 @@ module Stage.Parse.Lib exposing
     , andThen
     , optional, loop
     , many, many1, manyWithSeparator, many1WithSeparator, sequence, sequence1
-    , token, tokenString
+    , token, tokenString, tokenInt, tokenFloat, tokenChar
+    , getPosition
     , Step(..)
     )
 
@@ -21,7 +22,8 @@ module Stage.Parse.Lib exposing
 @docs andThen
 @docs optional, loop
 @docs many, many1, manyWithSeparator, many1WithSeparator, sequence, sequence1
-@docs token, tokenString
+@docs token, tokenString, tokenInt, tokenFloat, tokenChar
+@docs getPosition
 @docs Step
 
 -}
@@ -179,8 +181,8 @@ token wantedToken =
                         failInner (ExpectedToken wantedToken) tokens
 
 
-tokenString : Token.T -> Parser String
-tokenString wantedToken =
+token_ : (Token.Type -> Maybe a) -> (Token.T -> LocatedParseErrorType) -> Token.T -> Parser a
+token_ toVal toError wantedToken =
     Parser <|
         \tokens ->
             case tokens of
@@ -189,15 +191,35 @@ tokenString wantedToken =
 
                 t :: ts ->
                     if Token.flatten t.type_ == wantedToken then
-                        case Token.getString t.type_ of
+                        case toVal t.type_ of
                             Nothing ->
-                                failInner (TokenDidNotContainString wantedToken) tokens
+                                failInner (toError wantedToken) tokens
 
-                            Just string ->
-                                Ok ( string, ts )
+                            Just val ->
+                                Ok ( val, ts )
 
                     else
                         failInner (ExpectedTokenT wantedToken) tokens
+
+
+tokenString : Token.T -> Parser String
+tokenString wantedToken =
+    token_ Token.getString TokenDidNotContainString wantedToken
+
+
+tokenInt : Token.T -> Parser Int
+tokenInt wantedToken =
+    token_ Token.getInt TokenDidNotContainInt wantedToken
+
+
+tokenFloat : Token.T -> Parser Float
+tokenFloat wantedToken =
+    token_ Token.getFloat TokenDidNotContainFloat wantedToken
+
+
+tokenChar : Token.T -> Parser Char
+tokenChar wantedToken =
+    token_ Token.getChar TokenDidNotContainChar wantedToken
 
 
 type Step state a
@@ -355,3 +377,15 @@ lazy toParser =
                     toParser ()
             in
             parse tokens
+
+
+getPosition : Parser ( Int, Int )
+getPosition =
+    Parser <|
+        \tokens ->
+            case tokens of
+                t :: ts ->
+                    Ok ( ( t.line, t.column ), tokens )
+
+                [] ->
+                    Debug.todo "getPosition when empty"

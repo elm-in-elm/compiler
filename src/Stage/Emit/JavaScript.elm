@@ -75,11 +75,8 @@ emitExpr located =
         Argument argument ->
             mangleVarName argument
 
-        Plus e1 e2 ->
-            "(" ++ emitExpr e1 ++ " + " ++ emitExpr e2 ++ ")"
-
-        Cons e1 e2 ->
-            "[" ++ emitExpr e1 ++ "].concat(" ++ emitExpr e2 ++ ")"
+        BinOp op e1 e2 ->
+            "(" ++ emitExpr e1 ++ " " ++ op ++ " " ++ emitExpr e2 ++ ")"
 
         Lambda { argument, body } ->
             -- TODO are these parentheses needed?

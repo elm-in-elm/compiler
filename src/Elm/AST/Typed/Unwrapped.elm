@@ -19,6 +19,7 @@ import Elm.Data.ModuleName exposing (ModuleName)
 import Elm.Data.Qualifiedness exposing (Qualified)
 import Elm.Data.Type exposing (TypeOrId)
 import Elm.Data.VarName exposing (VarName)
+import List.NonEmpty exposing (NonEmpty)
 
 
 {-| -}
@@ -38,8 +39,7 @@ type Expr_
     | Var { module_ : ModuleName, name : VarName }
     | ConstructorValue { module_ : ModuleName, name : VarName }
     | Argument VarName
-    | Plus Expr Expr
-    | Cons Expr Expr
+    | BinOp String Expr Expr
     | Lambda { argument : VarName, body : Expr }
     | Call { fn : Expr, argument : Expr }
     | If { test : Expr, then_ : Expr, else_ : Expr }
@@ -50,7 +50,7 @@ type Expr_
     | Tuple3 Expr Expr Expr
     | Record (Dict VarName (Binding Expr))
     | RecordAccess Expr String
-    | Case Expr (List { pattern : Pattern, body : Expr })
+    | Case Expr (NonEmpty { pattern : Pattern, body : Expr })
 
 
 type alias Pattern =
@@ -67,7 +67,6 @@ type Pattern_
     | PTuple3 Pattern Pattern Pattern
     | PList (List Pattern)
     | PCons Pattern Pattern
-    | PBool Bool
     | PChar Char
     | PString String
     | PInt Int

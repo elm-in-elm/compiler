@@ -22,6 +22,7 @@ import Elm.Data.ModuleName exposing (ModuleName)
 import Elm.Data.Qualifiedness exposing (PossiblyQualified)
 import Elm.Data.TypeAnnotation exposing (TypeAnnotation)
 import Elm.Data.VarName exposing (VarName)
+import List.NonEmpty exposing (NonEmpty)
 import Transform
 
 
@@ -61,20 +62,18 @@ type Expr
     | ConstructorValue { qualifiedness : PossiblyQualified, name : VarName }
     | -- Both lambda arguments and let..in bindings
       Argument VarName
-    | Plus LocatedExpr LocatedExpr
-    | Cons LocatedExpr LocatedExpr
-    | ListConcat LocatedExpr LocatedExpr
-    | Lambda { arguments : List VarName, body : LocatedExpr }
+    | BinOp String LocatedExpr LocatedExpr
+    | Lambda { arguments : NonEmpty VarName, body : LocatedExpr }
     | Call { fn : LocatedExpr, argument : LocatedExpr }
     | If { test : LocatedExpr, then_ : LocatedExpr, else_ : LocatedExpr }
-    | Let { bindings : List (Binding LocatedExpr), body : LocatedExpr }
+    | Let { bindings : NonEmpty (Binding LocatedExpr), body : LocatedExpr }
     | List (List LocatedExpr)
     | Unit
     | Tuple LocatedExpr LocatedExpr
     | Tuple3 LocatedExpr LocatedExpr LocatedExpr
     | Record (List (Binding LocatedExpr))
     | RecordAccess LocatedExpr String
-    | Case LocatedExpr (List { pattern : LocatedPattern, body : LocatedExpr })
+    | Case LocatedExpr (NonEmpty { pattern : LocatedPattern, body : LocatedExpr })
 
 
 type alias LocatedPattern =
@@ -91,11 +90,9 @@ type Pattern
     | PTuple3 LocatedPattern LocatedPattern LocatedPattern
     | PList (List LocatedPattern)
     | PCons LocatedPattern LocatedPattern
-    | PBool Bool
     | PChar Char
     | PString String
     | PInt Int
-    | PHexInt Int
     | PFloat Float
 
 
@@ -133,18 +130,10 @@ recurse f expr =
         Argument _ ->
             expr
 
-        Plus e1 e2 ->
-            Plus
+        BinOp op e1 e2 ->
+            BinOp op
                 (f_ e1)
                 (f_ e2)
-
-        Cons e1 e2 ->
-            Cons
-                (f_ e1)
-                (f_ e2)
-
-        ListConcat e1 e2 ->
-            ListConcat (f_ e1) (f_ e2)
 
         Lambda ({ body } as lambda_) ->
             Lambda { lambda_ | body = f_ body }
@@ -164,7 +153,7 @@ recurse f expr =
 
         Let { bindings, body } ->
             Let
-                { bindings = List.map (Binding.map f_) bindings
+                { bindings = List.NonEmpty.map (Binding.map f_) bindings
                 , body = f_ body
                 }
 
@@ -188,7 +177,7 @@ recurse f expr =
 
         Case test branches ->
             Case (f_ test) <|
-                List.map
+                List.NonEmpty.map
                     (\{ pattern, body } ->
                         { pattern = pattern
                         , body = f_ body
@@ -247,18 +236,8 @@ unwrap expr =
         Argument name ->
             Unwrapped.Argument name
 
-        Plus e1 e2 ->
-            Unwrapped.Plus
-                (unwrap e1)
-                (unwrap e2)
-
-        Cons e1 e2 ->
-            Unwrapped.Cons
-                (unwrap e1)
-                (unwrap e2)
-
-        ListConcat e1 e2 ->
-            Unwrapped.ListConcat
+        BinOp op e1 e2 ->
+            Unwrapped.BinOp op
                 (unwrap e1)
                 (unwrap e2)
 
@@ -283,7 +262,7 @@ unwrap expr =
 
         Let { bindings, body } ->
             Unwrapped.Let
-                { bindings = List.map (Binding.map unwrap) bindings
+                { bindings = List.NonEmpty.map (Binding.map unwrap) bindings
                 , body = unwrap body
                 }
 
@@ -314,7 +293,7 @@ unwrap expr =
 
         Case e branches ->
             Unwrapped.Case (unwrap e) <|
-                List.map
+                List.NonEmpty.map
                     (\branch ->
                         { pattern = unwrapPattern branch.pattern
                         , body = unwrap branch.body
@@ -361,9 +340,6 @@ unwrapPattern expr =
         PCons p1 p2 ->
             Unwrapped.PCons (unwrapPattern p1) (unwrapPattern p2)
 
-        PBool bool ->
-            Unwrapped.PBool bool
-
         PChar char ->
             Unwrapped.PChar char
 
@@ -372,9 +348,6 @@ unwrapPattern expr =
 
         PInt int ->
             Unwrapped.PInt int
-
-        PHexInt int ->
-            Unwrapped.PHexInt int
 
         PFloat float ->
             Unwrapped.PFloat float
