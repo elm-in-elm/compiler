@@ -17,6 +17,7 @@ import Elm.Data.Module exposing (Module, ModuleType(..))
 import Elm.Data.ModuleName exposing (ModuleName)
 import Elm.Data.Qualifiedness exposing (PossiblyQualified)
 import Elm.Data.Token as Token exposing (T(..), Token)
+import Elm.Data.Type as Type
 import Elm.Data.Type.Concrete as ConcreteType exposing (ConcreteType)
 import Elm.Data.TypeAnnotation exposing (TypeAnnotation)
 import List.NonEmpty exposing (NonEmpty)
@@ -68,14 +69,26 @@ module_ filePath =
 -}
 moduleName : Parser ModuleName
 moduleName =
-    P.succeed (List.NonEmpty.toList >> String.join ".")
+    P.succeed identity
         |> P.skip (P.optional moduleType)
+        |> P.keep (qualified (P.tokenString TUpperName))
+
+
+qualified : Parser String -> Parser String
+qualified finalName =
+    P.succeed
+        (\xs last ->
+            (xs ++ [ last ])
+                |> String.join "."
+        )
         |> P.keep
-            (P.many1WithSeparator
+            (P.manyWithSeparator
                 { item = P.tokenString TUpperName
                 , separator = P.token Token.Dot
                 }
             )
+        |> P.skip (P.token Token.Dot)
+        |> P.keep finalName
 
 
 moduleDeclaration : Parser ( ModuleType, ModuleName, Exposing )
@@ -231,27 +244,52 @@ typeAliasDeclaration =
 
 type_ : Parser (ConcreteType PossiblyQualified)
 type_ =
-    {-
-       PP.expression
-           { oneOf =
-               [ PP.literal varType
-               , simpleType "Int" ConcreteType.Int
-               , simpleType "Float" ConcreteType.Float
-               , simpleType "Char" ConcreteType.Char
-               , simpleType "String" ConcreteType.String
-               , simpleType "Bool" ConcreteType.Bool
-               , parenStartingType
-               , listType
-               , recordType
-               , userDefinedType
-               ]
-           , andThenOneOf =
-               [ functionType
-               ]
-           , spaces = ignorables
-           }
-    -}
-    Debug.todo "type_"
+    fnType
+
+
+fnType : Parser (ConcreteType PossiblyQualified)
+fnType =
+    P.many1WithSeparator
+        { item = literalType
+        , separator = P.token Token.RightArrow
+        }
+        |> P.map
+            (\( x, xs ) ->
+                List.foldl
+                    (\from to ->
+                        ConcreteType.Function
+                            { from = from
+                            , to = to
+                            }
+                    )
+                    x
+                    xs
+            )
+
+
+literalType : Parser (ConcreteType PossiblyQualified)
+literalType =
+    P.oneOf
+        [ P.tokenString Token.TLowerName
+            |> P.map ConcreteType.TypeVar
+        , qualified (P.tokenString Token.TUpperName)
+            |> P.map (\upperName -> Debug.todo "UserDefinedType")
+        , parenthesized
+        , record
+        ]
+
+
+parenthesized : Parser (ConcreteType PossiblyQualified)
+parenthesized =
+    P.succeed identity
+        |> P.skip (P.token Token.LeftParen)
+        |> P.keep (P.lazy (\() -> type_))
+        |> P.skip (P.token Token.RightParen)
+
+
+record : Parser (ConcreteType PossiblyQualified)
+record =
+    Debug.todo "record"
 
 
 imports : Parser (Dict ModuleName Import)

@@ -3,7 +3,7 @@ module Stage.Parse.Lib exposing
     , succeed, fail
     , keep, skip
     , map, andMap, map2
-    , oneOf, end
+    , oneOf, end, lazy
     , andThen
     , optional, loop
     , many, many1, manyWithSeparator, many1WithSeparator, sequence, sequence1
@@ -17,7 +17,7 @@ module Stage.Parse.Lib exposing
 @docs succeed, fail
 @docs keep, skip
 @docs map, andMap, map2
-@docs oneOf, end
+@docs oneOf, end, lazy
 @docs andThen
 @docs optional, loop
 @docs many, many1, manyWithSeparator, many1WithSeparator, sequence, sequence1
@@ -116,28 +116,30 @@ skip next original =
 
 andThen : (a -> Parser b) -> Parser a -> Parser b
 andThen fn (Parser parse) =
-    Parser <| \tokens ->
-    case parse tokens of
-        Err err ->
-            Err err
+    Parser <|
+        \tokens ->
+            case parse tokens of
+                Err err ->
+                    Err err
 
-        Ok ( andThe, rest ) ->
-            let
-                (Parser nextParse) =
-                    fn andThe
-            in
-            nextParse rest
+                Ok ( andThe, rest ) ->
+                    let
+                        (Parser nextParse) =
+                            fn andThe
+                    in
+                    nextParse rest
 
 
 map : (a -> b) -> Parser a -> Parser b
 map fn (Parser parse) =
-    Parser <| \tokens ->
-    case parse tokens of
-        Err err ->
-            Err err
+    Parser <|
+        \tokens ->
+            case parse tokens of
+                Err err ->
+                    Err err
 
-        Ok ( andThe, rest ) ->
-            Ok ( fn andThe, rest )
+                Ok ( andThe, rest ) ->
+                    Ok ( fn andThe, rest )
 
 
 andMap : Parser a -> Parser (a -> b) -> Parser b
@@ -163,37 +165,39 @@ optional p =
 
 token : Token.Type -> Parser Token
 token wantedToken =
-    Parser <| \tokens ->
-    case tokens of
-        [] ->
-            failInner (ExpectedToken wantedToken) tokens
+    Parser <|
+        \tokens ->
+            case tokens of
+                [] ->
+                    failInner (ExpectedToken wantedToken) tokens
 
-        t :: ts ->
-            if t.type_ == wantedToken then
-                Ok ( t, ts )
+                t :: ts ->
+                    if t.type_ == wantedToken then
+                        Ok ( t, ts )
 
-            else
-                failInner (ExpectedToken wantedToken) tokens
+                    else
+                        failInner (ExpectedToken wantedToken) tokens
 
 
 tokenString : Token.T -> Parser String
 tokenString wantedToken =
-    Parser <| \tokens ->
-    case tokens of
-        [] ->
-            failInner (ExpectedTokenT wantedToken) tokens
+    Parser <|
+        \tokens ->
+            case tokens of
+                [] ->
+                    failInner (ExpectedTokenT wantedToken) tokens
 
-        t :: ts ->
-            if Token.flatten t.type_ == wantedToken then
-                case Token.getString t.type_ of
-                    Nothing ->
-                        failInner (TokenDidNotContainString wantedToken) tokens
+                t :: ts ->
+                    if Token.flatten t.type_ == wantedToken then
+                        case Token.getString t.type_ of
+                            Nothing ->
+                                failInner (TokenDidNotContainString wantedToken) tokens
 
-                    Just string ->
-                        Ok ( string, ts )
+                            Just string ->
+                                Ok ( string, ts )
 
-            else
-                failInner (ExpectedTokenT wantedToken) tokens
+                    else
+                        failInner (ExpectedTokenT wantedToken) tokens
 
 
 type Step state a
@@ -295,12 +299,13 @@ many1WithSeparator { item, separator } =
 
 end : Parser ()
 end =
-    Parser <| \tokens ->
-    if List.isEmpty tokens then
-        Ok ( (), tokens )
+    Parser <|
+        \tokens ->
+            if List.isEmpty tokens then
+                Ok ( (), tokens )
 
-    else
-        failInner ExpectedEOF tokens
+            else
+                failInner ExpectedEOF tokens
 
 
 sequence :
@@ -339,3 +344,14 @@ sequence1 c =
                 }
             )
         |> skip c.end
+
+
+lazy : (() -> Parser a) -> Parser a
+lazy toParser =
+    Parser <|
+        \tokens ->
+            let
+                (Parser parse) =
+                    toParser ()
+            in
+            parse tokens
