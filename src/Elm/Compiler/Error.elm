@@ -397,9 +397,14 @@ locatedParseErrorTypeToString type_ =
             "Empty oneOf"
 
         ExpectedEOF tokens ->
-            "Expected EOF, got these tokens:\n"
-                ++ String.join "\n"
-                    (List.map (Token.toString >> (\s -> " - " ++ s)) tokens)
+            "Expected EOF, got "
+                ++ String.fromInt (List.length tokens)
+                ++ " tokens, starting with:\n"
+                ++ (tokens
+                        |> List.take 5
+                        |> List.map (Token.toString >> (\s -> " - " ++ s))
+                        |> String.join "\n"
+                   )
 
         ExpectedNonemptyList ->
             "Expected non-empty list"
