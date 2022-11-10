@@ -8,6 +8,7 @@ module Elm.Data.Token exposing
     , getInt
     , getString
     , tToString
+    , toString
     , typeToString
     )
 
@@ -389,3 +390,11 @@ getChar t =
 
         _ ->
             Nothing
+
+
+toString : Token -> String
+toString token =
+    "{TYPE} ({LINE}:{COL})"
+        |> String.replace "{TYPE}" (typeToString token.type_)
+        |> String.replace "{LINE}" (String.fromInt token.line)
+        |> String.replace "{COL}" (String.fromInt token.column)

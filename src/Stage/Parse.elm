@@ -67,6 +67,7 @@ module_ filePath =
         |> P.keep moduleDeclaration
         |> P.keep imports
         |> P.keep (P.many declaration)
+        |> P.skip P.end
 
 
 {-|
@@ -851,9 +852,19 @@ lowerName =
 
 finalizeExpr : LocatedExpr -> List ( ExprOperator, LocatedExpr ) -> LocatedExpr
 finalizeExpr left operatorsAndExprs =
-    Debug.todo "finalizeExpr"
+    case operatorsAndExprs of
+        [] ->
+            left
+
+        _ ->
+            Debug.todo "finalizeExpr non-empty"
 
 
 finalizePattern : LocatedPattern -> List ( PatternOperator, LocatedPattern ) -> LocatedPattern
 finalizePattern left operatorsAndPatterns =
-    Debug.todo "finalizePattern"
+    case operatorsAndPatterns of
+        [] ->
+            left
+
+        _ ->
+            Debug.todo "finalizePattern non-empty"

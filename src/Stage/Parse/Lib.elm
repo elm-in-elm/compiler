@@ -326,11 +326,20 @@ end : Parser ()
 end =
     Parser <|
         \tokens ->
-            if List.isEmpty tokens then
-                Ok ( (), tokens )
+            case tokens of
+                -- TODO one of these is surely not right?
+                [] ->
+                    Ok ( (), tokens )
 
-            else
-                failInner ExpectedEOF tokens
+                [ t ] ->
+                    if t.type_ == Token.End then
+                        Ok ( (), tokens )
+
+                    else
+                        failInner (ExpectedEOF tokens) tokens
+
+                _ ->
+                    failInner (ExpectedEOF tokens) tokens
 
 
 sequence :

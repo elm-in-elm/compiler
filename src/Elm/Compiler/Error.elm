@@ -24,7 +24,7 @@ import Elm.Data.FilePath exposing (FilePath)
 import Elm.Data.Located exposing (Located)
 import Elm.Data.ModuleName exposing (ModuleName)
 import Elm.Data.Qualifiedness exposing (PossiblyQualified(..), Qualified)
-import Elm.Data.Token as Token
+import Elm.Data.Token as Token exposing (Token)
 import Elm.Data.Type exposing (TypeOrId(..))
 import Elm.Data.Type.ToString as TypeToString
 import Elm.Data.VarName exposing (VarName)
@@ -122,7 +122,7 @@ type alias LocatedParseError =
 
 type LocatedParseErrorType
     = EmptyOneOf
-    | ExpectedEOF
+    | ExpectedEOF (List Token)
     | ExpectedNonemptyList
     | ExpectedMaxThreeTuple
     | ExpectedModuleNameWithoutDots
@@ -396,8 +396,10 @@ locatedParseErrorTypeToString type_ =
         EmptyOneOf ->
             "Empty oneOf"
 
-        ExpectedEOF ->
-            "Expected EOF"
+        ExpectedEOF tokens ->
+            "Expected EOF, got these tokens:\n"
+                ++ String.join "\n"
+                    (List.map (Token.toString >> (\s -> " - " ++ s)) tokens)
 
         ExpectedNonemptyList ->
             "Expected non-empty list"
