@@ -384,10 +384,29 @@ exposedTypeAndOptionallyAllConstructors =
 
 expr : Parser LocatedExpr
 expr =
-    -- TODO how to get from expr to simpleExpr
+    P.succeed finalizeExpr
+        |> P.keep simpleExpr
+        |> P.keep
+            (P.many
+                (P.succeed Tuple.pair
+                    |> P.keep exprOperator
+                    |> P.keep simpleExpr
+                )
+            )
+
+
+type ExprOperator
+    = ExprCall
+    | ExprBinOp String
+
+
+exprOperator : Parser ExprOperator
+exprOperator =
     P.oneOf
-        [ call
-        , binop
+        [ P.tokenString Token.TOperator |> P.map ExprBinOp
+        , P.succeed ExprCall
+
+        -- TODO |> P.skip (P.peek simpleExpr)
         ]
 
 
@@ -406,36 +425,32 @@ simpleExpr =
         ]
 
 
-call : LocatedExpr -> Parser LocatedExpr
-call left =
-    P.succeed
-        (\right ->
-            Located.merge
-                (\fn argument ->
-                    Frontend.Call
-                        { fn = fn
-                        , argument = argument
-                        }
-                )
-                left
-                right
-        )
-        |> P.keep (P.lazy (\() -> expr))
-
-
-binop : LocatedExpr -> Parser LocatedExpr
-binop left =
-    P.succeed (\op right -> Located.merge (BinOp op) left right)
-        |> P.keep (P.tokenString Token.TOperator)
-        |> P.keep (P.lazy (\() -> expr))
-
-
 pattern : Parser LocatedPattern
 pattern =
-    -- TODO how to get from pattern to simplePattern
+    P.succeed finalizePattern
+        |> P.keep simplePattern
+        |> P.keep
+            (P.many
+                (P.succeed Tuple.pair
+                    |> P.keep patternOperator
+                    |> P.keep simplePattern
+                )
+            )
+
+
+type PatternOperator
+    = PatternCons
+    | PatternAsAlias String -- postfix
+
+
+patternOperator : Parser PatternOperator
+patternOperator =
     P.oneOf
-        [ consPatternOperator
-        , asAlias
+        [ P.succeed PatternCons
+            |> P.skip (P.token (Token.Operator "::"))
+        , P.succeed PatternAsAlias
+            |> P.skip (P.token Token.As)
+            |> P.keep (P.tokenString Token.TLowerName)
         ]
 
 
@@ -446,20 +461,6 @@ simplePattern =
         , located patternList
         , patternTuple
         ]
-
-
-asAlias : LocatedPattern -> Parser LocatedPattern
-asAlias left =
-    P.succeed (\right -> Located.merge (\pattern_ alias_ -> PAlias pattern_ (Located.unwrap alias_)) left right)
-        |> P.skip (P.token Token.As)
-        |> P.keep (located (P.tokenString Token.TLowerName))
-
-
-consPatternOperator : LocatedPattern -> Parser LocatedPattern
-consPatternOperator left =
-    P.succeed (\right -> Located.merge PCons left right)
-        |> P.skip (P.token (Token.Operator "::"))
-        |> P.keep pattern
 
 
 patternLiteral : Parser Pattern
@@ -484,7 +485,7 @@ patternTuple =
         { start = P.token Token.LeftParen
         , separator = P.token Token.Comma
         , end = P.token Token.RightParen
-        , item = pattern
+        , item = P.lazy (\() -> pattern)
         }
         |> located
         |> P.andThen
@@ -514,7 +515,7 @@ patternList =
         { start = P.token Token.LeftSquareBracket
         , separator = P.token Token.Comma
         , end = P.token Token.RightSquareBracket
-        , item = pattern
+        , item = P.lazy (\() -> pattern)
         }
         |> P.map PList
 
@@ -839,3 +840,13 @@ located p =
         |> P.keep P.getPosition
         |> P.keep p
         |> P.keep P.getPosition
+
+
+finalizeExpr : LocatedExpr -> List ( ExprOperator, LocatedExpr ) -> LocatedExpr
+finalizeExpr left operatorsAndExprs =
+    Debug.todo "finalizeExpr"
+
+
+finalizePattern : LocatedPattern -> List ( PatternOperator, LocatedPattern ) -> LocatedPattern
+finalizePattern left operatorsAndPatterns =
+    Debug.todo "finalizePattern"

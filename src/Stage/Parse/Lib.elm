@@ -48,7 +48,10 @@ run (Parser parse) tokens =
         |> Result.map Tuple.first
 
 
-{-| Reports the last parser's error if needed
+{-| Reports the last parser's error if needed.
+
+Automatically backtracks!
+
 -}
 oneOf : List (Parser a) -> Parser a
 oneOf parsers =
