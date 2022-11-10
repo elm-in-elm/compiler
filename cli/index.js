@@ -61,7 +61,9 @@ const {registerPort} = require('./utils.js');
 					filePath,
 					errorCode: error.code
 				});
-			}
+			} else {
+        throw error;
+      }
 		}
 	});
 	registerPort(app, 'writeToFile', async ({filePath, fileContents}) => {

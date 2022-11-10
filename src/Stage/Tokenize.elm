@@ -51,7 +51,15 @@ tokenizeString string =
         go : State -> Result TokenizeError State
         go state =
             if List.isEmpty state.program then
-                Ok state
+                Ok
+                    { state
+                        | tokens =
+                            { line = state.line
+                            , column = state.column
+                            , type_ = End
+                            }
+                                :: state.tokens
+                    }
 
             else
                 let
@@ -60,10 +68,6 @@ tokenizeString string =
                 in
                 case err of
                     Just err_ ->
-                        let
-                            _ =
-                                List.map (Debug.log "token") newState.tokens
-                        in
                         Err err_
 
                     Nothing ->

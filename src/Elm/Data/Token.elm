@@ -22,8 +22,9 @@ type alias Token =
 
 
 type Type
-    = -- parameterized
-      LowerName String -- helloWorld
+    = End
+      -- parameterized
+    | LowerName String -- helloWorld
     | UpperName String -- HelloWorld
     | Int Int -- 123
     | Float Float -- 123.45
@@ -230,6 +231,9 @@ typeToString t =
 
         Underscore ->
             "Underscore"
+
+        End ->
+            "End"
 
 
 tToString : T -> String

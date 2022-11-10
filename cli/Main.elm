@@ -333,6 +333,7 @@ handleReadFileSuccess moduleType ({ filePath } as file) ({ project } as model) =
             parseResult =
                 Tokenize.tokenize file.fileContents
                     |> Result.andThen (Parse.parse file.filePath)
+                    |> Debug.log "parsed"
                     |> Result.andThen
                         (case moduleType of
                             MainModule ->

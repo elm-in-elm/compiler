@@ -12,13 +12,8 @@ port module Main exposing (Msg(..), Natural, main)
 -- Shows how to create an alias for a module name (Events)
 -- Shows how to import multiple modules into a single namespace (Math). Use this with great care as it can create confusion about the source of a function.
 
-import Browser
-import Html exposing (..)
-import Html.Events as Events exposing (onClick)
-import Math.Matrix4 as Math
-import Math.Vector2 as Math
-import Math.Vector3 as Math
-import WebGL
+import Bar
+import Foo as F exposing (foo)
 
 
 

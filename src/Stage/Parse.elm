@@ -35,7 +35,11 @@ parse :
     -> List Token
     -> Result Error (Module Frontend.LocatedExpr TypeAnnotation PossiblyQualified)
 parse filePath tokens =
-    P.run (module_ filePath) tokens
+    let
+        result =
+            P.run (module_ filePath) tokens
+    in
+    result
 
 
 module_ : FilePath -> Parser (Module Frontend.LocatedExpr TypeAnnotation PossiblyQualified)
@@ -72,31 +76,35 @@ module_ filePath =
 -}
 moduleName : Parser ModuleName
 moduleName =
-    P.succeed identity
-        |> P.skip (P.optional moduleType)
-        |> P.keep (qualified (P.tokenString TUpperName))
-
-
-{-|
-
-    (UpperName Dot)* finalName -> String
-
--}
-qualified : Parser String -> Parser String
-qualified finalName =
     P.succeed
-        (\xs last ->
-            (xs ++ [ last ])
-                |> String.join "."
+        (\maybeModules lastName ->
+            let
+                modules =
+                    maybeModules
+                        |> Maybe.map List.NonEmpty.toList
+                        |> Maybe.withDefault []
+            in
+            String.join "." (modules ++ [ lastName ])
         )
-        |> P.keep
-            (P.manyWithSeparator
-                { item = P.tokenString TUpperName
-                , separator = P.token Token.Dot
-                }
-            )
-        |> P.skip (P.token Token.Dot)
-        |> P.keep finalName
+        |> P.skip (P.optional moduleType)
+        |> P.keep (P.optional qualification)
+        |> P.keep upperName
+
+
+qualified : Parser String -> Parser ( NonEmpty String, String )
+qualified finalString =
+    P.succeed Tuple.pair
+        |> P.keep qualification
+        |> P.keep finalString
+
+
+qualification : Parser (NonEmpty String)
+qualification =
+    P.many1
+        (P.succeed identity
+            |> P.keep upperName
+            |> P.skip (P.token Token.Dot)
+        )
 
 
 moduleDeclaration : Parser ( ModuleType, ModuleName, Exposing )
@@ -169,7 +177,7 @@ portDeclaration : Parser ( String, DeclarationBody LocatedExpr TypeAnnotation Po
 portDeclaration =
     P.succeed (\name type__ -> ( name, Declaration.Port type__ ))
         |> P.skip (P.token Token.Port)
-        |> P.keep (P.tokenString Token.TLowerName)
+        |> P.keep lowerName
         |> P.skip (P.token Token.Colon)
         |> P.keep type_
 
@@ -199,13 +207,13 @@ valueDeclaration =
                         }
                     )
         )
-        |> P.keep (P.tokenString Token.TLowerName)
+        |> P.keep lowerName
         |> P.keep
             (P.oneOf
                 [ P.succeed (\type__ declarationName -> Just ( type__, declarationName ))
                     |> P.skip (P.token Token.Colon)
                     |> P.keep type_
-                    |> P.keep (P.tokenString Token.TLowerName)
+                    |> P.keep lowerName
                 , P.succeed Nothing
                 ]
             )
@@ -225,8 +233,8 @@ customTypeDeclaration =
             )
         )
         |> P.skip (P.token Token.Type)
-        |> P.keep (P.tokenString Token.TUpperName)
-        |> P.keep (P.many (P.tokenString Token.TLowerName))
+        |> P.keep upperName
+        |> P.keep (P.many lowerName)
         |> P.skip (P.token Token.Equals)
         |> P.keep constructors
 
@@ -244,8 +252,8 @@ typeAliasDeclaration =
         )
         |> P.skip (P.token Token.Type)
         |> P.skip (P.token Token.Alias)
-        |> P.keep (P.tokenString Token.TUpperName)
-        |> P.keep (P.many (P.tokenString Token.TLowerName))
+        |> P.keep upperName
+        |> P.keep (P.many lowerName)
         |> P.skip (P.token Token.Equals)
         |> P.keep type_
 
@@ -278,13 +286,26 @@ fnType =
 literalType : Parser (ConcreteType PossiblyQualified)
 literalType =
     P.oneOf
-        [ P.tokenString Token.TLowerName
-            |> P.map ConcreteType.TypeVar
-        , qualified (P.tokenString Token.TUpperName)
-            |> P.map (\upperName -> Debug.todo "UserDefinedType")
+        [ lowerName |> P.map ConcreteType.TypeVar
+        , userDefinedType
         , parenthesizedType
         , recordType
         ]
+
+
+userDefinedType : Parser (ConcreteType PossiblyQualified)
+userDefinedType =
+    P.succeed
+        (\( modules, name ) args ->
+            ConcreteType.UserDefinedType
+                { qualifiedness = qualify (List.NonEmpty.toList modules)
+                , name = name
+                , args = args
+                }
+        )
+        |> P.keep (qualified upperName)
+        -- TODO: this will need some newline/indent checking:
+        |> P.keep (P.many (P.lazy (\() -> type_)))
 
 
 parenthesizedType : Parser (ConcreteType PossiblyQualified)
@@ -310,7 +331,7 @@ recordType =
 typeBinding : Parser ( VarName, ConcreteType PossiblyQualified )
 typeBinding =
     P.succeed Tuple.pair
-        |> P.keep (P.tokenString Token.TLowerName)
+        |> P.keep lowerName
         |> P.skip (P.token Token.Colon)
         |> P.keep (P.lazy (\() -> type_))
 
@@ -358,8 +379,7 @@ exposedItem =
 
 exposedValue : Parser ExposedItem
 exposedValue =
-    P.tokenString Token.TLowerName
-        |> P.map ExposedValue
+    P.map ExposedValue lowerName
 
 
 exposedTypeAndOptionallyAllConstructors : Parser ExposedItem
@@ -372,7 +392,7 @@ exposedTypeAndOptionallyAllConstructors =
             else
                 ExposedType name
         )
-        |> P.keep (P.tokenString Token.TUpperName)
+        |> P.keep upperName
         |> P.keep
             (P.oneOf
                 [ P.succeed True
@@ -450,7 +470,7 @@ patternOperator =
             |> P.skip (P.token (Token.Operator "::"))
         , P.succeed PatternAsAlias
             |> P.skip (P.token Token.As)
-            |> P.keep (P.tokenString Token.TLowerName)
+            |> P.keep lowerName
         ]
 
 
@@ -474,7 +494,7 @@ patternLiteral =
         , P.tokenString Token.TString |> P.map PString
         , P.tokenInt Token.TInt |> P.map PInt
         , P.tokenFloat Token.TFloat |> P.map PFloat
-        , P.tokenString Token.TLowerName |> P.map PVar
+        , lowerName |> P.map PVar
         , patternRecord
         ]
 
@@ -526,7 +546,7 @@ patternRecord =
         { start = P.token Token.LeftCurlyBracket
         , separator = P.token Token.Comma
         , end = P.token Token.RightCurlyBracket
-        , item = P.tokenString Token.TLowerName
+        , item = lowerName
         }
         |> P.map PRecord
 
@@ -567,7 +587,7 @@ record =
 recordBinding : Parser (Binding LocatedExpr)
 recordBinding =
     P.succeed Binding
-        |> P.keep (P.tokenString Token.TLowerName)
+        |> P.keep lowerName
         |> P.skip (P.token Token.Equals)
         |> P.keep (P.lazy (\() -> expr))
 
@@ -592,58 +612,35 @@ list =
         |> P.map Frontend.List
 
 
+type NameType
+    = UppercaseName
+    | LowercaseName
+
+
 varOrConstructorValue : Parser LocatedExpr
 varOrConstructorValue =
-    {- TODO deal with this
-       type NameType
-           = UppercaseName
-           | LowercaseName
-
-
-       let
-           -- unqualified constructor OR qualified var OR qualified constructor
-           go : ( List String, NameType, String ) -> Parser Expr
-           go ( modules, nameType, lastName ) =
-               P.oneOf
-                   [ --
-                     P.succeed (\( newType, newName ) -> ( lastName :: modules, newType, newName ))
-                       |> P.skip (P.token Token.Dot)
-                       |> P.keep
-                           (P.oneOf
-                               [ P.tokenString Token.TUpperName |> P.map (Tuple.pair UppercaseName)
-                               , P.tokenString Token.TLowerName |> P.map (Tuple.pair LowercaseName)
-                               ]
-                           )
-                       |> P.andThen go
-                   , let
-                       toExpr =
-                           case nameType of
-                               LowercaseName ->
-                                   Frontend.Var
-
-                               UppercaseName ->
-                                   Frontend.ConstructorValue
-                     in
-                     P.succeed <|
-                       toExpr
-                           { qualifiedness = qualify <| List.reverse modules
-                           , name = lastName
-                           }
-                   ]
-       in
-       P.oneOf
-           [ nonqualifiedVar
-           , P.tokenString Token.TUpperName
-               |> P.andThen (\firstUppercase -> go ( [], UppercaseName, firstUppercase ))
-           ]
-    -}
+    let
+        toExpr :
+            ({ name : String, qualifiedness : PossiblyQualified } -> Expr)
+            -> ( List String, String )
+            -> Expr
+        toExpr toVariant ( modules, lastName ) =
+            toVariant
+                { qualifiedness = qualify <| List.reverse modules
+                , name = lastName
+                }
+    in
     P.oneOf
-        [ Debug.todo "unqualified constructor"
-        , Debug.todo "qualified var"
-        , Debug.todo "qualified constructor"
-
-        -- TODO it's not clear to me after months outside this code: why not unqualified var?
+        [ qualified lowerName
+            |> P.map (Tuple.mapFirst List.NonEmpty.toList >> toExpr Var)
+        , qualified upperName
+            |> P.map (Tuple.mapFirst List.NonEmpty.toList >> toExpr ConstructorValue)
+        , lowerName
+            |> P.map (Tuple.pair [] >> toExpr Var)
+        , upperName
+            |> P.map (Tuple.pair [] >> toExpr ConstructorValue)
         ]
+        |> located
 
 
 literal : Parser Expr
@@ -687,7 +684,7 @@ lambda =
                 }
         )
         |> P.skip (P.token Token.Backslash)
-        |> P.keep (P.many1 (P.tokenString Token.TLowerName))
+        |> P.keep (P.many1 lowerName)
         |> P.skip (P.token Token.RightArrow)
         |> P.keep (P.lazy (\() -> expr))
 
@@ -728,7 +725,7 @@ let_ =
 letBinding : Parser (Binding LocatedExpr)
 letBinding =
     P.succeed Binding
-        |> P.keep (P.tokenString Token.TLowerName)
+        |> P.keep lowerName
         |> P.skip (P.token Token.Equals)
         |> P.keep (P.lazy (\() -> expr))
 
@@ -762,7 +759,7 @@ constructors =
 constructor : Parser (Constructor PossiblyQualified)
 constructor =
     P.succeed Declaration.Constructor
-        |> P.keep (P.tokenString Token.TUpperName)
+        |> P.keep upperName
         |> P.keep (P.many type_)
 
 
@@ -781,7 +778,7 @@ import_ =
             (P.optional
                 (P.succeed identity
                     |> P.skip (P.token Token.As)
-                    |> P.keep (P.tokenString Token.TUpperName)
+                    |> P.keep upperName
                 )
             )
         |> P.skip
@@ -840,6 +837,16 @@ located p =
         |> P.keep P.getPosition
         |> P.keep p
         |> P.keep P.getPosition
+
+
+upperName : Parser String
+upperName =
+    P.tokenString Token.TUpperName
+
+
+lowerName : Parser String
+lowerName =
+    P.tokenString Token.TLowerName
 
 
 finalizeExpr : LocatedExpr -> List ( ExprOperator, LocatedExpr ) -> LocatedExpr
