@@ -391,4 +391,5 @@ getPosition =
                     Ok ( ( t.line, t.column ), tokens )
 
                 [] ->
-                    Debug.todo "getPosition when empty"
+                    -- Shouldn't happen as we have an End token
+                    Ok ( ( -1, -1 ), tokens )
