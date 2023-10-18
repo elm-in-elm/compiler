@@ -34,7 +34,7 @@
     "test-dependencies": {
         "direct": {
             "elm-community/random-extra": "3.2.0",
-            "elm-explorations/test": "2.1.1"
+            "elm-explorations/test": "2.1.2"
         },
         "indirect": {
             "elm/bytes": "1.0.8",
