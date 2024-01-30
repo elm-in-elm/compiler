@@ -7,7 +7,7 @@
     "elm-version": "0.19.1",
     "dependencies": {
         "direct": {
-            "Janiczek/transform": "1.1.0",
+            "Janiczek/transform": "1.1.1",
             "dmy/elm-pratt-parser": "2.0.0",
             "elm/core": "1.0.5",
             "elm/json": "1.1.3",
