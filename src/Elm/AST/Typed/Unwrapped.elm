@@ -35,11 +35,9 @@ type Expr_
     | Float Float
     | Char Char
     | String String
-    | Bool Bool
     | Var { module_ : ModuleName, name : VarName }
     | ConstructorValue { module_ : ModuleName, name : VarName }
     | Argument VarName
-    | BinOp String Expr Expr
     | Lambda { argument : VarName, body : Expr }
     | Call { fn : Expr, argument : Expr }
     | If { test : Expr, then_ : Expr, else_ : Expr }

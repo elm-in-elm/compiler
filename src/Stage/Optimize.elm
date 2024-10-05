@@ -6,7 +6,9 @@ module Stage.Optimize exposing
     )
 
 import Elm.AST.Typed as Typed
+import Elm.Data.ModuleName exposing (ModuleName)
 import Elm.Data.Project exposing (Project)
+import Elm.Data.VarName exposing (VarName)
 import Stage.Optimize.Boilerplate as Boilerplate
 
 
@@ -43,6 +45,9 @@ optimizePlus located =
                 ( Typed.Int left, Typed.Int right ) ->
                     Just (Typed.setExpr (Typed.Int (left + right)) r)
 
+                ( Typed.Float left, Typed.Float right ) ->
+                    Just (Typed.setExpr (Typed.Float (left + right)) r)
+
                 _ ->
                     Nothing
 
@@ -53,10 +58,19 @@ optimizePlus located =
 optimizeCons : Typed.LocatedExpr -> Maybe Typed.LocatedExpr
 optimizeCons located =
     case Typed.getExpr located of
-        Typed.BinOp "::" l r ->
-            case Typed.getExpr r of
-                Typed.List list ->
-                    Just (Typed.setExpr (Typed.List (l :: list)) r)
+        Typed.Call c1 ->
+            case ( Typed.getExpr c1.fn, Typed.getExpr c1.argument ) of
+                ( Typed.Call c2, Typed.List list ) ->
+                    case Typed.getExpr c2.fn of
+                        Typed.Var v1 ->
+                            if v1 == { module_ = "List", name = "cons" } then
+                                Just (Typed.setExpr (Typed.List (c2.argument :: list)) located)
+
+                            else
+                                Nothing
+
+                        _ ->
+                            Nothing
 
                 _ ->
                     Nothing
@@ -70,17 +84,31 @@ optimizeIfLiteralBool located =
     case Typed.getExpr located of
         Typed.If { test, then_, else_ } ->
             case Typed.getExpr test of
-                Typed.Bool bool ->
-                    Just
-                        (if bool then
-                            then_
+                Typed.ConstructorValue c ->
+                    getBoolValue c
+                        |> Maybe.map
+                            (\bool ->
+                                if bool then
+                                    then_
 
-                         else
-                            else_
-                        )
+                                else
+                                    else_
+                            )
 
                 _ ->
                     Nothing
 
         _ ->
             Nothing
+
+
+getBoolValue : { module_ : ModuleName, name : VarName } -> Maybe Bool
+getBoolValue { module_, name } =
+    if module_ == "Basics" && name == "True" then
+        Just True
+
+    else if module_ == "Basics" && name == "False" then
+        Just False
+
+    else
+        Nothing

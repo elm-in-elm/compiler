@@ -107,16 +107,6 @@ assignIdsHelp currentId located =
         Canonical.Var name ->
             assignId currentId (Typed.Var name)
 
-        Canonical.BinOp op e1 e2 ->
-            let
-                ( e1_, id1 ) =
-                    f currentId e1
-
-                ( e2_, id2 ) =
-                    f id1 e2
-            in
-            assignId id2 (Typed.BinOp op e1_ e2_)
-
         Canonical.Lambda { argument, body } ->
             let
                 ( body_, id1 ) =

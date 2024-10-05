@@ -116,6 +116,7 @@ types =
             , ( "in", "in", Ok [ In ] )
             , ( "case", "case", Ok [ Case ] )
             , ( "of", "of", Ok [ Of ] )
+            , ( "where", "where", Ok [ Where ] )
 
             -- symbols
             , ( "dot", ".", Ok [ Dot ] )

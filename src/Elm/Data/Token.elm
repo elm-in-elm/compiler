@@ -49,6 +49,7 @@ type Type
     | Case -- case
     | Of -- of
     | As -- as
+    | Where -- where
       -- Symbols
     | Dot -- .
     | All -- (..)
@@ -184,6 +185,9 @@ typeToString t =
 
         As ->
             "As"
+
+        Where ->
+            "Where"
 
         Dot ->
             "Dot"

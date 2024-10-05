@@ -337,6 +337,13 @@ findDependencies modules thisModule declarationBody =
         Port _ ->
             Ok []
 
+        InfixOperator r ->
+            findDependenciesOfVar
+                modules
+                thisModule
+                thisModule.name
+                r.function
+
 
 findDependenciesOfType :
     Dict ModuleName (Module Typed.LocatedExpr Never Qualified)
@@ -484,11 +491,6 @@ findDependenciesOfExpr modules locatedExpr =
 
         Argument _ ->
             Ok []
-
-        BinOp _ e1 e2 ->
-            Result.map2 (++)
-                (f e1)
-                (f e2)
 
         Lambda { argument, body } ->
             f body

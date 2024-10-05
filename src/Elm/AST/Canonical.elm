@@ -75,7 +75,6 @@ type Expr
     | Var { module_ : ModuleName, name : VarName }
     | ConstructorValue { module_ : ModuleName, name : VarName }
     | Argument VarName
-    | BinOp String LocatedExpr LocatedExpr
     | Lambda { argument : VarName, body : LocatedExpr }
     | Call { fn : LocatedExpr, argument : LocatedExpr }
     | If { test : LocatedExpr, then_ : LocatedExpr, else_ : LocatedExpr }
@@ -140,11 +139,6 @@ unwrap expr =
 
         Argument name ->
             Unwrapped.Argument name
-
-        BinOp op e1 e2 ->
-            Unwrapped.BinOp op
-                (f e1)
-                (f e2)
 
         Lambda { argument, body } ->
             Unwrapped.Lambda
@@ -300,11 +294,6 @@ fromUnwrapped expr =
 
             Unwrapped.Argument name ->
                 Argument name
-
-            Unwrapped.BinOp op e1 e2 ->
-                BinOp op
-                    (f e1)
-                    (f e2)
 
             Unwrapped.Lambda { argument, body } ->
                 Lambda

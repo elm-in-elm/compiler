@@ -70,11 +70,9 @@ type Expr_
     | Float Float
     | Char Char
     | String String
-    | Bool Bool
     | Var { module_ : ModuleName, name : VarName }
     | ConstructorValue { module_ : ModuleName, name : VarName }
     | Argument VarName
-    | BinOp String LocatedExpr LocatedExpr
     | Lambda { argument : VarName, body : LocatedExpr }
     | Call { fn : LocatedExpr, argument : LocatedExpr }
     | If { test : LocatedExpr, then_ : LocatedExpr, else_ : LocatedExpr }
@@ -138,19 +136,11 @@ recurse fn locatedExpr =
                     String _ ->
                         expr
 
-                    Bool _ ->
-                        expr
-
                     Var _ ->
                         expr
 
                     Argument _ ->
                         expr
-
-                    BinOp op e1 e2 ->
-                        BinOp op
-                            (fn e1)
-                            (fn e2)
 
                     Lambda ({ body } as lambda_) ->
                         Lambda { lambda_ | body = fn body }
@@ -259,18 +249,11 @@ recursiveChildren fn locatedExpr =
         String _ ->
             []
 
-        Bool _ ->
-            []
-
         Var _ ->
             []
 
         Argument _ ->
             []
-
-        BinOp _ left right ->
-            fn left
-                ++ fn right
 
         Lambda { body } ->
             fn body
@@ -375,19 +358,11 @@ unwrap expr =
         String string ->
             Unwrapped.String string
 
-        Bool bool ->
-            Unwrapped.Bool bool
-
         Var var_ ->
             Unwrapped.Var var_
 
         Argument name ->
             Unwrapped.Argument name
-
-        BinOp op e1 e2 ->
-            Unwrapped.BinOp op
-                (f e1)
-                (f e2)
 
         Lambda { argument, body } ->
             Unwrapped.Lambda
@@ -538,19 +513,11 @@ dropTypes locatedExpr =
                     String string ->
                         Canonical.String string
 
-                    Bool bool ->
-                        Canonical.Bool bool
-
                     Var var ->
                         Canonical.Var var
 
                     Argument var ->
                         Canonical.Argument var
-
-                    BinOp op e1 e2 ->
-                        Canonical.BinOp op
-                            (f e1)
-                            (f e2)
 
                     Lambda { argument, body } ->
                         Canonical.Lambda

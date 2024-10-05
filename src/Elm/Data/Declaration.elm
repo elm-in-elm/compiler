@@ -1,5 +1,6 @@
 module Elm.Data.Declaration exposing
-    ( Declaration, DeclarationBody(..), Constructor, TypeAliasDeclaration
+    ( Declaration, DeclarationBody(..)
+    , Constructor, TypeAliasDeclaration, InfixOperatorDeclaration, Associativity(..)
     , map, mapBody, setAnnotation
     , combineValue, combineType, combineTuple3
     , getExpr, getTypeAlias
@@ -7,7 +8,8 @@ module Elm.Data.Declaration exposing
 
 {-| Top-level declaration, be it a function, constant or a type definition.
 
-@docs Declaration, DeclarationBody, Constructor, TypeAliasDeclaration
+@docs Declaration, DeclarationBody
+@docs Constructor, TypeAliasDeclaration, InfixOperatorDeclaration, Associativity
 @docs map, mapBody, setAnnotation
 @docs combineValue, combineType, combineTuple3
 @docs getExpr, getTypeAlias
@@ -66,6 +68,7 @@ type DeclarationBody expr annotation qualifiedness
         , constructors : NonEmpty (Constructor qualifiedness)
         }
     | Port (ConcreteType qualifiedness)
+    | InfixOperator InfixOperatorDeclaration
 
 
 type alias TypeAliasDeclaration qualifiedness =
@@ -73,6 +76,27 @@ type alias TypeAliasDeclaration qualifiedness =
     , -- TODO how to map from the parameters to the vars in the definition?
       definition : ConcreteType qualifiedness
     }
+
+
+type alias InfixOperatorDeclaration =
+    { operator : String
+    , function : String
+    , precedence : Int
+    , associativity : Associativity
+    }
+
+
+{-|
+
+     left associativity:  1 + 2 + 3 -> (1 + 2) + 3
+     right associativity: 1 ^ 2 ^ 3 -> 1 ^ (2 ^ 3)
+     non-associative:     1 < 2 < 3 -> error
+
+-}
+type Associativity
+    = Left
+    | Right
+    | Non
 
 
 {-| Constructor of a custom type.
@@ -163,6 +187,9 @@ mapBody fnExpr fnAnnotation fnQualifiedness body =
         Port type_ ->
             Port (ConcreteType.map fnQualifiedness type_)
 
+        InfixOperator r ->
+            InfixOperator r
+
 
 {-| Switch the Result and the expression inside the declaration body.
 Similar to [`Result.Extra.combine`](/packages/elm-community/result-extra/latest/Result-Extra#combine).
@@ -192,6 +219,9 @@ combineValue body =
 
         Port type_ ->
             Ok <| Port type_
+
+        InfixOperator r ->
+            Ok <| InfixOperator r
 
 
 combineType : DeclarationBody a b (Result err c) -> Result err (DeclarationBody a b c)
@@ -228,6 +258,9 @@ combineType body =
                 |> ConcreteType.combine
                 |> Result.map Port
 
+        InfixOperator r ->
+            Ok (InfixOperator r)
+
 
 combineTuple3 :
     ( x, y, z )
@@ -254,6 +287,9 @@ combineTuple3 ( defaultX, defaultY, defaultZ ) body =
         Port type_ ->
             ( Port type_, ( defaultX, defaultY, defaultZ ) )
 
+        InfixOperator r ->
+            ( InfixOperator r, ( defaultX, defaultY, defaultZ ) )
+
 
 getExpr : DeclarationBody expr a b -> Maybe expr
 getExpr body =
@@ -270,6 +306,9 @@ getExpr body =
         Port _ ->
             Nothing
 
+        InfixOperator _ ->
+            Nothing
+
 
 getTypeAlias : Declaration a b qualifiedness -> Maybe (TypeAliasDeclaration qualifiedness)
 getTypeAlias decl =
@@ -284,6 +323,9 @@ getTypeAlias decl =
             Nothing
 
         Port _ ->
+            Nothing
+
+        InfixOperator _ ->
             Nothing
 
 

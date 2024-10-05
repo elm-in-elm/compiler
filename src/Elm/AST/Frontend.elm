@@ -60,9 +60,41 @@ type Expr
     | Bool Bool
     | Var { qualifiedness : PossiblyQualified, name : VarName }
     | ConstructorValue { qualifiedness : PossiblyQualified, name : VarName }
-    | -- Both lambda arguments and let..in bindings
-      Argument VarName
-    | BinOp String LocatedExpr LocatedExpr
+      {- In the parsing phase we don't have enough information to figure out
+         the precedence of operators, since those are defined by the Elm source
+         code itself instead of being hardcoded!
+
+         So we (copying stil4m/elm-syntax's approach) parse them into Operator
+         (instead of, say, Var) and their usages into a fairly non-sensical
+         AmbiguousApplication (List Expr) where the Operators are sprinkled in
+         with the expressions they're supposed to be working on:
+
+         AmbiguousApplication [ Int 1, Operator "*", Int 2, Operator "+", Int 3 ]
+
+         Later in the Desugar phase, once the infix operators are all
+         registered, we'll figure out the precedence and convert AmbiguousApplication
+         into nested Calls and Operators into Vars with their named functions:
+
+         Call
+           (Call
+             (Var "Basics" "add")
+             (Call
+               (Call
+                 (Var "Basics" "mul")
+                 (Int 1)
+               )
+               (Int 2)
+             )
+           )
+           (Int 3)
+
+         (If the above seems weird to you, note that our Calls only allow a
+         single argument to each function.)
+      -}
+    | Operator VarName
+    | AmbiguousApplication (List LocatedExpr)
+      --
+    | Argument VarName -- Both lambda arguments and let..in bindings
     | Lambda { arguments : NonEmpty VarName, body : LocatedExpr }
     | Call { fn : LocatedExpr, argument : LocatedExpr }
     | If { test : LocatedExpr, then_ : LocatedExpr, else_ : LocatedExpr }
@@ -130,10 +162,11 @@ recurse f expr =
         Argument _ ->
             expr
 
-        BinOp op e1 e2 ->
-            BinOp op
-                (f_ e1)
-                (f_ e2)
+        Operator _ ->
+            expr
+
+        AmbiguousApplication exprs ->
+            AmbiguousApplication <| List.map f_ exprs
 
         Lambda ({ body } as lambda_) ->
             Lambda { lambda_ | body = f_ body }
@@ -236,10 +269,11 @@ unwrap expr =
         Argument name ->
             Unwrapped.Argument name
 
-        BinOp op e1 e2 ->
-            Unwrapped.BinOp op
-                (unwrap e1)
-                (unwrap e2)
+        Operator name ->
+            Unwrapped.Operator name
+
+        AmbiguousApplication exprs ->
+            Unwrapped.AmbiguousApplication (List.map unwrap exprs)
 
         Lambda { arguments, body } ->
             Unwrapped.Lambda

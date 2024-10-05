@@ -6,7 +6,8 @@ import Elm.Compiler.Error exposing (Error(..), LocatedParseErrorType(..), ParseE
 import Elm.Data.Binding as Binding exposing (Binding)
 import Elm.Data.Declaration as Declaration
     exposing
-        ( Constructor
+        ( Associativity(..)
+        , Constructor
         , Declaration
         , DeclarationBody
         )
@@ -171,6 +172,7 @@ declarationBody =
         , customTypeDeclaration
         , valueDeclaration
         , portDeclaration
+        , infixOperatorDeclaration
         ]
 
 
@@ -181,6 +183,38 @@ portDeclaration =
         |> P.keep lowerName
         |> P.skip (P.token Token.Colon)
         |> P.keep type_
+
+
+infixOperatorDeclaration : Parser ( String, DeclarationBody LocatedExpr TypeAnnotation PossiblyQualified )
+infixOperatorDeclaration =
+    P.succeed
+        (\associativity precedence op fn ->
+            ( op
+            , Declaration.InfixOperator
+                { operator = op
+                , function = fn
+                , precedence = precedence
+                , associativity = associativity
+                }
+            )
+        )
+        |> P.skip (P.token (Token.LowerName "infix"))
+        |> P.keep infixOperatorAssociativity
+        |> P.keep (P.tokenInt Token.TInt)
+        |> P.skip (P.token Token.LeftParen)
+        |> P.keep (P.tokenString Token.TOperator)
+        |> P.skip (P.token Token.RightParen)
+        |> P.skip (P.token Token.Equals)
+        |> P.keep lowerName
+
+
+infixOperatorAssociativity : Parser Associativity
+infixOperatorAssociativity =
+    P.oneOf
+        [ P.succeed Left |> P.skip (P.token (Token.LowerName "left"))
+        , P.succeed Right |> P.skip (P.token (Token.LowerName "right"))
+        , P.succeed Non |> P.skip (P.token (Token.LowerName "non"))
+        ]
 
 
 valueDeclaration : Parser ( String, DeclarationBody LocatedExpr TypeAnnotation PossiblyQualified )
@@ -405,7 +439,7 @@ exposedTypeAndOptionallyAllConstructors =
 
 expr : Parser LocatedExpr
 expr =
-    P.succeed finalizeExpr
+    P.succeed (Debug.todo "expr?")
         |> P.keep simpleExpr
         |> P.keep
             (P.many
@@ -448,7 +482,7 @@ simpleExpr =
 
 pattern : Parser LocatedPattern
 pattern =
-    P.succeed finalizePattern
+    P.succeed (Debug.todo "pattern?")
         |> P.keep simplePattern
         |> P.keep
             (P.many
@@ -461,7 +495,7 @@ pattern =
 
 type PatternOperator
     = PatternCons
-    | PatternAsAlias String -- postfix
+    | PatternAsAlias String
 
 
 patternOperator : Parser PatternOperator
@@ -848,23 +882,3 @@ upperName =
 lowerName : Parser String
 lowerName =
     P.tokenString Token.TLowerName
-
-
-finalizeExpr : LocatedExpr -> List ( ExprOperator, LocatedExpr ) -> LocatedExpr
-finalizeExpr left operatorsAndExprs =
-    case operatorsAndExprs of
-        [] ->
-            left
-
-        _ ->
-            Debug.todo "finalizeExpr non-empty"
-
-
-finalizePattern : LocatedPattern -> List ( PatternOperator, LocatedPattern ) -> LocatedPattern
-finalizePattern left operatorsAndPatterns =
-    case operatorsAndPatterns of
-        [] ->
-            left
-
-        _ ->
-            Debug.todo "finalizePattern non-empty"

@@ -843,6 +843,7 @@ reservedKeywords =
         , ( "port", Port )
         , ( "then", Then )
         , ( "type", Type )
+        , ( "where", Where )
         ]
 
 

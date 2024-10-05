@@ -29,8 +29,9 @@ type Expr
     | Bool Bool
     | Var { qualifiedness : PossiblyQualified, name : VarName }
     | ConstructorValue { qualifiedness : PossiblyQualified, name : VarName }
+    | Operator VarName
+    | AmbiguousApplication (List Expr)
     | Argument VarName
-    | BinOp String Expr Expr
     | Lambda { arguments : NonEmpty VarName, body : Expr }
     | Call { fn : Expr, argument : Expr }
     | If { test : Expr, then_ : Expr, else_ : Expr }
