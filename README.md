@@ -6,6 +6,23 @@
 # elm-in-elm
 Elm compiler written in Elm!
 
+
+# ABANDONED
+
+This project is currently not being worked on. There are other Elm compilers written in Elm, that are feature complete:
+
+- https://github.com/pithub/elm-compiler-in-elm-ui
+- https://github.com/guida-lang/compiler
+- https://github.com/marc136/elm.run
+
+The Gren compiler might also be of interest, being rewritten from Haskell into Gren:
+
+- https://github.com/gren-lang/compiler
+
+Thank you to all the contributors for your work! ~janiczek
+
+----
+
 <a href="https://travis-ci.com/elm-in-elm/compiler" alt="Build Status">
   <img src="https://img.shields.io/travis/com/elm-in-elm/compiler/master.svg" /></a>
 <a href="https://discordapp.com/invite/pSqzWRV" alt="Discord">
